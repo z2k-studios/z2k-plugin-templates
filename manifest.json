@@ -1,0 +1,10 @@
+{
+	"id": "z2k-plugin-new-card",
+	"name": "Z2K - New Card",
+	"version": "1.0.0",
+	"minAppVersion": "0.15.0",
+	"description": "Provides new card actions using templates",
+	"author": "Z2K",
+	"authorUrl": "https://z2k.dev/",
+	"isDesktopOnly": false
+}
