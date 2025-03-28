@@ -1,8 +1,387 @@
-/*
 
-This CSS file will be included with your plugin, and
-available in the app when your plugin is enabled.
+.template-selection-content {
+	padding: 16px 20px;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	height: 100%;
+}
 
-If your plugin does not need CSS, delete this file.
+.modal {
+	background-color: var(--background-primary);
+	border-radius: 8px;
+	box-shadow: 0 2px 10px var(--shadow);
+	width: 100%;
+	max-width: 500px;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	max-height: 80vh;
+}
 
-*/
+.search-container {
+	width: 100%;
+}
+
+.search-input {
+	width: 100%;
+	padding: 8px 12px;
+	font-size: 14px;
+	border-radius: 4px;
+	border: 1px solid var(--background-modifier-border);
+	background-color: var(--background-primary);
+}
+
+.search-input:focus {
+	box-shadow: 0 0 0 2px var(--interactive-accent);
+	border-color: transparent;
+	outline: none;
+}
+
+.template-list {
+	flex-grow: 1;
+	overflow-y: auto;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	max-height: 300px;
+	min-height: 30px;
+	position: relative;
+}
+
+.template-item {
+	padding: 10px 12px;
+	border-bottom: 1px solid var(--background-modifier-border);
+	cursor: pointer;
+	display: flex;
+	justify-content: space-between;
+	transition: background-color 0.15s ease;
+}
+
+.template-item:focus {
+	outline: none;
+	box-shadow: inset 0 0 0 2px var(--interactive-accent);
+}
+
+.template-item:last-child {
+	border-bottom: none;
+}
+
+.template-item:hover {
+	background-color: var(--background-secondary);
+}
+
+.template-item.selected {
+	background-color: var(--interactive-accent);
+	color: var(--text-on-accent);
+}
+
+.template-item.selected .template-path {
+	color: rgba(255, 255, 255, 0.8);
+}
+
+.template-name {
+	font-weight: 500;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	margin-right: 8px;
+	flex: 1;
+}
+
+.template-path {
+	color: var(--text-muted);
+	font-size: 12px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	text-align: right;
+	max-width: 40%;
+}
+
+.template-selection-actions {
+	padding: 12px 0 0 0;
+	display: flex;
+	justify-content: flex-end;
+}
+
+.btn {
+	padding: 6px 12px;
+	border-radius: 4px;
+	font-size: 14px;
+	font-weight: 500;
+	cursor: pointer;
+	border: 1px solid transparent;
+	transition: all 0.15s ease;
+}
+
+.btn-secondary {
+	background-color: var(--background-secondary);
+	color: var(--text-normal);
+	border-color: var(--background-modifier-border);
+}
+
+.btn-secondary:hover {
+	background-color: var(--background-secondary-alt);
+}
+
+.btn-primary {
+	background-color: var(--interactive-accent);
+	color: var(--text-on-accent);
+	margin-left: 8px;
+}
+
+.btn-primary:hover {
+	background-color: var(--interactive-accent-hover);
+}
+
+.btn[disabled] {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+/* .empty-state {
+	padding: 20px;
+	text-align: center;
+	color: var(--text-muted);
+	border-bottom: none;
+	margin-top: 0;
+} */
+.empty-state {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	height: 100%;
+	padding: 0;
+	color: var(--text-muted);
+	border: none;
+}
+
+/* Field Collection Modal Styles */
+.field-collection-modal {
+	max-width: 600px;
+	max-height: 80vh;
+}
+
+.field-collection-form {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	padding: 16px 20px;
+}
+
+.field-list {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	max-height: 60vh;
+	overflow-y: auto;
+	padding-right: 8px;
+}
+
+/* Individual Field Styling */
+.field-container {
+	display: flex;
+	flex-direction: column;
+	position: relative;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	padding: 12px;
+	background-color: var(--background-primary);
+	transition: all 0.2s ease;
+}
+
+.field-container:focus-within {
+	border-color: var(--interactive-accent);
+	box-shadow: 0 0 0 2px rgba(var(--interactive-accent-rgb), 0.2);
+}
+
+.field-input {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	width: 100%;
+}
+
+.field-input label {
+	font-weight: 500;
+	font-size: 14px;
+	color: var(--text-normal);
+}
+
+.input-wrapper {
+	display: flex;
+	align-items: center;
+	position: relative;
+}
+
+/* Basic input styling */
+input[type="text"],
+input[type="number"],
+input[type="date"],
+select,
+textarea {
+	width: 100%;
+	padding: 8px 10px;
+	background-color: var(--background-secondary);
+	color: var(--text-normal);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	font-size: 14px;
+	transition: all 0.15s ease;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+	border-color: var(--interactive-accent);
+	box-shadow: 0 0 0 2px rgba(var(--interactive-accent-rgb), 0.2);
+	outline: none;
+}
+
+/* Checkbox styling */
+.boolean-input-container {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+input[type="checkbox"] {
+	width: 16px;
+	height: 16px;
+	cursor: pointer;
+	accent-color: var(--interactive-accent);
+}
+
+.checkbox-label {
+	cursor: pointer;
+}
+
+/* Multi-select styling */
+.multi-select-container {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	padding: 8px;
+	background-color: var(--background-secondary);
+	border-radius: 4px;
+	border: 1px solid var(--background-modifier-border);
+}
+
+.multi-select-option {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 4px 0;
+}
+
+/* Error state styling */
+.has-error {
+	border-color: var(--text-error) !important;
+}
+
+.error-message,
+.field-error {
+	color: var(--text-error);
+	font-size: 12px;
+	margin-top: 4px;
+}
+
+/* Field state indicators */
+.field-state-indicators {
+	display: flex;
+	position: absolute;
+	top: 8px;
+	right: 8px;
+	gap: 4px;
+}
+
+.indicator {
+	width: 20px;
+	height: 20px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 50%;
+	font-size: 12px;
+	cursor: help;
+}
+
+.touched-indicator {
+	background-color: var(--color-green);
+	color: white;
+}
+
+.focused-indicator {
+	background-color: var(--interactive-accent);
+	color: white;
+}
+
+.error-indicator {
+	background-color: var(--text-error);
+	color: white;
+}
+
+.has-references-indicator,
+.is-referenced-indicator {
+	background-color: var(--color-yellow);
+	color: black;
+}
+
+/* Dependency indicators */
+.dependency-indicators {
+	display: flex;
+	gap: 4px;
+	margin-left: 8px;
+}
+
+.depends-on,
+.is-dependency {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
+	border-radius: 50%;
+	cursor: help;
+}
+
+.depends-on {
+	background-color: var(--color-blue);
+	color: white;
+}
+
+.is-dependency {
+	background-color: var(--color-purple);
+	color: white;
+}
+
+/* Miss text preview */
+.miss-text-preview {
+	font-size: 12px;
+	color: var(--text-muted);
+	font-style: italic;
+	margin-top: 4px;
+}
+
+.miss-text-preview span {
+	font-weight: 500;
+}
+
+/* Form actions */
+.form-actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
+	margin-top: 16px;
+	padding-top: 16px;
+	border-top: 1px solid var(--background-modifier-border);
+}
+
+/* Field state classes */
+.field-input.touched .input-wrapper {
+	border-left: 2px solid var(--color-green);
+}
+
+.field-input.focused .input-wrapper {
+	border-left: 2px solid var(--interactive-accent);
+}

@@ -6,5 +6,6 @@
 	"description": "Provides new card actions using templates",
 	"author": "Z2K",
 	"authorUrl": "https://z2k.dev/",
-	"isDesktopOnly": false
+	"isDesktopOnly": false,
+	"styles": ["styles.css"]
 }
