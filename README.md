@@ -43,3 +43,8 @@ npm run build
 ```
 
 This creates a bundled `main.js` file that includes the template engine.
+
+Use this while developing:
+```bash
+npm run dev
+```

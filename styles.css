@@ -1,13 +1,70 @@
 
-.template-selection-content {
-	padding: 16px 20px;
-	display: flex;
-	flex-direction: column;
-	gap: 16px;
-	height: 100%;
+/*
+--------------------------------------------------------------------------------------------------------------------------------
+	Buttons
+--------------------------------------------------------------------------------------------------------------------------------
+*/
+
+.btn {
+	padding: 6px 12px;
+	border-radius: 4px;
+	font-size: 14px;
+	font-weight: 500;
+	cursor: pointer;
+	border: 1px solid transparent;
+	transition: all 0.15s ease;
 }
 
+.btn[disabled] {
+	opacity: 0.5;
+}
+
+.btn-primary {
+	background-color: var(--interactive-accent);
+	color: var(--text-on-accent);
+	margin-left: 8px;
+}
+
+.btn-primary:hover {
+	background-color: var(--interactive-accent-hover);
+}
+
+.btn-secondary {
+	background-color: var(--background-secondary);
+	color: var(--text-normal);
+	border-color: var(--background-modifier-border);
+}
+
+.btn-secondary:hover {
+	background-color: var(--background-secondary-alt);
+}
+
+.btn-warning {
+	background-color: var(--text-error);
+	color: white;
+}
+
+.btn-warning:hover {
+	background-color: var(--text-error-hover, #d93025);
+	opacity: 0.9;
+}
+
+
+
+/*
+--------------------------------------------------------------------------------------------------------------------------------
+	Modals
+--------------------------------------------------------------------------------------------------------------------------------
+*/
+
 .modal {
+	resize: both;
+	overflow: auto;
+	min-width: 400px;
+	min-height: 300px;
+}
+
+.modal-content {
 	background-color: var(--background-primary);
 	border-radius: 8px;
 	box-shadow: 0 2px 10px var(--shadow);
@@ -38,7 +95,27 @@
 	outline: none;
 }
 
-.template-list {
+
+
+/*
+--------------------------------------------------------------------------------------------------------------------------------
+	Selection Modals
+--------------------------------------------------------------------------------------------------------------------------------
+*/
+
+.selection-modal {
+	max-width: 500px;
+}
+
+.selection-content {
+	padding: 16px 20px;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	height: 100%;
+}
+
+.selection-list {
 	flex-grow: 1;
 	overflow-y: auto;
 	border: 1px solid var(--background-modifier-border);
@@ -48,7 +125,7 @@
 	position: relative;
 }
 
-.template-item {
+.selection-item {
 	padding: 10px 12px;
 	border-bottom: 1px solid var(--background-modifier-border);
 	cursor: pointer;
@@ -57,29 +134,29 @@
 	transition: background-color 0.15s ease;
 }
 
-.template-item:focus {
+.selection-item:focus {
 	outline: none;
 	box-shadow: inset 0 0 0 2px var(--interactive-accent);
 }
 
-.template-item:last-child {
+.selection-item:last-child {
 	border-bottom: none;
 }
 
-.template-item:hover {
+.selection-item:hover {
 	background-color: var(--background-secondary);
 }
 
-.template-item.selected {
+.selection-item.selected {
 	background-color: var(--interactive-accent);
 	color: var(--text-on-accent);
 }
 
-.template-item.selected .template-path {
+.selection-item.selected .selection-secondary {
 	color: rgba(255, 255, 255, 0.8);
 }
 
-.template-name {
+.selection-primary {
 	font-weight: 500;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -88,7 +165,7 @@
 	flex: 1;
 }
 
-.template-path {
+.selection-secondary {
 	color: var(--text-muted);
 	font-size: 12px;
 	overflow: hidden;
@@ -98,67 +175,46 @@
 	max-width: 40%;
 }
 
-.template-selection-actions {
+.selection-actions {
 	padding: 12px 0 0 0;
 	display: flex;
 	justify-content: flex-end;
 }
 
-.btn {
-	padding: 6px 12px;
-	border-radius: 4px;
-	font-size: 14px;
-	font-weight: 500;
-	cursor: pointer;
-	border: 1px solid transparent;
-	transition: all 0.15s ease;
-}
-
-.btn-secondary {
-	background-color: var(--background-secondary);
-	color: var(--text-normal);
-	border-color: var(--background-modifier-border);
-}
-
-.btn-secondary:hover {
-	background-color: var(--background-secondary-alt);
-}
-
-.btn-primary {
-	background-color: var(--interactive-accent);
-	color: var(--text-on-accent);
-	margin-left: 8px;
-}
-
-.btn-primary:hover {
-	background-color: var(--interactive-accent-hover);
-}
-
-.btn[disabled] {
-	opacity: 0.5;
-	cursor: not-allowed;
-}
-
-/* .empty-state {
-	padding: 20px;
-	text-align: center;
-	color: var(--text-muted);
-	border-bottom: none;
-	margin-top: 0;
-} */
-.empty-state {
+.selection-empty-state {
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	height: 100%;
-	padding: 0;
+	padding: 20px;
 	color: var(--text-muted);
+	font-style: italic;
+}
+
+
+
+/*
+--------------------------------------------------------------------------------------------------------------------------------
+	Specific Selection Modal Overrides
+--------------------------------------------------------------------------------------------------------------------------------
+*/
+
+.template-list-empty-state {
+	padding: 0;
 	border: none;
 }
 
+
+
+/*
+--------------------------------------------------------------------------------------------------------------------------------
+	Field Collection Modal
+--------------------------------------------------------------------------------------------------------------------------------
+*/
+
 /* Field Collection Modal Styles */
 .field-collection-modal {
-	max-width: 600px;
+	max-width: 1000px;
 	max-height: 80vh;
 }
 
@@ -167,15 +223,18 @@
 	flex-direction: column;
 	gap: 16px;
 	padding: 16px 20px;
+	height: 100%;
+	min-height: 0; /* Forces proper flex behavior */
 }
 
 .field-list {
 	display: flex;
 	flex-direction: column;
-	gap: 12px;
-	max-height: 60vh;
+	flex: 1;
+	gap: 16px;
 	overflow-y: auto;
 	padding-right: 8px;
+	scroll-behavior: smooth;
 }
 
 /* Individual Field Styling */
@@ -183,16 +242,26 @@
 	display: flex;
 	flex-direction: column;
 	position: relative;
-	border: 1px solid var(--background-modifier-border);
+	/* border: 1px solid var(--background-modifier-border); */
 	border-radius: 4px;
-	padding: 12px;
+	padding: 4px;
+	padding-left: 12px;
 	background-color: var(--background-primary);
 	transition: all 0.2s ease;
+	box-shadow: inset 3px 0 0 transparent;
+}
+
+.field-container.touched {
+	box-shadow: inset 3px 0 0 var(--color-green);
+}
+
+.field-container.has-error {
+	box-shadow: inset 3px 0 0 var(--text-error);
 }
 
 .field-container:focus-within {
 	border-color: var(--interactive-accent);
-	box-shadow: 0 0 0 2px rgba(var(--interactive-accent-rgb), 0.2);
+	box-shadow: inset 3px 0 0 var(--interactive-accent);
 }
 
 .field-input {
@@ -206,12 +275,6 @@
 	font-weight: 500;
 	font-size: 14px;
 	color: var(--text-normal);
-}
-
-.input-wrapper {
-	display: flex;
-	align-items: center;
-	position: relative;
 }
 
 /* Basic input styling */
@@ -230,12 +293,26 @@ textarea {
 	transition: all 0.15s ease;
 }
 
-input:focus,
+textarea {
+	resize: vertical;
+	height: 37px;
+	min-height: 37px;
+	width: 100%;
+	max-width: 100%;
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+input[type="date"]:focus,
 select:focus,
 textarea:focus {
 	border-color: var(--interactive-accent);
 	box-shadow: 0 0 0 2px rgba(var(--interactive-accent-rgb), 0.2);
 	outline: none;
+}
+
+::placeholder {
+	color: var(--text-muted);
 }
 
 /* Checkbox styling */
@@ -275,84 +352,14 @@ input[type="checkbox"] {
 }
 
 /* Error state styling */
-.has-error {
+/* .has-error {
 	border-color: var(--text-error) !important;
-}
+} */
 
-.error-message,
-.field-error {
+.error-message {
 	color: var(--text-error);
 	font-size: 12px;
 	margin-top: 4px;
-}
-
-/* Field state indicators */
-.field-state-indicators {
-	display: flex;
-	position: absolute;
-	top: 8px;
-	right: 8px;
-	gap: 4px;
-}
-
-.indicator {
-	width: 20px;
-	height: 20px;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	border-radius: 50%;
-	font-size: 12px;
-	cursor: help;
-}
-
-.touched-indicator {
-	background-color: var(--color-green);
-	color: white;
-}
-
-.focused-indicator {
-	background-color: var(--interactive-accent);
-	color: white;
-}
-
-.error-indicator {
-	background-color: var(--text-error);
-	color: white;
-}
-
-.has-references-indicator,
-.is-referenced-indicator {
-	background-color: var(--color-yellow);
-	color: black;
-}
-
-/* Dependency indicators */
-.dependency-indicators {
-	display: flex;
-	gap: 4px;
-	margin-left: 8px;
-}
-
-.depends-on,
-.is-dependency {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	width: 24px;
-	height: 24px;
-	border-radius: 50%;
-	cursor: help;
-}
-
-.depends-on {
-	background-color: var(--color-blue);
-	color: white;
-}
-
-.is-dependency {
-	background-color: var(--color-purple);
-	color: white;
 }
 
 /* Miss text preview */
@@ -370,18 +377,70 @@ input[type="checkbox"] {
 /* Form actions */
 .form-actions {
 	display: flex;
+	flex-shrink: 0;
 	justify-content: flex-end;
 	gap: 8px;
-	margin-top: 16px;
-	padding-top: 16px;
-	border-top: 1px solid var(--background-modifier-border);
+	/* margin-top: 16px; */
+	/* padding-top: 16px; */
+	/* border-top: 1px solid var(--background-modifier-border); */
 }
 
-/* Field state classes */
-.field-input.touched .input-wrapper {
-	border-left: 2px solid var(--color-green);
+
+
+/*
+--------------------------------------------------------------------------------------------------------------------------------
+	Delete Confirmation Modal
+--------------------------------------------------------------------------------------------------------------------------------
+*/
+.delete-confirmation-modal {
+	padding: 16px 20px;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
 }
 
-.field-input.focused .input-wrapper {
-	border-left: 2px solid var(--interactive-accent);
+.delete-confirmation-message {
+	font-size: 14px;
+	line-height: 1.5;
+	margin: 0;
+	color: var(--text-normal);
+}
+
+.delete-confirmation-buttons {
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
+}
+
+
+
+/*
+--------------------------------------------------------------------------------------------------------------------------------
+	Error Modal
+--------------------------------------------------------------------------------------------------------------------------------
+*/
+.error-modal {
+	padding: 16px 20px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.error-modal-message {
+	font-size: 14px;
+	line-height: 1.5;
+	margin: 0;
+	color: var(--text-error);
+	font-weight: 500;
+}
+
+.error-modal-description {
+	font-family: var(--font-monospace, monospace);
+	font-size: 13px;
+	background-color: var(--background-secondary);
+	border-radius: 4px;
+	padding: 10px;
+	margin: 0;
+	white-space: pre-wrap;
+	overflow-x: auto;
 }

@@ -1,118 +1,418 @@
 
-import { App, Plugin, Modal, Notice, TFolder, TFile, Editor } from 'obsidian';
-import { Z2KTemplateEngine, VarInfo, PromptTextSegment } from 'z2k-template-engine';
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+// TODO: Add error handling for errors within react components by using React Error Boundaries
+
+import { App, Plugin, Modal, Notice, TFolder, TFile, PluginSettingTab, Setting } from 'obsidian';
+import { Z2KTemplateEngine, TemplateState, VarInfo, PromptTextSegment, TemplateError } from 'z2k-template-engine';
+import React, { useState, useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
+
+interface Z2KPluginSettings {
+	z2kRootFolder: string;
+	useExternalTemplates: boolean;
+	embeddedTemplatesFolder: string;
+	externalTemplatesFolder: string;
+	blockPrefixFilter: string;
+}
+
+const DEFAULT_SETTINGS: Z2KPluginSettings = {
+	z2kRootFolder: '/Z2K',
+	useExternalTemplates: false,
+	embeddedTemplatesFolder: 'Templates',
+	externalTemplatesFolder: '/Templates-External',
+	blockPrefixFilter: 'Block - ',
+};
+
+class Z2KSettingTab extends PluginSettingTab {
+	plugin: Z2KPlugin;
+
+	constructor(app: App, plugin: Z2KPlugin) {
+		super(app, plugin);
+		this.plugin = plugin;
+	}
+
+	display(): void {
+		const {containerEl} = this;
+		containerEl.empty();
+		containerEl.createEl('h2', {text: 'Z2K Plugin Settings'});
+
+		new Setting(containerEl)
+			.setName('Z2K root folder')
+			.setDesc('Folder where card structure starts')
+			.addText(text => text
+				.setPlaceholder(DEFAULT_SETTINGS.z2kRootFolder)
+				.setValue(this.plugin.settings.z2kRootFolder)
+				.onChange(async (value) => {
+					this.plugin.settings.z2kRootFolder = value;
+					await this.plugin.saveData(this.plugin.settings);
+				}));
+
+		new Setting(containerEl)
+			.setName('Use external templates folder')
+			.setDesc('If enabled, templates will be loaded from the external templates folder')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.useExternalTemplates)
+				.onChange(async (value) => {
+					this.plugin.settings.useExternalTemplates = value;
+					await this.plugin.saveData(this.plugin.settings);
+				}));
+
+		if (this.plugin.settings.useExternalTemplates) {
+			new Setting(containerEl)
+				.setName('Embedded templates folder name')
+				.setDesc('Any files within any folders of this name will show up as templates')
+				.addText(text => text
+					.setPlaceholder(DEFAULT_SETTINGS.embeddedTemplatesFolder)
+					.setValue(this.plugin.settings.embeddedTemplatesFolder)
+					.onChange(async (value) => {
+						this.plugin.settings.embeddedTemplatesFolder = value;
+						await this.plugin.saveData(this.plugin.settings);
+					}));
+		} else {
+			new Setting(containerEl)
+				.setName('External templates folder')
+				.setDesc('All files within this folder will show up as templates')
+				.addText(text => text
+					.setPlaceholder(DEFAULT_SETTINGS.externalTemplatesFolder)
+					.setValue(this.plugin.settings.externalTemplatesFolder)
+					.onChange(async (value) => {
+						this.plugin.settings.externalTemplatesFolder = value;
+						await this.plugin.saveData(this.plugin.settings);
+					}));
+		}
+
+		new Setting(containerEl)
+			.setName('Block prefix filter')
+			.setDesc('Filename prefix to mark the template as a block-template')
+			.addText(text => text
+				.setPlaceholder(DEFAULT_SETTINGS.blockPrefixFilter)
+				.setValue(this.plugin.settings.blockPrefixFilter)
+				.onChange(async (value) => {
+					this.plugin.settings.blockPrefixFilter = value;
+					await this.plugin.saveData(this.plugin.settings);
+				}));
+	}
+}
 
 export default class Z2KPlugin extends Plugin {
 	templateEngine: Z2KTemplateEngine;
-	foldersByType: Record<string, string>;
+	settings: Z2KPluginSettings;
 
 	async onload() {
-		this.templateEngine = new Z2KTemplateEngine();
-		this.foldersByType = {
-			"thought": "Thoughts",
-			"memory": "Memories",
-		};
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+		this.templateEngine = new Z2KTemplateEngine(true);
 		this.registerCommands();
+		this.addSettingTab(new Z2KSettingTab(this.app, this));
 	}
 	onunload() {}
 
 	registerCommands() {
+		// Command palette commands
 		this.addCommand({
-			id: 'create-card-from-command-palette',
-			name: 'Create Card from Command Palette',
-			callback: () => this.createCardFromCommandPalette('thought'),
+			id: 'z2k-create-new-card',
+			name: 'Create new card',
+			callback: () => this.createCardCommand({}),
 		});
 
+		// Command palette commands for when text is selected
 		this.addCommand({
-			id: 'create-card-from-selected-text',
-			name: 'Create Card from Selected Text',
+			id: 'z2k-create-card-from-selected-text',
+			name: 'Create card from selected text',
 			editorCheckCallback: (checking, editor) => {
-				if (checking) return true;
-				this.createCardFromSelectedText(editor, 'memory');
+				const selectedText = editor.getSelection();
+				if (checking) { return selectedText.length > 0; } // Only enable if text is selected
+				this.createCardCommand({existingText: selectedText});
 			},
 		});
 
+		// Context menu 'new card from selection' when text is selected
+		this.registerEvent(
+			this.app.workspace.on('editor-menu', (menu, editor) => {
+				const selectedText = editor.getSelection();
+				if (selectedText.length === 0) return;
+				menu.addItem((item) => {
+					item.setTitle("Create card from selection...")
+						.setIcon("document-plus")
+						.onClick(() => {
+							this.createCardCommand({existingText: selectedText});
+						});
+				});
+			})
+		);
+
+		// Command palette 'convert file to card' when a file is active
 		this.addCommand({
-			id: 'create-card-from-quick-note',
-			name: 'Create Card from Quick Note',
-			callback: () => this.createCardFromQuickNote('thought'),
-		});
-	}
-	registerEventListeners() {}
-
-	// Core functions for handling card creation
-	async createCardFromCommandPalette(cardType: string) {
-		await this.mainCreationProcess(cardType);
-	}
-	async createCardFromSelectedText(editor: Editor, cardType: string) {
-		const selectedText = editor.getSelection();
-		if (!selectedText) {
-			new Notice('No text selected.');
-			return;
-		}
-		await this.mainCreationProcess(cardType, selectedText);
-	}
-	async createCardFromQuickNote(cardType: string) {}
-
-	async mainCreationProcess(cardType: string, existingText?: string) {
-		// Get template using TemplateSelectionModal modal
-		const templates = this.getTemplatesForType(cardType);
-		if (templates.length === 0) {
-			new Notice('No templates found.');
-			return;
-		}
-		const template = await new Promise<TFile>(resolve => {
-			new TemplateSelectionModal(this.app, templates, resolve).open();
+			id: 'z2k-convert-file-to-card',
+			name: 'Convert file to card',
+			checkCallback: (checking) => {
+				const activeFile = this.app.workspace.getActiveFile();
+				// Only enable if there's an active file and it's a markdown file
+				if (checking) { return !!activeFile && activeFile.extension === 'md'; }
+				this.createCardCommand({existingFile: activeFile as TFile});
+			},
 		});
 
-		const templateContent = await this.app.vault.read(template);
-		const templateState = this.templateEngine.parseTemplate(templateContent);
-		// if (jsonData) {
-		// 	this.templateEngine.resolveVarsFromJSON(templateState, jsonData);
-		// }
-		console.log("After parse:", JSON.stringify(templateState, null, 2));
-		this.templateEngine.resolveBuiltInVars(templateState);
-		console.log("After resolveBuiltInVars:", JSON.stringify(templateState, null, 2));
+		// Context menu version of 'convert file to card'
+		this.registerEvent(
+			this.app.workspace.on('file-menu', (menu, file) => {
+				// Only show option for markdown files
+				if (!(file instanceof TFile) || file.extension !== 'md') return;
 
-		// Prompt user for missing variables if needed
-		if (templateState.mergedVarInfoMap.size > 0) {
-			await new Promise<void>(resolve => {
-				new FieldCollectionModal(this.app, templateState.mergedVarInfoMap, resolve).open();
+				menu.addItem((item) => {
+					item.setTitle("Convert to card...")
+						.setIcon("document-plus")
+						.onClick(() => {
+							this.createCardCommand({existingFile: file});
+						});
+				});
+			})
+		);
+	}
+
+	async createCardCommand(opts: { existingText?: string, existingFile?: TFile }) {
+		try {
+
+			let { existingText, existingFile } = opts;
+
+			if (existingText && existingFile) {
+				throw new NewCardPluginError("Providing both existing text and file is not supported");
+			}
+
+			// Pull text from file if needed
+			if (existingFile) {
+				try {
+					existingText = await this.app.vault.read(existingFile);
+				} catch (error) {
+					rethrowWithMessage(error, "Error occurred trying to read the file");
+				}
+			}
+
+			// Prompt for card type (the folder containing the desired template)
+			const cardTypes = this.getTemplatesTypes();
+			const cardType = await new Promise<TFolder>((resolve, reject) =>
+				new CardTypeSelectionModal(this.app, cardTypes, this.settings, resolve, reject).open()
+			);
+
+			// Get template using TemplateSelectionModal modal (the template file)
+			const templates = this.getTemplatesForType(cardType);
+			if (templates.length === 0) {
+				throw new NewCardPluginError('No templates were found'); // TODO: make this a quick modal with a message
+			}
+			const template = await new Promise<TFile>((resolve, reject) => {
+				new TemplateSelectionModal(this.app, templates, resolve, reject).open();
 			});
+
+			// Get template
+			let templateContent: string;
+			try {
+				templateContent = await this.app.vault.read(template);
+			} catch (error) {
+				rethrowWithMessage(error, "Error occurred while reading the template");
+			}
+
+			// Parse the template
+			let templateState: TemplateState;
+			try {
+				templateState = this.templateEngine.parseTemplate(templateContent);
+			} catch (error) {
+				rethrowWithMessage(error, "Error occurred while parsing the template");
+			}
+
+			// if (jsonData) {
+			// 	this.templateEngine.resolveVarsFromJSON(templateState, jsonData);
+			// }
+			// console.log("After parse:", JSON.stringify(templateState, null, 2));
+
+			// Resolve built-in variables
+			try {
+				this.templateEngine.resolveBuiltInVars(templateState);
+			} catch (error) {
+				rethrowWithMessage(error, "Error occurred while resolving built-in variables");
+			}
+
+			console.log(templateState.mergedVarInfoMap);
+
+			// Prompt user for missing variables if needed
+			if (templateState.mergedVarInfoMap.size > 0) {
+				await new Promise<void>((resolve, reject) => {
+					new FieldCollectionModal(this.app, template.basename, templateState.mergedVarInfoMap, resolve, reject).open();
+				});
+			}
+			// console.log("After prompt:", JSON.stringify(templateState, null, 2));
+
+			// // Resolve any remaining missing variables with defaults
+			// this.templateEngine.resolveMissText(templateState);
+			// console.log("After resolveMissText:", templateState);
+
+			// Render the template
+			let title: string, content: string;
+			try {
+				({ title, content } = this.templateEngine.renderTemplate(templateState));
+				if (existingText) {
+					// Append existing text if provided
+					content = `${content}\n\n---\n\n${existingText}`;
+				}
+			} catch (error) {
+				rethrowWithMessage(error, "Error occurred while rendering the template");
+			}
+
+			// Create the new card
+			let newCardPath: string;
+			try {
+				const filename = title.replace(/[^a-zA-Z0-9_\-\. ()]/g, '_'); // Double-check title safety for filename (should already be safe from form validation)
+
+				// Figure out where to put the new card
+				let folderStr: string;
+				if (this.settings.useExternalTemplates) {
+					folderStr = cardType.path
+					if (cardType.path.startsWith(this.settings.externalTemplatesFolder + "/")) {
+						folderStr = cardType.path.substring(this.settings.externalTemplatesFolder.length + 2);
+					}
+					folderStr = this.settings.z2kRootFolder + "/" + folderStr;
+				} else {
+					folderStr = cardType.path;
+					let templatesDir = this.settings.z2kRootFolder + "/" + this.settings.embeddedTemplatesFolder;
+					if (cardType.path.startsWith(templatesDir + "/")) {
+						folderStr = cardType.path.substring(templatesDir.length + 2);
+					}
+					folderStr = this.settings.z2kRootFolder + "/" + folderStr;
+				}
+				// Ensure the folder exists (create recursively if it doesn't)
+				const folder = this.app.vault.getAbstractFileByPath(folderStr);
+				if (!(folder instanceof TFolder)) {
+					try {
+						await this.app.vault.createFolder(folderStr);
+					} catch (error) {
+						rethrowWithMessage(error, `Error creating folder "${folderStr}"`);
+					}
+				}
+
+				newCardPath = folder + "/" + filename;
+				await this.app.vault.create(newCardPath, content);
+			} catch (error) {
+				rethrowWithMessage(error, "Error creating new file");
+			}
+
+			// Open the new file
+			try {
+				this.app.workspace.openLinkText(newCardPath, newCardPath);
+			} catch (error) {
+				rethrowWithMessage(error, "Error opening new file");
+			}
+
+			// Prompt for deletion if file was provided
+			if (existingFile) {
+				const shouldDelete = await new Promise<boolean>(resolve => {
+					new DeleteConfirmationModal(this.app, existingFile as TFile, resolve).open();
+				});
+				if (shouldDelete) {
+					try {
+						await this.app.vault.delete(existingFile);
+					} catch (error) {
+						rethrowWithMessage(error, "Error deleting original file");
+					}
+				}
+			}
+
+		} catch (error: unknown) {
+			// Display error messages to the user
+			if (error instanceof NewCardPluginError) {
+				console.error("NewCardPluginError: ", error.message);
+				new ErrorModal(this.app, error).open();
+			} else if (error instanceof UserCancelError) {
+				// Just exit, no need to show a message
+				// console.log("User cancelled the operation.");
+			} else if (error instanceof TemplateError) {
+				console.error("Template error: ", error.message);
+				new ErrorModal(this.app, error).open();
+			} else {
+				console.error("Unexpected error: ", error);
+				new ErrorModal(this.app, new NewCardPluginError("An unexpected error occurred", error)).open();
+			}
 		}
-		console.log("After prompt:", JSON.stringify(templateState, null, 2));
-
-		// // Resolve any remaining missing variables with defaults
-		// this.templateEngine.resolveMissText(templateState);
-		// console.log("After resolveMissText:", templateState);
-
-		const filename = "temp.md";
-		let renderedContent = this.templateEngine.renderTemplate(templateState);
-		if (existingText) {
-			// Append existing text if provided
-			renderedContent = `${renderedContent}\n\n---\n\n${existingText}`;
-		}
-
-		// Create note
-		await this.app.vault.create(filename, renderedContent);
 	}
 
-	private getTemplatesForType(cardType: string): TFile[] {
-		let folderPath = this.foldersByType[cardType] + "/Templates";
-		let folder = this.app.vault.getAbstractFileByPath(folderPath);
-		let files: TFile[] = [];
-		if (folder instanceof TFolder) {
-			files = this.getMarkdownFilesRecursively(folder);
+	private getTemplatesTypes(): TFolder[] {
+		let folders: TFolder[] = [];
+
+		let rootFolder;
+		try {
+			rootFolder = this.app.vault.getAbstractFileByPath(this.settings.z2kRootFolder);
+			if (!(rootFolder instanceof TFolder)) {
+				throw new NewCardPluginError(`Could not find Z2K root folder "${this.settings.z2kRootFolder}"`);
+			}
+		} catch (error) {
+			rethrowWithMessage(error, `Error accessing Z2K root folder "${this.settings.z2kRootFolder}"`);
 		}
-		folderPath = "Templates";
-		folder = this.app.vault.getAbstractFileByPath(folderPath);
-		if (folder instanceof TFolder) {
-			files = files.concat(this.getMarkdownFilesRecursively(folder));
+
+		if (this.settings.useExternalTemplates) {
+			let externalTemplatesFolder;
+			try {
+				externalTemplatesFolder = this.app.vault.getAbstractFileByPath(this.settings.externalTemplatesFolder);
+				if (!(externalTemplatesFolder instanceof TFolder)) {
+					throw new NewCardPluginError(`Could not find external templates folder "${this.settings.externalTemplatesFolder}"`);
+				}
+			} catch (error) {
+				rethrowWithMessage(error, `Error accessing external templates folder "${this.settings.externalTemplatesFolder}"`);
+			}
+
+			function gatherExternalTemplatesRec(folder: TFolder) {
+				folders.push(folder);
+				for (const child of folder.children) {
+					if (!(child instanceof TFolder)) { continue; }
+					gatherExternalTemplatesRec(child); // Recurse into subfolders
+				}
+			}
+			gatherExternalTemplatesRec(externalTemplatesFolder);
+		} else {
+			let templateFolder = this.settings.embeddedTemplatesFolder;
+			if (templateFolder === '') {
+				throw new NewCardPluginError("Embedded templates folder is not set");
+			}
+
+			function gatherEmbeddedTemplatesRec(folder: TFolder) {
+				// Check if a template folder exists in this folder
+				for (const child of folder.children) {
+					if (!(child instanceof TFolder)) { continue; }
+					if (child.name === templateFolder) {
+						folders.push(folder);
+					} else {
+						gatherEmbeddedTemplatesRec(child); // Recurse into subfolders
+					}
+				}
+			}
+			gatherEmbeddedTemplatesRec(rootFolder);
 		}
-		return files;
+
+		return folders;
 	}
+
+	private getTemplatesForType(cardType: TFolder): TFile[] {
+		const {settings, app} = this;
+		const result: TFile[] = [];
+		let curr: TFolder | null = cardType;
+
+		while (curr) {
+			let folderPath: string;
+
+			if (settings.useExternalTemplates) {
+				if (!curr.path.startsWith(settings.externalTemplatesFolder)) break;
+				folderPath = curr.path + "/Templates";
+			} else {
+				if (!curr.path.startsWith(settings.z2kRootFolder)) break;
+				folderPath = curr.path + "/" + settings.embeddedTemplatesFolder;
+			}
+
+			const folder = app.vault.getAbstractFileByPath(folderPath);
+			if (folder instanceof TFolder) {
+				result.push(...this.getMarkdownFilesRecursively(folder));
+			}
+
+			curr = curr.parent as TFolder;
+		}
+
+		return result;
+	}
+
 	private getMarkdownFilesRecursively(folder: TFolder): TFile[] {
 		let files: TFile[] = [];
 
@@ -129,61 +429,231 @@ export default class Z2KPlugin extends Plugin {
 	}
 }
 
+// ------------------------------------------------------------------------------------------------
+// Errors
+// ------------------------------------------------------------------------------------------------
+
+class UserCancelError extends Error {
+	constructor(message: string) {
+		super(message);
+		this.name = "UserCancelError";
+	}
+}
+
+class NewCardPluginError extends Error {
+	userMessage: string;
+	cause?: unknown;
+	constructor(userMessage: string, cause?: unknown) {
+		if (cause instanceof Error) {
+			super(cause.message);
+			if (cause?.stack) {
+				this.stack += "\nCaused by: " + cause.stack;
+			}
+		} else if (typeof cause === "string") {
+			super(cause);
+		} else {
+			super(userMessage);
+		}
+		this.name = "NewCardPluginError";
+		this.userMessage = userMessage;
+		this.cause = cause;
+	}
+}
+
+function rethrowWithMessage(error: unknown, message: string): never {
+	if (error instanceof NewCardPluginError || error instanceof UserCancelError || error instanceof TemplateError) {
+		throw error; // Don't modify the error
+	} else {
+		throw new NewCardPluginError(message, error);
+	}
+}
 
 
-export class TemplateSelectionModal extends Modal {
-	templates: TFile[];
-	onSelect: (template: TFile) => void;
+// ------------------------------------------------------------------------------------------------
+// Card Type Selection Modal
+// ------------------------------------------------------------------------------------------------
+export class CardTypeSelectionModal extends Modal {
+	cardTypes: TFolder[];
+	settings: Z2KPluginSettings;
+	resolve: (cardType: TFolder) => void;
+	reject: (error: Error) => void;
 	root: any; // For React root
 
-	constructor(app: App, templates: TFile[], onSelect: (template: TFile) => void) {
+	constructor(app: App, cardTypes: TFolder[], settings: Z2KPluginSettings, resolve: (cardType: TFolder) => void, reject: (error: Error) => void) {
 		super(app);
-		this.templates = templates;
-		this.onSelect = onSelect;
+		this.cardTypes = cardTypes;
+		this.settings = settings;
+		this.resolve = resolve;
+		this.reject = reject;
 	}
 
 	onOpen() {
-		// Add CSS class to modal for styling
-		this.contentEl.addClass('template-selection-modal');
-
-		// Set modal title
-		this.titleEl.setText('Select Template');
-
-		this.contentEl.empty(); // Clear any existing content
-
-		// Create React root and render component
-		const reactContainer = this.contentEl.createDiv();
-		this.root = createRoot(reactContainer);
-
+		this.titleEl.setText('Select Card Type');
+		this.contentEl.empty();
+		this.contentEl.addClass('modal-content', 'card-type-selection-modal');
+		this.root = createRoot(this.contentEl);
 		this.root.render(
-			<TemplateSelector
-				templates={this.templates}
-				onSelect={(template: TFile) => {
-					this.onSelect(template);
+			<CardTypeSelector
+				cardTypes={this.cardTypes}
+				settings={this.settings}
+				onConfirm={(cardType: TFolder) => {
+					this.resolve(cardType);
 					this.close();
 				}}
-				onClose={() => this.close()}
+				onCancel={() => {
+					this.reject(new UserCancelError("User cancelled card type selection"));
+					this.close();
+				}}
 			/>
 		);
 	}
 
 	onClose() {
-		// Unmount React component
-		if (this.root) {
-			this.root.unmount();
+		if (this.root) { this.root.unmount(); }
+		this.contentEl.empty();
+	}
+}
+
+interface CardTypeSelectorProps {
+	cardTypes: TFolder[];
+	settings: Z2KPluginSettings;
+	onConfirm: (cardType: TFolder) => void;
+	onCancel: () => void;
+}
+
+// React component for the modal content
+const CardTypeSelector = ({ cardTypes, settings, onConfirm, onCancel }: CardTypeSelectorProps) => {
+	let cardTypeEntries: [string, TFolder][] = [];
+	for (const cardType of cardTypes) {
+		let visStr = cardType.path;
+		if (settings.useExternalTemplates) {
+			if (cardType.path.startsWith(settings.externalTemplatesFolder + "/")) {
+				visStr = cardType.path.substring(settings.externalTemplatesFolder.length + 1);
+			}
+		} else {
+			if (cardType.path.startsWith(settings.z2kRootFolder + "/")) {
+				visStr = cardType.path.substring(settings.z2kRootFolder.length + 1);
+			}
 		}
+		cardTypeEntries.push([visStr, cardType]);
+	}
+
+	const [selectedIndex, setSelectedIndex] = useState<number>(0);
+	const listRef = useRef<HTMLDivElement>(null);
+
+	// Focus first item on mount
+	useEffect(() => {
+		// Focus the container for keyboard navigation
+		if (listRef.current) {
+			listRef.current.focus();
+		}
+	}, []);
+
+	// Keyboard navigation
+	const handleKeyDown = (e: React.KeyboardEvent) => {
+		if (e.key === 'ArrowDown') {
+			e.preventDefault();
+			const newIndex = Math.min(selectedIndex + 1, cardTypeEntries.length - 1);
+			setSelectedIndex(newIndex);
+		} else if (e.key === 'ArrowUp') {
+			e.preventDefault();
+			const newIndex = Math.max(selectedIndex - 1, 0);
+			setSelectedIndex(newIndex);
+		} else if (e.key === 'Enter') {
+			e.preventDefault();
+			onConfirm(cardTypeEntries[selectedIndex][1]);
+		} else if (e.key === 'Escape') {
+			e.preventDefault();
+			onCancel();
+		}
+	};
+
+	return (
+		<div
+			className="selection-content"
+			onKeyDown={handleKeyDown}
+			tabIndex={0}
+			ref={listRef}
+		>
+			<div className="selection-list">
+				{cardTypeEntries.length === 0 ? (
+					<div className="selection-empty-state">No card types found</div>
+				) : (
+					cardTypeEntries.map(([id, cardType], index) => (
+						<div
+							key={id}
+							className={`selection-item ${selectedIndex === index ? 'selected' : ''}`}
+							onClick={() => onConfirm(cardType)}
+							tabIndex={index + 1}
+							role="button"
+							aria-selected={selectedIndex === index}
+						>
+							<span className="selection-primary">{cardType.path}</span>
+							{/* <span className="selection-secondary">{cardType.}</span> */}
+						</div>
+					))
+				)}
+			</div>
+			<div className="selection-actions">
+				<button className="btn btn-secondary" onClick={onCancel}>
+					Cancel
+				</button>
+			</div>
+		</div>
+	);
+};
+
+
+// ------------------------------------------------------------------------------------------------
+// Template Selection Modal
+// ------------------------------------------------------------------------------------------------
+export class TemplateSelectionModal extends Modal {
+	templates: TFile[];
+	resolve: (template: TFile) => void;
+	reject: (error: Error) => void;
+	root: any; // For React root
+
+	constructor(app: App, templates: TFile[], resolve: (template: TFile) => void, reject: (error: Error) => void){
+		super(app);
+		this.templates = templates;
+		this.resolve = resolve;
+		this.reject = reject;
+	}
+
+	onOpen() {
+		this.titleEl.setText('Select Template');
+		this.contentEl.empty();
+		this.contentEl.addClass('modal-content', 'template-selection-modal');
+		this.root = createRoot(this.contentEl);
+		this.root.render(
+			<TemplateSelector
+				templates={this.templates}
+				onConfirm={(template: TFile) => {
+					this.resolve(template);
+					this.close();
+				}}
+				onCancel={() => {
+					this.reject(new UserCancelError("User cancelled template selection"));
+					this.close();
+				}}
+			/>
+		);
+	}
+
+	onClose() {
+		if (this.root) { this.root.unmount(); }
 		this.contentEl.empty();
 	}
 }
 
 interface TemplateSelectorProps {
 	templates: TFile[];
-	onSelect: (template: TFile) => void;
-	onClose: () => void;
+	onConfirm: (template: TFile) => void;
+	onCancel: () => void;
 }
 
 // React component for the modal content
-const TemplateSelector = ({ templates, onSelect, onClose }: TemplateSelectorProps) => {
+const TemplateSelector = ({ templates, onConfirm, onCancel }: TemplateSelectorProps) => {
 	const [searchTerm, setSearchTerm] = useState<string>('');
 	const [filteredTemplates, setFilteredTemplates] = useState<TFile[]>(templates);
 	const [selectedTemplate, setSelectedTemplate] = useState<TFile | null>(null);
@@ -227,11 +697,11 @@ const TemplateSelector = ({ templates, onSelect, onClose }: TemplateSelectorProp
 		} else if (e.key === 'Enter') {
 			e.preventDefault();
 			if (selectedTemplate) {
-				handleSelect();
+				onConfirm(selectedTemplate);
 			}
 		} else if (e.key === 'Escape') {
 			e.preventDefault();
-			onClose();
+			onCancel();
 		}
 	};
 
@@ -244,12 +714,6 @@ const TemplateSelector = ({ templates, onSelect, onClose }: TemplateSelectorProp
 		}
 	};
 
-	const handleSelect = () => {
-		if (selectedTemplate) {
-			onSelect(selectedTemplate);
-		}
-	};
-
 	const handleTemplateClick = (template: TFile, index: number) => {
 		setSelectedTemplate(template);
 		setSelectedIndex(index);
@@ -257,11 +721,11 @@ const TemplateSelector = ({ templates, onSelect, onClose }: TemplateSelectorProp
 
 	const handleTemplateDoubleClick = (template: TFile) => {
 		setSelectedTemplate(template);
-		onSelect(template);
+		onConfirm(template);
 	};
 
 	return (
-		<div className="template-selection-content" onKeyDown={handleKeyDown}>
+		<div className="selection-content" onKeyDown={handleKeyDown}>
 			<div className="search-container">
 				<input
 					ref={searchInputRef}
@@ -272,31 +736,31 @@ const TemplateSelector = ({ templates, onSelect, onClose }: TemplateSelectorProp
 					onChange={(e) => setSearchTerm(e.target.value)}
 				/>
 			</div>
-			<div className="template-list" ref={listRef}>
+			<div className="selection-list" ref={listRef}>
 				{filteredTemplates.length === 0 ? (
-					<div className="empty-state">No templates found</div>
+					<div className="selection-empty-state template-list-empty-state">No templates found</div>
 				) : (
 					filteredTemplates.map((template: TFile, index: number) => (
 						<div
 							key={template.path}
-							className={`template-item ${selectedIndex === index ? 'selected' : ''}`}
+							className={`selection-item ${selectedIndex === index ? 'selected' : ''}`}
 							onClick={() => handleTemplateClick(template, index)}
 							onDoubleClick={() => handleTemplateDoubleClick(template)}
 							tabIndex={index + 2} // +2 because search is tabIndex 1
 						>
-							<span className="template-name">{template.basename}</span>
-							<span className="template-path">{template.parent?.path || ''}</span>
+							<span className="selection-primary">{template.basename}</span>
+							<span className="selection-secondary">{template.parent?.path || ''}</span>
 						</div>
 					))
 				)}
 			</div>
-			<div className="template-selection-actions">
-				<button className="btn btn-secondary" onClick={onClose}>
+			<div className="selection-actions">
+				<button className="btn btn-secondary" onClick={onCancel}>
 					Cancel
 				</button>
 				<button
 					className="btn btn-primary"
-					onClick={handleSelect}
+					onClick={() => onConfirm(selectedTemplate as TFile)}
 					disabled={!selectedTemplate}
 				>
 					Select Template
@@ -307,52 +771,50 @@ const TemplateSelector = ({ templates, onSelect, onClose }: TemplateSelectorProp
 };
 
 
-
+// ------------------------------------------------------------------------------------------------
+// Field Collection Modal
+// ------------------------------------------------------------------------------------------------
 /**
  * Modal for collecting field values from the user
  * Supports dynamic field updates and tracking field interactions
  */
 export class FieldCollectionModal extends Modal {
+	title: string;
 	varInfoMap: Map<string, VarInfo>;
-	onComplete: () => void;
+	resolve: () => void;
+	reject: (error: Error) => void;
 	root: any; // React root
 
-	constructor(app: App, varInfoMap: Map<string, VarInfo>, onComplete: () => void) {
+	constructor(app: App, title: string, varInfoMap: Map<string, VarInfo>, resolve: () => void, reject: (error: Error) => void) {
 		super(app);
+		this.title = title;
 		this.varInfoMap = varInfoMap;
-		this.onComplete = onComplete;
+		this.resolve = resolve;
+		this.reject = reject;
 	}
 
 	onOpen() {
-		// Add CSS class to modal for styling
-		this.contentEl.addClass('field-collection-modal');
-
-		// Set modal title
-		this.titleEl.setText('Fill Template Fields');
-
-		this.contentEl.empty(); // Clear any existing content
-
-		// Create React root and render component
-		const reactContainer = this.contentEl.createDiv();
-		this.root = createRoot(reactContainer);
-
+		this.titleEl.setText(this.title);
+		this.contentEl.empty();
+		this.contentEl.addClass('modal-content', 'field-collection-modal');
+		this.root = createRoot(this.contentEl);
 		this.root.render(
 			<FieldCollectionForm
 				varInfoMap={this.varInfoMap}
 				onComplete={() => {
-					this.onComplete();
+					this.resolve();
 					this.close();
 				}}
-				onCancel={() => this.close()}
+				onCancel={() => {
+					this.reject(new UserCancelError("User cancelled field collection"));
+					this.close();
+				}}
 			/>
 		);
 	}
 
 	onClose() {
-		// Unmount React component
-		if (this.root) {
-			this.root.unmount();
-		}
+		if (this.root) { this.root.unmount(); }
 		this.contentEl.empty();
 	}
 }
@@ -366,16 +828,10 @@ interface FieldCollectionFormProps {
 	onComplete: () => void;
 	onCancel: () => void;
 }
+// This component assumes that varInfoMap will not be changing.
 const FieldCollectionForm = ({ varInfoMap, onComplete, onCancel }: FieldCollectionFormProps) => {
-	const [fieldStates, setFieldStates] = useState<Record<string, FieldState>>({});
-	const [orderedFieldNames, setOrderedFieldNames] = useState<string[]>([]);
-	const [isSubmitting, setIsSubmitting] = useState(false);
-	const formRef = useRef<HTMLFormElement>(null);
-
-	// Setup field states on initial render
-	useEffect(() => {
+	function computeInitialFieldStates(): Record<string, FieldState> {
 		const initialFieldStates: Record<string, FieldState> = {};
-		const initialValues: Record<string, any> = {};
 
 		// Initialize field states with metadata
 		for (const [fieldName, varInfo] of varInfoMap.entries()) {
@@ -395,7 +851,7 @@ const FieldCollectionForm = ({ varInfoMap, onComplete, onCancel }: FieldCollecti
 
 			// Set initial field state
 			initialFieldStates[fieldName] = {
-				value: varInfo.defaultValue || '',
+				value: varInfo.resolvedValue || varInfo.defaultValue || '',
 				omitFromForm: varInfo.resolvedValue !== undefined || varInfo.directives.includes('no-prompt'),
 				touched: false,
 				focused: false,
@@ -406,9 +862,6 @@ const FieldCollectionForm = ({ varInfoMap, onComplete, onCancel }: FieldCollecti
 				resolvedDefaultValue: varInfo.defaultValue || '',
 				resolvedMissText: varInfo.missText || ''
 			};
-
-			// Set initial value
-			initialValues[fieldName] = varInfo.defaultValue || '';
 		}
 
 		// Resolve dependencies to set dependent fields
@@ -427,24 +880,49 @@ const FieldCollectionForm = ({ varInfoMap, onComplete, onCancel }: FieldCollecti
 		const circularDependency = detectCircularDependencies(initialFieldStates);
 		if (circularDependency.length > 0) {
 			new Notice(`Aborting! Circular dependency: ${circularDependency.join(' -> ')}`);
-			onCancel();
-			return;
+			setTimeout(() => { onCancel(); }, 0); // defer unmounting until after the render finishes
+			return {}; // Return empty state to prevent further processing
 		}
 
-		// Calculate the initial order of fields based on dependencies
-		const orderedFields = calculateFieldOrder(initialFieldStates);
-		setOrderedFieldNames(orderedFields);
+		return initialFieldStates;
+	}
+	function computeInitialRenderOrderFieldNames(): string[] {
+		// let renderOrderFieldNames = dependencyOrderedFieldNames;
+		let renderOrderFieldNames = Object.keys(fieldStates);
+		renderOrderFieldNames = renderOrderFieldNames.filter(fieldName => !fieldStates[fieldName].omitFromForm);
+		// Put required fields at the top
+		const requiredFields = renderOrderFieldNames.filter(fieldName => {
+			const varInfo = varInfoMap.get(fieldName);
+			return varInfo && varInfo.directives.includes('required');
+		});
+		const optionalFields = renderOrderFieldNames.filter(fieldName => {
+			const varInfo = varInfoMap.get(fieldName);
+			return varInfo && !varInfo.directives.includes('required');
+		});
+		renderOrderFieldNames = [...requiredFields, ...optionalFields];
 
-		// Set initial field states
-		setFieldStates(initialFieldStates);
-	}, [varInfoMap]);
+		// Always put the title at the top
+		const titleIndex = renderOrderFieldNames.indexOf('title');
+		if (titleIndex > -1) {
+			renderOrderFieldNames.unshift(renderOrderFieldNames.splice(titleIndex, 1)[0]);
+		}
+		return renderOrderFieldNames;
+	}
 
-	// Update resolved text when field values change
+	// State variables (definition order is important here)
+	const [fieldStates, setFieldStates] = useState<Record<string, FieldState>>(computeInitialFieldStates());
+	const [dependencyOrderedFieldNames] = useState<string[]>(() => calculateFieldDependencyOrder(fieldStates));
+	const [renderOrderFieldNames] = useState<string[]>(() => computeInitialRenderOrderFieldNames());
+	// Update fields after the first render to distribute and apply dependencies
 	useEffect(() => {
-		if (Object.keys(fieldStates).length === 0) return;
+		let newFieldStates = {...fieldStates};
+		updateFieldStates(newFieldStates);
+		validateAllFields(newFieldStates);
+		setFieldStates(newFieldStates);
+	}, []);
 
-		const updatedFieldStates = { ...fieldStates };
-		for (const fieldName of orderedFieldNames) { // orderedFieldNames ensures dependencies are resolved first
+	function updateFieldStates(newFieldStates: Record<string, FieldState>) {
+		for (const fieldName of dependencyOrderedFieldNames) { // dependencyOrderedFieldNames ensures dependencies are resolved first
 			const varInfo = varInfoMap.get(fieldName);
 			if (!varInfo) continue;
 
@@ -454,122 +932,106 @@ const FieldCollectionForm = ({ varInfoMap, onComplete, onCancel }: FieldCollecti
 				return segments.map(segment => {
 					if (segment.type === 'text') return segment.content;
 					// Replace field references with their current values
-					return fieldStates[segment.content]?.value?.toString() || '';
+					// 	(if the field doesn't exist, just return blank)
+					let currValue = newFieldStates[segment.content]?.value?.toString();
+					return currValue ? currValue : "{{" + segment.content + "}}";
 				}).join('');
 			};
 
 			// Update all resolved text fields
-			updatedFieldStates[fieldName].resolvedPromptText = resolveSegments(varInfo.parsedPromptText);
-			updatedFieldStates[fieldName].resolvedDefaultValue = resolveSegments(varInfo.parsedDefaultValue);
-			updatedFieldStates[fieldName].resolvedMissText = resolveSegments(varInfo.parsedMissText);
+			newFieldStates[fieldName].resolvedPromptText = resolveSegments(varInfo.parsedPromptText);
+			newFieldStates[fieldName].resolvedDefaultValue = resolveSegments(varInfo.parsedDefaultValue);
+			newFieldStates[fieldName].resolvedMissText = resolveSegments(varInfo.parsedMissText);
 
-			if (!updatedFieldStates[fieldName].touched) {
-				updatedFieldStates[fieldName].value = updatedFieldStates[fieldName].resolvedDefaultValue;
+			if (!newFieldStates[fieldName].touched) {
+				newFieldStates[fieldName].value = newFieldStates[fieldName].resolvedDefaultValue;
 			}
 		}
+	}
 
-		setFieldStates(updatedFieldStates);
-	}, [fieldStates, varInfoMap]);
-
-	const handleFieldChange = (fieldName: string, value: any) => {
-		setFieldStates(prevState => {
-			const updatedFieldState = { ...prevState[fieldName], value, touched: true };
-			return { ...prevState, [fieldName]: updatedFieldState };
-		});
-	};
-
-	const handleFieldFocus = (fieldName: string) => {
-		setFieldStates(prev => ({
-			...prev,
-			[fieldName]: {
-				...prev[fieldName],
-				value: prev[fieldName].touched ? prev[fieldName].value : prev[fieldName].resolvedDefaultValue,
-				touched: true,
-				focused: true
+	function	validateAllFields(newFieldStates: Record<string, FieldState>): boolean {
+		let isValid: boolean = true;
+		for (const fieldName of Object.keys(newFieldStates)) {
+			const varInfo = varInfoMap.get(fieldName);
+			if (!varInfo) {
+				console.error(`Field ${fieldName} not found in varInfoMap`);
+				return true; // Skip validation if field not found
 			}
-		}));
-	};
 
-	const handleFieldBlur = (fieldName: string) => {
-		setFieldStates(prev => ({
-			...prev,
-			[fieldName]: {
-				...prev[fieldName],
-				focused: false
+			const value = fieldStates[fieldName].value;
+			let hasError = false;
+			let errorMessage = '';
+
+			// Basic validation based on field type
+			if (varInfo.dataType === 'number' && isNaN(Number(value))) {
+				hasError = true;
+				errorMessage = 'Please enter a valid number';
+			} else if (value === '' && varInfo.directives.includes('required')) {
+				hasError = true;
+				errorMessage = 'This field is required';
 			}
-		}));
-
-		// Validate field on blur
-		validateField(fieldName);
-	};
-
-	const validateField = (fieldName: string) => {
-		const varInfo = varInfoMap.get(fieldName);
-		if (!varInfo) return;
-
-		const value = fieldStates[fieldName].value;
-		let hasError = false;
-		let errorMessage = '';
-
-		// Basic validation based on field type
-		if (varInfo.dataType === 'number' && isNaN(Number(value))) {
-			hasError = true;
-			errorMessage = 'Please enter a valid number';
-		} else if (value === '' && varInfo.directives.includes('required')) {
-			hasError = true;
-			errorMessage = 'This field is required';
+			newFieldStates[fieldName].hasError = hasError;
+			newFieldStates[fieldName].errorMessage = errorMessage;
+			if (hasError) {
+				isValid = false;
+			}
 		}
-
-		setFieldStates(prev => ({
-			...prev,
-			[fieldName]: {
-				...prev[fieldName],
-				hasError,
-				errorMessage
-			}
-		}));
-
-		return !hasError;
-	};
-
-	const validateAllFields = () => {
-		let isValid = true;
-
-		for (const fieldName of Object.keys(fieldStates)) {
-			const fieldValid = validateField(fieldName);
-			if (!fieldValid) isValid = false;
-		}
-
 		return isValid;
+	}
+
+	function handleFieldChange(fieldName: string, value: string | number | string[]) {
+		let newFieldStates = { ...fieldStates };
+		newFieldStates[fieldName].value = value;
+		newFieldStates[fieldName].touched = true;
+		updateFieldStates(newFieldStates);
+		validateAllFields(newFieldStates);
+		setFieldStates(newFieldStates);
 	};
 
-	const handleSubmit = (e: React.FormEvent, finalize: boolean = false) => {
-		e.preventDefault();
-		setIsSubmitting(true);
+	function handleFieldFocus(fieldName: string) {
+		let newFieldStates = { ...fieldStates };
+		newFieldStates[fieldName].touched = true;
+		newFieldStates[fieldName].focused = true;
+		updateFieldStates(newFieldStates);
+		validateAllFields(newFieldStates);
+		setFieldStates(newFieldStates);
+	};
 
-		const isValid = validateAllFields();
+	function handleFieldBlur(fieldName: string) {
+		let newFieldStates = { ...fieldStates };
+		newFieldStates[fieldName].focused = false;
+		updateFieldStates(newFieldStates);
+		validateAllFields(newFieldStates);
+		setFieldStates(newFieldStates);
+	};
+
+	function handleSubmit(e: React.FormEvent, finalize: boolean = false) {
+		e.preventDefault();
+
+		// Abort if there are errors
+		let isValid = validateAllFields(fieldStates);
 		if (!isValid) {
-			setIsSubmitting(false);
+			scrollToFirstError();
 			return;
 		}
 
 		// Update varInfoMap with resolved values
-		for (const fieldName of orderedFieldNames) {
+		for (const fieldName of dependencyOrderedFieldNames) {
 			const varInfo = varInfoMap.get(fieldName);
-			if (varInfo) {
-				if (fieldStates[fieldName].touched) {
-					let value = fieldStates[fieldName].value;
-					// Convert arrays to comma-separated strings for multiSelect
-					if (Array.isArray(value)) {
-						value = value.join(", ");
-					}
-					varInfo.resolvedValue = value;
-					varInfo.valueSource = 'user-input';
-				} else {
-					if (finalize) {
-						varInfo.resolvedValue = fieldStates[fieldName].resolvedMissText || '';
-						varInfo.valueSource = 'miss';
-					}
+			if (!varInfo) { continue; }
+			if (fieldStates[fieldName].touched) {
+				let value = fieldStates[fieldName].value;
+				// Convert arrays to comma-separated strings for multiSelect
+				if (Array.isArray(value)) {
+					value = value.join(", ");
+				}
+				varInfo.resolvedValue = value;
+				varInfo.valueSource = 'user-input';
+			} else {
+				// Left untouched, use miss value if finalizing
+				if (finalize) {
+					varInfo.resolvedValue = fieldStates[fieldName].resolvedMissText || '';
+					varInfo.valueSource = 'miss';
 				}
 			}
 		}
@@ -577,31 +1039,32 @@ const FieldCollectionForm = ({ varInfoMap, onComplete, onCancel }: FieldCollecti
 		onComplete();
 	};
 
-	// Get and filter ordered fields for rendering
-	const fieldsToRender = useMemo(() => {
-		const orderedFields = calculateFieldOrder(fieldStates);
-		return orderedFields.filter(fieldName => !fieldStates[fieldName].omitFromForm);
-	}, [fieldStates]);
-
-	// Check if form is valid
-	const isFormValid = useMemo(() => {
-		for (const fieldState of Object.values(fieldStates)) {
-			if (fieldState.hasError) return false;
+	function scrollToFirstError() {
+		for (const fieldName of dependencyOrderedFieldNames) {
+			if (fieldStates[fieldName].hasError) {
+				const element = document.querySelector(`[name="${fieldName}"]`) || document.getElementById(fieldName);
+				if (element) {
+					element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+					(element as HTMLElement).focus();
+					break;
+				}
+			}
 		}
-		return true;
-	}, [fieldStates]);
+	}
 
 	return (
-		<form ref={formRef} onSubmit={handleSubmit} className="field-collection-form">
+		<form onSubmit={handleSubmit} className="field-collection-form">
 			<div className="field-list">
-				{fieldsToRender.map(fieldName => {
+				{renderOrderFieldNames.map(fieldName => {
 					const varInfo = varInfoMap.get(fieldName);
 					const fieldState = fieldStates[fieldName];
 
 					if (!varInfo || !fieldState) return null;
 
 					return (
-						<div key={fieldName} className="field-container">
+						<div key={fieldName} className={`field-container ${
+							fieldState.hasError ? 'has-error' : (fieldState.touched ? 'touched' : '')
+						}`}>
 							<FieldInput
 								name={fieldName}
 								label={fieldState.resolvedPromptText || fieldName}
@@ -611,45 +1074,15 @@ const FieldCollectionForm = ({ varInfoMap, onComplete, onCancel }: FieldCollecti
 								onFocus={() => handleFieldFocus(fieldName)}
 								onBlur={() => handleFieldBlur(fieldName)}
 							/>
-							{fieldState.hasError && (
-								<div className="field-error">{fieldState.errorMessage}</div>
-							)}
-							<FieldStateIndicator
-								touched={fieldState.touched}
-								focused={fieldState.focused}
-								hasError={fieldState.hasError}
-								hasReferences={fieldState.dependencies.length > 0}
-								isReferenced={fieldState.dependentFields.length > 0}
-							/>
 						</div>
 					);
 				})}
 			</div>
 
 			<div className="form-actions">
-				<button
-					type="button"
-					className="btn btn-secondary"
-					onClick={onCancel}
-					disabled={isSubmitting}
-				>
-					Cancel
-				</button>
-				<button
-					type="submit"
-					className="btn btn-primary"
-					disabled={!isFormValid || isSubmitting}
-				>
-					Submit
-				</button>
-				<button
-					type="button"
-					className="btn btn-primary"
-					onClick={(e) => handleSubmit(e, true)} // Submit and finalize
-					disabled={!isFormValid || isSubmitting}
-				>
-					Submit and Finalize
-				</button>
+				<button type="button" className="btn btn-secondary" onClick={onCancel}>Cancel</button>
+				<button type="submit" className="btn btn-primary">Submit</button>
+				<button type="button" className="btn btn-primary" onClick={(e) => handleSubmit(e, true)}>Submit and Finalize</button>
 			</div>
 		</form>
 	);
@@ -659,8 +1092,13 @@ const FieldCollectionForm = ({ varInfoMap, onComplete, onCancel }: FieldCollecti
  * Tracks the state of each field including user interactions
  */
 interface FieldState {
-	value: undefined | string | number | string[]; // Value given back to the template engine
+	// The current value of the field
+	// 	Should always be ready to be verified/submitted (except for miss text resolution, that can be applied upon being verified/submitted)
+	//    Should also always be what's shown in the field and be used for dependencies
+	value: undefined | string | number | string[];
 	omitFromForm: boolean;
+	// Keeps track of whether the field has been interacted with
+	// 	(determines miss text behavior and default value behavior in the field itself)
 	touched: boolean;
 	focused: boolean;
 	hasError: boolean;
@@ -715,7 +1153,7 @@ function detectCircularDependencies(fieldStates: Record<string, FieldState>): st
 	return [];
 }
 
-function calculateFieldOrder(fieldStates: Record<string, FieldState>): string[] {
+function calculateFieldDependencyOrder(fieldStates: Record<string, FieldState>): string[] {
 	// order based on the dependency tree
 	// if a field has dependencies, it should come after its dependencies
 	// so go through each field and check its dependencies,
@@ -746,11 +1184,6 @@ function calculateFieldOrder(fieldStates: Record<string, FieldState>): string[] 
 				madeChange = true;
 			}
 		}
-	}
-	// Always put title first
-	const titleIndex = orderedFields.indexOf('title');
-	if (titleIndex !== -1) {
-		orderedFields.unshift(orderedFields.splice(titleIndex, 1)[0]);
 	}
 	return orderedFields;
 }
@@ -783,14 +1216,25 @@ const FieldInput = ({ name, label, varInfo, fieldState, onChange, onFocus, onBlu
 	};
 
 	// Render the appropriate input based on data type
-	const renderInput = () => {
+	function renderInput() {
 		const dataType = varInfo.dataType || 'text';
 
 		switch(dataType) {
-			case 'text':
+			case 'titleText':
 				return (
 					<input
 						type="text"
+						className={`title-text-input ${fieldState.hasError ? 'has-error' : ''}`}
+						value={fieldState.value?.toString() || ''}
+						onChange={(e) => onChange(e.target.value)}
+						placeholder={fieldState.resolvedDefaultValue}
+						{...commonProps}
+					/>
+				);
+
+			case 'text':
+				return (
+					<textarea
 						className={`text-input ${fieldState.hasError ? 'has-error' : ''}`}
 						value={fieldState.value?.toString() || ''}
 						onChange={(e) => onChange(e.target.value)}
@@ -835,7 +1279,7 @@ const FieldInput = ({ name, label, varInfo, fieldState, onChange, onFocus, onBlu
 							onChange={(e) => onChange(e.target.checked)}
 							{...commonProps}
 						/>
-						<label htmlFor={inputId} className="checkbox-label">{label}</label>
+						<label htmlFor={inputId} className="checkbox-label" title={generateTitle()}>{label}</label>
 					</div>
 				);
 
@@ -863,7 +1307,7 @@ const FieldInput = ({ name, label, varInfo, fieldState, onChange, onFocus, onBlu
 					: fieldState.value ? [fieldState.value] : [];
 
 				return (
-					<div className="multi-select-container">
+					<div className={`multi-select-container ${fieldState.hasError ? 'has-error' : ''}`}>
 						{varInfo.options?.map((option) => (
 							<div key={option} className="multi-select-option">
 								<input
@@ -882,50 +1326,23 @@ const FieldInput = ({ name, label, varInfo, fieldState, onChange, onFocus, onBlu
 						))}
 					</div>
 				);
-
-			default:
-				return (
-					<input
-						type="text"
-						className={`text-input ${fieldState.hasError ? 'has-error' : ''}`}
-						value={fieldState.value?.toString() || ''}
-						onChange={(e) => onChange(e.target.value)}
-						placeholder={fieldState.resolvedDefaultValue}
-						{...commonProps}
-					/>
-				);
 		}
 	};
 
-	// Show dependency indicators (fields this field depends on or that depend on it)
-	const renderDependencyIndicators = () => {
+	function generateTitle() {
 		const hasDependencies = fieldState.dependencies.length > 0;
 		const isDependedOn = fieldState.dependentFields.length > 0;
+		const nameText = `Field name: ${name}`;
+		const dependencyText = hasDependencies ? `Depends on: ${fieldState.dependencies.join(', ')}` : '';
+		const dependencyText2 = isDependedOn ? `Used by: ${fieldState.dependentFields.join(', ')}` : '';
+		return `${nameText}\n${dependencyText}\n${dependencyText2}`;
+	}
 
-		if (!hasDependencies && !isDependedOn) return null;
-
-		return (
-			<div className="dependency-indicators">
-				{hasDependencies && (
-					<div className="depends-on" title={`Depends on: ${fieldState.dependencies.join(', ')}`}>
-						<span className="indicator-icon">↑</span>
-					</div>
-				)}
-				{isDependedOn && (
-					<div className="is-dependency" title={`Used by: ${fieldState.dependentFields.join(', ')}`}>
-						<span className="indicator-icon">↓</span>
-					</div>
-				)}
-			</div>
-		);
-	};
-
-	// Show a preview of what will be used if field is left empty
-	const renderMissTextPreview = () => {
+	function renderMissTextPreview() {
 		if (fieldState.resolvedMissText && !fieldState.touched) {
 			return (
 				<div className="miss-text-preview">
-					Default if empty: <span>{fieldState.resolvedMissText}</span>
+					Default if left untouched:<br/><span>{fieldState.resolvedMissText}</span>
 				</div>
 			);
 		}
@@ -933,17 +1350,11 @@ const FieldInput = ({ name, label, varInfo, fieldState, onChange, onFocus, onBlu
 	};
 
 	return (
-		<div className={`field-input ${fieldState.touched ? 'touched' : ''} ${fieldState.focused ? 'focused' : ''}`}>
+		<div className="field-input">
 			{/* Don't show label twice for checkboxes */}
-			{varInfo.dataType !== 'boolean' && <label htmlFor={inputId}>{label}</label>}
-
-			<div className="input-wrapper">
-				{renderInput()}
-				{renderDependencyIndicators()}
-			</div>
-
+			{varInfo.dataType !== 'boolean' && <label htmlFor={inputId} title={generateTitle()}>{label}</label>}
+			{renderInput()}
 			{renderMissTextPreview()}
-
 			{fieldState.hasError && fieldState.errorMessage && (
 				<div className="error-message">{fieldState.errorMessage}</div>
 			)}
@@ -951,73 +1362,88 @@ const FieldInput = ({ name, label, varInfo, fieldState, onChange, onFocus, onBlu
 	);
 };
 
-/**
- * Helper component that shows a visual indicator for field interaction states
- */
-interface FieldStateIndicatorProps {
-	touched: boolean;
-	focused: boolean;
-	hasError: boolean;
-	hasReferences: boolean; // Field contains references to other fields
-	isReferenced: boolean;  // Field is referenced by other fields
-}
 
-const FieldStateIndicator = ({ touched, focused, hasError, hasReferences, isReferenced }: FieldStateIndicatorProps) => {
-	// Define indicator classes and titles based on state
-	const indicators = [
-		{
-			active: touched,
-			className: 'touched-indicator',
-			title: 'Field has been modified',
-			icon: '✓'
-		},
-		{
-			active: focused,
-			className: 'focused-indicator',
-			title: 'Field is currently focused',
-			icon: '⌨'
-		},
-		{
-			active: hasError,
-			className: 'error-indicator',
-			title: 'Field has validation errors',
-			icon: '⚠'
-		},
-		{
-			active: hasReferences,
-			className: 'has-references-indicator',
-			title: 'Field references other fields',
-			icon: '↑'
-		},
-		{
-			active: isReferenced,
-			className: 'is-referenced-indicator',
-			title: 'Field is referenced by other fields',
-			icon: '↓'
-		}
-	];
+// ------------------------------------------------------------------------------------------------
+// Delete Confirmation Modal
+// ------------------------------------------------------------------------------------------------
+export class DeleteConfirmationModal extends Modal {
+	file: TFile;
+	onConfirm: (shouldDelete: boolean) => void;
+	root: any; // For React root
 
-	// Only show the container if at least one indicator is active
-	const hasActiveIndicators = indicators.some(indicator => indicator.active);
-	if (!hasActiveIndicators) {
-		return null;
+	constructor(app: App, file: TFile, onConfirm: (shouldDelete: boolean) => void) {
+		super(app);
+		this.file = file;
+		this.onConfirm = onConfirm;
 	}
 
-	return (
-		<div className="field-state-indicators">
-			{indicators.map((indicator, index) =>
-				indicator.active && (
-					<div
-						key={index}
-						className={`indicator ${indicator.className}`}
-						title={indicator.title}
-						aria-label={indicator.title}
-					>
-						<span className="indicator-icon">{indicator.icon}</span>
-					</div>
-				)
-			)}
-		</div>
-	);
-};
+	onOpen() {
+		this.titleEl.setText('Delete Original File?');
+		this.contentEl.empty();
+		this.contentEl.addClass('modal-content', 'delete-confirmation-modal');
+		this.root = createRoot(this.contentEl);
+		this.root.render(
+			<>
+				<p className="delete-confirmation-message">
+					Would you like to now delete "{this.file.name}"?
+				</p>
 
+				<div className="delete-confirmation-buttons">
+					<button
+						className="btn btn-secondary"
+						onClick={() => {
+							this.onConfirm(false);
+							this.close();
+						}}
+					>
+						Keep Original File
+					</button>
+
+					<button
+						className="btn btn-warning"
+						onClick={() => {
+							this.onConfirm(true);
+							this.close();
+						}}
+					>
+						Move to Trash
+					</button>
+				</div>
+			</>
+		);
+	}
+
+	onClose() {
+		if (this.root) { this.root.unmount(); }
+		this.contentEl.empty();
+	}
+}
+
+export class ErrorModal extends Modal {
+	error: Error;
+	root: any; // React root
+
+	constructor(app: App, error: Error) {
+		super(app);
+		this.error = error;
+	}
+
+	onOpen() {
+		this.titleEl.setText('Error');
+		this.contentEl.empty();
+		this.contentEl.addClass('modal-content', 'error-modal');
+		this.root = createRoot(this.contentEl);
+		this.root.render(
+			<>
+				<p className="error-modal-message">{this.error.message}</p>
+				{this.error instanceof TemplateError && (
+					<p className="error-modal-description">{this.error.description}</p>
+				)}
+			</>
+		);
+	}
+	onClose() {
+		if (this.root) { this.root.unmount(); }
+		this.contentEl.empty();
+	}
+}
