@@ -1,3 +1,18 @@
+/*
+--------------------------------------------------------------------------------------------------------------------------------
+	Settings Page
+--------------------------------------------------------------------------------------------------------------------------------
+*/
+
+.z2k-settings .setting-item.is-invalid input {
+	border-color: var(--text-error);
+	box-shadow: none;
+}
+.z2k-settings .setting-item.is-invalid .setting-item-error-description {
+	color: var(--text-error);
+}
+
+
 
 /*
 --------------------------------------------------------------------------------------------------------------------------------
@@ -5,7 +20,7 @@
 --------------------------------------------------------------------------------------------------------------------------------
 */
 
-.btn {
+.z2k .btn {
 	padding: 6px 12px;
 	border-radius: 4px;
 	font-size: 14px;
@@ -15,36 +30,36 @@
 	transition: all 0.15s ease;
 }
 
-.btn[disabled] {
+.z2k .btn[disabled] {
 	opacity: 0.5;
 }
 
-.btn-primary {
+.z2k .btn-primary {
 	background-color: var(--interactive-accent);
 	color: var(--text-on-accent);
 	margin-left: 8px;
 }
 
-.btn-primary:hover {
+.z2k .btn-primary:hover {
 	background-color: var(--interactive-accent-hover);
 }
 
-.btn-secondary {
+.z2k .btn-secondary {
 	background-color: var(--background-secondary);
 	color: var(--text-normal);
 	border-color: var(--background-modifier-border);
 }
 
-.btn-secondary:hover {
+.z2k .btn-secondary:hover {
 	background-color: var(--background-secondary-alt);
 }
 
-.btn-warning {
+.z2k .btn-warning {
 	background-color: var(--text-error);
 	color: white;
 }
 
-.btn-warning:hover {
+.z2k .btn-warning:hover {
 	background-color: var(--text-error-hover, #d93025);
 	opacity: 0.9;
 }
@@ -57,30 +72,23 @@
 --------------------------------------------------------------------------------------------------------------------------------
 */
 
-.modal {
-	resize: both;
-	overflow: auto;
-	min-width: 400px;
-	min-height: 300px;
-}
-
-.modal-content {
+.z2k .modal-content {
 	background-color: var(--background-primary);
 	border-radius: 8px;
 	box-shadow: 0 2px 10px var(--shadow);
 	width: 100%;
-	max-width: 500px;
+	/* max-width: 500px; */
 	display: flex;
 	flex-direction: column;
 	overflow: hidden;
 	max-height: 80vh;
 }
 
-.search-container {
+.z2k .search-container {
 	width: 100%;
 }
 
-.search-input {
+.z2k .search-input {
 	width: 100%;
 	padding: 8px 12px;
 	font-size: 14px;
@@ -89,7 +97,7 @@
 	background-color: var(--background-primary);
 }
 
-.search-input:focus {
+.z2k .search-input:focus {
 	box-shadow: 0 0 0 2px var(--interactive-accent);
 	border-color: transparent;
 	outline: none;
@@ -103,11 +111,11 @@
 --------------------------------------------------------------------------------------------------------------------------------
 */
 
-.selection-modal {
+.z2k.selection-modal {
 	max-width: 500px;
 }
 
-.selection-content {
+.z2k .selection-content {
 	padding: 16px 20px;
 	display: flex;
 	flex-direction: column;
@@ -115,7 +123,7 @@
 	height: 100%;
 }
 
-.selection-list {
+.z2k .selection-list {
 	flex-grow: 1;
 	overflow-y: auto;
 	border: 1px solid var(--background-modifier-border);
@@ -125,7 +133,7 @@
 	position: relative;
 }
 
-.selection-item {
+.z2k .selection-item {
 	padding: 10px 12px;
 	border-bottom: 1px solid var(--background-modifier-border);
 	cursor: pointer;
@@ -134,29 +142,29 @@
 	transition: background-color 0.15s ease;
 }
 
-.selection-item:focus {
+.z2k .selection-item:focus {
 	outline: none;
 	box-shadow: inset 0 0 0 2px var(--interactive-accent);
 }
 
-.selection-item:last-child {
+.z2k .selection-item:last-child {
 	border-bottom: none;
 }
 
-.selection-item:hover {
+.z2k .selection-item:hover {
 	background-color: var(--background-secondary);
 }
 
-.selection-item.selected {
+.z2k .selection-item.selected {
 	background-color: var(--interactive-accent);
 	color: var(--text-on-accent);
 }
 
-.selection-item.selected .selection-secondary {
+.z2k .selection-item.selected .selection-secondary {
 	color: rgba(255, 255, 255, 0.8);
 }
 
-.selection-primary {
+.z2k .selection-primary {
 	font-weight: 500;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -165,7 +173,7 @@
 	flex: 1;
 }
 
-.selection-secondary {
+.z2k .selection-secondary {
 	color: var(--text-muted);
 	font-size: 12px;
 	overflow: hidden;
@@ -175,13 +183,13 @@
 	max-width: 40%;
 }
 
-.selection-actions {
+.z2k .selection-actions {
 	padding: 12px 0 0 0;
 	display: flex;
 	justify-content: flex-end;
 }
 
-.selection-empty-state {
+.z2k .selection-empty-state {
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -195,39 +203,31 @@
 
 /*
 --------------------------------------------------------------------------------------------------------------------------------
-	Specific Selection Modal Overrides
---------------------------------------------------------------------------------------------------------------------------------
-*/
-
-.template-list-empty-state {
-	padding: 0;
-	border: none;
-}
-
-
-
-/*
---------------------------------------------------------------------------------------------------------------------------------
 	Field Collection Modal
 --------------------------------------------------------------------------------------------------------------------------------
 */
 
 /* Field Collection Modal Styles */
-.field-collection-modal {
+.z2k.field-collection-modal {
+	resize: both;
+	overflow: auto;
+	min-width: 400px;
+	min-height: 300px;
 	max-width: 1000px;
 	max-height: 80vh;
 }
 
-.field-collection-form {
+.z2k .field-collection-form {
 	display: flex;
 	flex-direction: column;
 	gap: 16px;
 	padding: 16px 20px;
 	height: 100%;
+	width: 100%;
 	min-height: 0; /* Forces proper flex behavior */
 }
 
-.field-list {
+.z2k .field-list {
 	display: flex;
 	flex-direction: column;
 	flex: 1;
@@ -238,7 +238,7 @@
 }
 
 /* Individual Field Styling */
-.field-container {
+.z2k .field-container {
 	display: flex;
 	flex-direction: column;
 	position: relative;
@@ -251,33 +251,37 @@
 	box-shadow: inset 3px 0 0 transparent;
 }
 
-.field-container.touched {
+.z2k .field-container.touched {
 	box-shadow: inset 3px 0 0 var(--color-green);
 }
 
-.field-container.has-error {
+.z2k .field-container.has-error {
 	box-shadow: inset 3px 0 0 var(--text-error);
 }
 
-.field-container:focus-within {
+.z2k .field-container:focus-within {
 	border-color: var(--interactive-accent);
 	box-shadow: inset 3px 0 0 var(--interactive-accent);
 }
 
-.field-input {
+.z2k .field-input {
 	display: flex;
 	flex-direction: column;
 	gap: 6px;
 	width: 100%;
 }
 
-.field-input label {
+.z2k .field-input label {
 	font-weight: 500;
 	font-size: 14px;
 	color: var(--text-normal);
 }
 
+
+/* TODO: These look global, not field collection modal-specific */
+
 /* Basic input styling */
+.z2k
 input[type="text"],
 input[type="number"],
 input[type="date"],
@@ -293,14 +297,15 @@ textarea {
 	transition: all 0.15s ease;
 }
 
-textarea {
+.z2k textarea {
 	resize: vertical;
 	height: 37px;
 	min-height: 37px;
 	width: 100%;
-	max-width: 100%;
+	/* max-width: 100%; */
 }
 
+.z2k
 input[type="text"]:focus,
 input[type="number"]:focus,
 input[type="date"]:focus,
@@ -311,30 +316,30 @@ textarea:focus {
 	outline: none;
 }
 
-::placeholder {
+.z2k ::placeholder {
 	color: var(--text-muted);
 }
 
 /* Checkbox styling */
-.boolean-input-container {
+.z2k .boolean-input-container {
 	display: flex;
 	align-items: center;
 	gap: 8px;
 }
 
-input[type="checkbox"] {
+.z2k input[type="checkbox"] {
 	width: 16px;
 	height: 16px;
 	cursor: pointer;
 	accent-color: var(--interactive-accent);
 }
 
-.checkbox-label {
+.z2k .checkbox-label {
 	cursor: pointer;
 }
 
 /* Multi-select styling */
-.multi-select-container {
+.z2k .multi-select-container {
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
@@ -344,7 +349,7 @@ input[type="checkbox"] {
 	border: 1px solid var(--background-modifier-border);
 }
 
-.multi-select-option {
+.z2k .multi-select-option {
 	display: flex;
 	align-items: center;
 	gap: 8px;
@@ -352,30 +357,26 @@ input[type="checkbox"] {
 }
 
 /* Error state styling */
-/* .has-error {
-	border-color: var(--text-error) !important;
-} */
-
-.error-message {
+.z2k .error-message {
 	color: var(--text-error);
 	font-size: 12px;
 	margin-top: 4px;
 }
 
 /* Miss text preview */
-.miss-text-preview {
+.z2k .miss-text-preview {
 	font-size: 12px;
 	color: var(--text-muted);
 	font-style: italic;
 	margin-top: 4px;
 }
 
-.miss-text-preview span {
+.z2k .miss-text-preview span {
 	font-weight: 500;
 }
 
 /* Form actions */
-.form-actions {
+.z2k .form-actions {
 	display: flex;
 	flex-shrink: 0;
 	justify-content: flex-end;
@@ -392,21 +393,21 @@ input[type="checkbox"] {
 	Delete Confirmation Modal
 --------------------------------------------------------------------------------------------------------------------------------
 */
-.delete-confirmation-modal {
+.z2k.delete-confirmation-modal {
 	padding: 16px 20px;
 	display: flex;
 	flex-direction: column;
 	gap: 16px;
 }
 
-.delete-confirmation-message {
+.z2k .delete-confirmation-message {
 	font-size: 14px;
 	line-height: 1.5;
 	margin: 0;
 	color: var(--text-normal);
 }
 
-.delete-confirmation-buttons {
+.z2k .delete-confirmation-buttons {
 	display: flex;
 	justify-content: flex-end;
 	gap: 8px;
@@ -419,22 +420,23 @@ input[type="checkbox"] {
 	Error Modal
 --------------------------------------------------------------------------------------------------------------------------------
 */
-.error-modal {
+.z2k.error-modal {
 	padding: 16px 20px;
 	display: flex;
 	flex-direction: column;
 	gap: 12px;
 }
 
-.error-modal-message {
+.z2k .error-modal-message {
 	font-size: 14px;
 	line-height: 1.5;
+	padding: 10px;
 	margin: 0;
 	color: var(--text-error);
 	font-weight: 500;
 }
 
-.error-modal-description {
+.z2k .error-modal-description {
 	font-family: var(--font-monospace, monospace);
 	font-size: 13px;
 	background-color: var(--background-secondary);
@@ -443,4 +445,12 @@ input[type="checkbox"] {
 	margin: 0;
 	white-space: pre-wrap;
 	overflow-x: auto;
+}
+
+.z2k .error-modal-message,
+.z2k .error-modal-description {
+	user-select: text;
+	white-space: pre-wrap;
+	word-break: break-word;
+	cursor: text;
 }

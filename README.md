@@ -1,8 +1,8 @@
 
 
-# Z2K Obsidian Plugin
+# Z2K Templates Plugin
 
-An Obsidian plugin using the Z2K Template Engine.
+An Obsidian plugin using the Z2K Template Engine to create new cards and update cards using templates and blocks.
 
 ## Development Setup
 

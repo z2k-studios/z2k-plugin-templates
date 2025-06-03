@@ -9,7 +9,7 @@ import { createRoot } from 'react-dom/client';
 interface Z2KPluginSettings {
 	z2kRootFolder: string;
 	useExternalTemplates: boolean;
-	embeddedTemplatesFolder: string;
+	embeddedTemplatesFolderName: string;
 	externalTemplatesFolder: string;
 	blockPrefixFilter: string;
 }
@@ -17,7 +17,7 @@ interface Z2KPluginSettings {
 const DEFAULT_SETTINGS: Z2KPluginSettings = {
 	z2kRootFolder: '/Z2K',
 	useExternalTemplates: false,
-	embeddedTemplatesFolder: 'Templates',
+	embeddedTemplatesFolderName: 'Templates',
 	externalTemplatesFolder: '/Templates-External',
 	blockPrefixFilter: 'Block - ',
 };
@@ -33,18 +33,29 @@ class Z2KSettingTab extends PluginSettingTab {
 	display(): void {
 		const {containerEl} = this;
 		containerEl.empty();
-		containerEl.createEl('h2', {text: 'Z2K Plugin Settings'});
+		containerEl.addClass('z2k-settings');
+		containerEl.createEl('h2', {text: 'Z2K Template Settings'});
 
 		new Setting(containerEl)
 			.setName('Z2K root folder')
 			.setDesc('Folder where card structure starts')
-			.addText(text => text
-				.setPlaceholder(DEFAULT_SETTINGS.z2kRootFolder)
-				.setValue(this.plugin.settings.z2kRootFolder)
-				.onChange(async (value) => {
-					this.plugin.settings.z2kRootFolder = value;
-					await this.plugin.saveData(this.plugin.settings);
-				}));
+			.addText(text => {
+				const input = text
+					.setPlaceholder(DEFAULT_SETTINGS.z2kRootFolder)
+					.setValue(this.plugin.settings.z2kRootFolder)
+					.inputEl;
+
+				this.validateTextInput(input,
+					(value) => {
+						if (/[*?"<>|:]/.test(value)) { return "Invalid characters in folder path"; }
+						return null;
+					},
+					async (validValue) => {
+						this.plugin.settings.z2kRootFolder = validValue;
+						await this.plugin.saveData(this.plugin.settings);
+					});
+			});
+
 
 		new Setting(containerEl)
 			.setName('Use external templates folder')
@@ -54,42 +65,118 @@ class Z2KSettingTab extends PluginSettingTab {
 				.onChange(async (value) => {
 					this.plugin.settings.useExternalTemplates = value;
 					await this.plugin.saveData(this.plugin.settings);
+					this.display(); // re-render settings UI
 				}));
 
 		if (this.plugin.settings.useExternalTemplates) {
 			new Setting(containerEl)
-				.setName('Embedded templates folder name')
-				.setDesc('Any files within any folders of this name will show up as templates')
-				.addText(text => text
-					.setPlaceholder(DEFAULT_SETTINGS.embeddedTemplatesFolder)
-					.setValue(this.plugin.settings.embeddedTemplatesFolder)
-					.onChange(async (value) => {
-						this.plugin.settings.embeddedTemplatesFolder = value;
-						await this.plugin.saveData(this.plugin.settings);
-					}));
-		} else {
-			new Setting(containerEl)
 				.setName('External templates folder')
 				.setDesc('All files within this folder will show up as templates')
-				.addText(text => text
-					.setPlaceholder(DEFAULT_SETTINGS.externalTemplatesFolder)
-					.setValue(this.plugin.settings.externalTemplatesFolder)
-					.onChange(async (value) => {
-						this.plugin.settings.externalTemplatesFolder = value;
-						await this.plugin.saveData(this.plugin.settings);
-					}));
+				.addText(text => {
+					const input = text
+						.setPlaceholder(DEFAULT_SETTINGS.externalTemplatesFolder)
+						.setValue(this.plugin.settings.externalTemplatesFolder)
+						.inputEl;
+
+					this.validateTextInput(input,
+						(value) => {
+							if (/[*?"<>|:]/.test(value)) { return "Invalid characters in folder path"; }
+							return null;
+						},
+						async (validValue) => {
+							this.plugin.settings.externalTemplatesFolder = validValue;
+							await this.plugin.saveData(this.plugin.settings);
+						});
+				});
+		} else {
+			new Setting(containerEl)
+				.setName('Embedded templates folder name')
+				.setDesc('Any files within folders of this name will show up as templates')
+				.addText(text => {
+					const input = text
+						.setPlaceholder(DEFAULT_SETTINGS.embeddedTemplatesFolderName)
+						.setValue(this.plugin.settings.embeddedTemplatesFolderName)
+						.inputEl;
+
+					this.validateTextInput(input,
+						(value) => {
+							if (!value.trim()) { return "Folder name cannot be empty"; }
+							if (value.includes('/') || value.includes('\\')) { return "Folder name cannot contain slashes"; }
+							if (/^[.]+$/.test(value)) { return `"${value}" is not a valid folder name`; }
+							if (/[*?"<>|:]/.test(value)) { return "Invalid characters in folder name"; }
+							return null;
+						},
+						async (validValue) => {
+							this.plugin.settings.embeddedTemplatesFolderName = validValue;
+							await this.plugin.saveData(this.plugin.settings);
+						});
+				});
 		}
 
 		new Setting(containerEl)
 			.setName('Block prefix filter')
 			.setDesc('Filename prefix to mark the template as a block-template')
-			.addText(text => text
-				.setPlaceholder(DEFAULT_SETTINGS.blockPrefixFilter)
-				.setValue(this.plugin.settings.blockPrefixFilter)
-				.onChange(async (value) => {
-					this.plugin.settings.blockPrefixFilter = value;
-					await this.plugin.saveData(this.plugin.settings);
-				}));
+			.addText(text => {
+				const input = text
+					.setPlaceholder(DEFAULT_SETTINGS.blockPrefixFilter)
+					.setValue(this.plugin.settings.blockPrefixFilter)
+					.inputEl;
+
+				this.validateTextInput(input,
+					(value) => {
+						if (!value.trim()) { return "Prefix cannot be empty"; }
+						if (/[*?"<>|:./\\]/.test(value)) { return "Invalid characters in prefix"; }
+						return null;
+					},
+					async (validValue) => {
+						this.plugin.settings.blockPrefixFilter = validValue;
+						await this.plugin.saveData(this.plugin.settings);
+					});
+			});
+	}
+
+	validateTextInput(
+		el: HTMLInputElement,
+		isValid: (val: string) => string | null,
+		onValid: (val: string) => Promise<void>
+	) {
+		let lastValid = el.value;
+		const settingItem = el.closest('.setting-item');
+		let errorDescEl: HTMLElement | null = null;
+
+		const showError = (msg: string) => {
+			const infoEl = settingItem?.querySelector('.setting-item-info');
+			if (!errorDescEl && infoEl) {
+				errorDescEl = infoEl.createDiv({cls: ['setting-item-description', 'setting-item-error-description']});
+			}
+			errorDescEl?.setText(msg);
+			settingItem?.addClass('is-invalid');
+		};
+
+		const clearError = () => {
+			errorDescEl?.remove();
+			errorDescEl = null;
+			settingItem?.removeClass('is-invalid');
+		};
+
+		const applyValidation = async (val: string) => {
+			const err = isValid(val);
+			if (err) {
+				showError(err);
+			} else {
+				clearError();
+				lastValid = val;
+				await onValid(val);
+			}
+		};
+
+		el.addEventListener('input', () => applyValidation(el.value));
+		el.addEventListener('blur', () => {
+			if (settingItem?.classList.contains('is-invalid')) {
+				el.value = lastValid;
+				clearError();
+			}
+		});
 	}
 }
 
@@ -109,8 +196,8 @@ export default class Z2KPlugin extends Plugin {
 		// Command palette commands
 		this.addCommand({
 			id: 'z2k-create-new-card',
-			name: 'Create new card',
-			callback: () => this.createCardCommand({}),
+			name: 'Create new card from template',
+			callback: () => this.createOrContinueCard({}),
 		});
 
 		// Command palette commands for when text is selected
@@ -120,7 +207,7 @@ export default class Z2KPlugin extends Plugin {
 			editorCheckCallback: (checking, editor) => {
 				const selectedText = editor.getSelection();
 				if (checking) { return selectedText.length > 0; } // Only enable if text is selected
-				this.createCardCommand({existingText: selectedText});
+				this.createOrContinueCard({inputText: selectedText});
 			},
 		});
 
@@ -130,10 +217,10 @@ export default class Z2KPlugin extends Plugin {
 				const selectedText = editor.getSelection();
 				if (selectedText.length === 0) return;
 				menu.addItem((item) => {
-					item.setTitle("Create card from selection...")
+					item.setTitle("Z2K: Create card from selection...")
 						.setIcon("document-plus")
 						.onClick(() => {
-							this.createCardCommand({existingText: selectedText});
+							this.createOrContinueCard({inputText: selectedText});
 						});
 				});
 			})
@@ -147,7 +234,7 @@ export default class Z2KPlugin extends Plugin {
 				const activeFile = this.app.workspace.getActiveFile();
 				// Only enable if there's an active file and it's a markdown file
 				if (checking) { return !!activeFile && activeFile.extension === 'md'; }
-				this.createCardCommand({existingFile: activeFile as TFile});
+				this.createOrContinueCard({inputFile: activeFile as TFile});
 			},
 		});
 
@@ -158,61 +245,93 @@ export default class Z2KPlugin extends Plugin {
 				if (!(file instanceof TFile) || file.extension !== 'md') return;
 
 				menu.addItem((item) => {
-					item.setTitle("Convert to card...")
+					item.setTitle("Z2K: Convert to card...")
 						.setIcon("document-plus")
 						.onClick(() => {
-							this.createCardCommand({existingFile: file});
+							this.createOrContinueCard({inputFile: file});
+						});
+				});
+			})
+		);
+
+		// Command palette 'continue card creation' to continue creating a card from an existing file
+		this.addCommand({
+			id: 'z2k-continue-filling-card',
+			name: 'Continue filling card',
+			editorCheckCallback: (checking, editor) => {
+				const activeFile = this.app.workspace.getActiveFile();
+				if (checking) { return !!activeFile && activeFile.extension === 'md'; }
+				this.createOrContinueCard({ continueFile: activeFile as TFile });
+			},
+		});
+
+		// Context menu 'continue card creation' when a file is active
+		this.registerEvent(
+			this.app.workspace.on('file-menu', (menu, file) => {
+				if (!(file instanceof TFile) || file.extension !== 'md') return;
+
+				menu.addItem((item) => {
+					item.setTitle("Z2K: Continue filling card...")
+						.setIcon("document-plus")
+						.onClick(() => {
+							this.createOrContinueCard({ continueFile: file as TFile });
 						});
 				});
 			})
 		);
 	}
 
-	async createCardCommand(opts: { existingText?: string, existingFile?: TFile }) {
+	async createOrContinueCard(opts: { inputText?: string, inputFile?: TFile, continueFile?: TFile }) {
 		try {
 
-			let { existingText, existingFile } = opts;
-
-			if (existingText && existingFile) {
-				throw new NewCardPluginError("Providing both existing text and file is not supported");
-			}
+			let { inputText, inputFile, continueFile } = opts;
 
 			// Pull text from file if needed
-			if (existingFile) {
+			if (inputFile) {
 				try {
-					existingText = await this.app.vault.read(existingFile);
+					inputText = await this.app.vault.read(inputFile);
 				} catch (error) {
 					rethrowWithMessage(error, "Error occurred trying to read the file");
 				}
 			}
 
-			// Prompt for card type (the folder containing the desired template)
-			const cardTypes = this.getTemplatesTypes();
-			const cardType = await new Promise<TFolder>((resolve, reject) =>
-				new CardTypeSelectionModal(this.app, cardTypes, this.settings, resolve, reject).open()
-			);
+			let inputContent: string;
+			let cardType: TFolder | null = null;
+			let fieldCollectionModalTitle = "Field Collection for Card";
+			if (continueFile) {
+				// If continuing from an existing file, just read its content
+				fieldCollectionModalTitle = continueFile.basename;
+				try {
+					inputContent = await this.app.vault.read(continueFile);
+				} catch (error) {
+					rethrowWithMessage(error, "Error occurred while reading the file to continue from");
+				}
+			} else {
+				// Prompt for card type (the folder containing the desired template)
+				const cardTypes = this.getTemplatesTypes();
+				cardType = await new Promise<TFolder>((resolve, reject) =>
+					new CardTypeSelectionModal(this.app, cardTypes, this.settings, resolve, reject).open()
+				);
 
-			// Get template using TemplateSelectionModal modal (the template file)
-			const templates = this.getTemplatesForType(cardType);
-			if (templates.length === 0) {
-				throw new NewCardPluginError('No templates were found'); // TODO: make this a quick modal with a message
-			}
-			const template = await new Promise<TFile>((resolve, reject) => {
-				new TemplateSelectionModal(this.app, templates, resolve, reject).open();
-			});
+				// Get template using TemplateSelectionModal modal (the template file)
+				const templates = this.getTemplatesForType(cardType);
+				const template = await new Promise<TFile>((resolve, reject) => {
+					new TemplateSelectionModal(this.app, templates, resolve, reject).open();
+				});
+				fieldCollectionModalTitle = template.basename;
 
-			// Get template
-			let templateContent: string;
-			try {
-				templateContent = await this.app.vault.read(template);
-			} catch (error) {
-				rethrowWithMessage(error, "Error occurred while reading the template");
+				// Get template
+				try {
+					inputContent = await this.app.vault.read(template);
+				} catch (error) {
+					rethrowWithMessage(error, "Error occurred while reading the template");
+				}
 			}
 
 			// Parse the template
 			let templateState: TemplateState;
 			try {
-				templateState = this.templateEngine.parseTemplate(templateContent);
+				templateState = this.templateEngine.parseTemplate(inputContent);
 			} catch (error) {
 				rethrowWithMessage(error, "Error occurred while parsing the template");
 			}
@@ -229,12 +348,10 @@ export default class Z2KPlugin extends Plugin {
 				rethrowWithMessage(error, "Error occurred while resolving built-in variables");
 			}
 
-			console.log(templateState.mergedVarInfoMap);
-
 			// Prompt user for missing variables if needed
 			if (templateState.mergedVarInfoMap.size > 0) {
 				await new Promise<void>((resolve, reject) => {
-					new FieldCollectionModal(this.app, template.basename, templateState.mergedVarInfoMap, resolve, reject).open();
+					new FieldCollectionModal(this.app, fieldCollectionModalTitle, templateState.mergedVarInfoMap, resolve, reject).open();
 				});
 			}
 			// console.log("After prompt:", JSON.stringify(templateState, null, 2));
@@ -247,68 +364,82 @@ export default class Z2KPlugin extends Plugin {
 			let title: string, content: string;
 			try {
 				({ title, content } = this.templateEngine.renderTemplate(templateState));
-				if (existingText) {
+				if (inputText) {
 					// Append existing text if provided
-					content = `${content}\n\n---\n\n${existingText}`;
+					content = `${content}\n\n---\n\n${inputText}`;
 				}
 			} catch (error) {
 				rethrowWithMessage(error, "Error occurred while rendering the template");
 			}
 
-			// Create the new card
-			let newCardPath: string;
-			try {
-				const filename = title.replace(/[^a-zA-Z0-9_\-\. ()]/g, '_'); // Double-check title safety for filename (should already be safe from form validation)
-
-				// Figure out where to put the new card
-				let folderStr: string;
-				if (this.settings.useExternalTemplates) {
-					folderStr = cardType.path
-					if (cardType.path.startsWith(this.settings.externalTemplatesFolder + "/")) {
-						folderStr = cardType.path.substring(this.settings.externalTemplatesFolder.length + 2);
-					}
-					folderStr = this.settings.z2kRootFolder + "/" + folderStr;
-				} else {
-					folderStr = cardType.path;
-					let templatesDir = this.settings.z2kRootFolder + "/" + this.settings.embeddedTemplatesFolder;
-					if (cardType.path.startsWith(templatesDir + "/")) {
-						folderStr = cardType.path.substring(templatesDir.length + 2);
-					}
-					folderStr = this.settings.z2kRootFolder + "/" + folderStr;
+			if (continueFile) {
+				// If continuing an existing file, update its content
+				try {
+					await this.app.vault.modify(continueFile, content);
+					await this.app.workspace.openLinkText(continueFile.path, continueFile.path);
+				} catch (error) {
+					rethrowWithMessage(error, "Error occurred while updating the existing file");
 				}
-				// Ensure the folder exists (create recursively if it doesn't)
-				const folder = this.app.vault.getAbstractFileByPath(folderStr);
-				if (!(folder instanceof TFolder)) {
-					try {
-						await this.app.vault.createFolder(folderStr);
-					} catch (error) {
-						rethrowWithMessage(error, `Error creating folder "${folderStr}"`);
+			} else {
+				// Create the new card
+				let newCardPath: string;
+				try {
+					// Determine new card location
+					let finalFolderPath = normalizePath((cardType as TFolder).path);
+					if (this.settings.useExternalTemplates) {
+						const base = normalizePath(this.settings.externalTemplatesFolder);
+						if (!this.isSubPath(base, finalFolderPath)) {
+							throw new NewCardPluginError(`Card type folder must be inside external templates folder`);
+						}
+						finalFolderPath = finalFolderPath === base ? this.settings.z2kRootFolder : this.joinPath(this.settings.z2kRootFolder, finalFolderPath.slice(base.length + 1));
 					}
+
+					// Ensure folder exists
+					let folder = this.getFolder(finalFolderPath);
+					if (!folder) {
+						try {
+							await this.app.vault.createFolder(finalFolderPath);
+						} catch (err) {
+							rethrowWithMessage(err, `Error creating folder "${finalFolderPath}"`);
+						}
+					}
+
+					const filename = title
+						.replace(/[<>:"/\\|?*\u0000-\u001F]/g, '_') // Illegal in Windows + control chars
+						.replace(/^\.+$/, '_')                      // Avoid names like "." or ".."
+						.replace(/[. ]+$/, '')                      // No trailing dots or spaces
+						.replace(/^ +/, '')                         // No leading spaces
+						|| 'Untitled';                              // Fallback if empty
+
+					// Create the new card path (and avoid overwriting existing files)
+					newCardPath = this.joinPath(finalFolderPath, filename + ".md");
+					let counter = 1;
+					while (this.getFile(newCardPath)) {
+						newCardPath = this.joinPath(finalFolderPath, `${filename} (${counter++}).md`);
+					}
+					await this.app.vault.create(newCardPath, content);
+				} catch (error) {
+					rethrowWithMessage(error, "Error creating new file");
 				}
 
-				newCardPath = folder + "/" + filename;
-				await this.app.vault.create(newCardPath, content);
-			} catch (error) {
-				rethrowWithMessage(error, "Error creating new file");
-			}
+				// Open the new file
+				try {
+					this.app.workspace.openLinkText(newCardPath, newCardPath);
+				} catch (error) {
+					rethrowWithMessage(error, "Error opening new file");
+				}
 
-			// Open the new file
-			try {
-				this.app.workspace.openLinkText(newCardPath, newCardPath);
-			} catch (error) {
-				rethrowWithMessage(error, "Error opening new file");
-			}
-
-			// Prompt for deletion if file was provided
-			if (existingFile) {
-				const shouldDelete = await new Promise<boolean>(resolve => {
-					new DeleteConfirmationModal(this.app, existingFile as TFile, resolve).open();
-				});
-				if (shouldDelete) {
-					try {
-						await this.app.vault.delete(existingFile);
-					} catch (error) {
-						rethrowWithMessage(error, "Error deleting original file");
+				// Prompt for deletion if file was provided
+				if (inputFile) {
+					const shouldDelete = await new Promise<boolean>(resolve => {
+						new DeleteConfirmationModal(this.app, inputFile as TFile, resolve).open();
+					});
+					if (shouldDelete) {
+						try {
+							await this.app.vault.delete(inputFile);
+						} catch (error) {
+							rethrowWithMessage(error, "Error deleting original file");
+						}
 					}
 				}
 			}
@@ -332,85 +463,101 @@ export default class Z2KPlugin extends Plugin {
 	}
 
 	private getTemplatesTypes(): TFolder[] {
-		let folders: TFolder[] = [];
+		const folders: TFolder[] = [];
 
-		let rootFolder;
-		try {
-			rootFolder = this.app.vault.getAbstractFileByPath(this.settings.z2kRootFolder);
-			if (!(rootFolder instanceof TFolder)) {
-				throw new NewCardPluginError(`Could not find Z2K root folder "${this.settings.z2kRootFolder}"`);
-			}
-		} catch (error) {
-			rethrowWithMessage(error, `Error accessing Z2K root folder "${this.settings.z2kRootFolder}"`);
+		const rootPath = normalizePath(this.settings.z2kRootFolder);
+		const root = rootPath
+			? this.app.vault.getAbstractFileByPath(rootPath)
+			: this.app.vault.getRoot();
+		if (!(root instanceof TFolder)) {
+			throw new NewCardPluginError(`Could not find Z2K root folder "${this.settings.z2kRootFolder}"`);
 		}
 
 		if (this.settings.useExternalTemplates) {
-			let externalTemplatesFolder;
-			try {
-				externalTemplatesFolder = this.app.vault.getAbstractFileByPath(this.settings.externalTemplatesFolder);
-				if (!(externalTemplatesFolder instanceof TFolder)) {
-					throw new NewCardPluginError(`Could not find external templates folder "${this.settings.externalTemplatesFolder}"`);
-				}
-			} catch (error) {
-				rethrowWithMessage(error, `Error accessing external templates folder "${this.settings.externalTemplatesFolder}"`);
+			const externalPath = normalizePath(this.settings.externalTemplatesFolder);
+			const external = externalPath
+				? this.app.vault.getAbstractFileByPath(externalPath)
+				: this.app.vault.getRoot();
+			if (!(external instanceof TFolder)) {
+				throw new NewCardPluginError(`Could not find external templates folder "${this.settings.externalTemplatesFolder}"`);
 			}
 
-			function gatherExternalTemplatesRec(folder: TFolder) {
+			const recurse = (folder: TFolder) => {
 				folders.push(folder);
 				for (const child of folder.children) {
-					if (!(child instanceof TFolder)) { continue; }
-					gatherExternalTemplatesRec(child); // Recurse into subfolders
+					if (child instanceof TFolder) { recurse(child); }
 				}
-			}
-			gatherExternalTemplatesRec(externalTemplatesFolder);
+			};
+			recurse(external);
 		} else {
-			let templateFolder = this.settings.embeddedTemplatesFolder;
-			if (templateFolder === '') {
-				throw new NewCardPluginError("Embedded templates folder is not set");
-			}
-
-			function gatherEmbeddedTemplatesRec(folder: TFolder) {
-				// Check if a template folder exists in this folder
+			const templateFolderName = this.settings.embeddedTemplatesFolderName.trim();
+			const recurse = (folder: TFolder) => {
 				for (const child of folder.children) {
-					if (!(child instanceof TFolder)) { continue; }
-					if (child.name === templateFolder) {
-						folders.push(folder);
+					if (!(child instanceof TFolder)) continue;
+					if (child.name === templateFolderName) {
+						folders.push(folder); // Parent of matching template folder
 					} else {
-						gatherEmbeddedTemplatesRec(child); // Recurse into subfolders
+						recurse(child);
 					}
 				}
-			}
-			gatherEmbeddedTemplatesRec(rootFolder);
+			};
+			recurse(root);
 		}
 
-		return folders;
+		return folders.sort((a, b) => a.path.localeCompare(b.path));
 	}
 
 	private getTemplatesForType(cardType: TFolder): TFile[] {
-		const {settings, app} = this;
+		const settings = this.settings;
 		const result: TFile[] = [];
 		let curr: TFolder | null = cardType;
 
 		while (curr) {
-			let folderPath: string;
+			const currPath = normalizePath(curr.path);
+			let templateFolderPath: string;
 
 			if (settings.useExternalTemplates) {
-				if (!curr.path.startsWith(settings.externalTemplatesFolder)) break;
-				folderPath = curr.path + "/Templates";
+				if (!this.isSubPath(settings.externalTemplatesFolder, curr.path)) { break; }
+				templateFolderPath = currPath;
 			} else {
-				if (!curr.path.startsWith(settings.z2kRootFolder)) break;
-				folderPath = curr.path + "/" + settings.embeddedTemplatesFolder;
+				if (!this.isSubPath(settings.z2kRootFolder, curr.path)) { break; }
+				templateFolderPath = this.joinPath(currPath, settings.embeddedTemplatesFolderName);
 			}
 
-			const folder = app.vault.getAbstractFileByPath(folderPath);
-			if (folder instanceof TFolder) {
-				result.push(...this.getMarkdownFilesRecursively(folder));
+			const templateFolder = this.getFolder(templateFolderPath);
+			if (templateFolder) {
+				result.push(...this.getMarkdownFilesRecursively(templateFolder));
 			}
 
-			curr = curr.parent as TFolder;
+			curr = curr.parent instanceof TFolder ? curr.parent : null;
 		}
 
 		return result;
+	}
+
+	private getFile(path: string): TFile | null {
+		const normalized = normalizePath(path);
+		const file = this.app.vault.getAbstractFileByPath(normalized);
+		return file instanceof TFile ? file : null;
+	}
+
+	private getFolder(path: string): TFolder | null {
+		const normalized = normalizePath(path);
+		if (normalized === '') { return this.app.vault.getRoot(); } // Special case for root folder
+		const file = this.app.vault.getAbstractFileByPath(normalized);
+		return file instanceof TFolder ? file : null;
+	}
+
+	private isSubPath(parent: string, child: string): boolean {
+		const normParent = normalizePath(parent);
+		const normChild = normalizePath(child);
+		if (normParent === '') { return true; } // root is parent of everything
+		if (normChild === normParent) { return true; }
+		return normChild.startsWith(normParent + '/');
+	}
+
+	private joinPath(...parts: string[]): string {
+		return normalizePath(parts.join('/'));
 	}
 
 	private getMarkdownFilesRecursively(folder: TFolder): TFile[] {
@@ -427,6 +574,16 @@ export default class Z2KPlugin extends Plugin {
 
 		return files;
 	}
+}
+
+function normalizePath(path: string): string {
+	return path
+		.trim()
+		.replace(/\\/g, '/')       // Normalize backslashes
+		.replace(/\/{2,}/g, '/')   // Collapse multiple slashes
+		.replace(/^\.\//, '')      // Remove leading "./"
+		.replace(/^\/+/, '')       // Remove leading slashes
+		.replace(/\/+$/, '');      // Remove trailing slashes
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -488,9 +645,10 @@ export class CardTypeSelectionModal extends Modal {
 	}
 
 	onOpen() {
+		this.modalEl.addClass('z2k', 'card-type-selection-modal');
 		this.titleEl.setText('Select Card Type');
 		this.contentEl.empty();
-		this.contentEl.addClass('modal-content', 'card-type-selection-modal');
+		this.contentEl.addClass('modal-content');
 		this.root = createRoot(this.contentEl);
 		this.root.render(
 			<CardTypeSelector
@@ -568,6 +726,24 @@ const CardTypeSelector = ({ cardTypes, settings, onConfirm, onCancel }: CardType
 		}
 	};
 
+	function getPrettyPath(path: string): string {
+		let normPath = normalizePath(path);
+		if (settings.useExternalTemplates) {
+			let etf = normalizePath(settings.externalTemplatesFolder);
+			if (normPath === etf) { return "/"; }
+			if (normPath.startsWith(etf + "/")) {
+				return "/" + normPath.substring(etf.length + 1);
+			}
+		} else {
+			let z2kRoot = normalizePath(settings.z2kRootFolder);
+			if (normPath === z2kRoot) { return "/"; }
+			if (normPath.startsWith(z2kRoot + "/")) {
+				return "/" + normPath.substring(z2kRoot.length + 1);
+			}
+		}
+		return normPath;
+	}
+
 	return (
 		<div
 			className="selection-content"
@@ -588,7 +764,7 @@ const CardTypeSelector = ({ cardTypes, settings, onConfirm, onCancel }: CardType
 							role="button"
 							aria-selected={selectedIndex === index}
 						>
-							<span className="selection-primary">{cardType.path}</span>
+							<span className="selection-primary">{getPrettyPath(cardType.path)}</span>
 							{/* <span className="selection-secondary">{cardType.}</span> */}
 						</div>
 					))
@@ -621,9 +797,10 @@ export class TemplateSelectionModal extends Modal {
 	}
 
 	onOpen() {
+		this.modalEl.addClass('z2k', 'template-selection-modal');
 		this.titleEl.setText('Select Template');
 		this.contentEl.empty();
-		this.contentEl.addClass('modal-content', 'template-selection-modal');
+		this.contentEl.addClass('modal-content');
 		this.root = createRoot(this.contentEl);
 		this.root.render(
 			<TemplateSelector
@@ -771,6 +948,10 @@ const TemplateSelector = ({ templates, onConfirm, onCancel }: TemplateSelectorPr
 };
 
 
+
+// TODO: Save the state of the modal to prevent large data loss on accidental close
+// I tried a long time to block the closing upong clicking outside the modal but was not able to do so.
+
 // ------------------------------------------------------------------------------------------------
 // Field Collection Modal
 // ------------------------------------------------------------------------------------------------
@@ -794,9 +975,10 @@ export class FieldCollectionModal extends Modal {
 	}
 
 	onOpen() {
+		this.modalEl.addClass('z2k', 'field-collection-modal');
 		this.titleEl.setText(this.title);
 		this.contentEl.empty();
-		this.contentEl.addClass('modal-content', 'field-collection-modal');
+		this.contentEl.addClass('modal-content');
 		this.root = createRoot(this.contentEl);
 		this.root.render(
 			<FieldCollectionForm
@@ -969,6 +1151,22 @@ const FieldCollectionForm = ({ varInfoMap, onComplete, onCancel }: FieldCollecti
 			} else if (value === '' && varInfo.directives.includes('required')) {
 				hasError = true;
 				errorMessage = 'This field is required';
+			}
+			if (fieldName === "title") {
+				const val = (value as string).trim();
+				if (!val) {
+					hasError = true;
+					errorMessage = 'Title cannot be empty';
+				} else if (/^[.]+$/.test(val)) {
+					hasError = true;
+					errorMessage = 'Title cannot be just dots';
+				} else if (/[<>:"/\\|?*\u0000-\u001F]/.test(val)) {
+					hasError = true;
+					errorMessage = 'Title contains invalid characters (\\ / : * ? " < > |)';
+				} else if (/[. ]+$/.test(val)) {
+					hasError = true;
+					errorMessage = 'Title cannot end with a space or dot';
+				}
 			}
 			newFieldStates[fieldName].hasError = hasError;
 			newFieldStates[fieldName].errorMessage = errorMessage;
@@ -1378,9 +1576,10 @@ export class DeleteConfirmationModal extends Modal {
 	}
 
 	onOpen() {
+		this.modalEl.addClass('z2k', 'delete-confirmation-modal');
 		this.titleEl.setText('Delete Original File?');
 		this.contentEl.empty();
-		this.contentEl.addClass('modal-content', 'delete-confirmation-modal');
+		this.contentEl.addClass('modal-content');
 		this.root = createRoot(this.contentEl);
 		this.root.render(
 			<>
@@ -1429,9 +1628,10 @@ export class ErrorModal extends Modal {
 	}
 
 	onOpen() {
+		this.modalEl.addClass('z2k', 'error-modal');
 		this.titleEl.setText('Error');
 		this.contentEl.empty();
-		this.contentEl.addClass('modal-content', 'error-modal');
+		this.contentEl.addClass('modal-content');
 		this.root = createRoot(this.contentEl);
 		this.root.render(
 			<>
@@ -1439,6 +1639,18 @@ export class ErrorModal extends Modal {
 				{this.error instanceof TemplateError && (
 					<p className="error-modal-description">{this.error.description}</p>
 				)}
+				<button
+					className="btn btn-secondary"
+					onClick={() => {
+						const text = this.error.stack ?? this.error.message;
+						navigator.clipboard.writeText(text).then(() => {
+							new Notice("Copied!", 2000);
+						});
+					}}
+					style={{ alignSelf: 'flex-end' }}
+				>
+					Copy Error
+				</button>
 			</>
 		);
 	}

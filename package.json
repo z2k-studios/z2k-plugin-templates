@@ -1,7 +1,7 @@
 {
-	"name": "z2k-plugin-new-card",
+	"name": "z2k-plugin-templates",
 	"version": "1.0.0",
-	"description": "Provides new card actions using templates",
+	"description": "Provides template functionality for Z2K and more, allowing you to create new cards and perform other actions using templates and blocks.",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
