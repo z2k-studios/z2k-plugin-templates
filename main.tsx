@@ -1,17 +1,19 @@
 
 // TODO: Add error handling for errors within react components by using React Error Boundaries
 
-import { App, Plugin, Modal, Notice, TFolder, TFile, PluginSettingTab, Setting } from 'obsidian';
-import { Z2KTemplateEngine, TemplateState, VarInfo, PromptTextSegment, TemplateError } from 'z2k-template-engine';
+import { App, Plugin, Modal, Notice, TFolder, TFile, PluginSettingTab, Setting, MarkdownView, EditorPosition } from 'obsidian';
+import { Z2KTemplateEngine, TemplateState, BuiltInVar, SegmentList, VarInfo, VarValueType, ReducedSetSegment, TemplateError } from 'z2k-template-engine';
 import React, { useState, useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
+import moment from 'moment';   // npm i moment
 
 interface Z2KPluginSettings {
 	z2kRootFolder: string;
 	useExternalTemplates: boolean;
 	embeddedTemplatesFolderName: string;
 	externalTemplatesFolder: string;
-	blockPrefixFilter: string;
+	partialPrefixFilter: string;
+	creator: string;
 }
 
 const DEFAULT_SETTINGS: Z2KPluginSettings = {
@@ -19,7 +21,8 @@ const DEFAULT_SETTINGS: Z2KPluginSettings = {
 	useExternalTemplates: false,
 	embeddedTemplatesFolderName: 'Templates',
 	externalTemplatesFolder: '/Templates-External',
-	blockPrefixFilter: 'Block - ',
+	partialPrefixFilter: 'Partial - ',
+	creator: '',
 };
 
 class Z2KSettingTab extends PluginSettingTab {
@@ -118,8 +121,8 @@ class Z2KSettingTab extends PluginSettingTab {
 			.setDesc('Filename prefix to mark the template as a block-template')
 			.addText(text => {
 				const input = text
-					.setPlaceholder(DEFAULT_SETTINGS.blockPrefixFilter)
-					.setValue(this.plugin.settings.blockPrefixFilter)
+					.setPlaceholder(DEFAULT_SETTINGS.partialPrefixFilter)
+					.setValue(this.plugin.settings.partialPrefixFilter)
 					.inputEl;
 
 				this.validateTextInput(input,
@@ -129,7 +132,27 @@ class Z2KSettingTab extends PluginSettingTab {
 						return null;
 					},
 					async (validValue) => {
-						this.plugin.settings.blockPrefixFilter = validValue;
+						this.plugin.settings.partialPrefixFilter = validValue;
+						await this.plugin.saveData(this.plugin.settings);
+					});
+			});
+
+		new Setting(containerEl)
+			.setName('Creator name')
+			.setDesc('Name to put in YAML when creating new cards (disabled if empty)')
+			.addText(text => {
+				const input = text
+					.setPlaceholder(DEFAULT_SETTINGS.creator)
+					.setValue(this.plugin.settings.creator)
+					.inputEl;
+
+				this.validateTextInput(input,
+					(value) => {
+						if (value.length > 100) { return "Creator name is too long"; }
+						return null;
+					},
+					async (validValue) => {
+						this.plugin.settings.creator = validValue;
 						await this.plugin.saveData(this.plugin.settings);
 					});
 			});
@@ -186,7 +209,7 @@ export default class Z2KPlugin extends Plugin {
 
 	async onload() {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
-		this.templateEngine = new Z2KTemplateEngine(true);
+		this.templateEngine = new Z2KTemplateEngine();
 		this.registerCommands();
 		this.addSettingTab(new Z2KSettingTab(this.app, this));
 	}
@@ -279,6 +302,32 @@ export default class Z2KPlugin extends Plugin {
 				});
 			})
 		);
+
+		// Command palette for inserting a partial
+		this.addCommand({
+			id: 'z2k-insert-partial-template',
+			name: 'Insert partial template',
+			editorCheckCallback: (checking, editor) => {
+				const file = this.app.workspace.getActiveFile();
+				if (checking) return !!editor && !!file && file.extension === 'md';
+				this.insertPartialTemplate();
+			}
+		});
+
+		// Context menu for inserting a partial template when text is selected
+		this.registerEvent(
+			this.app.workspace.on('editor-menu', (menu, editor) => {
+				const file = this.app.workspace.getActiveFile();
+				if (!file || file.extension !== 'md') return;
+				menu.addItem((item) => {
+					item.setTitle("Z2K: Insert partial template...")
+						.setIcon("plus-square") // Or whatever icon feels right
+						.onClick(() => {
+							this.insertPartialTemplate();
+						});
+				});
+			})
+		);
 	}
 
 	async createOrContinueCard(opts: { inputText?: string, inputFile?: TFile, continueFile?: TFile }) {
@@ -298,9 +347,10 @@ export default class Z2KPlugin extends Plugin {
 			let inputContent: string;
 			let cardType: TFolder | null = null;
 			let fieldCollectionModalTitle = "Field Collection for Card";
+			let templateName: any;
 			if (continueFile) {
 				// If continuing from an existing file, just read its content
-				fieldCollectionModalTitle = continueFile.basename;
+				fieldCollectionModalTitle = "Continue Filling Card:";
 				try {
 					inputContent = await this.app.vault.read(continueFile);
 				} catch (error) {
@@ -308,17 +358,18 @@ export default class Z2KPlugin extends Plugin {
 				}
 			} else {
 				// Prompt for card type (the folder containing the desired template)
-				const cardTypes = this.getTemplatesTypes();
+				const cardTypes = this.getTemplatesTypes(false);
 				cardType = await new Promise<TFolder>((resolve, reject) =>
 					new CardTypeSelectionModal(this.app, cardTypes, this.settings, resolve, reject).open()
 				);
 
 				// Get template using TemplateSelectionModal modal (the template file)
-				const templates = this.getTemplatesForType(cardType);
+				const templates = this.getTemplatesForType(cardType, false);
 				const template = await new Promise<TFile>((resolve, reject) => {
-					new TemplateSelectionModal(this.app, templates, resolve, reject).open();
+					new TemplateSelectionModal(this.app, templates, this.settings, resolve, reject).open();
 				});
 				fieldCollectionModalTitle = template.basename;
+				templateName = template.basename;
 
 				// Get template
 				try {
@@ -332,6 +383,102 @@ export default class Z2KPlugin extends Plugin {
 			let templateState: TemplateState;
 			try {
 				templateState = this.templateEngine.parseTemplate(inputContent);
+
+				// Add some extra built-ins
+				templateState.mergedVarInfoMap.set("creator", {
+					varName: "creator",
+					dataType: "text",
+					directives: ['no-prompt'],
+					resolvedValue: this.settings.creator || "",
+					valueSource: "built-in",
+				});
+				if (continueFile) {
+					// Only use the yaml from the file if continuing
+					templateName = templateState.parsedYaml["z2k_template_name"];
+				} else {
+					// Override the template name if specified in YAML
+					let templateNameYaml = templateState.parsedYaml["z2k_template_name"];
+					if (templateNameYaml instanceof SegmentList) {
+						if (templateNameYaml.items.length !== 1 || typeof templateNameYaml.items[0] !== 'string') {
+							new Notice("Sorry, variables in the template name are not supported");
+						} else {
+							templateName = templateNameYaml.items[0] as string;
+						}
+					}
+				}
+				templateState.mergedVarInfoMap.set("templateName", {
+					varName: "templateName",
+					dataType: "text",
+					directives: ['no-prompt'],
+					resolvedValue: templateName as string || "",
+					valueSource: "built-in",
+				});
+
+				if (continueFile) {
+					let currTitle = continueFile.basename;
+					if (currTitle.endsWith('.md')) { currTitle = currTitle.slice(0, -3); }
+					let reducedSetSegments = this.templateEngine.parseReducedSetSegmentsText(currTitle);
+					let hasVars = false;
+					for (const seg of reducedSetSegments) {
+						if (seg.type !== 'text') { hasVars = true; break; }
+					}
+					if (hasVars) {
+						templateState.mergedVarInfoMap.set("title", {
+							varName: "title",
+							rawExpression: currTitle,
+							promptText: "Title",
+							parsedPromptText: this.templateEngine.parseReducedSetSegmentsText("Title"),
+							dataType: "titleText",
+							defaultValue: currTitle,
+							parsedDefaultValue: reducedSetSegments,
+							directives: ['required'],
+							valueSource: "user-input",
+						});
+					}
+				} else {
+					if (templateState.parsedYaml.hasOwnProperty("z2k_template_title")) {
+						// This will override any existing "title" variable
+						const segmentList = templateState.parsedYaml["z2k_template_title"];
+						if (!(segmentList instanceof SegmentList)) {
+							throw new TemplatePluginError("z2k_template_title yaml value must be a string");
+						}
+						const reducedSetSegments = this.templateEngine.parseReducedSetSegments(segmentList);
+						templateState.mergedVarInfoMap.set("title", {
+							varName: "title",
+							promptText: "Title",
+							parsedPromptText: this.templateEngine.parseReducedSetSegmentsText("Title"),
+							dataType: "titleText",
+							parsedDefaultValue: reducedSetSegments,
+							directives: ['required'],
+							valueSource: "yaml",
+						});
+					} else if (!templateState.mergedVarInfoMap.has("title")) {
+						templateState.mergedVarInfoMap.set("title", {
+							varName: "title",
+							promptText: "Title",
+							parsedPromptText: this.templateEngine.parseReducedSetSegmentsText("Title"),
+							dataType: "titleText",
+							parsedDefaultValue: this.templateEngine.parseReducedSetSegmentsText("Untitled"),
+							directives: ['required'],
+							valueSource: "built-in",
+						});
+					}
+				}
+
+				// Ensure title variable is properly configured
+				const titleVarInfo = templateState.mergedVarInfoMap.get("title") as VarInfo;
+				if (titleVarInfo) {
+					titleVarInfo.dataType = "titleText";
+					if (!titleVarInfo.promptText) {
+						titleVarInfo.promptText = "Title";
+					}
+					if (!titleVarInfo.parsedPromptText) {
+						titleVarInfo.parsedPromptText = this.templateEngine.parseReducedSetSegmentsText("Title");
+					}
+					if (!titleVarInfo.directives.includes("required")) {
+						titleVarInfo.directives.push("required");
+					}
+				}
 			} catch (error) {
 				rethrowWithMessage(error, "Error occurred while parsing the template");
 			}
@@ -340,13 +487,6 @@ export default class Z2KPlugin extends Plugin {
 			// 	this.templateEngine.resolveVarsFromJSON(templateState, jsonData);
 			// }
 			// console.log("After parse:", JSON.stringify(templateState, null, 2));
-
-			// Resolve built-in variables
-			try {
-				this.templateEngine.resolveBuiltInVars(templateState);
-			} catch (error) {
-				rethrowWithMessage(error, "Error occurred while resolving built-in variables");
-			}
 
 			// Prompt user for missing variables if needed
 			if (templateState.mergedVarInfoMap.size > 0) {
@@ -361,22 +501,38 @@ export default class Z2KPlugin extends Plugin {
 			// console.log("After resolveMissText:", templateState);
 
 			// Render the template
-			let title: string, content: string;
+			let title: string | undefined, content: string;
 			try {
 				({ title, content } = this.templateEngine.renderTemplate(templateState));
-				if (inputText) {
-					// Append existing text if provided
-					content = `${content}\n\n---\n\n${inputText}`;
-				}
+				if (inputText) { content = `${content}\n\n---\n\n${inputText}`; }   // Append existing text if provided
 			} catch (error) {
 				rethrowWithMessage(error, "Error occurred while rendering the template");
 			}
 
+			const filename = title
+				?.replace(/[<>:"/\\|?*\u0000-\u001F]/g, '_') // Illegal in Windows + control chars
+				.replace(/^\.+$/, '_')                      // Avoid names like "." or ".."
+				.replace(/[. ]+$/, '')                      // No trailing dots or spaces
+				.replace(/^ +/, '')                         // No leading spaces
+				|| 'Untitled';                              // Fallback if empty
+
 			if (continueFile) {
 				// If continuing an existing file, update its content
 				try {
-					await this.app.vault.modify(continueFile, content);
-					await this.app.workspace.openLinkText(continueFile.path, continueFile.path);
+					if (continueFile.basename !== filename) {
+						// Write the new contents at the new path
+						let newCardPath = this.joinPath(continueFile.parent?.path as string, filename + '.md');
+						let counter = 1;
+						while (this.getFile(newCardPath)) {
+							newCardPath = this.joinPath(continueFile.parent?.path as string, `${filename} (${counter++}).md`);
+						}
+						await this.app.vault.create(newCardPath, content); // Create the new file
+						await this.app.vault.delete(continueFile); // Delete the old file
+						await this.app.workspace.openLinkText(newCardPath, ""); // Open the new file
+					} else {
+						await this.app.vault.modify(continueFile, content); // Just modify the existing file
+						await this.app.workspace.openLinkText(continueFile.path, ""); // Open the file if not already open
+					}
 				} catch (error) {
 					rethrowWithMessage(error, "Error occurred while updating the existing file");
 				}
@@ -389,7 +545,7 @@ export default class Z2KPlugin extends Plugin {
 					if (this.settings.useExternalTemplates) {
 						const base = normalizePath(this.settings.externalTemplatesFolder);
 						if (!this.isSubPath(base, finalFolderPath)) {
-							throw new NewCardPluginError(`Card type folder must be inside external templates folder`);
+							throw new TemplatePluginError(`Card type folder must be inside external templates folder`);
 						}
 						finalFolderPath = finalFolderPath === base ? this.settings.z2kRootFolder : this.joinPath(this.settings.z2kRootFolder, finalFolderPath.slice(base.length + 1));
 					}
@@ -404,13 +560,6 @@ export default class Z2KPlugin extends Plugin {
 						}
 					}
 
-					const filename = title
-						.replace(/[<>:"/\\|?*\u0000-\u001F]/g, '_') // Illegal in Windows + control chars
-						.replace(/^\.+$/, '_')                      // Avoid names like "." or ".."
-						.replace(/[. ]+$/, '')                      // No trailing dots or spaces
-						.replace(/^ +/, '')                         // No leading spaces
-						|| 'Untitled';                              // Fallback if empty
-
 					// Create the new card path (and avoid overwriting existing files)
 					newCardPath = this.joinPath(finalFolderPath, filename + ".md");
 					let counter = 1;
@@ -424,7 +573,7 @@ export default class Z2KPlugin extends Plugin {
 
 				// Open the new file
 				try {
-					this.app.workspace.openLinkText(newCardPath, newCardPath);
+					this.app.workspace.openLinkText(newCardPath, "");
 				} catch (error) {
 					rethrowWithMessage(error, "Error opening new file");
 				}
@@ -445,33 +594,156 @@ export default class Z2KPlugin extends Plugin {
 			}
 
 		} catch (error: unknown) {
-			// Display error messages to the user
-			if (error instanceof NewCardPluginError) {
-				console.error("NewCardPluginError: ", error.message);
-				new ErrorModal(this.app, error).open();
-			} else if (error instanceof UserCancelError) {
-				// Just exit, no need to show a message
-				// console.log("User cancelled the operation.");
-			} else if (error instanceof TemplateError) {
-				console.error("Template error: ", error.message);
-				new ErrorModal(this.app, error).open();
-			} else {
-				console.error("Unexpected error: ", error);
-				new ErrorModal(this.app, new NewCardPluginError("An unexpected error occurred", error)).open();
-			}
+			this.handleErrors(error);
 		}
 	}
 
-	private getTemplatesTypes(): TFolder[] {
-		const folders: TFolder[] = [];
+	async insertPartialTemplate() {
+		const editor = this.app.workspace.getActiveViewOfType(MarkdownView)?.editor;
+		const file = this.app.workspace.getActiveFile();
+		if (!editor || !file || file.extension !== 'md') { return; }
 
+		try {
+			// First parse the file content
+			let fileContent: string;
+			try {
+				fileContent = await this.app.vault.read(file);
+			} catch (error) {
+				rethrowWithMessage(error, "Error occurred while reading the current file");
+			}
+			const currentState = this.templateEngine.parseTemplate(fileContent);
+
+			// Get valid partial template types
+			const cardTypes = this.getTemplatesTypes(true);
+			const cardType = await new Promise<TFolder>((resolve, reject) =>
+				new CardTypeSelectionModal(this.app, cardTypes, this.settings, resolve, reject).open());
+
+			// Get templates in that type
+			const templates = this.getTemplatesForType(cardType, true);
+			if (templates.length === 0) throw new Error("No partial templates found in selected folder");
+
+			// Let user pick one
+			const template = await new Promise<TFile>((resolve, reject) =>
+				new TemplateSelectionModal(this.app, templates, this.settings, resolve, reject).open());
+
+			// Read and ask for fields
+			const inputContent = await this.app.vault.read(template);
+			const partialState = this.templateEngine.parseTemplate(inputContent);
+			if (partialState.mergedVarInfoMap.size > 0) {
+				await new Promise<void>((resolve, reject) =>
+					new FieldCollectionModal(this.app, template.basename, partialState.mergedVarInfoMap, resolve, reject).open());
+			}
+
+			{ // Merge, render, and update text
+				// 1. Render current YAML to get line count
+				const { yamlString: originalYaml } = this.templateEngine.renderTemplate(currentState);
+				const originalYamlLineCount = originalYaml.trim() === "" ? 0 : originalYaml.trim().split("\n").length + 2; // +2 for `---`
+
+				// 2. Merge YAML
+				Z2KTemplateEngine.deepMergeParsedYaml(currentState.parsedYaml, partialState.parsedYaml);
+
+				// 3. Re-render after merge
+				const { yamlString: mergedYaml, bodyString: mainBody } = this.templateEngine.renderTemplate(currentState);
+				let { bodyString: partialBody } = this.templateEngine.renderTemplate(partialState);
+
+				// 4. Append inputText to partialBody
+				// TODO: Make this actually bind the inputText to a builtin {{input}} variable that they can put in the template
+				let inputText = editor.getSelection();
+				if (inputText) {
+					partialBody += `\n${inputText}`;
+				}
+
+				// 5. Calculate YAML line delta
+				const mergedYamlLineCount = mergedYaml.trim() === "" ? 0 : mergedYaml.trim().split("\n").length + 2;
+				const yamlLineDelta = mergedYamlLineCount - originalYamlLineCount;
+
+				// 6. Replace selected range in mainBody by character offset
+				const origFrom = editor.getCursor("from");
+				const origTo = editor.getCursor("to");
+				const from: EditorPosition = {
+					line: origFrom.line - originalYamlLineCount, // Adjust for YAML offset
+					ch: origFrom.ch
+				};
+				const to: EditorPosition = {
+					line: origTo.line - originalYamlLineCount,
+					ch: origTo.ch
+				};
+				const mainLines = mainBody.split("\n");
+
+				const before = mainLines.slice(0, from.line);
+				const fromLinePrefix = mainLines[from.line]?.slice(0, from.ch) ?? "";
+				if (fromLinePrefix !== "") { before.push(fromLinePrefix); }
+
+				const after = mainLines.slice(to.line + 1);
+				if (to.line < mainLines.length && mainLines[to.line]) {
+					after.unshift(mainLines[to.line].slice(to.ch));
+				}
+
+				const updatedBody = [...before, ...partialBody.split("\n"), ...after].join("\n");
+
+				// 7. Assemble full content with YAML
+				let fullContent = "";
+				if (mergedYaml.trim() !== "") {
+					fullContent += `---\n${mergedYaml.trim()}\n---\n`;
+					if (!updatedBody.startsWith("\n")) { // Put an empty line after yaml for convention
+						fullContent += `\n`;
+					}
+				}
+				fullContent += updatedBody;
+
+				// 8. Replace full file
+				editor.setValue(fullContent);
+
+				// 9. Scroll to inserted partial
+				const scrollStart: EditorPosition = {
+					line: from.line + yamlLineDelta,
+					ch: from.ch
+				};
+				const scrollEnd: EditorPosition = {
+					line: scrollStart.line + partialBody.split("\n").length - 1,
+					ch: partialBody.split("\n").at(-1)?.length ?? 0
+				};
+
+				editor.scrollIntoView({ from: scrollStart, to: scrollEnd });
+				editor.setCursor(scrollEnd);
+			}
+		} catch (error: unknown) {
+			this.handleErrors(error);
+		}
+	}
+
+	private handleErrors(error: unknown) {
+		// Display error messages to the user
+		if (error instanceof TemplatePluginError) {
+			console.error("TemplatePluginError: ", error.message);
+			new ErrorModal(this.app, error).open();
+		} else if (error instanceof UserCancelError) {
+			// Just exit, no need to show a message
+			// console.log("User cancelled the operation.");
+		} else if (error instanceof TemplateError) {
+			console.error("Template error: ", error.message);
+			new ErrorModal(this.app, error).open();
+		} else {
+			console.error("Unexpected error: ", error);
+			new ErrorModal(this.app, new TemplatePluginError("An unexpected error occurred", error)).open();
+		}
+	}
+
+	private getTemplatesTypes(partials: boolean): TFolder[] {
+		const folders: TFolder[] = [];
+		const blockPrefix = this.settings.partialPrefixFilter;
 		const rootPath = normalizePath(this.settings.z2kRootFolder);
 		const root = rootPath
 			? this.app.vault.getAbstractFileByPath(rootPath)
 			: this.app.vault.getRoot();
 		if (!(root instanceof TFolder)) {
-			throw new NewCardPluginError(`Could not find Z2K root folder "${this.settings.z2kRootFolder}"`);
+			throw new TemplatePluginError(`Could not find Z2K root folder "${this.settings.z2kRootFolder}"`);
 		}
+
+		const folderHasMatchingTemplates = (folder: TFolder): boolean =>
+			folder.children.some(child =>
+				child instanceof TFile && (child.name.startsWith(blockPrefix) === partials)
+			);
 
 		if (this.settings.useExternalTemplates) {
 			const externalPath = normalizePath(this.settings.externalTemplatesFolder);
@@ -479,11 +751,11 @@ export default class Z2KPlugin extends Plugin {
 				? this.app.vault.getAbstractFileByPath(externalPath)
 				: this.app.vault.getRoot();
 			if (!(external instanceof TFolder)) {
-				throw new NewCardPluginError(`Could not find external templates folder "${this.settings.externalTemplatesFolder}"`);
+				throw new TemplatePluginError(`Could not find external templates folder "${this.settings.externalTemplatesFolder}"`);
 			}
 
 			const recurse = (folder: TFolder) => {
-				folders.push(folder);
+				if (folderHasMatchingTemplates(folder)) { folders.push(folder); }
 				for (const child of folder.children) {
 					if (child instanceof TFolder) { recurse(child); }
 				}
@@ -495,7 +767,10 @@ export default class Z2KPlugin extends Plugin {
 				for (const child of folder.children) {
 					if (!(child instanceof TFolder)) continue;
 					if (child.name === templateFolderName) {
-						folders.push(folder); // Parent of matching template folder
+						if (folderHasMatchingTemplates(child)) {
+							folders.push(folder); // Parent of matching template folder
+						}
+
 					} else {
 						recurse(child);
 					}
@@ -507,7 +782,7 @@ export default class Z2KPlugin extends Plugin {
 		return folders.sort((a, b) => a.path.localeCompare(b.path));
 	}
 
-	private getTemplatesForType(cardType: TFolder): TFile[] {
+	private getTemplatesForType(cardType: TFolder, partials: boolean): TFile[] {
 		const settings = this.settings;
 		const result: TFile[] = [];
 		let curr: TFolder | null = cardType;
@@ -526,7 +801,9 @@ export default class Z2KPlugin extends Plugin {
 
 			const templateFolder = this.getFolder(templateFolderPath);
 			if (templateFolder) {
-				result.push(...this.getMarkdownFilesRecursively(templateFolder));
+				const allTemplates = this.getMarkdownFilesRecursively(templateFolder);
+				const filtered = allTemplates.filter(f => f.name.startsWith(settings.partialPrefixFilter) === partials);
+				result.push(...filtered);
 			}
 
 			curr = curr.parent instanceof TFolder ? curr.parent : null;
@@ -597,7 +874,7 @@ class UserCancelError extends Error {
 	}
 }
 
-class NewCardPluginError extends Error {
+class TemplatePluginError extends Error {
 	userMessage: string;
 	cause?: unknown;
 	constructor(userMessage: string, cause?: unknown) {
@@ -611,17 +888,17 @@ class NewCardPluginError extends Error {
 		} else {
 			super(userMessage);
 		}
-		this.name = "NewCardPluginError";
+		this.name = "TemplatePluginError";
 		this.userMessage = userMessage;
 		this.cause = cause;
 	}
 }
 
 function rethrowWithMessage(error: unknown, message: string): never {
-	if (error instanceof NewCardPluginError || error instanceof UserCancelError || error instanceof TemplateError) {
+	if (error instanceof TemplatePluginError || error instanceof UserCancelError || error instanceof TemplateError) {
 		throw error; // Don't modify the error
 	} else {
-		throw new NewCardPluginError(message, error);
+		throw new TemplatePluginError(message, error);
 	}
 }
 
@@ -785,13 +1062,15 @@ const CardTypeSelector = ({ cardTypes, settings, onConfirm, onCancel }: CardType
 // ------------------------------------------------------------------------------------------------
 export class TemplateSelectionModal extends Modal {
 	templates: TFile[];
+	settings: Z2KPluginSettings;
 	resolve: (template: TFile) => void;
 	reject: (error: Error) => void;
 	root: any; // For React root
 
-	constructor(app: App, templates: TFile[], resolve: (template: TFile) => void, reject: (error: Error) => void){
+	constructor(app: App, templates: TFile[], settings: Z2KPluginSettings, resolve: (template: TFile) => void, reject: (error: Error) => void){
 		super(app);
 		this.templates = templates;
+		this.settings = settings;
 		this.resolve = resolve;
 		this.reject = reject;
 	}
@@ -805,6 +1084,7 @@ export class TemplateSelectionModal extends Modal {
 		this.root.render(
 			<TemplateSelector
 				templates={this.templates}
+				settings={this.settings}
 				onConfirm={(template: TFile) => {
 					this.resolve(template);
 					this.close();
@@ -825,12 +1105,13 @@ export class TemplateSelectionModal extends Modal {
 
 interface TemplateSelectorProps {
 	templates: TFile[];
+	settings: Z2KPluginSettings;
 	onConfirm: (template: TFile) => void;
 	onCancel: () => void;
 }
 
 // React component for the modal content
-const TemplateSelector = ({ templates, onConfirm, onCancel }: TemplateSelectorProps) => {
+const TemplateSelector = ({ templates, settings, onConfirm, onCancel }: TemplateSelectorProps) => {
 	const [searchTerm, setSearchTerm] = useState<string>('');
 	const [filteredTemplates, setFilteredTemplates] = useState<TFile[]>(templates);
 	const [selectedTemplate, setSelectedTemplate] = useState<TFile | null>(null);
@@ -901,6 +1182,13 @@ const TemplateSelector = ({ templates, onConfirm, onCancel }: TemplateSelectorPr
 		onConfirm(template);
 	};
 
+	const displayName = (template: TFile): string => {
+		if (template.basename.startsWith(settings.partialPrefixFilter)) {
+			return template.basename.slice(settings.partialPrefixFilter.length);
+		}
+		return template.basename;
+	}
+
 	return (
 		<div className="selection-content" onKeyDown={handleKeyDown}>
 			<div className="search-container">
@@ -925,7 +1213,7 @@ const TemplateSelector = ({ templates, onConfirm, onCancel }: TemplateSelectorPr
 							onDoubleClick={() => handleTemplateDoubleClick(template)}
 							tabIndex={index + 2} // +2 because search is tabIndex 1
 						>
-							<span className="selection-primary">{template.basename}</span>
+							<span className="selection-primary">{displayName(template)}</span>
 							<span className="selection-secondary">{template.parent?.path || ''}</span>
 						</div>
 					))
@@ -1018,7 +1306,7 @@ const FieldCollectionForm = ({ varInfoMap, onComplete, onCancel }: FieldCollecti
 		// Initialize field states with metadata
 		for (const [fieldName, varInfo] of varInfoMap.entries()) {
 
-			function getJustFieldReferences(segments: PromptTextSegment[] | undefined): string[] {
+			function getJustFieldReferences(segments: ReducedSetSegment[] | undefined): string[] {
 				if (!segments) return [];
 				return segments
 					.filter(segment => segment.type === 'fieldReference')
@@ -1033,16 +1321,17 @@ const FieldCollectionForm = ({ varInfoMap, onComplete, onCancel }: FieldCollecti
 
 			// Set initial field state
 			initialFieldStates[fieldName] = {
-				value: varInfo.resolvedValue || varInfo.defaultValue || '',
-				omitFromForm: varInfo.resolvedValue !== undefined || varInfo.directives.includes('no-prompt'),
+				value: varInfo.resolvedValue ?? varInfo.defaultValue ?? '',
+				alreadyResolved: varInfo.resolvedValue !== undefined,
+				omitFromForm: varInfo.directives.includes('no-prompt'),
 				touched: false,
 				focused: false,
 				hasError: false,
 				dependencies: [...new Set(dependencies)],
 				dependentFields: [],
-				resolvedPromptText: varInfo.promptText || fieldName,
-				resolvedDefaultValue: varInfo.defaultValue || '',
-				resolvedMissText: varInfo.missText || ''
+				resolvedPromptText: varInfo.promptText ?? fieldName,
+				resolvedDefaultValue: varInfo.defaultValue ?? '',
+				resolvedMissText: varInfo.missText ?? ''
 			};
 		}
 
@@ -1083,11 +1372,26 @@ const FieldCollectionForm = ({ varInfoMap, onComplete, onCancel }: FieldCollecti
 		});
 		renderOrderFieldNames = [...requiredFields, ...optionalFields];
 
-		// Always put the title at the top
-		const titleIndex = renderOrderFieldNames.indexOf('title');
-		if (titleIndex > -1) {
-			renderOrderFieldNames.unshift(renderOrderFieldNames.splice(titleIndex, 1)[0]);
+		// But then put the fields that they depend on before them (recursively)
+		const finalRenderOrder: string[] = [];
+		const visited: Set<string> = new Set();
+		function visit(fieldName: string) {
+			if (visited.has(fieldName)) return;
+			visited.add(fieldName);
+			const fieldState = fieldStates[fieldName];
+			if (!fieldState || fieldState.omitFromForm) return;
+			for (const dependency of fieldState.dependencies) {
+				visit(dependency);
+			}
+			if (!finalRenderOrder.includes(fieldName)) {
+				finalRenderOrder.push(fieldName);
+			}
 		}
+		for (const fieldName of renderOrderFieldNames) {
+			visit(fieldName);
+		}
+		renderOrderFieldNames = finalRenderOrder;
+
 		return renderOrderFieldNames;
 	}
 
@@ -1106,17 +1410,24 @@ const FieldCollectionForm = ({ varInfoMap, onComplete, onCancel }: FieldCollecti
 	function updateFieldStates(newFieldStates: Record<string, FieldState>) {
 		for (const fieldName of dependencyOrderedFieldNames) { // dependencyOrderedFieldNames ensures dependencies are resolved first
 			const varInfo = varInfoMap.get(fieldName);
-			if (!varInfo) continue;
+			if (!varInfo) {continue;}
 
 			// Helper function to resolve text segments
-			const resolveSegments = (segments?: PromptTextSegment[]): string => {
-				if (!segments) return '';
+			const resolveSegments = (segments?: ReducedSetSegment[]): string => {
+				if (!segments) {return '';}
 				return segments.map(segment => {
-					if (segment.type === 'text') return segment.content;
+					if (segment.type === 'text') {return segment.content;}
 					// Replace field references with their current values
-					// 	(if the field doesn't exist, just return blank)
-					let currValue = newFieldStates[segment.content]?.value?.toString();
-					return currValue ? currValue : "{{" + segment.content + "}}";
+					let refValue = newFieldStates[segment.content]?.value;
+					if (refValue === undefined || refValue === null || refValue === "") {
+						return "{{" + segment.content + "}}";
+					}
+					let refDataType = varInfoMap.get(segment.content)?.dataType;
+					if (!refDataType) {
+						console.error(`Field ${segment.content} not found in varInfoMap`);
+						return "{{" + segment.content + "}}"; // Fallback to unresolved reference
+					}
+					return Z2KTemplateEngine.renderField(refValue, refDataType, segment.dateFormat);
 				}).join('');
 			};
 
@@ -1125,7 +1436,7 @@ const FieldCollectionForm = ({ varInfoMap, onComplete, onCancel }: FieldCollecti
 			newFieldStates[fieldName].resolvedDefaultValue = resolveSegments(varInfo.parsedDefaultValue);
 			newFieldStates[fieldName].resolvedMissText = resolveSegments(varInfo.parsedMissText);
 
-			if (!newFieldStates[fieldName].touched) {
+			if (!newFieldStates[fieldName].alreadyResolved && !newFieldStates[fieldName].touched) {
 				newFieldStates[fieldName].value = newFieldStates[fieldName].resolvedDefaultValue;
 			}
 		}
@@ -1217,13 +1528,8 @@ const FieldCollectionForm = ({ varInfoMap, onComplete, onCancel }: FieldCollecti
 		for (const fieldName of dependencyOrderedFieldNames) {
 			const varInfo = varInfoMap.get(fieldName);
 			if (!varInfo) { continue; }
-			if (fieldStates[fieldName].touched) {
-				let value = fieldStates[fieldName].value;
-				// Convert arrays to comma-separated strings for multiSelect
-				if (Array.isArray(value)) {
-					value = value.join(", ");
-				}
-				varInfo.resolvedValue = value;
+			if (fieldStates[fieldName].alreadyResolved || fieldStates[fieldName].touched || fieldName === 'title') {
+				varInfo.resolvedValue = fieldStates[fieldName].value;
 				varInfo.valueSource = 'user-input';
 			} else {
 				// Left untouched, use miss value if finalizing
@@ -1250,31 +1556,38 @@ const FieldCollectionForm = ({ varInfoMap, onComplete, onCancel }: FieldCollecti
 		}
 	}
 
+	function getFieldContainer(fieldName: string) {
+		const varInfo = varInfoMap.get(fieldName);
+		const fieldState = fieldStates[fieldName];
+
+		if (!varInfo || !fieldState) return null;
+
+		return (
+			<div key={fieldName} className={`field-container ${
+				fieldState.hasError ? 'has-error' : (fieldState.touched ? 'touched' : '')
+			}`}>
+				<FieldInput
+					name={fieldName}
+					label={fieldState.resolvedPromptText || fieldName}
+					varInfo={varInfo}
+					fieldState={fieldState}
+					onChange={(value) => handleFieldChange(fieldName, value)}
+					onFocus={() => handleFieldFocus(fieldName)}
+					onBlur={() => handleFieldBlur(fieldName)}
+				/>
+			</div>
+		);
+	}
+
 	return (
 		<form onSubmit={handleSubmit} className="field-collection-form">
+			<div className="field-title-container">
+				{getFieldContainer('title')}
+			</div>
 			<div className="field-list">
-				{renderOrderFieldNames.map(fieldName => {
-					const varInfo = varInfoMap.get(fieldName);
-					const fieldState = fieldStates[fieldName];
-
-					if (!varInfo || !fieldState) return null;
-
-					return (
-						<div key={fieldName} className={`field-container ${
-							fieldState.hasError ? 'has-error' : (fieldState.touched ? 'touched' : '')
-						}`}>
-							<FieldInput
-								name={fieldName}
-								label={fieldState.resolvedPromptText || fieldName}
-								varInfo={varInfo}
-								fieldState={fieldState}
-								onChange={(value) => handleFieldChange(fieldName, value)}
-								onFocus={() => handleFieldFocus(fieldName)}
-								onBlur={() => handleFieldBlur(fieldName)}
-							/>
-						</div>
-					);
-				})}
+				{renderOrderFieldNames
+					.filter(fieldName => fieldName !== 'title')
+					.map(fieldName => getFieldContainer(fieldName))}
 			</div>
 
 			<div className="form-actions">
@@ -1293,7 +1606,8 @@ interface FieldState {
 	// The current value of the field
 	// 	Should always be ready to be verified/submitted (except for miss text resolution, that can be applied upon being verified/submitted)
 	//    Should also always be what's shown in the field and be used for dependencies
-	value: undefined | string | number | string[];
+	value: VarValueType;
+	alreadyResolved?: boolean;
 	omitFromForm: boolean;
 	// Keeps track of whether the field has been interacted with
 	// 	(determines miss text behavior and default value behavior in the field itself)
@@ -1352,37 +1666,31 @@ function detectCircularDependencies(fieldStates: Record<string, FieldState>): st
 }
 
 function calculateFieldDependencyOrder(fieldStates: Record<string, FieldState>): string[] {
-	// order based on the dependency tree
-	// if a field has dependencies, it should come after its dependencies
-	// so go through each field and check its dependencies,
-	//   if its dependencies are below it in the list,
-	//   move it down until all dependencies are above it
-	// keep iterating until no more moves are needed
-	// return the ordered list of field names
 	const orderedFields: string[] = [...Object.keys(fieldStates)];
 
 	let madeChange = true;
 	while (madeChange) {
 		madeChange = false;
-		for (const fieldName of Object.keys(fieldStates)) {
+		for (const fieldName of [...orderedFields]) {
 			const fieldState = fieldStates[fieldName];
 			if (!fieldState) continue;
-
-			let insertIndex = orderedFields.length;
-			for (const dependency of fieldState.dependencies) {
-				const dependencyIndex = orderedFields.indexOf(dependency);
-				if (dependencyIndex !== -1 && dependencyIndex < insertIndex) {
-					insertIndex = dependencyIndex;
+			const fieldIndex = orderedFields.indexOf(fieldName);
+			let maxDepIndex = -1;
+			for (const dep of fieldState.dependencies) {
+				const depIndex = orderedFields.indexOf(dep);
+				if (depIndex > maxDepIndex) {
+					maxDepIndex = depIndex;
 				}
 			}
-			if (insertIndex < orderedFields.indexOf(fieldName)) {
-				// Move the field down to its correct position
-				orderedFields.splice(orderedFields.indexOf(fieldName), 1);
-				orderedFields.splice(insertIndex, 0, fieldName);
+			if (maxDepIndex >= 0 && fieldIndex < maxDepIndex) {
+				// Move field after its farthest dependency
+				orderedFields.splice(fieldIndex, 1);
+				orderedFields.splice(maxDepIndex, 0, fieldName);
 				madeChange = true;
 			}
 		}
 	}
+
 	return orderedFields;
 }
 
@@ -1448,8 +1756,8 @@ const FieldInput = ({ name, label, varInfo, fieldState, onChange, onFocus, onBlu
 						className={`number-input ${fieldState.hasError ? 'has-error' : ''}`}
 						value={fieldState.value?.toString() || ''}
 						onChange={(e) => {
-							const num = e.target.valueAsNumber;
-							onChange(isNaN(num) ? null : num);
+							const num = Number(e.target.value);
+							onChange(isNaN(num) ? undefined : num);
 						}}
 						placeholder={fieldState.resolvedDefaultValue}
 						{...commonProps}
@@ -1461,8 +1769,14 @@ const FieldInput = ({ name, label, varInfo, fieldState, onChange, onFocus, onBlu
 					<input
 						type="date"
 						className={`date-input ${fieldState.hasError ? 'has-error' : ''}`}
-						value={fieldState.value?.toString() || ''}
-						onChange={(e) => onChange(e.target.value)}
+						value={
+							moment.isMoment(fieldState.value) && fieldState.value.isValid()
+								? fieldState.value.format("YYYY-MM-DD") : ''
+						}
+						onChange={(e) => {
+							const m = moment(e.target.value, "YYYY-MM-DD", true);
+							onChange(m.isValid() ? m : undefined);
+						}}
 						{...commonProps}
 					/>
 				);
@@ -1477,7 +1791,7 @@ const FieldInput = ({ name, label, varInfo, fieldState, onChange, onFocus, onBlu
 							onChange={(e) => onChange(e.target.checked)}
 							{...commonProps}
 						/>
-						<label htmlFor={inputId} className="checkbox-label" title={generateTitle()}>{label}</label>
+						<label htmlFor={inputId} className="checkbox-label" title={generateHoverText()}>{label}</label>
 					</div>
 				);
 
@@ -1500,10 +1814,7 @@ const FieldInput = ({ name, label, varInfo, fieldState, onChange, onFocus, onBlu
 
 			case 'multiSelect':
 				// For multiSelect, we need to handle an array of values
-				const selectedValues = Array.isArray(fieldState.value)
-					? fieldState.value
-					: fieldState.value ? [fieldState.value] : [];
-
+				const selectedValues = Array.isArray(fieldState.value) ? fieldState.value : [];
 				return (
 					<div className={`multi-select-container ${fieldState.hasError ? 'has-error' : ''}`}>
 						{varInfo.options?.map((option) => (
@@ -1514,8 +1825,8 @@ const FieldInput = ({ name, label, varInfo, fieldState, onChange, onFocus, onBlu
 									checked={selectedValues.includes(option)}
 									onChange={(e) => {
 										const newValues = e.target.checked
-											? [...selectedValues, option]
-											: selectedValues.filter(val => val !== option);
+											? [...selectedValues, option] // Add the option
+											: selectedValues.filter(val => val !== option); // Remove the option
 										onChange(newValues);
 									}}
 								/>
@@ -1527,13 +1838,13 @@ const FieldInput = ({ name, label, varInfo, fieldState, onChange, onFocus, onBlu
 		}
 	};
 
-	function generateTitle() {
-		const hasDependencies = fieldState.dependencies.length > 0;
-		const isDependedOn = fieldState.dependentFields.length > 0;
-		const nameText = `Field name: ${name}`;
-		const dependencyText = hasDependencies ? `Depends on: ${fieldState.dependencies.join(', ')}` : '';
-		const dependencyText2 = isDependedOn ? `Used by: ${fieldState.dependentFields.join(', ')}` : '';
-		return `${nameText}\n${dependencyText}\n${dependencyText2}`;
+	function generateHoverText() {
+		let finalText = "";
+		finalText += `Field name: ${name}`;
+		finalText += varInfo.directives.length > 0 ? `\nDirectives: ${varInfo.directives.join(', ')}` : '';
+		finalText += fieldState.dependencies.length > 0 ? `\nDepends on: ${fieldState.dependencies.join(', ')}` : '';
+		finalText += fieldState.dependentFields.length > 0 ? `\nUsed by: ${fieldState.dependentFields.join(', ')}` : '';
+		return finalText;
 	}
 
 	function renderMissTextPreview() {
@@ -1550,7 +1861,7 @@ const FieldInput = ({ name, label, varInfo, fieldState, onChange, onFocus, onBlu
 	return (
 		<div className="field-input">
 			{/* Don't show label twice for checkboxes */}
-			{varInfo.dataType !== 'boolean' && <label htmlFor={inputId} title={generateTitle()}>{label}</label>}
+			{varInfo.dataType !== 'boolean' && <label htmlFor={inputId} title={generateHoverText()}>{label}</label>}
 			{renderInput()}
 			{renderMissTextPreview()}
 			{fieldState.hasError && fieldState.errorMessage && (
