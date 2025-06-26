@@ -103,6 +103,11 @@
 	outline: none;
 }
 
+.z2k .search-highlight {
+	background-color: var(--interactive-accent);
+	color: var(--text-on-accent);
+}
+
 
 
 /*
@@ -211,8 +216,8 @@
 .z2k.field-collection-modal {
 	resize: both;
 	overflow: auto;
-	min-width: 400px;
-	min-height: 300px;
+	min-width: 300px;
+	min-height: 100px;
 	max-width: 1000px;
 	max-height: 80vh;
 }
@@ -413,6 +418,7 @@ textarea:focus {
 }
 
 .z2k .delete-confirmation-buttons {
+	padding: 12px 0 0 0;
 	display: flex;
 	justify-content: flex-end;
 	gap: 8px;

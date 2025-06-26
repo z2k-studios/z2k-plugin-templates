@@ -219,7 +219,7 @@ export default class Z2KPlugin extends Plugin {
 		// Command palette commands
 		this.addCommand({
 			id: 'z2k-create-new-card',
-			name: 'Create new card from template',
+			name: 'Create card from template',
 			callback: () => this.createOrContinueCard({}),
 		});
 
@@ -241,7 +241,6 @@ export default class Z2KPlugin extends Plugin {
 				if (selectedText.length === 0) return;
 				menu.addItem((item) => {
 					item.setTitle("Z2K: Create card from selection...")
-						.setIcon("document-plus")
 						.onClick(() => {
 							this.createOrContinueCard({inputText: selectedText});
 						});
@@ -261,22 +260,6 @@ export default class Z2KPlugin extends Plugin {
 			},
 		});
 
-		// Context menu version of 'convert file to card'
-		this.registerEvent(
-			this.app.workspace.on('file-menu', (menu, file) => {
-				// Only show option for markdown files
-				if (!(file instanceof TFile) || file.extension !== 'md') return;
-
-				menu.addItem((item) => {
-					item.setTitle("Z2K: Convert to card...")
-						.setIcon("document-plus")
-						.onClick(() => {
-							this.createOrContinueCard({inputFile: file});
-						});
-				});
-			})
-		);
-
 		// Command palette 'continue card creation' to continue creating a card from an existing file
 		this.addCommand({
 			id: 'z2k-continue-filling-card',
@@ -288,29 +271,47 @@ export default class Z2KPlugin extends Plugin {
 			},
 		});
 
-		// Context menu 'continue card creation' when a file is active
-		this.registerEvent(
-			this.app.workspace.on('file-menu', (menu, file) => {
-				if (!(file instanceof TFile) || file.extension !== 'md') return;
-
-				menu.addItem((item) => {
-					item.setTitle("Z2K: Continue filling card...")
-						.setIcon("document-plus")
-						.onClick(() => {
-							this.createOrContinueCard({ continueFile: file as TFile });
-						});
-				});
-			})
-		);
-
-		// Command palette for inserting a partial
+		// Command palette for inserting a partial when no text is selected
 		this.addCommand({
 			id: 'z2k-insert-partial-template',
 			name: 'Insert partial template',
 			editorCheckCallback: (checking, editor) => {
 				const file = this.app.workspace.getActiveFile();
-				if (checking) return !!editor && !!file && file.extension === 'md';
+				if (checking) {
+					// Only enable if there's an active markdown file and no text is selected
+					return !!file && file.extension === 'md' && editor.getSelection().length === 0;
+				}
 				this.insertPartialTemplate();
+			}
+		});
+
+		// Context menu for inserting a partial template when no text is selected
+		this.registerEvent(
+			this.app.workspace.on('editor-menu', (menu, editor) => {
+				const file = this.app.workspace.getActiveFile();
+				if (!(file instanceof TFile) || file.extension !== 'md') return;
+				const selectedText = editor.getSelection();
+				if (selectedText.length > 0) return;
+				menu.addItem((item) => {
+					item.setTitle("Z2K: Insert partial template...")
+						.onClick(() => {
+							this.insertPartialTemplate();
+						});
+				});
+			})
+		);
+
+		// Command palette for inserting a partial template when text is selected
+		this.addCommand({
+			id: 'z2k-insert-partial-template-from-selection',
+			name: 'Insert partial template using selected text',
+			editorCheckCallback: (checking, editor) => {
+				const file = this.app.workspace.getActiveFile();
+				if (checking) {
+					// Only enable if there's an active markdown file and text is selected
+					return !!file && file.extension === 'md' && editor.getSelection().length > 0;
+				}
+				this.insertPartialTemplate({inputText: editor.getSelection()});
 			}
 		});
 
@@ -318,12 +319,13 @@ export default class Z2KPlugin extends Plugin {
 		this.registerEvent(
 			this.app.workspace.on('editor-menu', (menu, editor) => {
 				const file = this.app.workspace.getActiveFile();
-				if (!file || file.extension !== 'md') return;
+				if (!(file instanceof TFile) || file.extension !== 'md') return;
+				const selectedText = editor.getSelection();
+				if (selectedText.length === 0) return;
 				menu.addItem((item) => {
-					item.setTitle("Z2K: Insert partial template...")
-						.setIcon("plus-square") // Or whatever icon feels right
+					item.setTitle("Z2K: Insert partial template using selection...")
 						.onClick(() => {
-							this.insertPartialTemplate();
+							this.insertPartialTemplate({inputText: selectedText});
 						});
 				});
 			})
@@ -332,7 +334,6 @@ export default class Z2KPlugin extends Plugin {
 
 	async createOrContinueCard(opts: { inputText?: string, inputFile?: TFile, continueFile?: TFile }) {
 		try {
-
 			let { inputText, inputFile, continueFile } = opts;
 
 			// Pull text from file if needed
@@ -381,10 +382,23 @@ export default class Z2KPlugin extends Plugin {
 
 			// Parse the template
 			let templateState: TemplateState;
+			let hadSourceTextField: boolean;
 			try {
 				templateState = this.templateEngine.parseTemplate(inputContent);
 
-				// Add some extra built-ins
+				// Add some extra built-ins:
+
+				// sourceText
+				hadSourceTextField = templateState.mergedVarInfoMap.has("sourceText");
+				templateState.mergedVarInfoMap.set("sourceText", {
+					varName: "sourceText",
+					dataType: "text",
+					directives: ['no-prompt'],
+					resolvedValue: inputText || "",
+					valueSource: "built-in",
+				});
+
+				// creator
 				templateState.mergedVarInfoMap.set("creator", {
 					varName: "creator",
 					dataType: "text",
@@ -392,6 +406,8 @@ export default class Z2KPlugin extends Plugin {
 					resolvedValue: this.settings.creator || "",
 					valueSource: "built-in",
 				});
+
+				// templateName
 				if (continueFile) {
 					// Only use the yaml from the file if continuing
 					templateName = templateState.parsedYaml["z2k_template_name"];
@@ -414,27 +430,23 @@ export default class Z2KPlugin extends Plugin {
 					valueSource: "built-in",
 				});
 
+				// title
+				// title is reduced set compatible
 				if (continueFile) {
 					let currTitle = continueFile.basename;
 					if (currTitle.endsWith('.md')) { currTitle = currTitle.slice(0, -3); }
-					let reducedSetSegments = this.templateEngine.parseReducedSetSegmentsText(currTitle);
-					let hasVars = false;
-					for (const seg of reducedSetSegments) {
-						if (seg.type !== 'text') { hasVars = true; break; }
-					}
-					if (hasVars) {
-						templateState.mergedVarInfoMap.set("title", {
-							varName: "title",
-							rawExpression: currTitle,
-							promptText: "Title",
-							parsedPromptText: this.templateEngine.parseReducedSetSegmentsText("Title"),
-							dataType: "titleText",
-							defaultValue: currTitle,
-							parsedDefaultValue: reducedSetSegments,
-							directives: ['required'],
-							valueSource: "user-input",
-						});
-					}
+					templateState.mergedVarInfoMap.set("title", {
+						varName: "title",
+						rawExpression: currTitle,
+						promptText: "Title",
+						parsedPromptText: Z2KTemplateEngine.parseReducedSetSegmentsText("Title"),
+						dataType: "titleText",
+						defaultValue: currTitle,
+						parsedDefaultValue: Z2KTemplateEngine.parseReducedSetSegmentsText(currTitle),
+						directives: ['required', 'no-prompt'],
+						resolvedValue: currTitle,
+						valueSource: "user-input",
+					});
 				} else {
 					if (templateState.parsedYaml.hasOwnProperty("z2k_template_title")) {
 						// This will override any existing "title" variable
@@ -442,11 +454,11 @@ export default class Z2KPlugin extends Plugin {
 						if (!(segmentList instanceof SegmentList)) {
 							throw new TemplatePluginError("z2k_template_title yaml value must be a string");
 						}
-						const reducedSetSegments = this.templateEngine.parseReducedSetSegments(segmentList);
+						const reducedSetSegments = Z2KTemplateEngine.parseReducedSetSegments(segmentList);
 						templateState.mergedVarInfoMap.set("title", {
 							varName: "title",
 							promptText: "Title",
-							parsedPromptText: this.templateEngine.parseReducedSetSegmentsText("Title"),
+							parsedPromptText: Z2KTemplateEngine.parseReducedSetSegmentsText("Title"),
 							dataType: "titleText",
 							parsedDefaultValue: reducedSetSegments,
 							directives: ['required'],
@@ -456,9 +468,9 @@ export default class Z2KPlugin extends Plugin {
 						templateState.mergedVarInfoMap.set("title", {
 							varName: "title",
 							promptText: "Title",
-							parsedPromptText: this.templateEngine.parseReducedSetSegmentsText("Title"),
+							parsedPromptText: Z2KTemplateEngine.parseReducedSetSegmentsText("Title"),
 							dataType: "titleText",
-							parsedDefaultValue: this.templateEngine.parseReducedSetSegmentsText("Untitled"),
+							parsedDefaultValue: Z2KTemplateEngine.parseReducedSetSegmentsText("Untitled"),
 							directives: ['required'],
 							valueSource: "built-in",
 						});
@@ -473,7 +485,7 @@ export default class Z2KPlugin extends Plugin {
 						titleVarInfo.promptText = "Title";
 					}
 					if (!titleVarInfo.parsedPromptText) {
-						titleVarInfo.parsedPromptText = this.templateEngine.parseReducedSetSegmentsText("Title");
+						titleVarInfo.parsedPromptText = Z2KTemplateEngine.parseReducedSetSegmentsText("Title");
 					}
 					if (!titleVarInfo.directives.includes("required")) {
 						titleVarInfo.directives.push("required");
@@ -489,10 +501,12 @@ export default class Z2KPlugin extends Plugin {
 			// console.log("After parse:", JSON.stringify(templateState, null, 2));
 
 			// Prompt user for missing variables if needed
-			if (templateState.mergedVarInfoMap.size > 0) {
+			if (this.hasFillableFields(templateState.mergedVarInfoMap)) {
 				await new Promise<void>((resolve, reject) => {
 					new FieldCollectionModal(this.app, fieldCollectionModalTitle, templateState.mergedVarInfoMap, resolve, reject).open();
 				});
+			} else {
+				new Notice("No fields to prompt for.");
 			}
 			// console.log("After prompt:", JSON.stringify(templateState, null, 2));
 
@@ -504,9 +518,13 @@ export default class Z2KPlugin extends Plugin {
 			let title: string | undefined, content: string;
 			try {
 				({ title, content } = this.templateEngine.renderTemplate(templateState));
-				if (inputText) { content = `${content}\n\n---\n\n${inputText}`; }   // Append existing text if provided
 			} catch (error) {
 				rethrowWithMessage(error, "Error occurred while rendering the template");
+			}
+
+			// check if the {{sourceText}} field is in the template, and if not, add it to the end of the template
+			if (hadSourceTextField && inputText) {
+				content += `\n\n${inputText}\n`;
 			}
 
 			const filename = title
@@ -598,7 +616,7 @@ export default class Z2KPlugin extends Plugin {
 		}
 	}
 
-	async insertPartialTemplate() {
+	async insertPartialTemplate(opts: { inputText?: string } = {}) {
 		const editor = this.app.workspace.getActiveViewOfType(MarkdownView)?.editor;
 		const file = this.app.workspace.getActiveFile();
 		if (!editor || !file || file.extension !== 'md') { return; }
@@ -627,9 +645,48 @@ export default class Z2KPlugin extends Plugin {
 				new TemplateSelectionModal(this.app, templates, this.settings, resolve, reject).open());
 
 			// Read and ask for fields
-			const inputContent = await this.app.vault.read(template);
-			const partialState = this.templateEngine.parseTemplate(inputContent);
-			if (partialState.mergedVarInfoMap.size > 0) {
+			const templateContent = await this.app.vault.read(template);
+			const partialState = this.templateEngine.parseTemplate(templateContent);
+
+			{ // Insert some built-in variables
+				// sourceText
+				partialState.mergedVarInfoMap.set("sourceText", {
+					varName: "sourceText",
+					dataType: "text",
+					directives: ['no-prompt'],
+					resolvedValue: opts.inputText || "",
+					valueSource: "built-in",
+				});
+
+				// creator
+				partialState.mergedVarInfoMap.set("creator", {
+					varName: "creator",
+					dataType: "text",
+					directives: ['no-prompt'],
+					resolvedValue: this.settings.creator || "",
+					valueSource: "built-in",
+				});
+
+				// templateName
+				partialState.mergedVarInfoMap.set("templateName", {
+					varName: "templateName",
+					dataType: "text",
+					directives: ['no-prompt'],
+					resolvedValue: template.basename,
+					valueSource: "built-in",
+				});
+
+				// title
+				partialState.mergedVarInfoMap.set("title", {
+					varName: "title",
+					dataType: "titleText",
+					directives: ['no-prompt'],
+					resolvedValue: file.basename,
+					valueSource: "built-in",
+				});
+			}
+
+			if (this.hasFillableFields(partialState.mergedVarInfoMap)) {
 				await new Promise<void>((resolve, reject) =>
 					new FieldCollectionModal(this.app, template.basename, partialState.mergedVarInfoMap, resolve, reject).open());
 			}
@@ -646,20 +703,16 @@ export default class Z2KPlugin extends Plugin {
 				const { yamlString: mergedYaml, bodyString: mainBody } = this.templateEngine.renderTemplate(currentState);
 				let { bodyString: partialBody } = this.templateEngine.renderTemplate(partialState);
 
-				// 4. Append inputText to partialBody
-				// TODO: Make this actually bind the inputText to a builtin {{input}} variable that they can put in the template
-				let inputText = editor.getSelection();
-				if (inputText) {
-					partialBody += `\n${inputText}`;
-				}
-
-				// 5. Calculate YAML line delta
+				// 4. Calculate YAML line delta
+				// All this stuff is to accomodate the change of position in the file because of YAML being inserted
 				const mergedYamlLineCount = mergedYaml.trim() === "" ? 0 : mergedYaml.trim().split("\n").length + 2;
+				console.log(`YAML line count: original=${originalYamlLineCount}, merged=${mergedYamlLineCount}`);
 				const yamlLineDelta = mergedYamlLineCount - originalYamlLineCount;
 
-				// 6. Replace selected range in mainBody by character offset
+				// 5. Replace selected range in mainBody by character offset
 				const origFrom = editor.getCursor("from");
 				const origTo = editor.getCursor("to");
+				console.log(`Original selection: from=${origFrom.line}:${origFrom.ch}, to=${origTo.line}:${origTo.ch}`);
 				const from: EditorPosition = {
 					line: origFrom.line - originalYamlLineCount, // Adjust for YAML offset
 					ch: origFrom.ch
@@ -681,7 +734,7 @@ export default class Z2KPlugin extends Plugin {
 
 				const updatedBody = [...before, ...partialBody.split("\n"), ...after].join("\n");
 
-				// 7. Assemble full content with YAML
+				// 6. Assemble full content with YAML
 				let fullContent = "";
 				if (mergedYaml.trim() !== "") {
 					fullContent += `---\n${mergedYaml.trim()}\n---\n`;
@@ -691,10 +744,10 @@ export default class Z2KPlugin extends Plugin {
 				}
 				fullContent += updatedBody;
 
-				// 8. Replace full file
+				// 7. Replace full file
 				editor.setValue(fullContent);
 
-				// 9. Scroll to inserted partial
+				// 8. Scroll to inserted partial
 				const scrollStart: EditorPosition = {
 					line: from.line + yamlLineDelta,
 					ch: from.ch
@@ -850,6 +903,13 @@ export default class Z2KPlugin extends Plugin {
 		});
 
 		return files;
+	}
+
+	private hasFillableFields(mergedVarInfoMap: Map<string, VarInfo>): boolean {
+		for (const varInfo of mergedVarInfoMap.values()) {
+			if (!varInfo.directives.includes("no-prompt")) { return true; }
+		}
+		return false;
 	}
 }
 
@@ -1122,7 +1182,7 @@ const TemplateSelector = ({ templates, settings, onConfirm, onCancel }: Template
 	// Filter templates when search term changes
 	useEffect(() => {
 		const filtered = templates.filter((template: TFile) => {
-			const nameMatch = template.basename.toLowerCase().includes(searchTerm.toLowerCase());
+			const nameMatch = displayName(template).toLowerCase().includes(searchTerm.toLowerCase());
 			const pathMatch = template.parent?.path.toLowerCase().includes(searchTerm.toLowerCase()) || false;
 			return nameMatch || pathMatch;
 		});
@@ -1189,6 +1249,34 @@ const TemplateSelector = ({ templates, settings, onConfirm, onCancel }: Template
 		return template.basename;
 	}
 
+	const highlightMatch = (text: string, search: string) => {
+		if (!search) return <>{text}</>;
+		const regex = new RegExp(search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'); // escape + global match
+		const parts = [];
+		let lastIndex = 0;
+		let match;
+
+		while ((match = regex.exec(text)) !== null) {
+			const start = match.index;
+			const end = regex.lastIndex;
+
+			if (start > lastIndex) {
+				parts.push(<span key={lastIndex}>{text.slice(lastIndex, start)}</span>);
+			}
+			parts.push(
+				<span key={start} className="search-highlight">
+					{text.slice(start, end)}
+				</span>
+			);
+			lastIndex = end;
+		}
+		if (lastIndex < text.length) {
+			parts.push(<span key={lastIndex}>{text.slice(lastIndex)}</span>);
+		}
+
+		return <>{parts}</>;
+	};
+
 	return (
 		<div className="selection-content" onKeyDown={handleKeyDown}>
 			<div className="search-container">
@@ -1213,8 +1301,14 @@ const TemplateSelector = ({ templates, settings, onConfirm, onCancel }: Template
 							onDoubleClick={() => handleTemplateDoubleClick(template)}
 							tabIndex={index + 2} // +2 because search is tabIndex 1
 						>
-							<span className="selection-primary">{displayName(template)}</span>
-							<span className="selection-secondary">{template.parent?.path || ''}</span>
+							{/* <span className="selection-primary">{displayName(template)}</span>
+							<span className="selection-secondary">{template.parent?.path || ''}</span> */}
+							<span className="selection-primary">
+								{highlightMatch(displayName(template), searchTerm)}
+							</span>
+							<span className="selection-secondary">
+								{highlightMatch(template.parent?.path || '', searchTerm)}
+							</span>
 						</div>
 					))
 				)}
@@ -1402,42 +1496,35 @@ const FieldCollectionForm = ({ varInfoMap, onComplete, onCancel }: FieldCollecti
 	// Update fields after the first render to distribute and apply dependencies
 	useEffect(() => {
 		let newFieldStates = {...fieldStates};
-		updateFieldStates(newFieldStates);
+		updateFieldStates(newFieldStates, true);
 		validateAllFields(newFieldStates);
 		setFieldStates(newFieldStates);
 	}, []);
 
-	function updateFieldStates(newFieldStates: Record<string, FieldState>) {
+	function updateFieldStates(newFieldStates: Record<string, FieldState>, reEvalValues: boolean = false) {
 		for (const fieldName of dependencyOrderedFieldNames) { // dependencyOrderedFieldNames ensures dependencies are resolved first
 			const varInfo = varInfoMap.get(fieldName);
 			if (!varInfo) {continue;}
 
-			// Helper function to resolve text segments
-			const resolveSegments = (segments?: ReducedSetSegment[]): string => {
-				if (!segments) {return '';}
-				return segments.map(segment => {
-					if (segment.type === 'text') {return segment.content;}
-					// Replace field references with their current values
-					let refValue = newFieldStates[segment.content]?.value;
-					if (refValue === undefined || refValue === null || refValue === "") {
-						return "{{" + segment.content + "}}";
-					}
-					let refDataType = varInfoMap.get(segment.content)?.dataType;
-					if (!refDataType) {
-						console.error(`Field ${segment.content} not found in varInfoMap`);
-						return "{{" + segment.content + "}}"; // Fallback to unresolved reference
-					}
-					return Z2KTemplateEngine.renderField(refValue, refDataType, segment.dateFormat);
-				}).join('');
+			let context = {
+				...Object.fromEntries(Object.entries(newFieldStates).map(
+					([name, state]) => [name, { value: state.value, dataType: varInfoMap.get(name)?.dataType ?? 'text'}])),
 			};
 
 			// Update all resolved text fields
-			newFieldStates[fieldName].resolvedPromptText = resolveSegments(varInfo.parsedPromptText);
-			newFieldStates[fieldName].resolvedDefaultValue = resolveSegments(varInfo.parsedDefaultValue);
-			newFieldStates[fieldName].resolvedMissText = resolveSegments(varInfo.parsedMissText);
+			newFieldStates[fieldName].resolvedPromptText = Z2KTemplateEngine.renderReducedSetText(varInfo.parsedPromptText, context);
+			newFieldStates[fieldName].resolvedDefaultValue = Z2KTemplateEngine.renderReducedSetText(varInfo.parsedDefaultValue, context);
+			newFieldStates[fieldName].resolvedMissText = Z2KTemplateEngine.renderReducedSetText(varInfo.parsedMissText, context);
 
 			if (!newFieldStates[fieldName].alreadyResolved && !newFieldStates[fieldName].touched) {
 				newFieldStates[fieldName].value = newFieldStates[fieldName].resolvedDefaultValue;
+			}
+			if (reEvalValues) {
+				// Go ahead and parse and render any values regardless. This
+				if (typeof(newFieldStates[fieldName].value) === 'string') {
+					let parsedValue = Z2KTemplateEngine.parseReducedSetSegmentsText(newFieldStates[fieldName].value as string);
+					newFieldStates[fieldName].value = Z2KTemplateEngine.renderReducedSetText(parsedValue, context);
+				}
 			}
 		}
 	}
@@ -1509,7 +1596,7 @@ const FieldCollectionForm = ({ varInfoMap, onComplete, onCancel }: FieldCollecti
 	function handleFieldBlur(fieldName: string) {
 		let newFieldStates = { ...fieldStates };
 		newFieldStates[fieldName].focused = false;
-		updateFieldStates(newFieldStates);
+		updateFieldStates(newFieldStates, true);
 		validateAllFields(newFieldStates);
 		setFieldStates(newFieldStates);
 	};
@@ -1581,9 +1668,9 @@ const FieldCollectionForm = ({ varInfoMap, onComplete, onCancel }: FieldCollecti
 
 	return (
 		<form onSubmit={handleSubmit} className="field-collection-form">
-			<div className="field-title-container">
-				{getFieldContainer('title')}
-			</div>
+			{varInfoMap.has('title') && fieldStates['title']?.omitFromForm !== true && (
+				<div className="field-title-container">{getFieldContainer('title')}</div>
+			)}
 			<div className="field-list">
 				{renderOrderFieldNames
 					.filter(fieldName => fieldName !== 'title')
