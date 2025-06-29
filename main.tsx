@@ -212,6 +212,114 @@ export default class Z2KPlugin extends Plugin {
 		this.templateEngine = new Z2KTemplateEngine();
 		this.registerCommands();
 		this.addSettingTab(new Z2KSettingTab(this.app, this));
+
+		// this.registerObsidianProtocolHandler("z2k-templates", async (params) => {
+		// 	try {
+		// 		const action = params.action;
+		// 		if (!action) throw new Error("Missing 'action' parameter");
+
+		// 		const templatePath = decodeURIComponent(params.templatepath || params.partialpath || "").trim();
+		// 		if (!templatePath) throw new Error("Missing 'templatepath' or 'partialpath'");
+
+		// 		// Resolve template file
+		// 		const templateFile = this.getFile(templatePath);
+		// 		if (!templateFile || templateFile.extension !== "md") {
+		// 			throw new Error(`Template not found: ${templatePath}`);
+		// 		}
+
+		// 		// Determine target folder and filename
+		// 		let rawPath = decodeURIComponent(params.filepath || "").trim();
+		// 		let finalPath = "";
+		// 		let timestampFilename = moment().format("YYYY-MM-DD_HH-mm-ss") + ".md";
+		// 		if (!rawPath) {
+		// 			// No filepath → root + timestamp
+		// 			finalPath = this.joinPath(this.settings.z2kRootFolder, timestampFilename);
+		// 		} else if (!rawPath.includes("/")) {
+		// 			// Filename only → resolve folder from template
+		// 			const folder = this.resolveTemplateParentFolder(templateFile);
+		// 			const filename = rawPath.endsWith(".md") ? rawPath : `${rawPath}.md`;
+		// 			finalPath = this.joinPath(folder, filename);
+
+		// 		} else {
+		// 			const endsWithSlash = rawPath.endsWith("/") || !rawPath.includes(".");
+		// 			if (endsWithSlash) {
+		// 				// Case 2: Folder path → use folder + timestamp
+		// 				const folder = rawPath.replace(/\/+$/, "");
+		// 				const filename = `${Date.now()}.md`;
+		// 				finalPath = this.joinPath(folder, filename);
+		// 			} else {
+		// 				// Case 4: Full path → use as-is, just ensure `.md`
+		// 				finalPath = rawPath.endsWith(".md") ? rawPath : `${rawPath}.md`;
+		// 			}
+		// 		}
+
+
+		// 		if (filepath && filepath.endsWith("/")) {
+		// 			folderPath = filepath.slice(0, -1);
+		// 		} else if (filepath.includes("/")) {
+		// 			folderPath = filepath.substring(0, filepath.lastIndexOf("/"));
+		// 		} else {
+		// 			folderPath = this.settings.z2kRootFolder;
+		// 		}
+
+		// 		// Filename fallback
+		// 		let fileName = filepath.substring(filepath.lastIndexOf("/") + 1) || `${Date.now()}`;
+		// 		if (!fileName.endsWith(".md")) fileName += ".md";
+		// 		finalPath = this.joinPath(folderPath, fileName);
+
+		// 		// Extract template fields (skip known ones)
+		// 		const known = new Set(["action", "vault", "templatepath", "partialpath", "filepath", "existingfilepath", "templateJSONdata", "destheader", "location"]);
+		// 		const templateVars: Record<string, string> = {};
+		// 		for (const key in params) {
+		// 			if (!known.has(key)) {
+		// 				templateVars[key] = decodeURIComponent(params[key]);
+		// 			}
+		// 		}
+
+		// 		// Optional: decode JSON fields
+		// 		let parsedJson = {};
+		// 		if (params.templateJSONdata) {
+		// 			try {
+		// 				parsedJson = JSON.parse(decodeURIComponent(params.templateJSONdata));
+		// 			} catch (e) {
+		// 				new Notice("Failed to parse templateJSONdata");
+		// 				return;
+		// 			}
+		// 		}
+
+		// 		if (action === "New") {
+		// 			await this.createOrContinueCard({
+		// 				inputFile: undefined,
+		// 				continueFile: undefined,
+		// 				// Inject preloaded content/vars if needed
+		// 				__uriInjected: {
+		// 					templateFile,
+		// 					filepath: finalPath,
+		// 					fieldOverrides: { ...parsedJson, ...templateVars },
+		// 				},
+		// 			});
+
+		// 		} else if (action === "InsertPartial") {
+		// 			await this.insertPartialTemplate({
+		// 				inputText: "",
+		// 				__uriInjected: {
+		// 					partialFile: templateFile,
+		// 					existingFilePath: filepath,
+		// 					destHeader: params.destheader,
+		// 					insertLocation: params.location || "top",
+		// 					fieldOverrides: { ...parsedJson, ...templateVars },
+		// 				},
+		// 			});
+
+		// 		} else {
+		// 			new Notice(`Unknown Z2K action: ${action}`);
+		// 		}
+
+		// 	} catch (e) {
+		// 		console.error("[Z2K URI handler error]", e);
+		// 		new Notice("Failed to process z2k-templates URI");
+		// 	}
+		// });
 	}
 	onunload() {}
 
@@ -393,7 +501,7 @@ export default class Z2KPlugin extends Plugin {
 				templateState.mergedVarInfoMap.set("sourceText", {
 					varName: "sourceText",
 					dataType: "text",
-					directives: ['no-prompt'],
+					directives: [],
 					resolvedValue: inputText || "",
 					valueSource: "built-in",
 				});
@@ -539,11 +647,7 @@ export default class Z2KPlugin extends Plugin {
 				try {
 					if (continueFile.basename !== filename) {
 						// Write the new contents at the new path
-						let newCardPath = this.joinPath(continueFile.parent?.path as string, filename + '.md');
-						let counter = 1;
-						while (this.getFile(newCardPath)) {
-							newCardPath = this.joinPath(continueFile.parent?.path as string, `${filename} (${counter++}).md`);
-						}
+						let newCardPath = this.generateUniqueFilePath(continueFile.parent?.path as string, filename)
 						await this.app.vault.create(newCardPath, content); // Create the new file
 						await this.app.vault.delete(continueFile); // Delete the old file
 						await this.app.workspace.openLinkText(newCardPath, ""); // Open the new file
@@ -558,32 +662,9 @@ export default class Z2KPlugin extends Plugin {
 				// Create the new card
 				let newCardPath: string;
 				try {
-					// Determine new card location
-					let finalFolderPath = normalizePath((cardType as TFolder).path);
-					if (this.settings.useExternalTemplates) {
-						const base = normalizePath(this.settings.externalTemplatesFolder);
-						if (!this.isSubPath(base, finalFolderPath)) {
-							throw new TemplatePluginError(`Card type folder must be inside external templates folder`);
-						}
-						finalFolderPath = finalFolderPath === base ? this.settings.z2kRootFolder : this.joinPath(this.settings.z2kRootFolder, finalFolderPath.slice(base.length + 1));
-					}
-
-					// Ensure folder exists
-					let folder = this.getFolder(finalFolderPath);
-					if (!folder) {
-						try {
-							await this.app.vault.createFolder(finalFolderPath);
-						} catch (err) {
-							rethrowWithMessage(err, `Error creating folder "${finalFolderPath}"`);
-						}
-					}
-
-					// Create the new card path (and avoid overwriting existing files)
-					newCardPath = this.joinPath(finalFolderPath, filename + ".md");
-					let counter = 1;
-					while (this.getFile(newCardPath)) {
-						newCardPath = this.joinPath(finalFolderPath, `${filename} (${counter++}).md`);
-					}
+					let finalFolderPath = this.getFolderBasedOnTemplate(cardType);
+					await this.ensureFolderExists(finalFolderPath);
+					newCardPath = this.generateUniqueFilePath(finalFolderPath, filename);
 					await this.app.vault.create(newCardPath, content);
 				} catch (error) {
 					rethrowWithMessage(error, "Error creating new file");
@@ -653,7 +734,7 @@ export default class Z2KPlugin extends Plugin {
 				partialState.mergedVarInfoMap.set("sourceText", {
 					varName: "sourceText",
 					dataType: "text",
-					directives: ['no-prompt'],
+					directives: [],
 					resolvedValue: opts.inputText || "",
 					valueSource: "built-in",
 				});
@@ -854,7 +935,7 @@ export default class Z2KPlugin extends Plugin {
 
 			const templateFolder = this.getFolder(templateFolderPath);
 			if (templateFolder) {
-				const allTemplates = this.getMarkdownFilesRecursively(templateFolder);
+				const allTemplates = this.getMarkdownFilesInFolder(templateFolder, true);
 				const filtered = allTemplates.filter(f => f.name.startsWith(settings.partialPrefixFilter) === partials);
 				result.push(...filtered);
 			}
@@ -865,19 +946,184 @@ export default class Z2KPlugin extends Plugin {
 		return result;
 	}
 
+	private async getAllPartials(relativeTo: TFile): Promise<Record<string, string>> {
+		let partialMap: Record<string, string> = {};
+
+		const addAllPartialsInFolder = async (folder: TFolder | undefined, recurse: boolean) => {
+			if (!folder) { return; }
+			for (const file of this.getMarkdownFilesInFolder(folder, recurse)) {
+				if (!file.name.startsWith(this.settings.partialPrefixFilter)) { continue; }
+				if (partialMap.hasOwnProperty(file.basename)) { continue; }
+				partialMap[file.basename] = await this.app.vault.read(file);
+			}
+		}
+		function getChildrenFoldersRecursivelyByDepth(folder: TFolder | null): TFolder[] {
+			let folders: TFolder[] = [];
+			if (!folder) { return folders; }
+			for (const child of folder.children) {
+				if (!(child instanceof TFolder)) { continue; }
+				folders.push(child);
+			}
+			for (const child of folder.children) {
+				if (!(child instanceof TFolder)) { continue; }
+				folders = folders.concat(getChildrenFoldersRecursivelyByDepth(child));
+			}
+			return folders;
+		}
+
+		if (!(relativeTo.parent instanceof TFolder)) {
+			console.error(`Relative file "${relativeTo.path}" has no parent folder`);
+			return partialMap;
+		}
+
+		if (this.settings.useExternalTemplates) {
+			let externalTemplatesFolder = this.getFolder(this.settings.externalTemplatesFolder);
+			if (!externalTemplatesFolder) {
+				console.error(`Could not find external templates folder "${this.settings.externalTemplatesFolder}"`);
+				return partialMap;
+			}
+			let currDir: TFolder | null = relativeTo.parent;
+			// self + ancestors
+			while (currDir) {
+				await addAllPartialsInFolder(currDir, false);
+				if (currDir === externalTemplatesFolder) { break; }
+				currDir = currDir.parent instanceof TFolder ? currDir.parent : null;
+			}
+			// descendants
+			for (const folder of getChildrenFoldersRecursivelyByDepth(relativeTo.parent)) {
+				await addAllPartialsInFolder(folder, false);
+			}
+			// all
+			await addAllPartialsInFolder(externalTemplatesFolder, true);
+		} else {
+			let currDir: TFolder | null = relativeTo.parent;
+			let embeddedTemplatesFolder;
+
+			{ // Within the Templates folder
+				// self + ancestors
+				while (currDir) {
+					await addAllPartialsInFolder(currDir, false);
+					if (currDir.name === this.settings.embeddedTemplatesFolderName) {
+						embeddedTemplatesFolder = currDir;
+						break;
+					}
+					currDir = currDir.parent instanceof TFolder ? currDir.parent : null;
+				}
+				// descendants
+				for (const folder of getChildrenFoldersRecursivelyByDepth(relativeTo.parent)) {
+					await addAllPartialsInFolder(folder, false);
+				}
+				// all
+				if (!embeddedTemplatesFolder) {
+					console.error(`Could not find embedded templates folder "${this.settings.embeddedTemplatesFolderName}"`);
+					return partialMap;
+				}
+				await addAllPartialsInFolder(embeddedTemplatesFolder, true);
+			}
+			{ // Within the Z2K root folder
+				function getAllTemplateFoldersRecursivelyByDepth(folder: TFolder | null): TFolder[] {
+					let folders: TFolder[] = [];
+					if (!folder) { return folders; }
+					for (const child of folder.children) {
+						if (!(child instanceof TFolder)) { continue; }
+						if (child.name !== this.settings.embeddedTemplatesFolderName) { continue; }
+						folders.push(child);
+						break;
+					}
+					for (const child of folder.children) {
+						if (!(child instanceof TFolder)) { continue; }
+						if (child.name === this.settings.embeddedTemplatesFolderName) { continue; }
+						folders = folders.concat(getAllTemplateFoldersRecursivelyByDepth(child));
+					}
+					return folders;
+				}
+
+				let z2kRootFolder = this.getFolder(this.settings.z2kRootFolder);
+				// self + ancestors
+				currDir = embeddedTemplatesFolder.parent;
+				while (currDir) {
+					if (currDir === z2kRootFolder) { break; }
+					for (const child of currDir.children) {
+						if (!(child instanceof TFolder)) { continue; }
+						if (child.name !== this.settings.embeddedTemplatesFolderName) { continue; }
+						await addAllPartialsInFolder(child, true);
+						break;
+					}
+					currDir = currDir.parent instanceof TFolder ? currDir.parent : null;
+				}
+				// descendants
+				for (const folder of getAllTemplateFoldersRecursivelyByDepth(embeddedTemplatesFolder.parent)) {
+					await addAllPartialsInFolder(folder, true);
+				}
+				// all
+				if (!z2kRootFolder) {
+					console.error(`Could not find Z2K root folder "${this.settings.z2kRootFolder}"`);
+					return partialMap;
+				}
+				for (const folder of getAllTemplateFoldersRecursivelyByDepth(z2kRootFolder)) {
+					await addAllPartialsInFolder(folder, true);
+				}
+			}
+		}
+		return partialMap;
+	}
+
+	private async ensureFolderExists(path: string): Promise<void> {
+		const folder = this.getFolder(path);
+		if (!folder) {
+			try {
+				await this.app.vault.createFolder(path);
+			} catch (err) {
+				rethrowWithMessage(err, `Error creating folder "${path}"`);
+			}
+		}
+	}
+
+	private generateUniqueFilePath(folderPath: string, baseName: string): string {
+		baseName = baseName.replace(/\.md$/, '');
+		let filename = baseName + '.md';
+		let fullPath = this.joinPath(folderPath, filename);
+		let counter = 1;
+		while (this.getFile(fullPath)) {
+			fullPath = this.joinPath(folderPath, `${baseName} (${counter++}).md`);
+		}
+		return fullPath;
+	}
+
+	// Resolve parent folder where a new card should go based on template location
+	private getFolderBasedOnTemplate(template: TFile | TFolder | null): string {
+		let templateFolder = template;
+		if (template instanceof TFile) { templateFolder = template.parent; }
+		if (!templateFolder) { return this.settings.z2kRootFolder; }
+
+		// If it's an embedded template, use its parent
+		if (!this.settings.useExternalTemplates && templateFolder.name === this.settings.embeddedTemplatesFolderName) {
+			templateFolder = templateFolder.parent ?? templateFolder; // fallback to itself if no parent
+		}
+
+		let finalFolderPath = normalizePath(templateFolder.path);
+		if (!this.settings.useExternalTemplates) { return finalFolderPath; }
+
+		const base = normalizePath(this.settings.externalTemplatesFolder);
+		if (!this.isSubPath(base, finalFolderPath)) { return finalFolderPath; }
+		finalFolderPath = finalFolderPath === base
+			? this.settings.z2kRootFolder
+			: this.joinPath(this.settings.z2kRootFolder, finalFolderPath.slice(base.length + 1));
+
+		return normalizePath(finalFolderPath);
+	}
+
 	private getFile(path: string): TFile | null {
 		const normalized = normalizePath(path);
 		const file = this.app.vault.getAbstractFileByPath(normalized);
 		return file instanceof TFile ? file : null;
 	}
-
 	private getFolder(path: string): TFolder | null {
 		const normalized = normalizePath(path);
 		if (normalized === '') { return this.app.vault.getRoot(); } // Special case for root folder
 		const file = this.app.vault.getAbstractFileByPath(normalized);
 		return file instanceof TFolder ? file : null;
 	}
-
 	private isSubPath(parent: string, child: string): boolean {
 		const normParent = normalizePath(parent);
 		const normChild = normalizePath(child);
@@ -885,20 +1131,18 @@ export default class Z2KPlugin extends Plugin {
 		if (normChild === normParent) { return true; }
 		return normChild.startsWith(normParent + '/');
 	}
-
 	private joinPath(...parts: string[]): string {
 		return normalizePath(parts.join('/'));
 	}
-
-	private getMarkdownFilesRecursively(folder: TFolder): TFile[] {
+	private getMarkdownFilesInFolder(folder: TFolder, recurse = false): TFile[] {
 		let files: TFile[] = [];
 
 		// Process all children
 		folder.children.forEach(child => {
 			if (child instanceof TFile && child.extension === 'md') {
 				files.push(child);
-			} else if (child instanceof TFolder) {
-				files = files.concat(this.getMarkdownFilesRecursively(child));
+			} else if (child instanceof TFolder && recurse) {
+				files = files.concat(this.getMarkdownFilesInFolder(child, true));
 			}
 		});
 
@@ -1601,6 +1845,15 @@ const FieldCollectionForm = ({ varInfoMap, onComplete, onCancel }: FieldCollecti
 		setFieldStates(newFieldStates);
 	};
 
+	function handleFieldReset(fieldName: string) {
+		let newFieldStates = { ...fieldStates };
+		newFieldStates[fieldName].touched = false;
+		newFieldStates[fieldName].value = newFieldStates[fieldName].resolvedDefaultValue;
+		updateFieldStates(newFieldStates, true);
+		validateAllFields(newFieldStates);
+		setFieldStates(newFieldStates);
+	}
+
 	function handleSubmit(e: React.FormEvent, finalize: boolean = false) {
 		e.preventDefault();
 
@@ -1661,6 +1914,7 @@ const FieldCollectionForm = ({ varInfoMap, onComplete, onCancel }: FieldCollecti
 					onChange={(value) => handleFieldChange(fieldName, value)}
 					onFocus={() => handleFieldFocus(fieldName)}
 					onBlur={() => handleFieldBlur(fieldName)}
+					onReset={() => handleFieldReset(fieldName)}
 				/>
 			</div>
 		);
@@ -1793,9 +2047,10 @@ interface FieldInputProps {
 	onChange: (value: any) => void;
 	onFocus: () => void;
 	onBlur: () => void;
+	onReset: () => void;
 }
 
-const FieldInput = ({ name, label, varInfo, fieldState, onChange, onFocus, onBlur }: FieldInputProps) => {
+const FieldInput = ({ name, label, varInfo, fieldState, onChange, onFocus, onBlur, onReset }: FieldInputProps) => {
 	// Generate a unique ID for the input element
 	const inputId = `field-${name}`;
 
@@ -1945,10 +2200,39 @@ const FieldInput = ({ name, label, varInfo, fieldState, onChange, onFocus, onBlu
 		return null;
 	};
 
+	// return (
+	// 	<div className="field-input">
+	// 		{/* Don't show label twice for checkboxes */}
+	// 		{varInfo.dataType !== 'boolean' && <label htmlFor={inputId} title={generateHoverText()}>{label}</label>}
+	// 		{renderInput()}
+	// 		{renderMissTextPreview()}
+	// 		{fieldState.hasError && fieldState.errorMessage && (
+	// 			<div className="error-message">{fieldState.errorMessage}</div>
+	// 		)}
+	// 	</div>
+	// );
 	return (
 		<div className="field-input">
-			{/* Don't show label twice for checkboxes */}
-			{varInfo.dataType !== 'boolean' && <label htmlFor={inputId} title={generateHoverText()}>{label}</label>}
+			{varInfo.dataType !== 'boolean' && (
+				<div className="label-wrapper">
+					<label htmlFor={inputId} title={generateHoverText()}>{label}</label>
+					<span className="reset-icon-wrapper">
+						<span
+							className="reset-icon"
+							title="Reset to default"
+							onMouseDown={(e) => { // use onMouseDown instead of onClick to prevent focus issues
+								e.preventDefault(); // Prevent icon from taking focus
+								onReset();
+								// Blur only if input already had focus
+								const inputEl = document.getElementById(inputId) as HTMLElement;
+								if (inputEl && inputEl === document.activeElement) { inputEl.blur(); }
+							}}
+							role="button"
+							tabIndex={-1}
+						>⟲</span>
+					</span>
+				</div>
+			)}
 			{renderInput()}
 			{renderMissTextPreview()}
 			{fieldState.hasError && fieldState.errorMessage && (
@@ -1956,6 +2240,7 @@ const FieldInput = ({ name, label, varInfo, fieldState, onChange, onFocus, onBlu
 			)}
 		</div>
 	);
+
 };
 
 
