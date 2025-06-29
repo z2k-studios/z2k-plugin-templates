@@ -6,6 +6,7 @@ import { Z2KTemplateEngine, TemplateState, BuiltInVar, SegmentList, VarInfo, Var
 import React, { useState, useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import moment from 'moment';   // npm i moment
+import { on } from 'events';
 
 interface Z2KPluginSettings {
 	z2kRootFolder: string;
@@ -486,6 +487,9 @@ export default class Z2KPlugin extends Plugin {
 				} catch (error) {
 					rethrowWithMessage(error, "Error occurred while reading the template");
 				}
+
+				// Add z2k system yaml
+				inputContent = await this.AddZ2KSystemYaml(inputContent, cardType);
 			}
 
 			// Parse the template
@@ -515,19 +519,15 @@ export default class Z2KPlugin extends Plugin {
 					valueSource: "built-in",
 				});
 
-				// templateName
-				if (continueFile) {
-					// Only use the yaml from the file if continuing
-					templateName = templateState.parsedYaml["z2k_template_name"];
-				} else {
-					// Override the template name if specified in YAML
-					let templateNameYaml = templateState.parsedYaml["z2k_template_name"];
-					if (templateNameYaml instanceof SegmentList) {
-						if (templateNameYaml.items.length !== 1 || typeof templateNameYaml.items[0] !== 'string') {
-							new Notice("Sorry, variables in the template name are not supported");
-						} else {
-							templateName = templateNameYaml.items[0] as string;
-						}
+				// templateName (not card title/name)
+				// sets templateName to be the template's file name,
+				// 	but overrides when a z2k_template_name yaml variable is present
+				let templateNameYaml = templateState.parsedYaml["z2k_template_name"];
+				if (templateNameYaml instanceof SegmentList) {
+					if (templateNameYaml.items.length !== 1 || typeof templateNameYaml.items[0] !== 'string') {
+						new Notice("Sorry, variables in the template name yaml are not supported right now");
+					} else {
+						templateName = templateNameYaml.items[0] as string;
 					}
 				}
 				templateState.mergedVarInfoMap.set("templateName", {
@@ -556,11 +556,11 @@ export default class Z2KPlugin extends Plugin {
 						valueSource: "user-input",
 					});
 				} else {
-					if (templateState.parsedYaml.hasOwnProperty("z2k_template_title")) {
+					if (templateState.parsedYaml.hasOwnProperty("z2k_template_default_title")) {
 						// This will override any existing "title" variable
-						const segmentList = templateState.parsedYaml["z2k_template_title"];
+						const segmentList = templateState.parsedYaml["z2k_template_default_title"];
 						if (!(segmentList instanceof SegmentList)) {
-							throw new TemplatePluginError("z2k_template_title yaml value must be a string");
+							throw new TemplatePluginError("z2k_template_default_title yaml value must be a string");
 						}
 						const reducedSetSegments = Z2KTemplateEngine.parseReducedSetSegments(segmentList);
 						templateState.mergedVarInfoMap.set("title", {
@@ -694,6 +694,32 @@ export default class Z2KPlugin extends Plugin {
 
 		} catch (error: unknown) {
 			this.handleErrors(error);
+		}
+	}
+	private async AddZ2KSystemYaml(inputContent: string, cardType: TFolder): Promise<string> {
+		// Get all the z2k system yaml files between here and the root
+		const z2kRoot = this.getFolder(this.settings.z2kRootFolder);
+		let currentFolder: TFolder | null = cardType;
+		let mergedYaml = "";
+		while (currentFolder) {
+			const filePath = this.joinPath(currentFolder.path, '.z2k-system.yaml');
+			try {
+				// Need to use adapter because the usual file read doesn't work for files that start with .
+				mergedYaml += await this.app.vault.adapter.read(filePath) + "\n";
+			} catch {
+				// Can't find/read the file
+			}
+			if (currentFolder === z2kRoot) break; // Stop at the Z2K root
+			currentFolder = currentFolder.parent;
+		}
+		if (!mergedYaml.trim()) { return inputContent; }
+
+		// Insert the YAML
+		if (!inputContent.trimStart().startsWith("---")) { // No YAML block in the content
+			return `---\n${mergedYaml}\n---\n\n${inputContent}`;
+		} else {
+			const insertPos = inputContent.indexOf('---') + 3; // right after first --- in the content
+			return `---\n${mergedYaml}\n${inputContent.slice(insertPos)}`;
 		}
 	}
 
@@ -1418,8 +1444,7 @@ interface TemplateSelectorProps {
 const TemplateSelector = ({ templates, settings, onConfirm, onCancel }: TemplateSelectorProps) => {
 	const [searchTerm, setSearchTerm] = useState<string>('');
 	const [filteredTemplates, setFilteredTemplates] = useState<TFile[]>(templates);
-	const [selectedTemplate, setSelectedTemplate] = useState<TFile | null>(null);
-	const [selectedIndex, setSelectedIndex] = useState<number>(-1);
+	const [selectedIndex, setSelectedIndex] = useState<number>(0);
 	const searchInputRef = useRef<HTMLInputElement>(null);
 	const listRef = useRef<HTMLDivElement>(null);
 
@@ -1432,7 +1457,7 @@ const TemplateSelector = ({ templates, settings, onConfirm, onCancel }: Template
 		});
 
 		setFilteredTemplates(filtered);
-		setSelectedIndex(-1); // Reset selection when search changes
+		setSelectedIndex(0); // Reset selection when search changes
 	}, [searchTerm, templates]);
 
 	// Focus search input on mount
@@ -1448,19 +1473,15 @@ const TemplateSelector = ({ templates, settings, onConfirm, onCancel }: Template
 			e.preventDefault();
 			const newIndex = Math.min(selectedIndex + 1, filteredTemplates.length - 1);
 			setSelectedIndex(newIndex);
-			setSelectedTemplate(filteredTemplates[newIndex]);
 			scrollToItem(newIndex);
 		} else if (e.key === 'ArrowUp') {
 			e.preventDefault();
 			const newIndex = Math.max(selectedIndex - 1, -1);
 			setSelectedIndex(newIndex);
-			setSelectedTemplate(newIndex >= 0 ? filteredTemplates[newIndex] : null);
 			scrollToItem(newIndex);
 		} else if (e.key === 'Enter') {
 			e.preventDefault();
-			if (selectedTemplate) {
-				onConfirm(selectedTemplate);
-			}
+			onConfirm(filteredTemplates[selectedIndex]);
 		} else if (e.key === 'Escape') {
 			e.preventDefault();
 			onCancel();
@@ -1474,16 +1495,6 @@ const TemplateSelector = ({ templates, settings, onConfirm, onCancel }: Template
 				items[index].scrollIntoView({ block: 'nearest' });
 			}
 		}
-	};
-
-	const handleTemplateClick = (template: TFile, index: number) => {
-		setSelectedTemplate(template);
-		setSelectedIndex(index);
-	};
-
-	const handleTemplateDoubleClick = (template: TFile) => {
-		setSelectedTemplate(template);
-		onConfirm(template);
 	};
 
 	const displayName = (template: TFile): string => {
@@ -1541,8 +1552,7 @@ const TemplateSelector = ({ templates, settings, onConfirm, onCancel }: Template
 						<div
 							key={template.path}
 							className={`selection-item ${selectedIndex === index ? 'selected' : ''}`}
-							onClick={() => handleTemplateClick(template, index)}
-							onDoubleClick={() => handleTemplateDoubleClick(template)}
+							onClick={() => onConfirm(template)}
 							tabIndex={index + 2} // +2 because search is tabIndex 1
 						>
 							{/* <span className="selection-primary">{displayName(template)}</span>
@@ -1563,10 +1573,10 @@ const TemplateSelector = ({ templates, settings, onConfirm, onCancel }: Template
 				</button>
 				<button
 					className="btn btn-primary"
-					onClick={() => onConfirm(selectedTemplate as TFile)}
-					disabled={!selectedTemplate}
+					onClick={() => onConfirm(filteredTemplates[selectedIndex])}
+					disabled={filteredTemplates.length === 0}
 				>
-					Select Template
+					Select
 				</button>
 			</div>
 		</div>
