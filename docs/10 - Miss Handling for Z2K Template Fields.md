@@ -1,4 +1,3 @@
-
 A miss is when a Template Field exists in a template but does not have any data provided for it during an update action.
 
 Miss Handling is different from Z2K than for classic Handlebars Field Replacement for a number of reasons:
@@ -8,7 +7,7 @@ Miss Handling is different from Z2K than for classic Handlebars Field Replacemen
 By default, if a field is not provided with data during a processing event, the field will remain in the file untouched. There are two ways this default handling can be overriden:
 
 # Override - Default Answer
-If a field specifies a [[8a - Z2K Template Fields and Prompting#^DefaultAnswer|Default Answer]], then that is a signal that unspecified fields should be filled in with that Default Answer upon use of the template file.
+If a field specifies a [[5c - Z2K Template Fields and Prompting#^DefaultAnswer|Default Answer]], then that is a signal that unspecified fields should be filled in with that Default Answer upon use of the template file.
 
 # Override - Default Miss Handling 
 If a template file contains in its YAML code includes the key `z2k_template_default_miss_handling`, it will use the method specified in the key's value:
@@ -17,7 +16,7 @@ If a template file contains in its YAML code includes the key `z2k_template_defa
 | ------------------------------------ | ---------- | ------------------------------------------------------------------------------------------------ |
 | `z2k_template_default_miss_handling` | `preserve` | (default) If a miss occurs for a field, the field will be preserved as is in the resultant file. |
 | `z2k_template_default_miss_handling` | `clear`    | If a miss occurs for a field, it will clear the field from the resultant file.                   |
-See [[10 - Z2K Template Fields Global YAML Settings]] for more details.
+See [[9c - Z2K Template YAML Configuration Fields]] for more details.
 
 # Override - clear and preserve Helper functions
 If a field uses the [[7b - Built-In Helper Functions|built-in helper functions]] `clear` or `preserve`, it will override the default handling for that particular field, allowing for fine grain control of miss handling. 

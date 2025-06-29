@@ -16,7 +16,7 @@ Where:
 	- `Prompt with spaces` is a suggested prompt to display to the user to describe the data to enter. 
 	- This prompt may contain `{{fields}}`, in which case it will use the current known value for other fields (advanced feature)
 	- This prompt may contain built-in field `{{FieldName}}` that refers to the actual FieldName that has been spacified and converted to lowercase. 
-	- Note: this may be empty, in which case Z2K will ask generically for data using just the field name, or the default prompt phrase. See [[10 - Z2K Template Fields Global YAML Settings]]
+	- Note: this may be empty, in which case Z2K will ask generically for data using just the field name, or the default prompt phrase. See [[9c - Z2K Template YAML Configuration Fields]]
 - `Default Answer` (Optional) ^DefaultAnswer
 	- This is the default answer to provide to the user to help with answering or minimize data entry
 	- Note: This can use other Template Fields, but it is fine if they remain unresolved if those fields have not yet been specified `{{fields}}`.
@@ -45,15 +45,15 @@ The prompting language offers a number of dataTypes to insure inputted data conf
 | `singleSelect:` | Provides a drop down list to select a single item. Here the tag is followed by a comma separated list of available options  |
 | `multiSelect:`  | Provides a drop down list to select multiple items. Here the tag is followed by a comma separated list of available options |
 
-# Prompting Built-in Helper Functions
-There a several built in helper functions for adjusting how fields are prompted for:
+# Built-in Prompting Directives
+There a several built in directives for adjusting how fields are prompted for:
 
-| Function    | Description                                                                                                                                               |
-| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `clear`     | Specifies that a field should clear itself if no data was provided (see [[9 - Miss Handling for Z2K Template Fields\|Miss Handling]] for more details)    |
-| `preserve`  | Specifies that a field should preserve itself if no data was provided (see [[9 - Miss Handling for Z2K Template Fields\|Miss Handling]] for more details) |
-| `no-prompt` | Specifies that a field should not be included in the UI to prompt the user for values.                                                                    |
-| `required`  | Specifies that a field is required for input before proceeding. Note: if a default value is provided, then that is sufficient for proceeding forward      |
+| Function     | Description                                                                                                                                                |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@clear`     | Specifies that a field should clear itself if no data was provided (see [[10 - Miss Handling for Z2K Template Fields\|Miss Handling]] for more details)    |
+| `@preserve`  | Specifies that a field should preserve itself if no data was provided (see [[10 - Miss Handling for Z2K Template Fields\|Miss Handling]] for more details) |
+| `@no-prompt` | Specifies that a field should not be included in the UI to prompt the user for values.                                                                     |
+| `@required`  | Specifies that a field is required for input before proceeding. Note: if a default value is provided, then that is sufficient for proceeding forward       |
 
 # Examples
 

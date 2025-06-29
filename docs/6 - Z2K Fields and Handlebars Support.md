@@ -2,7 +2,7 @@ Z2K uses [Handlebars](https://handlebarsjs.com/guide/)  to control how fields ar
 
 # Supported Handlebars.js Features
 Z2K supports the following features in Handlebars:
-- [Nested input objects](https://handlebarsjs.com/guide/#nested-input-objects) when passed external [[8b - Z2K Template Fields and Passed JSON Data|JSON data packets]]. Thus `{{person.lastname}}` will replace the field with the lastname object inside a person object. 
+- [Nested input objects](https://handlebarsjs.com/guide/#nested-input-objects) when passed external [[11 - Z2K Templates, URI, and JSON|JSON data packets]]. Thus `{{person.lastname}}` will replace the field with the lastname object inside a person object. 
 - [Whitespace Control](https://handlebarsjs.com/guide/expressions.html#whitespace-control) to remove whitespace in the source templates
 - [[7 - Z2K Template Field Helper Functions|Helper Functions]] with [[7b - Built-In Helper Functions|Built-in]] functions for formatting data
 - [[7a - Z2K Template Field Helper Function Overview#Usage - Nested Helper Functions|Nested Helper Functions]]
@@ -20,7 +20,7 @@ Z2K supports the following features in Handlebars:
 There are a few subtle differences:
 1. Z2K has several additional advanced expressions (see [[#Z2K Advanced Expressions not in Handlebars]] below)
 2. Z2K does not assume the output is HTML, but rather Markdown. Therefore the default escaping handling is implemented differently. Similarly, Raw output is handled differently
-3. Z2K assumes that if a field is not specified with data, then the field remains in the resultant template file. See [[9 - Miss Handling for Z2K Template Fields]] for more details. 
+3. Z2K assumes that if a field is not specified with data, then the field remains in the resultant template file. See [[10 - Miss Handling for Z2K Template Fields]] for more details. 
 
 # Z2K Advanced Expressions not in Handlebars
 For quick reference, the following are augmentations to the Handlebars language that is only used in Z2K's implementation:
@@ -29,7 +29,7 @@ For quick reference, the following are augmentations to the Handlebars language 
 2. Support for Z2K specific Built-In Helpers
 	- See [[7b - Built-In Helper Functions]]
 3. Support for User Prompting
-	- See [[8a - Z2K Template Fields and Prompting]]
+	- See [[5c - Z2K Template Fields and Prompting]]
 4. Support for automated fields
 	- See [[4 - Z2K Built-In Template Fields]]
 5. Support for required fields

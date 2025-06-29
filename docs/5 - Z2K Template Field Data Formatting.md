@@ -3,3 +3,4 @@ When Template Fields are replaced with their corresponding data, a small amount 
 
 1. [[5a - Z2K Template Field Data Default Formatting|Default Field Formatting Rules]]
 2. [[5b - Z2K Template Field Custom Formatting|Custom Field Formatting Rules]]
+3. [[5c - Z2K Template Fields and Prompting|Template Fields and Prompting Commands]]

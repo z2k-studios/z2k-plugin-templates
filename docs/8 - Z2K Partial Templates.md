@@ -1,13 +1,26 @@
-TBD
-Support for  the `{{> partialTemplateFile.md}}` capability in HandleBars
+The Z2K Template Plugin supports the concept of "*Partial Templates*", or also just called "*Partials*". These special templates are intended to be *block level* template text that can be inserted inside of another file. 
 
+Partials are extremely useful for enforcing consistent naming and formatting of text blocks across multiple files.
 
+# Partial Naming Conventions
+Partials' filenames must be prefixed with the text "`Partial - `". 
+Note: this prefix can be changed inside the plugin's setting page.
 
+# Inserting Partials
+Partials can be inserted into a file via two methods:
+1. By using the "Insert Template Partial into Card" command inside Obsidian. This can be done via an Obsidian Command request or by right clicking in the text of an existing card.
+2. By forcing a inclusion of the partial template's text using Handlebars' `{{> partialTemplateFile.md}}` field. 
 
+# YAML Data and Partials
+The Z2K Templates Plugin attempts to be smart at how to handle YAML frontmatter found in the partial template file being inserted. If the partial contains yaml data, it will extract those entries and add them into the card's YAML frontmatter. 
 
+*Note:* The plugin will not perform any error checking. For instance, if the YAML field is already present in the destination file's YAML, a duplicate entry may occur. 
 
+# Advanced Field Functions
+Partials support the full range of advance formatting and prompting features. Thus, you can use builtin functions and advanced Handlebars syntax within the partial template, assuming the underlying feature is supported (see [[6 - Z2K Fields and Handlebars Support]])
 
-Notes:
+# Dev Notes:
+*TODO: Move to Design Notes folder - but first review what items to share with users.*
 Captures all the partials using the same scope logic as the templates, registers them with handlebars.
 
 Do partials ever need partials from other directories besides the template scope logic?

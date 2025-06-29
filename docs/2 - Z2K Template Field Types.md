@@ -1,4 +1,4 @@
-There are a number of [[0 - Z2K Template Fields|Template Field]] types available to the user to include in their [[Z2K Templates]] cards. They are:
+There are a number of [[0 - Z2K Templates|Template Field]] types available to the user to include in their [[Z2K Templates]] cards. They are:
 
 1. [[#Template Field Type User Specified Fields|User Specified Fields]]
 2. [[#Template Field Type Built-In Fields|Built-In Fields]]

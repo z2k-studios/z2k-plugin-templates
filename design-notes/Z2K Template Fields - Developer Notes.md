@@ -2,16 +2,16 @@
 # Prioritization of Features
 1. Required Features
 	1. Good Old {{field}} replacement
-	2. Prompting - see [[8a - Z2K Template Fields and Prompting]]
+	2. Prompting - see [[5c - Z2K Template Fields and Prompting]]
 	3. Built In Fields - see [[4 - Z2K Built-In Template Fields]]
-	4. Prompting - see [[8a - Z2K Template Fields and Prompting]]
-	5. Miss Handling - see [[9 - Miss Handling for Z2K Template Fields]]
+	4. Prompting - see [[5c - Z2K Template Fields and Prompting]]
+	5. Miss Handling - see [[10 - Miss Handling for Z2K Template Fields]]
 2. Advance Features not needed in the first release:
 	1. For R2:
 		1. many of the [[7b - Built-In Helper Functions]]
 	2. For R3+
-		1. [[8b - Z2K Template Fields and Passed JSON Data]]
-		2. [[9 - Miss Handling for Z2K Template Fields#Override - Default Miss Handling]]
+		1. [[11 - Z2K Templates, URI, and JSON]]
+		2. [[10 - Miss Handling for Z2K Template Fields#Override - Default Miss Handling]]
 
 # Quick Testing
 - Include a link for one of the fiddlers
@@ -29,7 +29,7 @@ Hodge podge list of implementation questions details.
 - Specify which fields are required for input 
 	- Do it automatically - Do it be seeing if any are in the %%Title: {{field}} %% comment?
 - Special field to set the card title?
-- See [[9 - Miss Handling for Z2K Template Fields#Scratch]]
+- See [[10 - Miss Handling for Z2K Template Fields#Scratch]]
 
 - Handlebar/Mustache support:
 	- JSON names

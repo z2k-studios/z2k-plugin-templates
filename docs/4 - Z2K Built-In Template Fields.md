@@ -1,4 +1,4 @@
-Z2K includes a number of pre-defined [[0 - Z2K Template Fields|Template Field]] names that will be [[2 - Z2K Template Field Types#Template Field Type Built-In Fields|automatically]] filled in whenever the template is created.
+Z2K includes a number of pre-defined [[0 - Z2K Templates|Template Field]] names that will be [[2 - Z2K Template Field Types#Template Field Type Built-In Fields|automatically]] filled in whenever the template is created.
 
 # Contents
 The following types of built-in fields are available:
@@ -42,16 +42,16 @@ The following built-in date and time template fields can be used in templates:
 # Built-In Template Fields: Card Data
 Z2K supports a number of predefined built-in template fields regarding the current card.
 
-| Field                  | Value to be inserted                         | Example                          |
-| ---------------------- | -------------------------------------------- | -------------------------------- |
-| `{{title}}`            | The title of this card (\*1)                 | `Leaves of Grass - Walt Whitman` |
-| `{{cardTitle}}`        | The title of this card (same as `{{title}}`) | `Leaves of Grass - Walt Whitman` |
-| `{{cardAtom}}`         | The atom type of this card                   | `Thoughts`                       |
-| `{{cardTemplateName}}` | The name of the template used for this card  | `Information - Book`             |
-| `{{cardCreator}}`      | The name of the card creator                 | `Your Name`                      |
-| `{{cardType}}`         | The Z2K Card Type                            | `Ontology`                       |
-| `{{cardSourceType}}`   | The Z2K Card Source Type                     | `InternalThought`                |
-|                        |                                              |                                  |
+| Field                  | Value to be inserted                              | Example                          |
+| ---------------------- | ------------------------------------------------- | -------------------------------- |
+| `{{title}}`            | The title of this card (\*1)                      | `Leaves of Grass - Walt Whitman` |
+| `{{cardTitle}}`        | The title of this card (same as `{{title}}`)      | `Leaves of Grass - Walt Whitman` |
+| `{{cardAtom}}`         | The atom type of this card                        | `Thoughts`                       |
+| `{{cardTemplateName}}` | The name of the template used for this card       | `Information - Book`             |
+| `{{cardCreator}}`      | The name of the card creator                      | `Your Name`                      |
+| `{{cardType}}`         | The Z2K Card Type                                 | `Ontology`                       |
+| `{{cardSourceType}}`   | The Z2K Card Source Type                          | `InternalThought`                |
+| `{{templateName}}`     | The name of the Template used to create this card | `Book Template`                  |
 (\*1) The `{{title}}` built-in fields perform identically to Obsidian's predefined template variables with the same name. 
 
 
