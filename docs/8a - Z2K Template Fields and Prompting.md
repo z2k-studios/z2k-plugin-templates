@@ -37,6 +37,8 @@ The prompting language offers a number of dataTypes to insure inputted data conf
 
 | DataType        | Description                                                                                                                 |
 | --------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `text`          | Forces text input (default)                                                                                                 |
+| `titleText`     | Forces text to have file-system compliant characters                                                                        |
 | `number`        | Forces numeric only input                                                                                                   |
 | `date`          | Offers a date picker to the user                                                                                            |
 | `boolean`       | Displays as a checkbox                                                                                                      |
