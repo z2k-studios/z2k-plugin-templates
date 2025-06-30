@@ -57,3 +57,5 @@ Features
         
 6. File name from dailies plugin
 
+
+PS - add support for {{sourceText}}  field for additional text, particularly for JSON packets.
