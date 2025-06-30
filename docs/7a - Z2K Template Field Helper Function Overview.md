@@ -35,6 +35,9 @@ then the output of the above field expression would be
 [Tractatus Logico-Philosophicus](https://greatbooks.com/Tractatus)]
 ```
 
+==#Todo: Not sure if the parenthesis will be viewed as nesting or literals==
+==#Todo: Not sure if expressions are even support in the plugin==
+
 # Z2K Custom Helper Functions
 Note: currently, Z2K does not support registering custom functions (i.e. functions defined by the user). Stay tuned.
 
