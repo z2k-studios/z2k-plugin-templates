@@ -4,7 +4,7 @@ The Z2K Template Plugin was originally designed as an integral part of the Z2K S
 # Z2K System - Card Activation
 The Z2K System has a rich metadata structure to capture the state of cards as they move through development. The act of creating a card and populating it with field values changes the state of the card, and thereby Z2K Metadata YAML Fields will be updated through the process of using the Z2K Templates plugin. 
 
-Non-Z2K users are welcome to add these YAML properties into their own system (e.g. via a `.z2k-system.yaml` file described in [[9b - Z2K System YAML Files.md]]), but do note that these properties are subject to change in future versions of the Z2K Templates Plugin. They can be useful for operations like using DataView to find all cards that have yet to be Finalized.
+Non-Z2K users are welcome to add these YAML properties into their own system (e.g. via a `.z2k-system.yaml` file described in [[9b - Z2K System YAML Files]]), but do note that these properties are subject to change in future versions of the Z2K Templates Plugin. They can be useful for operations like using DataView to find all cards that have yet to be Finalized.
 
 
 ### z2k_card_build_state
