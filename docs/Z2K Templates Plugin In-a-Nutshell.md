@@ -1,14 +1,18 @@
+---
+sidebar_position: 1
+---
+
 [[Z2K Templates]] is an [Obsidian](https://obsidian.md) Plugin for making powerful templates for your Obsidian vault:
 - It uses the intuitive `{{handlebars}}` syntax to specify where to insert data within a template file and unique prompting interface for collecting data to insert into the template.
-- At its core, it uses the  [handlebars.js](https://handlebars.js) syntax for advanced techniques like [[7 - Z2K Template Field Helper Functions|functions]] and [[5 - Z2K Template Field Data Formatting|formatting]], and has a number of syntax extensions to support an interactive prompting in Obsidian. 
-- For advanced users, Z2K Templates also supports creating cards/notes from external datasets through [[11 - Z2K Templates, URI, and JSON|JSON data and URI commands]].
+- At its core, it uses the  [handlebars.js](https://handlebars.js) syntax for advanced techniques like [[Helper Functions|functions]] and [[Data Formatting|formatting]], and has a number of syntax extensions to support an interactive prompting in Obsidian. 
+- For advanced users, Z2K Templates also supports creating cards/notes from external datasets through [[Z2K Templates, URI, and JSON|JSON data and URI commands]].
 
 Z2K Templates is part of the [Z2K System](https://z2ksystem.com) but works fine as a standalone plugin. We encourage you to check out the greater [Z2K System](https://z2ksystem.com) for how to structure your Obsidian Vault as a digital extension of your mind. 
 
 # Getting Started
 Here's how to get started with Z2K Templates in under 2 minutes:
 ## Create a Template Folder
-To start using Z2K Templates, you will first need to create a folder call "`Templates`" in your Vault's root folder. (Note: this folder name and location can be changed in the Plugin's [[13 - Settings Page|Settings]] page. Also, Template folders can be stored [[0.1 - Template Folders|hierarchally]] to make Templates more context aware within your Vault.)
+To start using Z2K Templates, you will first need to create a folder call "`Templates`" in your Vault's root folder. (Note: this folder name and location can be changed in the Plugin's [[Plugin Settings Page|Settings]] page. Also, Template folders can be stored [[Template Folders|hierarchally]] to make Templates more context aware within your Vault.)
 
 ## Create a Template File
 To create a Template file, simply create a new markdown file in folder called ". For instance, create a file named "`Template - Book.md`" that contains:
