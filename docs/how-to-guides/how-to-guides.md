@@ -1,8 +1,8 @@
 ---
 sidebar_position: 1
+title: How-To Guides for Z2K Templates
 ---
-
-To help you come up to speed with Z2K Templates plugin, here are a number of "How-To" guides to introduce the core concepts.
+ To help you come up to speed with Z2K Templates plugin, here are a number of "How-To" guides to introduce the core concepts.
 # Beginner
 - [[How To Make Your First Template]]
 - [[How To Include Automated Fields like Date and Time]]
@@ -18,6 +18,7 @@ To help you come up to speed with Z2K Templates plugin, here are a number of "Ho
 - [[How to Make More Readable Templates]] (e.g. noprompt and pushing fields into yaml)
 - [[How to Create New Files from Existing Files]] - stores data in yaml to be used again by creating a new card from the existing card
 - [[How to Organize your Template Folders to be Context Sensitive]]
+- [[How to Store Fields into YAML for Template Updates]]
 - [[How To ]]
 
 # Advanced

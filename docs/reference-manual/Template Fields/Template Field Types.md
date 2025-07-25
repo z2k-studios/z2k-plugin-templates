@@ -1,5 +1,5 @@
 ---
-sidebar_position: 32
+sidebar_position: 22
 ---
 
 There are a number of [[reference-manual|Template Field]] types available to the user to include in their [[Docs/z2k-system-docs/4 - Z2K Reference Docs/4h - Z2K Templates/Z2K Templates]] cards. They are:
