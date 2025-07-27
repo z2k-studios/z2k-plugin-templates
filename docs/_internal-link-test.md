@@ -14,7 +14,7 @@ z2k-metadata-only: true
 
 These should resolve based on filename or `slug:`:
 
-- [[Z2K Templates Plugin In-a-Nutshell]]
+- [[Code/Obsidian Plugins/z2k-plugin-templates/docs/readme.md]]
 - [[Z2K Templates and YAML]]
 - [[Z2K Template Field Types]]
 - [[Template Field Naming Conventions]]

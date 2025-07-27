@@ -3,7 +3,9 @@ sidebar_position: 1
 title: How-To Guides for Z2K Templates
 ---
  To help you come up to speed with Z2K Templates plugin, here are a number of "How-To" guides to introduce the core concepts.
+
 # Beginner
+- [[How to Get Started in Under 2 Minutes]]
 - [[How To Make Your First Template]]
 - [[How To Include Automated Fields like Date and Time]]
 - [[How to Specify the Name of the Created File using Fields]]

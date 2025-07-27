@@ -1,5 +1,5 @@
 ---
-title: Z2K Templates - Reference Manual
+title: Z2K Templates Plugin 
 sidebar_position: 1
 ---
 [[Z2K Templates]] is an [Obsidian](https://obsidian.md) Plugin for making powerful templates for your Obsidian vault. These doc pages serve as a Reference Manual for how to use the plugin and use the handlebars syntax for making supercharged templates.
