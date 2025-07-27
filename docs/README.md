@@ -3,7 +3,7 @@ sidebar_position: 1
 title: Z2K Templates Plugin In-a-Nutshell
 ---
 [[Z2K Templates]] is an [Obsidian](https://obsidian.md) Plugin for making powerful templates for your Obsidian vault:
-- It uses the intuitive `{{handlebars}}` syntax to specify where to insert data within a template file and unique prompting interface for collecting data to insert into the template.
+- It uses the intuitive `{{handlebars}}` syntax to specify where to insert data within a template file and unique prompting interface for collecting data for insertion.
 - At its core, it uses the  [handlebars.js](https://handlebars.js) syntax for advanced techniques like [[Helper Functions|functions]] and [[Data Formatting|formatting]], and has a number of syntax extensions to support an interactive prompting in Obsidian. 
 - For advanced users, Z2K Templates also supports creating cards/notes from external datasets through [[Z2K Templates, URI, and JSON|JSON data and URI commands]].
 
