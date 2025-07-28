@@ -1,5 +1,6 @@
 ---
 sidebar_position: 1
+folder_position: 10
 title: How-To Guides for Z2K Templates
 ---
  To help you come up to speed with Z2K Templates plugin, here are a number of "How-To" guides to introduce the core concepts.
