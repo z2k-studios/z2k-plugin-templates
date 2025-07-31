@@ -2,7 +2,7 @@
 // TODO: Add error handling for errors within react components by using React Error Boundaries
 
 import { App, Plugin, Modal, Notice, TFolder, TFile, PluginSettingTab, Setting, MarkdownView, EditorPosition } from 'obsidian';
-import { Z2KTemplateEngine, TemplateState, BuiltInVar, SegmentList, VarInfo, VarValueType, ReducedSetSegment, TemplateError } from 'z2k-template-engine';
+import { Z2KTemplateEngine, TemplateState, TemplateStateNew, BuiltInVar, SegmentList, VarValueType, ReducedSetSegment, PromptInfo, TemplateError } from 'z2k-template-engine';
 import React, { useState, useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import moment from 'moment';   // npm i moment
@@ -441,6 +441,17 @@ export default class Z2KPlugin extends Plugin {
 		);
 	}
 
+	getPartialCallback(name: string, path: string) {
+		// TODO: stopped mid-way through these comments
+
+		// The name can be just the title (partial.md), an absolute path (/folder/partial.md), or a relative path (../folder/partial.md).
+		// The path is the folder of the template/partial where there partial was referenced (so it's relative to here).
+		// It behaves according to whether we are using an external templates folder or not.
+
+		// If the name is just the title (partial.md), then it checks for it at every tree folder from current up to root.
+		// If it has an absolute path, then just go to that path
+		// If it has a relative path, then just go to that relative path from the current folder. (You could traverse up the tree, but that seems complicated).
+	}
 	async createOrContinueCard(opts: { inputText?: string, inputFile?: TFile, continueFile?: TFile }) {
 		try {
 			let { inputText, inputFile, continueFile } = opts;
@@ -455,21 +466,24 @@ export default class Z2KPlugin extends Plugin {
 			}
 
 			let inputContent: string;
-			let cardType: TFolder | null = null;
+			let targetPath: TFolder | null = null; // this is both the target folder and specifies the card type
 			let fieldCollectionModalTitle = "Field Collection for Card";
-			let templateName: any;
+			let templateName: string = "";
 			if (continueFile) {
-				// If continuing from an existing file, just read its content
+				// Continuing from an existing file, just read its content
 				fieldCollectionModalTitle = "Continue Filling Card:";
 				try {
 					inputContent = await this.app.vault.read(continueFile);
 				} catch (error) {
 					rethrowWithMessage(error, "Error occurred while reading the file to continue from");
 				}
+				targetPath = continueFile.parent as TFolder;
 			} else {
+				// Creating a new card
+
 				// Prompt for card type (the folder containing the desired template)
 				const cardTypes = this.getTemplatesTypes(false);
-				cardType = await new Promise<TFolder>((resolve, reject) =>
+				const cardType = await new Promise<TFolder>((resolve, reject) =>
 					new CardTypeSelectionModal(this.app, cardTypes, this.settings, resolve, reject).open()
 				);
 
@@ -490,34 +504,35 @@ export default class Z2KPlugin extends Plugin {
 
 				// Add z2k system yaml
 				inputContent = await this.AddZ2KSystemYaml(inputContent, cardType);
+				targetPath = cardType;
 			}
 
 			// Parse the template
-			let templateState: TemplateState;
-			let hadSourceTextField: boolean;
+			let templateState: TemplateStateNew;
 			try {
-				templateState = this.templateEngine.parseTemplate(inputContent);
+				templateState = Z2KTemplateEngine.parseTemplateNew(inputContent, targetPath, getPartialCallback);
 
-				// Add some extra built-ins:
+				{ // Add some extra built-ins:
+					// sourceText
+					templateState.promptInfos["sourceText"] = {
+						varName: "sourceText",
+						type: "text",
+						directives: ['no-prompt'],
+					};
+					templateState.resolvedValues["sourceText"] = inputText || "";
 
-				// sourceText
-				hadSourceTextField = templateState.mergedVarInfoMap.has("sourceText");
-				templateState.mergedVarInfoMap.set("sourceText", {
-					varName: "sourceText",
-					dataType: "text",
-					directives: [],
-					resolvedValue: inputText || "",
-					valueSource: "built-in",
-				});
+					// creator
+					templateState.promptInfos["creator"] = {
+						varName: "creator",
+						type: "text",
+						directives: ['no-prompt'],
+					};
+					templateState.resolvedValues["creator"] = this.settings.creator || "";
+				}
 
-				// creator
-				templateState.mergedVarInfoMap.set("creator", {
-					varName: "creator",
-					dataType: "text",
-					directives: ['no-prompt'],
-					resolvedValue: this.settings.creator || "",
-					valueSource: "built-in",
-				});
+				// TODO: add the below to the above
+
+
 
 				// templateName (not card title/name)
 				// sets templateName to be the template's file name,
@@ -534,7 +549,7 @@ export default class Z2KPlugin extends Plugin {
 					varName: "templateName",
 					dataType: "text",
 					directives: ['no-prompt'],
-					resolvedValue: templateName as string || "",
+					resolvedValue: templateName,
 					valueSource: "built-in",
 				});
 
@@ -609,9 +624,10 @@ export default class Z2KPlugin extends Plugin {
 			// console.log("After parse:", JSON.stringify(templateState, null, 2));
 
 			// Prompt user for missing variables if needed
-			if (this.hasFillableFields(templateState.mergedVarInfoMap)) {
+			if (this.hasFillableFields(templateState.promptInfos)) {
 				await new Promise<void>((resolve, reject) => {
-					new FieldCollectionModal(this.app, fieldCollectionModalTitle, templateState.mergedVarInfoMap, resolve, reject).open();
+					// Leaving off: change to just passing in templateState, get FieldCollectionModal working with TemplateStateNew
+					new FieldCollectionModal(this.app, fieldCollectionModalTitle, templateState, resolve, reject).open();
 				});
 			} else {
 				new Notice("No fields to prompt for.");
@@ -723,6 +739,7 @@ export default class Z2KPlugin extends Plugin {
 		}
 	}
 
+	// TODO: try combining this with createOrContinueCard
 	async insertPartialTemplate(opts: { inputText?: string } = {}) {
 		const editor = this.app.workspace.getActiveViewOfType(MarkdownView)?.editor;
 		const file = this.app.workspace.getActiveFile();
@@ -1175,9 +1192,9 @@ export default class Z2KPlugin extends Plugin {
 		return files;
 	}
 
-	private hasFillableFields(mergedVarInfoMap: Map<string, VarInfo>): boolean {
-		for (const varInfo of mergedVarInfoMap.values()) {
-			if (!varInfo.directives.includes("no-prompt")) { return true; }
+	private hasFillableFields(promptInfos: Record<string, PromptInfo>): boolean {
+		for (const promptInfo of Object.values(promptInfos)) {
+			if (!promptInfo.directives?.includes("no-prompt")) { return true; }
 		}
 		return false;
 	}
@@ -1597,15 +1614,15 @@ const TemplateSelector = ({ templates, settings, onConfirm, onCancel }: Template
  */
 export class FieldCollectionModal extends Modal {
 	title: string;
-	varInfoMap: Map<string, VarInfo>;
+	templateState: TemplateStateNew;
 	resolve: () => void;
 	reject: (error: Error) => void;
 	root: any; // React root
 
-	constructor(app: App, title: string, varInfoMap: Map<string, VarInfo>, resolve: () => void, reject: (error: Error) => void) {
+	constructor(app: App, title: string, templateState: TemplateStateNew, resolve: () => void, reject: (error: Error) => void) {
 		super(app);
 		this.title = title;
-		this.varInfoMap = varInfoMap;
+		this.templateState = templateState;
 		this.resolve = resolve;
 		this.reject = reject;
 	}
@@ -1618,7 +1635,7 @@ export class FieldCollectionModal extends Modal {
 		this.root = createRoot(this.contentEl);
 		this.root.render(
 			<FieldCollectionForm
-				varInfoMap={this.varInfoMap}
+				templateState={this.templateState}
 				onComplete={() => {
 					this.resolve();
 					this.close();
@@ -1642,17 +1659,17 @@ export class FieldCollectionModal extends Modal {
  * Handles form state, dependencies between fields, and validation
  */
 interface FieldCollectionFormProps {
-	varInfoMap: Map<string, VarInfo>;
+	templateState: TemplateStateNew;
 	onComplete: () => void;
 	onCancel: () => void;
 }
 // This component assumes that varInfoMap will not be changing.
-const FieldCollectionForm = ({ varInfoMap, onComplete, onCancel }: FieldCollectionFormProps) => {
+const FieldCollectionForm = ({ templateState, onComplete, onCancel }: FieldCollectionFormProps) => {
 	function computeInitialFieldStates(): Record<string, FieldState> {
 		const initialFieldStates: Record<string, FieldState> = {};
 
 		// Initialize field states with metadata
-		for (const [fieldName, varInfo] of varInfoMap.entries()) {
+		for (const [fieldName, promptInfo] of Object.entries(templateState.promptInfos)) {
 
 			function getJustFieldReferences(segments: ReducedSetSegment[] | undefined): string[] {
 				if (!segments) return [];
@@ -1662,24 +1679,24 @@ const FieldCollectionForm = ({ varInfoMap, onComplete, onCancel }: FieldCollecti
 			}
 			// Get dependencies from prompt text, default value, and miss text
 			const dependencies = [
-				...getJustFieldReferences(varInfo.parsedPromptText),
-				...getJustFieldReferences(varInfo.parsedDefaultValue),
-				...getJustFieldReferences(varInfo.parsedMissText)
+				...getJustFieldReferences(promptInfo.parsedPrompt),
+				...getJustFieldReferences(promptInfo.parsedDefault),
+				...getJustFieldReferences(promptInfo.parsedMiss)
 			];
 
 			// Set initial field state
 			initialFieldStates[fieldName] = {
-				value: varInfo.resolvedValue ?? varInfo.defaultValue ?? '',
-				alreadyResolved: varInfo.resolvedValue !== undefined,
-				omitFromForm: varInfo.directives.includes('no-prompt'),
+				value: templateState.resolvedValues[fieldName] ?? promptInfo.default ?? '',
+				alreadyResolved: templateState.resolvedValues[fieldName] !== undefined,
+				omitFromForm: promptInfo.directives?.contains('no-prompt') ?? false,
 				touched: false,
 				focused: false,
 				hasError: false,
 				dependencies: [...new Set(dependencies)],
 				dependentFields: [],
-				resolvedPromptText: varInfo.promptText ?? fieldName,
-				resolvedDefaultValue: varInfo.defaultValue ?? '',
-				resolvedMissText: varInfo.missText ?? ''
+				resolvedPrompt: promptInfo.prompt ?? fieldName,
+				resolvedDefault: promptInfo.default ?? '',
+				resolvedMiss: promptInfo.miss ?? ''
 			};
 		}
 
@@ -1711,12 +1728,10 @@ const FieldCollectionForm = ({ varInfoMap, onComplete, onCancel }: FieldCollecti
 		renderOrderFieldNames = renderOrderFieldNames.filter(fieldName => !fieldStates[fieldName].omitFromForm);
 		// Put required fields at the top
 		const requiredFields = renderOrderFieldNames.filter(fieldName => {
-			const varInfo = varInfoMap.get(fieldName);
-			return varInfo && varInfo.directives.includes('required');
+			return templateState.promptInfos[fieldName]?.directives?.includes('required') ?? false;
 		});
 		const optionalFields = renderOrderFieldNames.filter(fieldName => {
-			const varInfo = varInfoMap.get(fieldName);
-			return varInfo && !varInfo.directives.includes('required');
+			return !templateState.promptInfos[fieldName]?.directives?.includes('required') ?? true;
 		});
 		renderOrderFieldNames = [...requiredFields, ...optionalFields];
 
@@ -1757,21 +1772,21 @@ const FieldCollectionForm = ({ varInfoMap, onComplete, onCancel }: FieldCollecti
 
 	function updateFieldStates(newFieldStates: Record<string, FieldState>, reEvalValues: boolean = false) {
 		for (const fieldName of dependencyOrderedFieldNames) { // dependencyOrderedFieldNames ensures dependencies are resolved first
-			const varInfo = varInfoMap.get(fieldName);
-			if (!varInfo) {continue;}
+			const promptInfo = templateState.promptInfos[fieldName];
+			if (!promptInfo || newFieldStates[fieldName].omitFromForm) { continue; }
 
 			let context = {
 				...Object.fromEntries(Object.entries(newFieldStates).map(
-					([name, state]) => [name, { value: state.value, dataType: varInfoMap.get(name)?.dataType ?? 'text'}])),
+					([name, state]) => [name, { value: state.value, dataType: promptInfo.type ?? 'text'}])),
 			};
 
 			// Update all resolved text fields
-			newFieldStates[fieldName].resolvedPromptText = Z2KTemplateEngine.renderReducedSetText(varInfo.parsedPromptText, context);
-			newFieldStates[fieldName].resolvedDefaultValue = Z2KTemplateEngine.renderReducedSetText(varInfo.parsedDefaultValue, context);
-			newFieldStates[fieldName].resolvedMissText = Z2KTemplateEngine.renderReducedSetText(varInfo.parsedMissText, context);
+			newFieldStates[fieldName].resolvedPrompt = Z2KTemplateEngine.renderReducedSetText(promptInfo.parsedPrompt, context);
+			newFieldStates[fieldName].resolvedDefault = Z2KTemplateEngine.renderReducedSetText(promptInfo.parsedDefault, context);
+			newFieldStates[fieldName].resolvedMiss = Z2KTemplateEngine.renderReducedSetText(promptInfo.parsedMiss, context);
 
 			if (!newFieldStates[fieldName].alreadyResolved && !newFieldStates[fieldName].touched) {
-				newFieldStates[fieldName].value = newFieldStates[fieldName].resolvedDefaultValue;
+				newFieldStates[fieldName].value = newFieldStates[fieldName].resolvedDefault;
 			}
 			if (reEvalValues) {
 				// Go ahead and parse and render any values regardless. This
@@ -1786,9 +1801,9 @@ const FieldCollectionForm = ({ varInfoMap, onComplete, onCancel }: FieldCollecti
 	function	validateAllFields(newFieldStates: Record<string, FieldState>): boolean {
 		let isValid: boolean = true;
 		for (const fieldName of Object.keys(newFieldStates)) {
-			const varInfo = varInfoMap.get(fieldName);
-			if (!varInfo) {
-				console.error(`Field ${fieldName} not found in varInfoMap`);
+			const promptInfo = templateState.promptInfos[fieldName];
+			if (!promptInfo) {
+				console.error(`Field ${fieldName} not found in promptInfos`);
 				return true; // Skip validation if field not found
 			}
 
@@ -1797,10 +1812,10 @@ const FieldCollectionForm = ({ varInfoMap, onComplete, onCancel }: FieldCollecti
 			let errorMessage = '';
 
 			// Basic validation based on field type
-			if (varInfo.dataType === 'number' && isNaN(Number(value))) {
+			if (promptInfo.type === 'number' && isNaN(Number(value))) {
 				hasError = true;
 				errorMessage = 'Please enter a valid number';
-			} else if (value === '' && varInfo.directives.includes('required')) {
+			} else if (value === '' && promptInfo.directives?.contains('required')) {
 				hasError = true;
 				errorMessage = 'This field is required';
 			}
@@ -1858,7 +1873,7 @@ const FieldCollectionForm = ({ varInfoMap, onComplete, onCancel }: FieldCollecti
 	function handleFieldReset(fieldName: string) {
 		let newFieldStates = { ...fieldStates };
 		newFieldStates[fieldName].touched = false;
-		newFieldStates[fieldName].value = newFieldStates[fieldName].resolvedDefaultValue;
+		newFieldStates[fieldName].value = newFieldStates[fieldName].resolvedDefault;
 		updateFieldStates(newFieldStates, true);
 		validateAllFields(newFieldStates);
 		setFieldStates(newFieldStates);
@@ -1874,18 +1889,16 @@ const FieldCollectionForm = ({ varInfoMap, onComplete, onCancel }: FieldCollecti
 			return;
 		}
 
-		// Update varInfoMap with resolved values
+		// Update template state with resolved values
 		for (const fieldName of dependencyOrderedFieldNames) {
-			const varInfo = varInfoMap.get(fieldName);
-			if (!varInfo) { continue; }
+			const propmtInfo = templateState.promptInfos[fieldName];
+			if (!propmtInfo) { continue; }
 			if (fieldStates[fieldName].alreadyResolved || fieldStates[fieldName].touched || fieldName === 'title') {
-				varInfo.resolvedValue = fieldStates[fieldName].value;
-				varInfo.valueSource = 'user-input';
+				templateState.resolvedValues[fieldName] = fieldStates[fieldName].value;
 			} else {
 				// Left untouched, use miss value if finalizing
 				if (finalize) {
-					varInfo.resolvedValue = fieldStates[fieldName].resolvedMissText || '';
-					varInfo.valueSource = 'miss';
+					templateState.resolvedValues[fieldName] = fieldStates[fieldName].resolvedMiss || '';
 				}
 			}
 		}
@@ -1907,10 +1920,10 @@ const FieldCollectionForm = ({ varInfoMap, onComplete, onCancel }: FieldCollecti
 	}
 
 	function getFieldContainer(fieldName: string) {
-		const varInfo = varInfoMap.get(fieldName);
+		const promptInfo = templateState.promptInfos[fieldName];
 		const fieldState = fieldStates[fieldName];
 
-		if (!varInfo || !fieldState) return null;
+		if (!promptInfo || !fieldState) return null;
 
 		return (
 			<div key={fieldName} className={`field-container ${
@@ -1918,8 +1931,8 @@ const FieldCollectionForm = ({ varInfoMap, onComplete, onCancel }: FieldCollecti
 			}`}>
 				<FieldInput
 					name={fieldName}
-					label={fieldState.resolvedPromptText || fieldName}
-					varInfo={varInfo}
+					label={fieldState.resolvedPrompt || fieldName}
+					promptInfo={promptInfo}
 					fieldState={fieldState}
 					onChange={(value) => handleFieldChange(fieldName, value)}
 					onFocus={() => handleFieldFocus(fieldName)}
@@ -1932,7 +1945,7 @@ const FieldCollectionForm = ({ varInfoMap, onComplete, onCancel }: FieldCollecti
 
 	return (
 		<form onSubmit={handleSubmit} className="field-collection-form">
-			{varInfoMap.has('title') && fieldStates['title']?.omitFromForm !== true && (
+			{templateState.promptInfos['title'] && fieldStates['title']?.omitFromForm !== true && (
 				<div className="field-title-container">{getFieldContainer('title')}</div>
 			)}
 			<div className="field-list">
@@ -1968,9 +1981,9 @@ interface FieldState {
 	errorMessage?: string;
 	dependentFields: string[]; // Fields that depend on this field
 	dependencies: string[]; // Fields this field depends on
-	resolvedPromptText?: string; // Prompt text with references resolved
-	resolvedDefaultValue?: string; // Default value with references resolved
-	resolvedMissText?: string; // Miss text with references resolved
+	resolvedPrompt?: string; // Prompt text with references resolved
+	resolvedDefault?: string; // Default value with references resolved
+	resolvedMiss?: string; // Miss text with references resolved
 }
 
 /**
@@ -2052,7 +2065,7 @@ function calculateFieldDependencyOrder(fieldStates: Record<string, FieldState>):
 interface FieldInputProps {
 	name: string;
 	label: string;
-	varInfo: VarInfo;
+	promptInfo: PromptInfo;
 	fieldState: FieldState;
 	onChange: (value: any) => void;
 	onFocus: () => void;
@@ -2060,7 +2073,7 @@ interface FieldInputProps {
 	onReset: () => void;
 }
 
-const FieldInput = ({ name, label, varInfo, fieldState, onChange, onFocus, onBlur, onReset }: FieldInputProps) => {
+const FieldInput = ({ name, label, promptInfo, fieldState, onChange, onFocus, onBlur, onReset }: FieldInputProps) => {
 	// Generate a unique ID for the input element
 	const inputId = `field-${name}`;
 
@@ -2075,7 +2088,7 @@ const FieldInput = ({ name, label, varInfo, fieldState, onChange, onFocus, onBlu
 
 	// Render the appropriate input based on data type
 	function renderInput() {
-		const dataType = varInfo.dataType || 'text';
+		const dataType = promptInfo.type || 'text';
 
 		switch(dataType) {
 			case 'titleText':
@@ -2085,7 +2098,7 @@ const FieldInput = ({ name, label, varInfo, fieldState, onChange, onFocus, onBlu
 						className={`title-text-input ${fieldState.hasError ? 'has-error' : ''}`}
 						value={fieldState.value?.toString() || ''}
 						onChange={(e) => onChange(e.target.value)}
-						placeholder={fieldState.resolvedDefaultValue}
+						placeholder={fieldState.resolvedDefault}
 						{...commonProps}
 					/>
 				);
@@ -2096,7 +2109,7 @@ const FieldInput = ({ name, label, varInfo, fieldState, onChange, onFocus, onBlu
 						className={`text-input ${fieldState.hasError ? 'has-error' : ''}`}
 						value={fieldState.value?.toString() || ''}
 						onChange={(e) => onChange(e.target.value)}
-						placeholder={fieldState.resolvedDefaultValue}
+						placeholder={fieldState.resolvedDefault}
 						{...commonProps}
 					/>
 				);
@@ -2111,7 +2124,7 @@ const FieldInput = ({ name, label, varInfo, fieldState, onChange, onFocus, onBlu
 							const num = Number(e.target.value);
 							onChange(isNaN(num) ? undefined : num);
 						}}
-						placeholder={fieldState.resolvedDefaultValue}
+						placeholder={fieldState.resolvedDefault}
 						{...commonProps}
 					/>
 				);
@@ -2156,7 +2169,7 @@ const FieldInput = ({ name, label, varInfo, fieldState, onChange, onFocus, onBlu
 						{...commonProps}
 					>
 						<option value="">Select an option</option>
-						{varInfo.options?.map((option) => (
+						{promptInfo.typeOptions?.map((option) => (
 							<option key={option} value={option}>
 								{option}
 							</option>
@@ -2169,7 +2182,7 @@ const FieldInput = ({ name, label, varInfo, fieldState, onChange, onFocus, onBlu
 				const selectedValues = Array.isArray(fieldState.value) ? fieldState.value : [];
 				return (
 					<div className={`multi-select-container ${fieldState.hasError ? 'has-error' : ''}`}>
-						{varInfo.options?.map((option) => (
+						{promptInfo.typeOptions?.map((option) => (
 							<div key={option} className="multi-select-option">
 								<input
 									type="checkbox"
@@ -2193,17 +2206,17 @@ const FieldInput = ({ name, label, varInfo, fieldState, onChange, onFocus, onBlu
 	function generateHoverText() {
 		let finalText = "";
 		finalText += `Field name: ${name}`;
-		finalText += varInfo.directives.length > 0 ? `\nDirectives: ${varInfo.directives.join(', ')}` : '';
+		finalText += promptInfo.directives?.length ?? 0 > 0 ? `\nDirectives: ${promptInfo.directives?.join(', ')}` : '';
 		finalText += fieldState.dependencies.length > 0 ? `\nDepends on: ${fieldState.dependencies.join(', ')}` : '';
 		finalText += fieldState.dependentFields.length > 0 ? `\nUsed by: ${fieldState.dependentFields.join(', ')}` : '';
 		return finalText;
 	}
 
 	function renderMissTextPreview() {
-		if (fieldState.resolvedMissText && !fieldState.touched) {
+		if (fieldState.resolvedMiss && !fieldState.touched) {
 			return (
 				<div className="miss-text-preview">
-					Default if left untouched:<br/><span>{fieldState.resolvedMissText}</span>
+					Default if left untouched:<br/><span>{fieldState.resolvedMiss}</span>
 				</div>
 			);
 		}
@@ -2223,7 +2236,7 @@ const FieldInput = ({ name, label, varInfo, fieldState, onChange, onFocus, onBlu
 	// );
 	return (
 		<div className="field-input">
-			{varInfo.dataType !== 'boolean' && (
+			{promptInfo.type !== 'boolean' && (
 				<div className="label-wrapper">
 					<label htmlFor={inputId} title={generateHoverText()}>{label}</label>
 					<span className="reset-icon-wrapper">
