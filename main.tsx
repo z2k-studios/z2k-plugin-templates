@@ -1,12 +1,11 @@
 
 // TODO: Add error handling for errors within react components by using React Error Boundaries
 
-import { App, Plugin, Modal, Notice, TFolder, TFile, PluginSettingTab, Setting, MarkdownView, EditorPosition } from 'obsidian';
-import { Z2KTemplateEngine, TemplateState, TemplateStateNew, BuiltInVar, SegmentList, VarValueType, ReducedSetSegment, PromptInfo, TemplateError } from 'z2k-template-engine';
+import { App, Plugin, Modal, Notice, TFolder, TFile, PluginSettingTab, Setting, MarkdownView, Editor } from 'obsidian';
+import { Z2KTemplateEngine, TemplateStateNew, VarValueType, PromptInfo, TemplateError } from 'z2k-template-engine';
 import React, { useState, useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import moment from 'moment';   // npm i moment
-import { on } from 'events';
 
 interface Z2KPluginSettings {
 	z2kRootFolder: string;
@@ -214,6 +213,7 @@ export default class Z2KPlugin extends Plugin {
 		this.registerCommands();
 		this.addSettingTab(new Z2KSettingTab(this.app, this));
 
+		// // API?
 		// this.registerObsidianProtocolHandler("z2k-templates", async (params) => {
 		// 	try {
 		// 		const action = params.action;
@@ -329,7 +329,7 @@ export default class Z2KPlugin extends Plugin {
 		this.addCommand({
 			id: 'z2k-create-new-card',
 			name: 'Create card from template',
-			callback: () => this.createOrContinueCard({}),
+			callback: () => this.createCard(),
 		});
 
 		// Command palette commands for when text is selected
@@ -339,7 +339,7 @@ export default class Z2KPlugin extends Plugin {
 			editorCheckCallback: (checking, editor) => {
 				const selectedText = editor.getSelection();
 				if (checking) { return selectedText.length > 0; } // Only enable if text is selected
-				this.createOrContinueCard({inputText: selectedText});
+				this.createCardFromSelection();
 			},
 		});
 
@@ -351,7 +351,7 @@ export default class Z2KPlugin extends Plugin {
 				menu.addItem((item) => {
 					item.setTitle("Z2K: Create card from selection...")
 						.onClick(() => {
-							this.createOrContinueCard({inputText: selectedText});
+							this.createCardFromSelection();
 						});
 				});
 			})
@@ -365,7 +365,7 @@ export default class Z2KPlugin extends Plugin {
 				const activeFile = this.app.workspace.getActiveFile();
 				// Only enable if there's an active file and it's a markdown file
 				if (checking) { return !!activeFile && activeFile.extension === 'md'; }
-				this.createOrContinueCard({inputFile: activeFile as TFile});
+				this.createCardFromFile(activeFile as TFile);
 			},
 		});
 
@@ -376,7 +376,7 @@ export default class Z2KPlugin extends Plugin {
 			editorCheckCallback: (checking, editor) => {
 				const activeFile = this.app.workspace.getActiveFile();
 				if (checking) { return !!activeFile && activeFile.extension === 'md'; }
-				this.createOrContinueCard({ continueFile: activeFile as TFile });
+				this.continueCard(activeFile as TFile);
 			},
 		});
 
@@ -390,7 +390,7 @@ export default class Z2KPlugin extends Plugin {
 					// Only enable if there's an active markdown file and no text is selected
 					return !!file && file.extension === 'md' && editor.getSelection().length === 0;
 				}
-				this.insertPartialTemplate();
+				this.insertPartial();
 			}
 		});
 
@@ -404,7 +404,7 @@ export default class Z2KPlugin extends Plugin {
 				menu.addItem((item) => {
 					item.setTitle("Z2K: Insert partial template...")
 						.onClick(() => {
-							this.insertPartialTemplate();
+							this.insertPartial();
 						});
 				});
 			})
@@ -420,7 +420,7 @@ export default class Z2KPlugin extends Plugin {
 					// Only enable if there's an active markdown file and text is selected
 					return !!file && file.extension === 'md' && editor.getSelection().length > 0;
 				}
-				this.insertPartialTemplate({inputText: editor.getSelection()});
+				this.insertPartialFromSelection();
 			}
 		});
 
@@ -434,14 +434,299 @@ export default class Z2KPlugin extends Plugin {
 				menu.addItem((item) => {
 					item.setTitle("Z2K: Insert partial template using selection...")
 						.onClick(() => {
-							this.insertPartialTemplate({inputText: selectedText});
+							this.insertPartialFromSelection();
 						});
 				});
 			})
 		);
+
+
+		//// Template editing mode
+		// Toggle
+		this.addCommand({
+			id: 'z2k-enable-template-editing',
+			name: 'Enable template editing mode',
+			checkCallback: (checking) => {
+				if (checking) { return !this.isTemplateEditingEnabled(); }
+				this.enableTemplateEditing();
+			},
+		});
+		this.addCommand({
+			id: 'z2k-disable-template-editing',
+			name: 'Disable template editing mode',
+			checkCallback: (checking) => {
+				if (checking) { return this.isTemplateEditingEnabled(); }
+				this.disableTemplateEditing();
+			},
+		});
+		// Toggle in context menu in file explorer
+		this.registerEvent(
+			this.app.workspace.on('file-menu', (menu, file) => {
+				if (!(file instanceof TFile) || file.extension !== 'md') return;
+				menu.addItem((item) => {
+					if (this.isTemplateEditingEnabled()) {
+						item.setTitle("Disable Template Editing Mode")
+							.onClick(() => this.disableTemplateEditing());
+					} else {
+						item.setTitle("Enable Template Editing Mode")
+							.onClick(() => this.enableTemplateEditing());
+					}
+				});
+			})
+		);
+
+		{ // Template conversion
+			// Command
+			this.addCommand({
+				id: 'z2k-convert-file-to-template',
+				name: 'Convert file to named template',
+				checkCallback: (checking) => {
+					const activeFile = this.app.workspace.getActiveFile();
+					if (checking) { return !!activeFile && activeFile.extension !== 'template'; }
+					this.convertFileToExtension(activeFile as TFile, 'template');
+				},
+			});
+			this.addCommand({
+				id: 'z2k-convert-file-to-partial',
+				name: 'Convert file to partial template',
+				checkCallback: (checking) => {
+					const activeFile = this.app.workspace.getActiveFile();
+					if (checking) { return !!activeFile && activeFile.extension !== 'partial'; }
+					this.convertFileToExtension(activeFile as TFile, 'partial');
+				},
+			});
+			this.addCommand({
+				id: 'z2k-convert-file-to-md',
+				name: 'Convert file to markdown',
+				checkCallback: (checking) => {
+					const activeFile = this.app.workspace.getActiveFile();
+					if (checking) { return !!activeFile && activeFile.extension !== 'md'; }
+					this.convertFileToExtension(activeFile as TFile, 'md');
+				},
+			});
+
+			// Context menu in file explorer
+			this.registerEvent(
+				this.app.workspace.on('file-menu', (menu, file) => {
+					if (!(file instanceof TFile) || file.extension === 'template') return;
+					menu.addItem((item) => {
+						item.setTitle("Convert to named template")
+							.onClick(() => this.convertFileToExtension(file, 'template'));
+					});
+				})
+			);
+			this.registerEvent(
+				this.app.workspace.on('file-menu', (menu, file) => {
+					if (!(file instanceof TFile) || file.extension === 'partial') return;
+					menu.addItem((item) => {
+						item.setTitle("Convert to partial template")
+							.onClick(() => this.convertFileToExtension(file, 'partial'));
+					});
+				})
+			);
+			this.registerEvent(
+				this.app.workspace.on('file-menu', (menu, file) => {
+					if (!(file instanceof TFile) || file.extension === 'md') return;
+					menu.addItem((item) => {
+						item.setTitle("Convert to markdown")
+							.onClick(() => this.convertFileToExtension(file, 'md'));
+					});
+				})
+			);
+		}
 	}
 
-	getPartialCallback(name: string, path: string) {
+
+
+	///////////////////////////////////////////////////////////////////////////////////
+	// Functions called from commands/context menu/etc
+	// 	These should all handle any errors
+	///////////////////////////////////////////////////////////////////////////////////
+
+	// Template editing
+	enableTemplateEditing() {
+		// @ts-expect-error: internal API
+		this.app.viewRegistry.registerExtensions(["template"], "markdown");
+	}
+	disableTemplateEditing() {
+		// @ts-expect-error: internal API
+		this.app.viewRegistry.unregisterExtensions("template");
+	}
+	isTemplateEditingEnabled(): boolean {
+		// @ts-expect-error: internal API
+		return !!this.app.viewRegistry.getTypeByExtension("template");
+	}
+
+	// Template conversion
+	async convertFileToExtension(file: TFile, newExtension: string) {
+		if (!file) { throw new Error("No file given to convert extension."); }
+		try {
+			const parentPath = file.parent?.path ?? "/";
+			const newPath = this.joinPath(parentPath, `${file.basename}.${newExtension}`);
+			await this.app.fileManager.renameFile(file, newPath);
+		} catch (error) {
+			rethrowWithMessage(error, "Error converting file extension");
+		}
+	}
+
+	// Card creation and management
+	// 	(I couldn't find a good way to de-duplicate these functions,
+	// 	so I made them separate and tried to reduce the repetition as much as I could)
+	async createCard() {
+		try {
+			const cardTypeFolder = await this.promptForCardTypeFolder();
+			const templateFile = await this.promptForTemplateFile(cardTypeFolder);
+			let state = await this.parseTemplate(templateFile);
+			state = await this.promptForFieldCollection(state);
+			let content = Z2KTemplateEngine.renderTemplateNew(state);
+			let title = state.resolvedValues["title"] as string || "Untitled";
+			title = Z2KTemplateEngine.reducedRenderContent(title, state.resolvedValues);
+			await this.createAndOpenFile(cardTypeFolder, title, content);
+		} catch (error) { this.handleErrors(error); }
+	}
+	async createCardFromFile(sourceFile: TFile) {
+		try {
+			const cardTypeFolder = await this.promptForCardTypeFolder();
+			const templateFile = await this.promptForTemplateFile(cardTypeFolder);
+			let state = await this.parseTemplate(templateFile);
+			let hadSourceTextField = state.promptInfos["sourceText"] !== undefined;
+			let sourceText = await this.app.vault.read(sourceFile);
+			state = this.addBuiltIns(state, { sourceText });
+			state = await this.promptForFieldCollection(state);
+			let content = Z2KTemplateEngine.renderTemplateNew(state);
+			content = this.ensureSourceText(content, hadSourceTextField, sourceText);
+			let title = state.resolvedValues["title"] as string || "Untitled";
+			title = Z2KTemplateEngine.reducedRenderContent(title, state.resolvedValues);
+			await this.createAndOpenFile(cardTypeFolder, title, content);
+			await this.promptAndDeleteFile(sourceFile);
+		} catch (error) { this.handleErrors(error); }
+	}
+	async createCardFromSelection() {
+		try {
+			const editor = this.getEditorOrThrow();
+			const cardTypeFolder = await this.promptForCardTypeFolder();
+			const templateFile = await this.promptForTemplateFile(cardTypeFolder);
+			let state = await this.parseTemplate(templateFile);
+			let hadSourceTextField = state.promptInfos["sourceText"] !== undefined;
+			let sourceText = editor.getSelection();
+			state = this.addBuiltIns(state, { sourceText });
+			state = await this.promptForFieldCollection(state);
+			let content = Z2KTemplateEngine.renderTemplateNew(state);
+			content = this.ensureSourceText(content, hadSourceTextField, sourceText);
+			let title = state.resolvedValues["title"] as string || "Untitled";
+			title = Z2KTemplateEngine.reducedRenderContent(title, state.resolvedValues);
+			await this.createAndOpenFile(cardTypeFolder, title, content);
+			editor.replaceSelection("");
+		} catch (error) { this.handleErrors(error); }
+	}
+	async continueCard(continueFile: TFile) {
+		try {
+			let state = await this.parseTemplate(continueFile);
+			state = this.addBuiltIns(state, { existingTitle: continueFile.basename });
+			state = await this.promptForFieldCollection(state);
+			let content = Z2KTemplateEngine.renderTemplateNew(state);
+			let title = state.resolvedValues["title"] as string || "Untitled";
+			title = Z2KTemplateEngine.reducedRenderContent(title, state.resolvedValues);
+			await this.updateTitleAndContent(continueFile, title, content);
+		} catch (error) { this.handleErrors(error); }
+	}
+	async insertPartial() {
+		try {
+			const editor = this.getEditorOrThrow();
+			const currDir = this.getOpenFileParentOrThrow();
+			const partialFile = await this.promptForPartialFile(currDir);
+			let state = await this.parseTemplate(partialFile);
+			state = this.addBuiltIns(state, {
+				existingTitle: this.getOpenFileOrThrow().basename });
+			state = await this.promptForFieldCollection(state);
+			let content = Z2KTemplateEngine.renderTemplateNew(state);
+			editor.replaceRange(content, editor.getCursor());
+		} catch (error) { this.handleErrors(error); }
+	}
+	async insertPartialFromSelection() {
+		try {
+			const editor = this.getEditorOrThrow();
+			const currDir = this.getOpenFileParentOrThrow();
+			const partialFile = await this.promptForPartialFile(currDir);
+			let state = await this.parseTemplate(partialFile);
+			let hadSourceTextField = state.promptInfos["sourceText"] !== undefined;
+			let sourceText = editor.getSelection();
+			state = this.addBuiltIns(state, {
+				sourceText,
+				existingTitle: this.getOpenFileOrThrow().basename });
+			state = await this.promptForFieldCollection(state);
+			let content = Z2KTemplateEngine.renderTemplateNew(state);
+			content = this.ensureSourceText(content, hadSourceTextField, sourceText);
+			editor.replaceSelection(content);
+		} catch (error) { this.handleErrors(error); }
+	}
+
+	///////////////////////////////////////////////////////////////////////////////////
+
+	// Prompts
+	async promptForCardTypeFolder(): Promise<TFolder> {
+		const cardTypes = this.getTemplatesTypes(false);
+		if (cardTypes.length === 0) {
+			throw new Error("No card types available. Please create a template folder first.");
+		}
+		return new Promise<TFolder>((resolve, reject) => {
+			new CardTypeSelectionModal(this.app, cardTypes, this.settings, resolve, reject).open();
+		});
+	}
+	async promptForTemplateFile(cardType: TFolder, partial: boolean = false): Promise<TFile> {
+		const templates = this.getTemplatesForType(cardType, partial);
+		if (templates.length === 0) {
+			throw new Error("No templates available in the selected card type folder.");
+		}
+		return new Promise<TFile>((resolve, reject) => {
+			new TemplateSelectionModal(this.app, templates, this.settings, resolve, reject).open();
+		});
+	}
+	async promptForPartialFile(cardType: TFolder): Promise<TFile> {
+		return this.promptForTemplateFile(cardType, true);
+	}
+	async promptForFieldCollection(templateState: TemplateStateNew): Promise<TemplateStateNew> {
+		if (this.hasFillableFields(templateState.promptInfos)) {
+			await new Promise<void>((resolve, reject) => {
+				new FieldCollectionModal(this.app, "Field Collection for Card", templateState, resolve, reject).open();
+			});
+		} else {
+			new Notice("No fields to prompt for.");
+		}
+		return templateState;
+	}
+	async promptAndDeleteFile(file: TFile): Promise<void> {
+		const shouldDelete = await new Promise<boolean>(resolve => {
+			new DeleteConfirmationModal(this.app, file as TFile, resolve).open();
+		});
+		if (shouldDelete) {
+			try {
+				await this.app.vault.delete(file);
+			} catch (error) {
+				rethrowWithMessage(error, "Error deleting original file");
+			}
+		}
+	}
+
+	// Helpers
+	getEditorOrThrow(): Editor {
+		const editor = this.app.workspace.getActiveViewOfType(MarkdownView)?.editor;
+		if (!editor) { throw new Error("No active markdown editor found."); }
+		return editor;
+	}
+	getOpenFileOrThrow(): TFile {
+		const file = this.app.workspace.getActiveFile();
+		if (!file || !(file instanceof TFile)) {
+			throw new Error("No active markdown file found.");
+		}
+		return file;
+	}
+	getOpenFileParentOrThrow(): TFolder {
+		const file = this.getOpenFileOrThrow();
+		return file.parent ?? this.app.vault.getRoot();
+	}
+	async getPartialCallback(name: string, path: string): Promise<[content: string, path: string]> {
+		return ["", ""];
 		// TODO: stopped mid-way through these comments
 
 		// The name can be just the title (partial.md), an absolute path (/folder/partial.md), or a relative path (../folder/partial.md).
@@ -452,266 +737,120 @@ export default class Z2KPlugin extends Plugin {
 		// If it has an absolute path, then just go to that path
 		// If it has a relative path, then just go to that relative path from the current folder. (You could traverse up the tree, but that seems complicated).
 	}
-	async createOrContinueCard(opts: { inputText?: string, inputFile?: TFile, continueFile?: TFile }) {
+	async parseTemplate(templateFile: TFile): Promise<TemplateStateNew> {
+		const content = await this.app.vault.read(templateFile);
+		const path = this.getOpenFileParentOrThrow().path;
 		try {
-			let { inputText, inputFile, continueFile } = opts;
-
-			// Pull text from file if needed
-			if (inputFile) {
-				try {
-					inputText = await this.app.vault.read(inputFile);
-				} catch (error) {
-					rethrowWithMessage(error, "Error occurred trying to read the file");
-				}
-			}
-
-			let inputContent: string;
-			let targetPath: TFolder | null = null; // this is both the target folder and specifies the card type
-			let fieldCollectionModalTitle = "Field Collection for Card";
-			let templateName: string = "";
-			if (continueFile) {
-				// Continuing from an existing file, just read its content
-				fieldCollectionModalTitle = "Continue Filling Card:";
-				try {
-					inputContent = await this.app.vault.read(continueFile);
-				} catch (error) {
-					rethrowWithMessage(error, "Error occurred while reading the file to continue from");
-				}
-				targetPath = continueFile.parent as TFolder;
-			} else {
-				// Creating a new card
-
-				// Prompt for card type (the folder containing the desired template)
-				const cardTypes = this.getTemplatesTypes(false);
-				const cardType = await new Promise<TFolder>((resolve, reject) =>
-					new CardTypeSelectionModal(this.app, cardTypes, this.settings, resolve, reject).open()
-				);
-
-				// Get template using TemplateSelectionModal modal (the template file)
-				const templates = this.getTemplatesForType(cardType, false);
-				const template = await new Promise<TFile>((resolve, reject) => {
-					new TemplateSelectionModal(this.app, templates, this.settings, resolve, reject).open();
-				});
-				fieldCollectionModalTitle = template.basename;
-				templateName = template.basename;
-
-				// Get template
-				try {
-					inputContent = await this.app.vault.read(template);
-				} catch (error) {
-					rethrowWithMessage(error, "Error occurred while reading the template");
-				}
-
-				// Add z2k system yaml
-				inputContent = await this.AddZ2KSystemYaml(inputContent, cardType);
-				targetPath = cardType;
-			}
-
-			// Parse the template
-			let templateState: TemplateStateNew;
-			try {
-				templateState = Z2KTemplateEngine.parseTemplateNew(inputContent, targetPath, getPartialCallback);
-
-				{ // Add some extra built-ins:
-					// sourceText
-					templateState.promptInfos["sourceText"] = {
-						varName: "sourceText",
-						type: "text",
-						directives: ['no-prompt'],
-					};
-					templateState.resolvedValues["sourceText"] = inputText || "";
-
-					// creator
-					templateState.promptInfos["creator"] = {
-						varName: "creator",
-						type: "text",
-						directives: ['no-prompt'],
-					};
-					templateState.resolvedValues["creator"] = this.settings.creator || "";
-				}
-
-				// TODO: add the below to the above
-
-
-
-				// templateName (not card title/name)
-				// sets templateName to be the template's file name,
-				// 	but overrides when a z2k_template_name yaml variable is present
-				let templateNameYaml = templateState.parsedYaml["z2k_template_name"];
-				if (templateNameYaml instanceof SegmentList) {
-					if (templateNameYaml.items.length !== 1 || typeof templateNameYaml.items[0] !== 'string') {
-						new Notice("Sorry, variables in the template name yaml are not supported right now");
-					} else {
-						templateName = templateNameYaml.items[0] as string;
-					}
-				}
-				templateState.mergedVarInfoMap.set("templateName", {
-					varName: "templateName",
-					dataType: "text",
-					directives: ['no-prompt'],
-					resolvedValue: templateName,
-					valueSource: "built-in",
-				});
-
-				// title
-				// title is reduced set compatible
-				if (continueFile) {
-					let currTitle = continueFile.basename;
-					if (currTitle.endsWith('.md')) { currTitle = currTitle.slice(0, -3); }
-					templateState.mergedVarInfoMap.set("title", {
-						varName: "title",
-						rawExpression: currTitle,
-						promptText: "Title",
-						parsedPromptText: Z2KTemplateEngine.parseReducedSetSegmentsText("Title"),
-						dataType: "titleText",
-						defaultValue: currTitle,
-						parsedDefaultValue: Z2KTemplateEngine.parseReducedSetSegmentsText(currTitle),
-						directives: ['required', 'no-prompt'],
-						resolvedValue: currTitle,
-						valueSource: "user-input",
-					});
-				} else {
-					if (templateState.parsedYaml.hasOwnProperty("z2k_template_default_title")) {
-						// This will override any existing "title" variable
-						const segmentList = templateState.parsedYaml["z2k_template_default_title"];
-						if (!(segmentList instanceof SegmentList)) {
-							throw new TemplatePluginError("z2k_template_default_title yaml value must be a string");
-						}
-						const reducedSetSegments = Z2KTemplateEngine.parseReducedSetSegments(segmentList);
-						templateState.mergedVarInfoMap.set("title", {
-							varName: "title",
-							promptText: "Title",
-							parsedPromptText: Z2KTemplateEngine.parseReducedSetSegmentsText("Title"),
-							dataType: "titleText",
-							parsedDefaultValue: reducedSetSegments,
-							directives: ['required'],
-							valueSource: "yaml",
-						});
-					} else if (!templateState.mergedVarInfoMap.has("title")) {
-						templateState.mergedVarInfoMap.set("title", {
-							varName: "title",
-							promptText: "Title",
-							parsedPromptText: Z2KTemplateEngine.parseReducedSetSegmentsText("Title"),
-							dataType: "titleText",
-							parsedDefaultValue: Z2KTemplateEngine.parseReducedSetSegmentsText("Untitled"),
-							directives: ['required'],
-							valueSource: "built-in",
-						});
-					}
-				}
-
-				// Ensure title variable is properly configured
-				const titleVarInfo = templateState.mergedVarInfoMap.get("title") as VarInfo;
-				if (titleVarInfo) {
-					titleVarInfo.dataType = "titleText";
-					if (!titleVarInfo.promptText) {
-						titleVarInfo.promptText = "Title";
-					}
-					if (!titleVarInfo.parsedPromptText) {
-						titleVarInfo.parsedPromptText = Z2KTemplateEngine.parseReducedSetSegmentsText("Title");
-					}
-					if (!titleVarInfo.directives.includes("required")) {
-						titleVarInfo.directives.push("required");
-					}
-				}
-			} catch (error) {
-				rethrowWithMessage(error, "Error occurred while parsing the template");
-			}
-
-			// if (jsonData) {
-			// 	this.templateEngine.resolveVarsFromJSON(templateState, jsonData);
-			// }
-			// console.log("After parse:", JSON.stringify(templateState, null, 2));
-
-			// Prompt user for missing variables if needed
-			if (this.hasFillableFields(templateState.promptInfos)) {
-				await new Promise<void>((resolve, reject) => {
-					// Leaving off: change to just passing in templateState, get FieldCollectionModal working with TemplateStateNew
-					new FieldCollectionModal(this.app, fieldCollectionModalTitle, templateState, resolve, reject).open();
-				});
-			} else {
-				new Notice("No fields to prompt for.");
-			}
-			// console.log("After prompt:", JSON.stringify(templateState, null, 2));
-
-			// // Resolve any remaining missing variables with defaults
-			// this.templateEngine.resolveMissText(templateState);
-			// console.log("After resolveMissText:", templateState);
-
-			// Render the template
-			let title: string | undefined, content: string;
-			try {
-				({ title, content } = this.templateEngine.renderTemplate(templateState));
-			} catch (error) {
-				rethrowWithMessage(error, "Error occurred while rendering the template");
-			}
-
-			// check if the {{sourceText}} field is in the template, and if not, add it to the end of the template
-			if (hadSourceTextField && inputText) {
-				content += `\n\n${inputText}\n`;
-			}
-
-			const filename = title
-				?.replace(/[<>:"/\\|?*\u0000-\u001F]/g, '_') // Illegal in Windows + control chars
-				.replace(/^\.+$/, '_')                      // Avoid names like "." or ".."
-				.replace(/[. ]+$/, '')                      // No trailing dots or spaces
-				.replace(/^ +/, '')                         // No leading spaces
-				|| 'Untitled';                              // Fallback if empty
-
-			if (continueFile) {
-				// If continuing an existing file, update its content
-				try {
-					if (continueFile.basename !== filename) {
-						// Write the new contents at the new path
-						let newCardPath = this.generateUniqueFilePath(continueFile.parent?.path as string, filename)
-						await this.app.vault.create(newCardPath, content); // Create the new file
-						await this.app.vault.delete(continueFile); // Delete the old file
-						await this.app.workspace.openLinkText(newCardPath, ""); // Open the new file
-					} else {
-						await this.app.vault.modify(continueFile, content); // Just modify the existing file
-						await this.app.workspace.openLinkText(continueFile.path, ""); // Open the file if not already open
-					}
-				} catch (error) {
-					rethrowWithMessage(error, "Error occurred while updating the existing file");
-				}
-			} else {
-				// Create the new card
-				let newCardPath: string;
-				try {
-					let finalFolderPath = this.getFolderBasedOnTemplate(cardType);
-					await this.ensureFolderExists(finalFolderPath);
-					newCardPath = this.generateUniqueFilePath(finalFolderPath, filename);
-					await this.app.vault.create(newCardPath, content);
-				} catch (error) {
-					rethrowWithMessage(error, "Error creating new file");
-				}
-
-				// Open the new file
-				try {
-					this.app.workspace.openLinkText(newCardPath, "");
-				} catch (error) {
-					rethrowWithMessage(error, "Error opening new file");
-				}
-
-				// Prompt for deletion if file was provided
-				if (inputFile) {
-					const shouldDelete = await new Promise<boolean>(resolve => {
-						new DeleteConfirmationModal(this.app, inputFile as TFile, resolve).open();
-					});
-					if (shouldDelete) {
-						try {
-							await this.app.vault.delete(inputFile);
-						} catch (error) {
-							rethrowWithMessage(error, "Error deleting original file");
-						}
-					}
-				}
-			}
-
-		} catch (error: unknown) {
-			this.handleErrors(error);
+			return Z2KTemplateEngine.parseTemplateNew(content, path, this.getPartialCallback);
+		} catch (error) {
+			rethrowWithMessage(error, "Error occurred while parsing the template");
 		}
 	}
+	async createAndOpenFile(folder: TFolder, title: string, content: string): Promise<TFile> {
+		try {
+			const filename = this.getValidFilename(title);
+			const newPath = this.generateUniqueFilePath(folder.path, filename);
+			const file = await this.app.vault.create(newPath, content);
+			await this.app.workspace.openLinkText(file.path, "");
+			return file;
+		} catch (error) {
+			rethrowWithMessage(error, "Error occurred while creating the file");
+		}
+	}
+	async updateTitleAndContent(file: TFile, title: string, content: string): Promise<void> {
+		try {
+			await this.app.vault.modify(file, content);
+			const filename = this.getValidFilename(title);
+			if (filename !== file.basename) {
+				const newPath = this.generateUniqueFilePath(file.parent?.path as string, filename);
+				await this.app.fileManager.renameFile(file, newPath);
+			}
+		} catch (error) {
+			rethrowWithMessage(error, "Error occurred while updating the file content or title");
+		}
+		// // Old version, just in case it's needed:
+		// try {
+		// 	if (continueFile.basename !== filename) {
+		// 		// Write the new contents at the new path
+		// 		let newCardPath = this.generateUniqueFilePath(continueFile.parent?.path as string, filename)
+		// 		await this.app.vault.create(newCardPath, content); // Create the new file
+		// 		await this.app.vault.delete(continueFile); // Delete the old file
+		// 		await this.app.workspace.openLinkText(newCardPath, ""); // Open the new file
+		// 	} else {
+		// 		await this.app.vault.modify(continueFile, content); // Just modify the existing file
+		// 		await this.app.workspace.openLinkText(continueFile.path, ""); // Open the file if not already open
+		// 	}
+		// } catch (error) {
+		// 	rethrowWithMessage(error, "Error occurred while updating the existing file");
+		// }
+	}
+	getValidFilename(title: string): string {
+		return title
+			?.replace(/[<>:"/\\|?*\u0000-\u001F]/g, '_') // Illegal in Windows + control chars
+			.replace(/^\.+$/, '_')                      // Avoid names like "." or ".."
+			.replace(/[. ]+$/, '')                      // No trailing dots or spaces
+			.replace(/^ +/, '')                         // No leading spaces
+			|| 'Untitled';                              // Fallback if empty
+	}
+	generateUniqueFilePath(folderPath: string, basename: string): string {
+		basename = basename.replace(/\.md$/, '');
+		let filename = basename + '.md';
+		let fullPath = this.joinPath(folderPath, filename);
+		let counter = 1;
+		while (this.getFile(fullPath)) {
+			fullPath = this.joinPath(folderPath, `${basename} (${counter++}).md`);
+		}
+		return fullPath;
+	}
+	addBuiltIns(templateState: TemplateStateNew, opts: { sourceText?: string, existingTitle?: string } = {}): TemplateStateNew {
+		// sourceText
+		templateState.promptInfos["sourceText"] = {
+			varName: "sourceText",
+			type: "text",
+			directives: ['no-prompt'],
+		};
+		templateState.resolvedValues["sourceText"] = opts.sourceText || "";
+
+		// creator
+		templateState.promptInfos["creator"] = {
+			varName: "creator",
+			type: "text",
+			directives: ['no-prompt'],
+		};
+		templateState.resolvedValues["creator"] = this.settings.creator || "";
+
+		// template name
+		templateState.promptInfos["templateName"] = {
+			varName: "templateName",
+			type: "text",
+			directives: ['no-prompt'],
+		};
+		templateState.resolvedValues["templateName"] = "temp"; // TODO
+
+		// title
+		templateState.promptInfos["title"] = {
+			varName: "title",
+			type: "titleText",
+			directives: opts.existingTitle ? ['required', 'no-prompt'] : ['required'],
+		};
+		templateState.resolvedValues["title"] = opts.existingTitle || "Untitled";
+
+		return templateState;
+	}
+	ensureSourceText(content: string, hadSourceTextField: boolean, sourceText: string): string {
+		if (hadSourceTextField) {
+			return content;
+		} else if (sourceText) {
+			return content + "\n\n" + sourceText + "\n";
+		} else {
+			return content;
+		}
+	}
+
+
+
+
+
 	private async AddZ2KSystemYaml(inputContent: string, cardType: TFolder): Promise<string> {
 		// Get all the z2k system yaml files between here and the root
 		const z2kRoot = this.getFolder(this.settings.z2kRootFolder);
@@ -736,156 +875,6 @@ export default class Z2KPlugin extends Plugin {
 		} else {
 			const insertPos = inputContent.indexOf('---') + 3; // right after first --- in the content
 			return `---\n${mergedYaml}\n${inputContent.slice(insertPos)}`;
-		}
-	}
-
-	// TODO: try combining this with createOrContinueCard
-	async insertPartialTemplate(opts: { inputText?: string } = {}) {
-		const editor = this.app.workspace.getActiveViewOfType(MarkdownView)?.editor;
-		const file = this.app.workspace.getActiveFile();
-		if (!editor || !file || file.extension !== 'md') { return; }
-
-		try {
-			// First parse the file content
-			let fileContent: string;
-			try {
-				fileContent = await this.app.vault.read(file);
-			} catch (error) {
-				rethrowWithMessage(error, "Error occurred while reading the current file");
-			}
-			const currentState = this.templateEngine.parseTemplate(fileContent);
-
-			// Get valid partial template types
-			const cardTypes = this.getTemplatesTypes(true);
-			const cardType = await new Promise<TFolder>((resolve, reject) =>
-				new CardTypeSelectionModal(this.app, cardTypes, this.settings, resolve, reject).open());
-
-			// Get templates in that type
-			const templates = this.getTemplatesForType(cardType, true);
-			if (templates.length === 0) throw new Error("No partial templates found in selected folder");
-
-			// Let user pick one
-			const template = await new Promise<TFile>((resolve, reject) =>
-				new TemplateSelectionModal(this.app, templates, this.settings, resolve, reject).open());
-
-			// Read and ask for fields
-			const templateContent = await this.app.vault.read(template);
-			const partialState = this.templateEngine.parseTemplate(templateContent);
-
-			{ // Insert some built-in variables
-				// sourceText
-				partialState.mergedVarInfoMap.set("sourceText", {
-					varName: "sourceText",
-					dataType: "text",
-					directives: [],
-					resolvedValue: opts.inputText || "",
-					valueSource: "built-in",
-				});
-
-				// creator
-				partialState.mergedVarInfoMap.set("creator", {
-					varName: "creator",
-					dataType: "text",
-					directives: ['no-prompt'],
-					resolvedValue: this.settings.creator || "",
-					valueSource: "built-in",
-				});
-
-				// templateName
-				partialState.mergedVarInfoMap.set("templateName", {
-					varName: "templateName",
-					dataType: "text",
-					directives: ['no-prompt'],
-					resolvedValue: template.basename,
-					valueSource: "built-in",
-				});
-
-				// title
-				partialState.mergedVarInfoMap.set("title", {
-					varName: "title",
-					dataType: "titleText",
-					directives: ['no-prompt'],
-					resolvedValue: file.basename,
-					valueSource: "built-in",
-				});
-			}
-
-			if (this.hasFillableFields(partialState.mergedVarInfoMap)) {
-				await new Promise<void>((resolve, reject) =>
-					new FieldCollectionModal(this.app, template.basename, partialState.mergedVarInfoMap, resolve, reject).open());
-			}
-
-			{ // Merge, render, and update text
-				// 1. Render current YAML to get line count
-				const { yamlString: originalYaml } = this.templateEngine.renderTemplate(currentState);
-				const originalYamlLineCount = originalYaml.trim() === "" ? 0 : originalYaml.trim().split("\n").length + 2; // +2 for `---`
-
-				// 2. Merge YAML
-				Z2KTemplateEngine.deepMergeParsedYaml(currentState.parsedYaml, partialState.parsedYaml);
-
-				// 3. Re-render after merge
-				const { yamlString: mergedYaml, bodyString: mainBody } = this.templateEngine.renderTemplate(currentState);
-				let { bodyString: partialBody } = this.templateEngine.renderTemplate(partialState);
-
-				// 4. Calculate YAML line delta
-				// All this stuff is to accomodate the change of position in the file because of YAML being inserted
-				const mergedYamlLineCount = mergedYaml.trim() === "" ? 0 : mergedYaml.trim().split("\n").length + 2;
-				console.log(`YAML line count: original=${originalYamlLineCount}, merged=${mergedYamlLineCount}`);
-				const yamlLineDelta = mergedYamlLineCount - originalYamlLineCount;
-
-				// 5. Replace selected range in mainBody by character offset
-				const origFrom = editor.getCursor("from");
-				const origTo = editor.getCursor("to");
-				console.log(`Original selection: from=${origFrom.line}:${origFrom.ch}, to=${origTo.line}:${origTo.ch}`);
-				const from: EditorPosition = {
-					line: origFrom.line - originalYamlLineCount, // Adjust for YAML offset
-					ch: origFrom.ch
-				};
-				const to: EditorPosition = {
-					line: origTo.line - originalYamlLineCount,
-					ch: origTo.ch
-				};
-				const mainLines = mainBody.split("\n");
-
-				const before = mainLines.slice(0, from.line);
-				const fromLinePrefix = mainLines[from.line]?.slice(0, from.ch) ?? "";
-				if (fromLinePrefix !== "") { before.push(fromLinePrefix); }
-
-				const after = mainLines.slice(to.line + 1);
-				if (to.line < mainLines.length && mainLines[to.line]) {
-					after.unshift(mainLines[to.line].slice(to.ch));
-				}
-
-				const updatedBody = [...before, ...partialBody.split("\n"), ...after].join("\n");
-
-				// 6. Assemble full content with YAML
-				let fullContent = "";
-				if (mergedYaml.trim() !== "") {
-					fullContent += `---\n${mergedYaml.trim()}\n---\n`;
-					if (!updatedBody.startsWith("\n")) { // Put an empty line after yaml for convention
-						fullContent += `\n`;
-					}
-				}
-				fullContent += updatedBody;
-
-				// 7. Replace full file
-				editor.setValue(fullContent);
-
-				// 8. Scroll to inserted partial
-				const scrollStart: EditorPosition = {
-					line: from.line + yamlLineDelta,
-					ch: from.ch
-				};
-				const scrollEnd: EditorPosition = {
-					line: scrollStart.line + partialBody.split("\n").length - 1,
-					ch: partialBody.split("\n").at(-1)?.length ?? 0
-				};
-
-				editor.scrollIntoView({ from: scrollStart, to: scrollEnd });
-				editor.setCursor(scrollEnd);
-			}
-		} catch (error: unknown) {
-			this.handleErrors(error);
 		}
 	}
 
@@ -1111,51 +1100,6 @@ export default class Z2KPlugin extends Plugin {
 		return partialMap;
 	}
 
-	private async ensureFolderExists(path: string): Promise<void> {
-		const folder = this.getFolder(path);
-		if (!folder) {
-			try {
-				await this.app.vault.createFolder(path);
-			} catch (err) {
-				rethrowWithMessage(err, `Error creating folder "${path}"`);
-			}
-		}
-	}
-
-	private generateUniqueFilePath(folderPath: string, baseName: string): string {
-		baseName = baseName.replace(/\.md$/, '');
-		let filename = baseName + '.md';
-		let fullPath = this.joinPath(folderPath, filename);
-		let counter = 1;
-		while (this.getFile(fullPath)) {
-			fullPath = this.joinPath(folderPath, `${baseName} (${counter++}).md`);
-		}
-		return fullPath;
-	}
-
-	// Resolve parent folder where a new card should go based on template location
-	private getFolderBasedOnTemplate(template: TFile | TFolder | null): string {
-		let templateFolder = template;
-		if (template instanceof TFile) { templateFolder = template.parent; }
-		if (!templateFolder) { return this.settings.z2kRootFolder; }
-
-		// If it's an embedded template, use its parent
-		if (!this.settings.useExternalTemplates && templateFolder.name === this.settings.embeddedTemplatesFolderName) {
-			templateFolder = templateFolder.parent ?? templateFolder; // fallback to itself if no parent
-		}
-
-		let finalFolderPath = normalizePath(templateFolder.path);
-		if (!this.settings.useExternalTemplates) { return finalFolderPath; }
-
-		const base = normalizePath(this.settings.externalTemplatesFolder);
-		if (!this.isSubPath(base, finalFolderPath)) { return finalFolderPath; }
-		finalFolderPath = finalFolderPath === base
-			? this.settings.z2kRootFolder
-			: this.joinPath(this.settings.z2kRootFolder, finalFolderPath.slice(base.length + 1));
-
-		return normalizePath(finalFolderPath);
-	}
-
 	private getFile(path: string): TFile | null {
 		const normalized = normalizePath(path);
 		const file = this.app.vault.getAbstractFileByPath(normalized);
@@ -1191,7 +1135,6 @@ export default class Z2KPlugin extends Plugin {
 
 		return files;
 	}
-
 	private hasFillableFields(promptInfos: Record<string, PromptInfo>): boolean {
 		for (const promptInfo of Object.values(promptInfos)) {
 			if (!promptInfo.directives?.includes("no-prompt")) { return true; }
@@ -1670,18 +1613,11 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel }: FieldColle
 
 		// Initialize field states with metadata
 		for (const [fieldName, promptInfo] of Object.entries(templateState.promptInfos)) {
-
-			function getJustFieldReferences(segments: ReducedSetSegment[] | undefined): string[] {
-				if (!segments) return [];
-				return segments
-					.filter(segment => segment.type === 'fieldReference')
-					.map(segment => segment.content);
-			}
 			// Get dependencies from prompt text, default value, and miss text
 			const dependencies = [
-				...getJustFieldReferences(promptInfo.parsedPrompt),
-				...getJustFieldReferences(promptInfo.parsedDefault),
-				...getJustFieldReferences(promptInfo.parsedMiss)
+				...promptInfo.prompt ? Z2KTemplateEngine.reducedGetDependencies(promptInfo.prompt) : [],
+				...promptInfo.default ? Z2KTemplateEngine.reducedGetDependencies(promptInfo.default) : [],
+				...promptInfo.miss ? Z2KTemplateEngine.reducedGetDependencies(promptInfo.miss) : [],
 			];
 
 			// Set initial field state
@@ -1777,24 +1713,25 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel }: FieldColle
 
 			let context = {
 				...Object.fromEntries(Object.entries(newFieldStates).map(
-					([name, state]) => [name, { value: state.value, dataType: promptInfo.type ?? 'text'}])),
+					([name, state]) => [name, state.value])),
 			};
 
 			// Update all resolved text fields
-			newFieldStates[fieldName].resolvedPrompt = Z2KTemplateEngine.renderReducedSetText(promptInfo.parsedPrompt, context);
-			newFieldStates[fieldName].resolvedDefault = Z2KTemplateEngine.renderReducedSetText(promptInfo.parsedDefault, context);
-			newFieldStates[fieldName].resolvedMiss = Z2KTemplateEngine.renderReducedSetText(promptInfo.parsedMiss, context);
+			newFieldStates[fieldName].resolvedPrompt = Z2KTemplateEngine.reducedRenderContent(promptInfo.prompt || fieldName, context)
+			newFieldStates[fieldName].resolvedDefault = Z2KTemplateEngine.reducedRenderContent(promptInfo.default || "", context);
+			newFieldStates[fieldName].resolvedMiss = Z2KTemplateEngine.reducedRenderContent(promptInfo.miss || "", context);
 
 			if (!newFieldStates[fieldName].alreadyResolved && !newFieldStates[fieldName].touched) {
 				newFieldStates[fieldName].value = newFieldStates[fieldName].resolvedDefault;
 			}
-			if (reEvalValues) {
-				// Go ahead and parse and render any values regardless. This
-				if (typeof(newFieldStates[fieldName].value) === 'string') {
-					let parsedValue = Z2KTemplateEngine.parseReducedSetSegmentsText(newFieldStates[fieldName].value as string);
-					newFieldStates[fieldName].value = Z2KTemplateEngine.renderReducedSetText(parsedValue, context);
-				}
-			}
+			// // I don't remember what this did, but I'm going to leave it disabled for now
+			// if (reEvalValues) {
+			// 	// Go ahead and parse and render any values regardless. This
+			// 	if (typeof(newFieldStates[fieldName].value) === 'string') {
+			// 		let parsedValue = Z2KTemplateEngine.parseReducedSetSegmentsText(newFieldStates[fieldName].value as string);
+			// 		newFieldStates[fieldName].value = Z2KTemplateEngine.renderReducedSetText(parsedValue, context);
+			// 	}
+			// }
 		}
 	}
 
@@ -2140,6 +2077,23 @@ const FieldInput = ({ name, label, promptInfo, fieldState, onChange, onFocus, on
 						}
 						onChange={(e) => {
 							const m = moment(e.target.value, "YYYY-MM-DD", true);
+							onChange(m.isValid() ? m : undefined);
+						}}
+						{...commonProps}
+					/>
+				);
+
+			case 'datetime':
+				return (
+					<input
+						type="datetime-local"
+						className={`date-input ${fieldState.hasError ? 'has-error' : ''}`}
+						value={
+							moment.isMoment(fieldState.value) && fieldState.value.isValid()
+								? fieldState.value.format("YYYY-MM-DD HH:mm:ss") : ''
+						}
+						onChange={(e) => {
+							const m = moment(e.target.value, "YYYY-MM-DD HH:mm:ss", true);
 							onChange(m.isValid() ? m : undefined);
 						}}
 						{...commonProps}
