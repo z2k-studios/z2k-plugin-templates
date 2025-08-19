@@ -1,28 +1,24 @@
 
 // TODO: Add error handling for errors within react components by using React Error Boundaries
 
-import { App, Plugin, Modal, Notice, TFolder, TFile, PluginSettingTab, Setting, MarkdownView, Editor } from 'obsidian';
-import { Z2KTemplateEngine, TemplateStateNew, VarValueType, PromptInfo, TemplateError } from 'z2k-template-engine';
+import { App, Plugin, Modal, Notice, TAbstractFile, TFolder, TFile, PluginSettingTab, Setting, MarkdownView, Editor } from 'obsidian';
+import { Z2KTemplateEngine, Z2KYamlDoc, TemplateState, VarValueType, PromptInfo, TemplateError } from 'z2k-template-engine';
 import React, { useState, useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import moment from 'moment';   // npm i moment
 
 interface Z2KPluginSettings {
 	z2kRootFolder: string;
-	useExternalTemplates: boolean;
-	embeddedTemplatesFolderName: string;
-	externalTemplatesFolder: string;
-	partialPrefixFilter: string;
 	creator: string;
+	templatesFolderName: string;
+	templateEditingEnabled: boolean;
 }
 
 const DEFAULT_SETTINGS: Z2KPluginSettings = {
 	z2kRootFolder: '/Z2K',
-	useExternalTemplates: false,
-	embeddedTemplatesFolderName: 'Templates',
-	externalTemplatesFolder: '/Templates-External',
-	partialPrefixFilter: 'Partial - ',
 	creator: '',
+	templatesFolderName: 'Templates',
+	templateEditingEnabled: true,
 };
 
 class Z2KSettingTab extends PluginSettingTab {
@@ -58,85 +54,6 @@ class Z2KSettingTab extends PluginSettingTab {
 						await this.plugin.saveData(this.plugin.settings);
 					});
 			});
-
-
-		new Setting(containerEl)
-			.setName('Use external templates folder')
-			.setDesc('If enabled, templates will be loaded from the external templates folder')
-			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.useExternalTemplates)
-				.onChange(async (value) => {
-					this.plugin.settings.useExternalTemplates = value;
-					await this.plugin.saveData(this.plugin.settings);
-					this.display(); // re-render settings UI
-				}));
-
-		if (this.plugin.settings.useExternalTemplates) {
-			new Setting(containerEl)
-				.setName('External templates folder')
-				.setDesc('All files within this folder will show up as templates')
-				.addText(text => {
-					const input = text
-						.setPlaceholder(DEFAULT_SETTINGS.externalTemplatesFolder)
-						.setValue(this.plugin.settings.externalTemplatesFolder)
-						.inputEl;
-
-					this.validateTextInput(input,
-						(value) => {
-							if (/[*?"<>|:]/.test(value)) { return "Invalid characters in folder path"; }
-							return null;
-						},
-						async (validValue) => {
-							this.plugin.settings.externalTemplatesFolder = validValue;
-							await this.plugin.saveData(this.plugin.settings);
-						});
-				});
-		} else {
-			new Setting(containerEl)
-				.setName('Embedded templates folder name')
-				.setDesc('Any files within folders of this name will show up as templates')
-				.addText(text => {
-					const input = text
-						.setPlaceholder(DEFAULT_SETTINGS.embeddedTemplatesFolderName)
-						.setValue(this.plugin.settings.embeddedTemplatesFolderName)
-						.inputEl;
-
-					this.validateTextInput(input,
-						(value) => {
-							if (!value.trim()) { return "Folder name cannot be empty"; }
-							if (value.includes('/') || value.includes('\\')) { return "Folder name cannot contain slashes"; }
-							if (/^[.]+$/.test(value)) { return `"${value}" is not a valid folder name`; }
-							if (/[*?"<>|:]/.test(value)) { return "Invalid characters in folder name"; }
-							return null;
-						},
-						async (validValue) => {
-							this.plugin.settings.embeddedTemplatesFolderName = validValue;
-							await this.plugin.saveData(this.plugin.settings);
-						});
-				});
-		}
-
-		new Setting(containerEl)
-			.setName('Block prefix filter')
-			.setDesc('Filename prefix to mark the template as a block-template')
-			.addText(text => {
-				const input = text
-					.setPlaceholder(DEFAULT_SETTINGS.partialPrefixFilter)
-					.setValue(this.plugin.settings.partialPrefixFilter)
-					.inputEl;
-
-				this.validateTextInput(input,
-					(value) => {
-						if (!value.trim()) { return "Prefix cannot be empty"; }
-						if (/[*?"<>|:./\\]/.test(value)) { return "Invalid characters in prefix"; }
-						return null;
-					},
-					async (validValue) => {
-						this.plugin.settings.partialPrefixFilter = validValue;
-						await this.plugin.saveData(this.plugin.settings);
-					});
-			});
-
 		new Setting(containerEl)
 			.setName('Creator name')
 			.setDesc('Name to put in YAML when creating new cards (disabled if empty)')
@@ -156,6 +73,42 @@ class Z2KSettingTab extends PluginSettingTab {
 						await this.plugin.saveData(this.plugin.settings);
 					});
 			});
+		new Setting(containerEl)
+			.setName('Embedded templates folder name')
+			.setDesc('Any files within folders of this name will show up as templates')
+			.addText(text => {
+				const input = text
+					.setPlaceholder(DEFAULT_SETTINGS.templatesFolderName)
+					.setValue(this.plugin.settings.templatesFolderName)
+					.inputEl;
+
+				this.validateTextInput(input,
+					(value) => {
+						if (!value.trim()) { return "Folder name cannot be empty"; }
+						if (value.includes('/') || value.includes('\\')) { return "Folder name cannot contain slashes"; }
+						if (/^[.]+$/.test(value)) { return `"${value}" is not a valid folder name`; }
+						if (/[*?"<>|:]/.test(value)) { return "Invalid characters in folder name"; }
+						return null;
+					},
+					async (validValue) => {
+						this.plugin.settings.templatesFolderName = validValue;
+						await this.plugin.saveData(this.plugin.settings);
+					});
+			});
+		new Setting(containerEl)
+			.setName('Enable template editing')
+			.setDesc('Enables editing of templates in the Templates folder')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.templateEditingEnabled)
+				.onChange(async (value) => {
+					this.plugin.settings.templateEditingEnabled = value;
+					await this.plugin.saveData(this.plugin.settings);
+					if (value) {
+						await this.plugin.enableTemplateEditing();
+					} else {
+						await this.plugin.disableTemplateEditing();
+					}
+				}));
 	}
 
 	validateTextInput(
@@ -325,249 +278,228 @@ export default class Z2KPlugin extends Plugin {
 	onunload() {}
 
 	registerCommands() {
-		// Command palette commands
-		this.addCommand({
-			id: 'z2k-create-new-card',
-			name: 'Create card from template',
-			callback: () => this.createCard(),
-		});
+		{ // Creating
+			// Command palette commands
+			this.addCommand({
+				id: 'z2k-create-new-card',
+				name: 'Create card from template',
+				callback: () => this.createCard(),
+			});
 
-		// Command palette commands for when text is selected
-		this.addCommand({
-			id: 'z2k-create-card-from-selected-text',
-			name: 'Create card from selected text',
-			editorCheckCallback: (checking, editor) => {
-				const selectedText = editor.getSelection();
-				if (checking) { return selectedText.length > 0; } // Only enable if text is selected
-				this.createCardFromSelection();
-			},
-		});
+			// Command palette commands for when text is selected
+			this.addCommand({
+				id: 'z2k-create-card-from-selected-text',
+				name: 'Create card from selected text',
+				editorCheckCallback: (checking, editor) => {
+					const selectedText = editor.getSelection();
+					if (checking) { return selectedText.length > 0; } // Only enable if text is selected
+					this.createCardFromSelection();
+				},
+			});
 
-		// Context menu 'new card from selection' when text is selected
-		this.registerEvent(
-			this.app.workspace.on('editor-menu', (menu, editor) => {
-				const selectedText = editor.getSelection();
-				if (selectedText.length === 0) return;
-				menu.addItem((item) => {
-					item.setTitle("Z2K: Create card from selection...")
-						.onClick(() => {
-							this.createCardFromSelection();
-						});
-				});
-			})
-		);
+			// Context menu 'new card from selection' when text is selected
+			this.registerEvent(
+				this.app.workspace.on('editor-menu', (menu, editor) => {
+					const selectedText = editor.getSelection();
+					if (selectedText.length === 0) return;
+					menu.addItem((item) => {
+						item.setTitle("Z2K: Create card from selection...")
+							.onClick(() => {
+								this.createCardFromSelection();
+							});
+					});
+				})
+			);
 
-		// Command palette 'convert file to card' when a file is active
-		this.addCommand({
-			id: 'z2k-convert-file-to-card',
-			name: 'Convert file to card',
-			checkCallback: (checking) => {
-				const activeFile = this.app.workspace.getActiveFile();
-				// Only enable if there's an active file and it's a markdown file
-				if (checking) { return !!activeFile && activeFile.extension === 'md'; }
-				this.createCardFromFile(activeFile as TFile);
-			},
-		});
+			// Command palette 'convert file to card' when a file is active
+			this.addCommand({
+				id: 'z2k-convert-file-to-card',
+				name: 'Convert file to card',
+				checkCallback: (checking) => {
+					const activeFile = this.app.workspace.getActiveFile();
+					// Only enable if there's an active file and it's a markdown file
+					if (checking) { return !!activeFile && activeFile.extension === 'md'; }
+					this.createCardFromFile(activeFile as TFile);
+				},
+			});
+		}
 
-		// Command palette 'continue card creation' to continue creating a card from an existing file
-		this.addCommand({
-			id: 'z2k-continue-filling-card',
-			name: 'Continue filling card',
-			editorCheckCallback: (checking, editor) => {
-				const activeFile = this.app.workspace.getActiveFile();
-				if (checking) { return !!activeFile && activeFile.extension === 'md'; }
-				this.continueCard(activeFile as TFile);
-			},
-		});
+		{ // Continuing
+			// Command palette 'continue card creation' to continue creating a card from an existing file
+			this.addCommand({
+				id: 'z2k-continue-filling-card',
+				name: 'Continue filling card',
+				editorCheckCallback: (checking, editor) => {
+					const activeFile = this.app.workspace.getActiveFile();
+					if (checking) { return !!activeFile && activeFile.extension === 'md'; }
+					this.continueCard(activeFile as TFile);
+				},
+			});
+		}
 
-		// Command palette for inserting a partial when no text is selected
-		this.addCommand({
-			id: 'z2k-insert-partial-template',
-			name: 'Insert partial template',
-			editorCheckCallback: (checking, editor) => {
-				const file = this.app.workspace.getActiveFile();
-				if (checking) {
-					// Only enable if there's an active markdown file and no text is selected
-					return !!file && file.extension === 'md' && editor.getSelection().length === 0;
-				}
-				this.insertPartial();
-			}
-		});
-
-		// Context menu for inserting a partial template when no text is selected
-		this.registerEvent(
-			this.app.workspace.on('editor-menu', (menu, editor) => {
-				const file = this.app.workspace.getActiveFile();
-				if (!(file instanceof TFile) || file.extension !== 'md') return;
-				const selectedText = editor.getSelection();
-				if (selectedText.length > 0) return;
-				menu.addItem((item) => {
-					item.setTitle("Z2K: Insert partial template...")
-						.onClick(() => {
-							this.insertPartial();
-						});
-				});
-			})
-		);
-
-		// Command palette for inserting a partial template when text is selected
-		this.addCommand({
-			id: 'z2k-insert-partial-template-from-selection',
-			name: 'Insert partial template using selected text',
-			editorCheckCallback: (checking, editor) => {
-				const file = this.app.workspace.getActiveFile();
-				if (checking) {
-					// Only enable if there's an active markdown file and text is selected
-					return !!file && file.extension === 'md' && editor.getSelection().length > 0;
-				}
-				this.insertPartialFromSelection();
-			}
-		});
-
-		// Context menu for inserting a partial template when text is selected
-		this.registerEvent(
-			this.app.workspace.on('editor-menu', (menu, editor) => {
-				const file = this.app.workspace.getActiveFile();
-				if (!(file instanceof TFile) || file.extension !== 'md') return;
-				const selectedText = editor.getSelection();
-				if (selectedText.length === 0) return;
-				menu.addItem((item) => {
-					item.setTitle("Z2K: Insert partial template using selection...")
-						.onClick(() => {
-							this.insertPartialFromSelection();
-						});
-				});
-			})
-		);
-
-
-		//// Template editing mode
-		// Toggle
-		this.addCommand({
-			id: 'z2k-enable-template-editing',
-			name: 'Enable template editing mode',
-			checkCallback: (checking) => {
-				if (checking) { return !this.isTemplateEditingEnabled(); }
-				this.enableTemplateEditing();
-			},
-		});
-		this.addCommand({
-			id: 'z2k-disable-template-editing',
-			name: 'Disable template editing mode',
-			checkCallback: (checking) => {
-				if (checking) { return this.isTemplateEditingEnabled(); }
-				this.disableTemplateEditing();
-			},
-		});
-		// Toggle in context menu in file explorer
-		this.registerEvent(
-			this.app.workspace.on('file-menu', (menu, file) => {
-				if (!(file instanceof TFile) || file.extension !== 'md') return;
-				menu.addItem((item) => {
-					if (this.isTemplateEditingEnabled()) {
-						item.setTitle("Disable Template Editing Mode")
-							.onClick(() => this.disableTemplateEditing());
-					} else {
-						item.setTitle("Enable Template Editing Mode")
-							.onClick(() => this.enableTemplateEditing());
+		{ // Inserting partials
+			// Command palette for inserting a partial when no text is selected
+			this.addCommand({
+				id: 'z2k-insert-partial-template',
+				name: 'Insert partial template',
+				editorCheckCallback: (checking, editor) => {
+					const file = this.app.workspace.getActiveFile();
+					if (checking) {
+						// Only enable if there's an active markdown file and no text is selected
+						return !!file && file.extension === 'md' && editor.getSelection().length === 0;
 					}
-				});
-			})
-		);
+					this.insertPartial();
+				}
+			});
+
+			// Context menu for inserting a partial template when no text is selected
+			this.registerEvent(
+				this.app.workspace.on('editor-menu', (menu, editor) => {
+					const file = this.app.workspace.getActiveFile();
+					if (!(file instanceof TFile) || file.extension !== 'md') return;
+					const selectedText = editor.getSelection();
+					if (selectedText.length > 0) return;
+					menu.addItem((item) => {
+						item.setTitle("Z2K: Insert partial template...")
+							.onClick(() => {
+								this.insertPartial();
+							});
+					});
+				})
+			);
+
+			// Command palette for inserting a partial template when text is selected
+			this.addCommand({
+				id: 'z2k-insert-partial-template-from-selection',
+				name: 'Insert partial template using selected text',
+				editorCheckCallback: (checking, editor) => {
+					const file = this.app.workspace.getActiveFile();
+					if (checking) {
+						// Only enable if there's an active markdown file and text is selected
+						return !!file && file.extension === 'md' && editor.getSelection().length > 0;
+					}
+					this.insertPartialFromSelection();
+				}
+			});
+
+			// Context menu for inserting a partial template when text is selected
+			this.registerEvent(
+				this.app.workspace.on('editor-menu', (menu, editor) => {
+					const file = this.app.workspace.getActiveFile();
+					if (!(file instanceof TFile) || file.extension !== 'md') return;
+					const selectedText = editor.getSelection();
+					if (selectedText.length === 0) return;
+					menu.addItem((item) => {
+						item.setTitle("Z2K: Insert partial template using selection...")
+							.onClick(() => {
+								this.insertPartialFromSelection();
+							});
+					});
+				})
+			);
+		}
+
+		{ // Template editing mode toggle
+			// Toggle command
+			this.addCommand({
+				id: 'z2k-enable-template-editing',
+				name: 'Enable template editing mode',
+				checkCallback: (checking) => {
+					if (checking) { return !this.settings.templateEditingEnabled; }
+					this.enableTemplateEditing();
+				},
+			});
+			this.addCommand({
+				id: 'z2k-disable-template-editing',
+				name: 'Disable template editing mode',
+				checkCallback: (checking) => {
+					if (checking) { return this.settings.templateEditingEnabled; }
+					this.disableTemplateEditing();
+				},
+			});
+			// Toggle in context menu in file explorer
+			this.registerEvent(
+				this.app.workspace.on('file-menu', (menu, file) => {
+					if (this.settings.templateEditingEnabled) { return; }
+					menu.addItem((item) => {
+						item.setTitle("Z2K - Enable Template Editing Mode")
+							.onClick(() => this.enableTemplateEditing());
+					});
+				})
+			);
+			this.registerEvent(
+				this.app.workspace.on('file-menu', (menu, file) => {
+					if (this.settings.templateEditingEnabled) { return; }
+					menu.addItem((item) => {
+						item.setTitle("Z2K - Disable Template Editing Mode")
+							.onClick(() => this.disableTemplateEditing());
+					});
+				})
+			);
+		}
 
 		{ // Template conversion
 			// Command
 			this.addCommand({
-				id: 'z2k-convert-file-to-template',
-				name: 'Convert file to named template',
+				id: "z2k-convert-file-to-template",
+				name: "Z2K - Convert file to named template",
 				checkCallback: (checking) => {
-					const activeFile = this.app.workspace.getActiveFile();
-					if (checking) { return !!activeFile && activeFile.extension !== 'template'; }
-					this.convertFileToExtension(activeFile as TFile, 'template');
+					let file = this.app.workspace.getActiveFile();
+					if (checking) { return !!file && this.getFileTemplateType(file) !== "blueprint"; }
+					this.convertFileTemplateType(file as TFile, "blueprint");
 				},
 			});
 			this.addCommand({
-				id: 'z2k-convert-file-to-partial',
-				name: 'Convert file to partial template',
+				id: "z2k-convert-file-to-partial",
+				name: "Z2K - Convert file to partial template",
 				checkCallback: (checking) => {
-					const activeFile = this.app.workspace.getActiveFile();
-					if (checking) { return !!activeFile && activeFile.extension !== 'partial'; }
-					this.convertFileToExtension(activeFile as TFile, 'partial');
+					let file = this.app.workspace.getActiveFile();
+					if (checking) { return !!file && this.getFileTemplateType(file) !== "partial"; }
+					this.convertFileTemplateType(file as TFile, "partial");
 				},
 			});
 			this.addCommand({
-				id: 'z2k-convert-file-to-md',
-				name: 'Convert file to markdown',
+				id: "z2k-convert-file-to-md",
+				name: "Z2K - Convert file to markdown",
 				checkCallback: (checking) => {
-					const activeFile = this.app.workspace.getActiveFile();
-					if (checking) { return !!activeFile && activeFile.extension !== 'md'; }
-					this.convertFileToExtension(activeFile as TFile, 'md');
+					let file = this.app.workspace.getActiveFile();
+					if (checking) { return !!file && this.getFileTemplateType(file) !== "normal"; }
+					this.convertFileTemplateType(file as TFile, "normal");
 				},
 			});
 
 			// Context menu in file explorer
 			this.registerEvent(
-				this.app.workspace.on('file-menu', (menu, file) => {
-					if (!(file instanceof TFile) || file.extension === 'template') return;
+				this.app.workspace.on("file-menu", (menu, file) => {
+					if (!(file instanceof TFile) || this.getFileTemplateType(file) === "blueprint") return;
 					menu.addItem((item) => {
-						item.setTitle("Convert to named template")
-							.onClick(() => this.convertFileToExtension(file, 'template'));
+						item.setTitle("Z2K - Convert to named template")
+							.onClick(() => this.convertFileTemplateType(file as TFile, "blueprint"));
 					});
 				})
 			);
 			this.registerEvent(
-				this.app.workspace.on('file-menu', (menu, file) => {
-					if (!(file instanceof TFile) || file.extension === 'partial') return;
+				this.app.workspace.on("file-menu", (menu, file) => {
+					if (!(file instanceof TFile) || this.getFileTemplateType(file) === "partial") return;
 					menu.addItem((item) => {
-						item.setTitle("Convert to partial template")
-							.onClick(() => this.convertFileToExtension(file, 'partial'));
+						item.setTitle("Z2K - Convert to partial template")
+							.onClick(() => this.convertFileTemplateType(file as TFile, "partial"));
 					});
 				})
 			);
 			this.registerEvent(
-				this.app.workspace.on('file-menu', (menu, file) => {
-					if (!(file instanceof TFile) || file.extension === 'md') return;
+				this.app.workspace.on("file-menu", (menu, file) => {
+					if (!(file instanceof TFile) || this.getFileTemplateType(file) === "normal") return;
 					menu.addItem((item) => {
-						item.setTitle("Convert to markdown")
-							.onClick(() => this.convertFileToExtension(file, 'md'));
+						item.setTitle("Z2K - Convert to markdown")
+							.onClick(() => this.convertFileTemplateType(file as TFile, "normal"));
 					});
 				})
 			);
 		}
 	}
 
-
-
-	///////////////////////////////////////////////////////////////////////////////////
-	// Functions called from commands/context menu/etc
-	// 	These should all handle any errors
-	///////////////////////////////////////////////////////////////////////////////////
-
-	// Template editing
-	enableTemplateEditing() {
-		// @ts-expect-error: internal API
-		this.app.viewRegistry.registerExtensions(["template"], "markdown");
-	}
-	disableTemplateEditing() {
-		// @ts-expect-error: internal API
-		this.app.viewRegistry.unregisterExtensions("template");
-	}
-	isTemplateEditingEnabled(): boolean {
-		// @ts-expect-error: internal API
-		return !!this.app.viewRegistry.getTypeByExtension("template");
-	}
-
-	// Template conversion
-	async convertFileToExtension(file: TFile, newExtension: string) {
-		if (!file) { throw new Error("No file given to convert extension."); }
-		try {
-			const parentPath = file.parent?.path ?? "/";
-			const newPath = this.joinPath(parentPath, `${file.basename}.${newExtension}`);
-			await this.app.fileManager.renameFile(file, newPath);
-		} catch (error) {
-			rethrowWithMessage(error, "Error converting file extension");
-		}
-	}
+	//// Functions called from commands/context menu/etc
 
 	// Card creation and management
 	// 	(I couldn't find a good way to de-duplicate these functions,
@@ -575,10 +507,13 @@ export default class Z2KPlugin extends Plugin {
 	async createCard() {
 		try {
 			const cardTypeFolder = await this.promptForCardTypeFolder();
-			const templateFile = await this.promptForTemplateFile(cardTypeFolder);
+			const templateFile = await this.promptForTemplateFile(cardTypeFolder, "blueprint");
 			let state = await this.parseTemplate(templateFile);
+			state = this.addBuiltIns(state);
+			state = this.setDefaultTitle(state);
 			state = await this.promptForFieldCollection(state);
-			let content = Z2KTemplateEngine.renderTemplateNew(state);
+			let content = Z2KTemplateEngine.renderTemplate(state);
+			content = this.updateYamlOnCreate(content, templateFile.basename);
 			let title = state.resolvedValues["title"] as string || "Untitled";
 			title = Z2KTemplateEngine.reducedRenderContent(title, state.resolvedValues);
 			await this.createAndOpenFile(cardTypeFolder, title, content);
@@ -587,13 +522,15 @@ export default class Z2KPlugin extends Plugin {
 	async createCardFromFile(sourceFile: TFile) {
 		try {
 			const cardTypeFolder = await this.promptForCardTypeFolder();
-			const templateFile = await this.promptForTemplateFile(cardTypeFolder);
+			const templateFile = await this.promptForTemplateFile(cardTypeFolder, "blueprint");
 			let state = await this.parseTemplate(templateFile);
 			let hadSourceTextField = state.promptInfos["sourceText"] !== undefined;
 			let sourceText = await this.app.vault.read(sourceFile);
 			state = this.addBuiltIns(state, { sourceText });
+			state = this.setDefaultTitle(state);
 			state = await this.promptForFieldCollection(state);
-			let content = Z2KTemplateEngine.renderTemplateNew(state);
+			let content = Z2KTemplateEngine.renderTemplate(state);
+			content = this.updateYamlOnCreate(content, templateFile.basename);
 			content = this.ensureSourceText(content, hadSourceTextField, sourceText);
 			let title = state.resolvedValues["title"] as string || "Untitled";
 			title = Z2KTemplateEngine.reducedRenderContent(title, state.resolvedValues);
@@ -605,13 +542,15 @@ export default class Z2KPlugin extends Plugin {
 		try {
 			const editor = this.getEditorOrThrow();
 			const cardTypeFolder = await this.promptForCardTypeFolder();
-			const templateFile = await this.promptForTemplateFile(cardTypeFolder);
+			const templateFile = await this.promptForTemplateFile(cardTypeFolder, "blueprint");
 			let state = await this.parseTemplate(templateFile);
 			let hadSourceTextField = state.promptInfos["sourceText"] !== undefined;
 			let sourceText = editor.getSelection();
 			state = this.addBuiltIns(state, { sourceText });
+			state = this.setDefaultTitle(state);
 			state = await this.promptForFieldCollection(state);
-			let content = Z2KTemplateEngine.renderTemplateNew(state);
+			let content = Z2KTemplateEngine.renderTemplate(state);
+			content = this.updateYamlOnCreate(content, templateFile.basename);
 			content = this.ensureSourceText(content, hadSourceTextField, sourceText);
 			let title = state.resolvedValues["title"] as string || "Untitled";
 			title = Z2KTemplateEngine.reducedRenderContent(title, state.resolvedValues);
@@ -624,22 +563,23 @@ export default class Z2KPlugin extends Plugin {
 			let state = await this.parseTemplate(continueFile);
 			state = this.addBuiltIns(state, { existingTitle: continueFile.basename });
 			state = await this.promptForFieldCollection(state);
-			let content = Z2KTemplateEngine.renderTemplateNew(state);
+			let content = Z2KTemplateEngine.renderTemplate(state);
 			let title = state.resolvedValues["title"] as string || "Untitled";
 			title = Z2KTemplateEngine.reducedRenderContent(title, state.resolvedValues);
 			await this.updateTitleAndContent(continueFile, title, content);
 		} catch (error) { this.handleErrors(error); }
 	}
+	// TODO: support yaml for inserting partials and update yaml as needed.
 	async insertPartial() {
 		try {
 			const editor = this.getEditorOrThrow();
 			const currDir = this.getOpenFileParentOrThrow();
-			const partialFile = await this.promptForPartialFile(currDir);
+			const partialFile = await this.promptForTemplateFile(currDir, "partial");
 			let state = await this.parseTemplate(partialFile);
 			state = this.addBuiltIns(state, {
 				existingTitle: this.getOpenFileOrThrow().basename });
 			state = await this.promptForFieldCollection(state);
-			let content = Z2KTemplateEngine.renderTemplateNew(state);
+			let content = Z2KTemplateEngine.renderTemplate(state);
 			editor.replaceRange(content, editor.getCursor());
 		} catch (error) { this.handleErrors(error); }
 	}
@@ -647,7 +587,7 @@ export default class Z2KPlugin extends Plugin {
 		try {
 			const editor = this.getEditorOrThrow();
 			const currDir = this.getOpenFileParentOrThrow();
-			const partialFile = await this.promptForPartialFile(currDir);
+			const partialFile = await this.promptForTemplateFile(currDir, "partial");
 			let state = await this.parseTemplate(partialFile);
 			let hadSourceTextField = state.promptInfos["sourceText"] !== undefined;
 			let sourceText = editor.getSelection();
@@ -655,17 +595,71 @@ export default class Z2KPlugin extends Plugin {
 				sourceText,
 				existingTitle: this.getOpenFileOrThrow().basename });
 			state = await this.promptForFieldCollection(state);
-			let content = Z2KTemplateEngine.renderTemplateNew(state);
+			let content = Z2KTemplateEngine.renderTemplate(state);
 			content = this.ensureSourceText(content, hadSourceTextField, sourceText);
 			editor.replaceSelection(content);
 		} catch (error) { this.handleErrors(error); }
 	}
 
-	///////////////////////////////////////////////////////////////////////////////////
+	// Template editing
+	async convertFileTemplateType(file: TFile, type: "normal" | "blueprint" | "partial") {
+		try {
+			if (type === "normal" && this.isInsideTemplatesFolder(file)) {
+				new Notice("You will need to manually move the file outside of your templates folder (" + this.settings.templatesFolderName + ").");
+			}
+			let content = await this.app.vault.read(file);
+			content = this.mutateFrontmatter(content, (doc: Z2KYamlDoc) => {
+				if (type === "normal") {
+					doc.del("z2k_template_type");
+				} else if (type === "blueprint" || type === "partial") {
+					doc.set("z2k_template_type", type);
+				}
+			});
+			await this.app.vault.modify(file, content);
+			// if editing is disabled, rename file to start with '.' (this shouldn't ever really happen though)
+			if (!this.settings.templateEditingEnabled && type !== "normal") {
+				await this.hideTemplateFile(file);
+			}
+		} catch (error) { this.handleErrors(error); }
+	}
+	async enableTemplateEditing() {
+		try {
+			this.settings.templateEditingEnabled = true;
+			await this.saveData(this.settings);
+			for (const f of this.getAllZ2KFiles()) {
+				if (f instanceof TFolder && f.name === "." + this.settings.templatesFolderName) {
+					await this.unhideFolder(f);
+				}
+				if (f instanceof TFile && f.name.startsWith(".") && this.getFileTemplateType(f) !== "normal") {
+					await this.unhideTemplateFile(f);
+				}
+			}
+			this.registerTemplateFileExtension();
+			new Notice("Z2K template editing enabled.");
+		} catch (error) { this.handleErrors(error); }
+	}
+	async disableTemplateEditing() {
+		try {
+			this.settings.templateEditingEnabled = false;
+			await this.saveData(this.settings);
+			for (const f of this.getAllZ2KFiles()) {
+				if (f instanceof TFolder && f.name === this.settings.templatesFolderName) {
+					await this.hideFolder(f);
+				}
+				if (f instanceof TFile && this.getFileTemplateType(f) !== "normal") {
+					await this.hideTemplateFile(f);
+				}
+			}
+			this.unregisterTemplateFileExtension();
+			new Notice("Z2K template editing disabled.");
+		} catch (error) { this.handleErrors(error); }
+	}
+
+	//// All other functions
 
 	// Prompts
 	async promptForCardTypeFolder(): Promise<TFolder> {
-		const cardTypes = this.getTemplatesTypes(false);
+		const cardTypes = this.getAllCardTypes("blueprint");
 		if (cardTypes.length === 0) {
 			throw new Error("No card types available. Please create a template folder first.");
 		}
@@ -673,8 +667,8 @@ export default class Z2KPlugin extends Plugin {
 			new CardTypeSelectionModal(this.app, cardTypes, this.settings, resolve, reject).open();
 		});
 	}
-	async promptForTemplateFile(cardType: TFolder, partial: boolean = false): Promise<TFile> {
-		const templates = this.getTemplatesForType(cardType, partial);
+	async promptForTemplateFile(cardType: TFolder, type: "blueprint" | "partial"): Promise<TFile> {
+		const templates = this.getAssociatedTemplates(type, cardType);
 		if (templates.length === 0) {
 			throw new Error("No templates available in the selected card type folder.");
 		}
@@ -682,10 +676,7 @@ export default class Z2KPlugin extends Plugin {
 			new TemplateSelectionModal(this.app, templates, this.settings, resolve, reject).open();
 		});
 	}
-	async promptForPartialFile(cardType: TFolder): Promise<TFile> {
-		return this.promptForTemplateFile(cardType, true);
-	}
-	async promptForFieldCollection(templateState: TemplateStateNew): Promise<TemplateStateNew> {
+	async promptForFieldCollection(templateState: TemplateState): Promise<TemplateState> {
 		if (this.hasFillableFields(templateState.promptInfos)) {
 			await new Promise<void>((resolve, reject) => {
 				new FieldCollectionModal(this.app, "Field Collection for Card", templateState, resolve, reject).open();
@@ -695,7 +686,7 @@ export default class Z2KPlugin extends Plugin {
 		}
 		return templateState;
 	}
-	async promptAndDeleteFile(file: TFile): Promise<void> {
+	async promptAndDeleteFile(file: TFile) {
 		const shouldDelete = await new Promise<boolean>(resolve => {
 			new DeleteConfirmationModal(this.app, file as TFile, resolve).open();
 		});
@@ -709,6 +700,203 @@ export default class Z2KPlugin extends Plugin {
 	}
 
 	// Helpers
+	mutateFrontmatter(content: string, mut: (doc: Z2KYamlDoc) => void): string {
+		const { fm, body } = Z2KYamlDoc.splitFrontmatter(content);
+		const doc = Z2KYamlDoc.fromString(fm);
+		mut(doc);
+		const newFm = doc.toString();
+		return Z2KYamlDoc.joinFrontmatter(newFm, body);
+	}
+	getFileTemplateType(file: TFile): "normal" | "blueprint" | "partial" {
+		const yamlTemplateType = this.app.metadataCache.getFileCache(file)?.frontmatter?.["z2k_template_type"];
+		if (yamlTemplateType === "blueprint" || yamlTemplateType === "partial") {
+			return yamlTemplateType;
+		} else if (this.isInsideTemplatesFolder(file)) {
+			return "blueprint";
+		} else if (file.extension === "template") {
+			return "blueprint";
+		} else {
+			return "normal";
+		}
+	}
+	async hideTemplateFile(file: TFile) {
+		// hide a file by renaming it to start with '.' if it doesn't already start with '.' and it's not a '.template' file
+		if (file.extension === "template") { return; }
+		if (file.name.startsWith(".")) { return; }
+		if (this.isInsideTemplatesFolder(file)) { return; }
+		const dirname = file.parent?.path ?? "";
+		const basename = file.name;
+		const newName = "." + basename;
+		const newPath = dirname ? `${dirname}/${newName}` : newName;
+		await this.app.vault.rename(file, newPath);
+	}
+	async unhideTemplateFile(file: TFile) {
+		if (file.extension === "template") { return; }
+		if (!file.name.startsWith(".")) { return; }
+		const dirname = file.parent?.path ?? "";
+		const basename = file.name.slice(1); // remove the leading '.'
+		const newPath = dirname ? `${dirname}/${basename}` : basename;
+		await this.app.vault.rename(file, newPath);
+	}
+	async hideFolder(folder: TFolder) {
+		// hide a folder by renaming it to start with '.'
+		if (folder.name.startsWith(".")) { return; }
+		const parentPath = folder.parent?.path ?? "";
+		const newName = "." + folder.name;
+		const newPath = parentPath ? `${parentPath}/${newName}` : newName;
+		await this.app.vault.rename(folder, newPath);
+	}
+	async unhideFolder(folder: TFolder) {
+		if (!folder.name.startsWith(".")) { return; }
+		const parentPath = folder.parent?.path ?? "";
+		const newName = folder.name.slice(1); // remove the leading '.'
+		const newPath = parentPath ? `${parentPath}/${newName}` : newName;
+		await this.app.vault.rename(folder, newPath);
+	}
+	registerTemplateFileExtension() {
+		// @ts-expect-error: internal API
+		this.app.viewRegistry.registerExtensions(["template"], "markdown");
+	}
+	unregisterTemplateFileExtension() {
+		// @ts-expect-error: internal API
+		this.app.viewRegistry.unregisterExtensions("template");
+	}
+
+	getAllTemplates(): { file: TFile, type: "blueprint" | "partial" }[] {
+		let list = [];
+		for (const f of this.getAllZ2KFiles()) {
+			if (!(f instanceof TFile)) { continue; }
+			const type = this.getFileTemplateType(f);
+			if (type === "normal") { continue; }
+			list.push({ file: f, type });
+		}
+		return list;
+	}
+	getAllCardTypes(filter: "blueprint" | "partial"): TFolder[] {
+		let folders: TFolder[] = [];
+		for (const t of this.getAllTemplates()) {
+			if (t.type !== filter) { continue; }
+			let folder = t.file.parent;
+			if (folder?.name === this.settings.templatesFolderName ||
+					folder?.name === '.' + this.settings.templatesFolderName) {
+				folder = folder.parent as TFolder; // templates are in the templates folder, so we want the parent folder
+			}
+			if (!folder || folders.includes(folder)) { continue; }
+			folders.push(folder);
+		}
+		folders.sort((a, b) => a.path.localeCompare(b.path));
+		return folders;
+	}
+	getAssociatedTemplates(filter: "blueprint" | "partial", cardType: TFolder): TFile[] {
+		const z2kRootFolder = this.getZ2KRootFolder();
+		if (!this.isSubPathOf(cardType.path, z2kRootFolder.path)) {
+			throw new Error("Card type folder is not inside the Z2K root folder.");
+		}
+		let currFolder: TFolder = cardType;
+		let templates: TFile[] = [];
+		while (true) {
+			for (const template of this.getAllTemplates()) {
+				if (template.type !== filter) { continue; }
+				if (this.isInThisFolderOrItsTemplatesFolder(template.file, currFolder)) {
+					if (!templates.includes(template.file)) {
+						templates.push(template.file);
+					}
+					continue;
+				}
+			}
+			if (currFolder === z2kRootFolder || !currFolder.parent) { break; }
+			currFolder = currFolder.parent as TFolder;
+		}
+		templates.sort((a, b) => a.path.localeCompare(b.path));
+		return templates;
+	}
+	getPartialCallbackFunc(): (name: string, path: string) => Promise<[found: boolean, content: string, path: string]> {
+		// Store [file, normalized path] pairs for all partials
+		let allPartials: [TFile, string][] = [];
+		for (const t of this.getAllTemplates()) {
+			if (t.type === "partial") {
+				allPartials.push([t.file, normalizeFullPath(t.file.path)]);
+			}
+		}
+
+		return async (name: string, path: string): Promise<[found: boolean, content: string, path: string]> => {
+			// TODO: support more path formats, like relative paths, partial paths, etc; Maybe make relative paths required to start with './' or '../'?
+			// name can be just the title (partial.md) or an absolute path (/folder/partial.md).
+			// path is the folder of the template/partial where the partial was referenced (so it's relative to here).
+			if (name.startsWith("/")) { // absolute path
+				const absolutePath = normalizeFullPath(this.joinPath(this.getZ2KRootFolder().path, name.substring(1))); // DOCS: relative to Z2K root folder
+				const file = this.getFile(absolutePath);
+				if (!file) { return [false, "", ""]; }
+				const normPath = normalizeFullPath(file.path);
+				if (!allPartials.some(([f, p]) => p === normPath)) { return [false, "", ""]; }
+				return [true, await this.app.vault.read(file), normPath];
+			}
+			// if given just the name, search current dir first (including templates dir), then search parents, then the whole vault
+			if (!name.includes("/")) { // just the name
+				let matches: [TFile, string][] = [];
+				for (const partial of allPartials) {
+					if (partial[0].basename === name || partial[0].name === name) {
+						matches.push(partial);
+					}
+				}
+				if (matches.length === 0) { return [false, "", ""]; }
+				if (matches.length === 1) {
+					// found exactly one match, return it
+					return [true, await this.app.vault.read(matches[0][0]), matches[0][1]];
+				}
+
+				let currFolder = this.getFolder(path);
+				if (!currFolder) { throw new Error(`Path '${path}' does not point to a folder.`); }
+				while (true) {
+					// check if any of the matches are in the current folder
+					for (const match of matches) {
+						if (this.isInThisFolderOrItsTemplatesFolder(match[0], currFolder as TFolder)) {
+							return [true, await this.app.vault.read(match[0]), match[1]];
+						}
+					}
+					if (currFolder === this.getZ2KRootFolder() || !currFolder.parent) { break; }
+					currFolder = currFolder.parent as TFolder;
+				}
+				// if we reach here, no match was found in the current folder or its parents, so return the first match
+				return [true, await this.app.vault.read(matches[0][0]), matches[0][1]];
+			} else {
+				// relative path
+				throw new Error("Relative paths are not supported yet. Please use absolute paths or just the name of the partial.");
+			}
+		}
+	}
+
+	isInThisFolderOrItsTemplatesFolder(file: TFile, folder: TFolder): boolean {
+		if (file.parent === folder) { return true; }
+		if (this.isSubPathOf(file.path, this.joinPath(folder.path, this.settings.templatesFolderName))
+				|| this.isSubPathOf(file.path, this.joinPath(folder.path, '.' + this.settings.templatesFolderName))) {
+			return true;
+		}
+		return false;
+	}
+	isInsideTemplatesFolder(file: TFile): boolean {
+		const tfn = this.settings.templatesFolderName;
+		const z2kRoot = this.getZ2KRootFolder();
+		if (!this.isSubPathOf(file.path, z2kRoot.path)) { return false; }
+		const normPath = normalizeFullPath(file.path);
+		return normPath.includes(`/${tfn}/`) || normPath.includes(`/.${tfn}/`) || normPath.startsWith(`${tfn}/`) || normPath.startsWith(`.${tfn}/`);
+	}
+	getAllZ2KFiles(): TAbstractFile[] {
+		let files: TAbstractFile[] = [];
+		const z2kRootPath = this.getZ2KRootFolder().path;
+		for (const f of this.app.vault.getAllLoadedFiles()) {
+			if (this.isSubPathOf(f.path, z2kRootPath)) {
+				files.push(f);
+			}
+		}
+		return files;
+	}
+	getZ2KRootFolder(): TFolder {
+		let z2kRoot = this.getFolder(this.settings.z2kRootFolder)
+		if (!z2kRoot) { throw new Error(`Z2K root folder '${this.settings.z2kRootFolder}' not found.`); }
+		return z2kRoot;
+	}
+
 	getEditorOrThrow(): Editor {
 		const editor = this.app.workspace.getActiveViewOfType(MarkdownView)?.editor;
 		if (!editor) { throw new Error("No active markdown editor found."); }
@@ -725,23 +913,12 @@ export default class Z2KPlugin extends Plugin {
 		const file = this.getOpenFileOrThrow();
 		return file.parent ?? this.app.vault.getRoot();
 	}
-	async getPartialCallback(name: string, path: string): Promise<[content: string, path: string]> {
-		return ["", ""];
-		// TODO: stopped mid-way through these comments
 
-		// The name can be just the title (partial.md), an absolute path (/folder/partial.md), or a relative path (../folder/partial.md).
-		// The path is the folder of the template/partial where there partial was referenced (so it's relative to here).
-		// It behaves according to whether we are using an external templates folder or not.
-
-		// If the name is just the title (partial.md), then it checks for it at every tree folder from current up to root.
-		// If it has an absolute path, then just go to that path
-		// If it has a relative path, then just go to that relative path from the current folder. (You could traverse up the tree, but that seems complicated).
-	}
-	async parseTemplate(templateFile: TFile): Promise<TemplateStateNew> {
+	async parseTemplate(templateFile: TFile): Promise<TemplateState> {
 		const content = await this.app.vault.read(templateFile);
 		const path = this.getOpenFileParentOrThrow().path;
 		try {
-			return Z2KTemplateEngine.parseTemplateNew(content, path, this.getPartialCallback);
+			return await Z2KTemplateEngine.parseTemplate(content, path, this.getPartialCallbackFunc());
 		} catch (error) {
 			rethrowWithMessage(error, "Error occurred while parsing the template");
 		}
@@ -757,7 +934,7 @@ export default class Z2KPlugin extends Plugin {
 			rethrowWithMessage(error, "Error occurred while creating the file");
 		}
 	}
-	async updateTitleAndContent(file: TFile, title: string, content: string): Promise<void> {
+	async updateTitleAndContent(file: TFile, title: string, content: string) {
 		try {
 			await this.app.vault.modify(file, content);
 			const filename = this.getValidFilename(title);
@@ -786,7 +963,7 @@ export default class Z2KPlugin extends Plugin {
 	}
 	getValidFilename(title: string): string {
 		return title
-			?.replace(/[<>:"/\\|?*\u0000-\u001F]/g, '_') // Illegal in Windows + control chars
+			.replace(/[<>:"/\\|?*\u0000-\u001F]/g, '_') // Illegal in Windows + control chars
 			.replace(/^\.+$/, '_')                      // Avoid names like "." or ".."
 			.replace(/[. ]+$/, '')                      // No trailing dots or spaces
 			.replace(/^ +/, '')                         // No leading spaces
@@ -802,40 +979,63 @@ export default class Z2KPlugin extends Plugin {
 		}
 		return fullPath;
 	}
-	addBuiltIns(templateState: TemplateStateNew, opts: { sourceText?: string, existingTitle?: string } = {}): TemplateStateNew {
+	setDefaultTitle(state: TemplateState): TemplateState {
+		// look through all the yaml (including from partials) and find any z2k_template_default_title field
+		for (const yamlStr of state.templatesYaml) {
+			let yaml = Z2KYamlDoc.fromString(yamlStr);
+
+			let raw = yaml.get("z2k_template_default_title");
+			let defaultTitle = (raw && typeof raw === "object" && "toJSON" in raw) ? (raw as any).toJSON() : raw;
+			if (typeof defaultTitle !== "string") {
+				throw new TemplatePluginError(`z2k_template_default_title must be a string (got a ${typeof defaultTitle})`);
+			}
+			state.promptInfos["title"].default = defaultTitle;
+			break; // take the first one we find
+		}
+		return state;
+	}
+	addBuiltIns(state: TemplateState, opts: { sourceText?: string, existingTitle?: string } = {}): TemplateState {
 		// sourceText
-		templateState.promptInfos["sourceText"] = {
+		state.promptInfos["sourceText"] = {
 			varName: "sourceText",
 			type: "text",
 			directives: ['no-prompt'],
 		};
-		templateState.resolvedValues["sourceText"] = opts.sourceText || "";
+		state.resolvedValues["sourceText"] = opts.sourceText || "";
 
 		// creator
-		templateState.promptInfos["creator"] = {
+		state.promptInfos["creator"] = {
 			varName: "creator",
 			type: "text",
 			directives: ['no-prompt'],
 		};
-		templateState.resolvedValues["creator"] = this.settings.creator || "";
+		state.resolvedValues["creator"] = this.settings.creator || "";
 
 		// template name
-		templateState.promptInfos["templateName"] = {
+		state.promptInfos["templateName"] = {
 			varName: "templateName",
 			type: "text",
 			directives: ['no-prompt'],
 		};
-		templateState.resolvedValues["templateName"] = "temp"; // TODO
+		state.resolvedValues["templateName"] = "temp"; // TODO
 
 		// title
-		templateState.promptInfos["title"] = {
+		state.promptInfos["title"] = {
 			varName: "title",
 			type: "titleText",
 			directives: opts.existingTitle ? ['required', 'no-prompt'] : ['required'],
 		};
-		templateState.resolvedValues["title"] = opts.existingTitle || "Untitled";
+		state.resolvedValues["title"] = opts.existingTitle || "Untitled";
 
-		return templateState;
+		return state;
+	}
+	updateYamlOnCreate(content: string, templateName: string): string {
+		return this.mutateFrontmatter(content, (doc: Z2KYamlDoc) => {
+			doc.set("z2k_template_name", templateName);
+			doc.del("z2k_template_type");
+			doc.del("z2k_template_default_title");
+			doc.del("z2k_template_default_miss_handling");
+		});
 	}
 	ensureSourceText(content: string, hadSourceTextField: boolean, sourceText: string): string {
 		if (hadSourceTextField) {
@@ -846,10 +1046,6 @@ export default class Z2KPlugin extends Plugin {
 			return content;
 		}
 	}
-
-
-
-
 
 	private async AddZ2KSystemYaml(inputContent: string, cardType: TFolder): Promise<string> {
 		// Get all the z2k system yaml files between here and the root
@@ -877,7 +1073,6 @@ export default class Z2KPlugin extends Plugin {
 			return `---\n${mergedYaml}\n${inputContent.slice(insertPos)}`;
 		}
 	}
-
 	private handleErrors(error: unknown) {
 		// Display error messages to the user
 		if (error instanceof TemplatePluginError) {
@@ -885,7 +1080,6 @@ export default class Z2KPlugin extends Plugin {
 			new ErrorModal(this.app, error).open();
 		} else if (error instanceof UserCancelError) {
 			// Just exit, no need to show a message
-			// console.log("User cancelled the operation.");
 		} else if (error instanceof TemplateError) {
 			console.error("Template error: ", error.message);
 			new ErrorModal(this.app, error).open();
@@ -895,231 +1089,27 @@ export default class Z2KPlugin extends Plugin {
 		}
 	}
 
-	private getTemplatesTypes(partials: boolean): TFolder[] {
-		const folders: TFolder[] = [];
-		const blockPrefix = this.settings.partialPrefixFilter;
-		const rootPath = normalizePath(this.settings.z2kRootFolder);
-		const root = rootPath
-			? this.app.vault.getAbstractFileByPath(rootPath)
-			: this.app.vault.getRoot();
-		if (!(root instanceof TFolder)) {
-			throw new TemplatePluginError(`Could not find Z2K root folder "${this.settings.z2kRootFolder}"`);
-		}
-
-		const folderHasMatchingTemplates = (folder: TFolder): boolean =>
-			folder.children.some(child =>
-				child instanceof TFile && (child.name.startsWith(blockPrefix) === partials)
-			);
-
-		if (this.settings.useExternalTemplates) {
-			const externalPath = normalizePath(this.settings.externalTemplatesFolder);
-			const external = externalPath
-				? this.app.vault.getAbstractFileByPath(externalPath)
-				: this.app.vault.getRoot();
-			if (!(external instanceof TFolder)) {
-				throw new TemplatePluginError(`Could not find external templates folder "${this.settings.externalTemplatesFolder}"`);
-			}
-
-			const recurse = (folder: TFolder) => {
-				if (folderHasMatchingTemplates(folder)) { folders.push(folder); }
-				for (const child of folder.children) {
-					if (child instanceof TFolder) { recurse(child); }
-				}
-			};
-			recurse(external);
-		} else {
-			const templateFolderName = this.settings.embeddedTemplatesFolderName.trim();
-			const recurse = (folder: TFolder) => {
-				for (const child of folder.children) {
-					if (!(child instanceof TFolder)) continue;
-					if (child.name === templateFolderName) {
-						if (folderHasMatchingTemplates(child)) {
-							folders.push(folder); // Parent of matching template folder
-						}
-
-					} else {
-						recurse(child);
-					}
-				}
-			};
-			recurse(root);
-		}
-
-		return folders.sort((a, b) => a.path.localeCompare(b.path));
-	}
-
-	private getTemplatesForType(cardType: TFolder, partials: boolean): TFile[] {
-		const settings = this.settings;
-		const result: TFile[] = [];
-		let curr: TFolder | null = cardType;
-
-		while (curr) {
-			const currPath = normalizePath(curr.path);
-			let templateFolderPath: string;
-
-			if (settings.useExternalTemplates) {
-				if (!this.isSubPath(settings.externalTemplatesFolder, curr.path)) { break; }
-				templateFolderPath = currPath;
-			} else {
-				if (!this.isSubPath(settings.z2kRootFolder, curr.path)) { break; }
-				templateFolderPath = this.joinPath(currPath, settings.embeddedTemplatesFolderName);
-			}
-
-			const templateFolder = this.getFolder(templateFolderPath);
-			if (templateFolder) {
-				const allTemplates = this.getMarkdownFilesInFolder(templateFolder, true);
-				const filtered = allTemplates.filter(f => f.name.startsWith(settings.partialPrefixFilter) === partials);
-				result.push(...filtered);
-			}
-
-			curr = curr.parent instanceof TFolder ? curr.parent : null;
-		}
-
-		return result;
-	}
-
-	private async getAllPartials(relativeTo: TFile): Promise<Record<string, string>> {
-		let partialMap: Record<string, string> = {};
-
-		const addAllPartialsInFolder = async (folder: TFolder | undefined, recurse: boolean) => {
-			if (!folder) { return; }
-			for (const file of this.getMarkdownFilesInFolder(folder, recurse)) {
-				if (!file.name.startsWith(this.settings.partialPrefixFilter)) { continue; }
-				if (partialMap.hasOwnProperty(file.basename)) { continue; }
-				partialMap[file.basename] = await this.app.vault.read(file);
-			}
-		}
-		function getChildrenFoldersRecursivelyByDepth(folder: TFolder | null): TFolder[] {
-			let folders: TFolder[] = [];
-			if (!folder) { return folders; }
-			for (const child of folder.children) {
-				if (!(child instanceof TFolder)) { continue; }
-				folders.push(child);
-			}
-			for (const child of folder.children) {
-				if (!(child instanceof TFolder)) { continue; }
-				folders = folders.concat(getChildrenFoldersRecursivelyByDepth(child));
-			}
-			return folders;
-		}
-
-		if (!(relativeTo.parent instanceof TFolder)) {
-			console.error(`Relative file "${relativeTo.path}" has no parent folder`);
-			return partialMap;
-		}
-
-		if (this.settings.useExternalTemplates) {
-			let externalTemplatesFolder = this.getFolder(this.settings.externalTemplatesFolder);
-			if (!externalTemplatesFolder) {
-				console.error(`Could not find external templates folder "${this.settings.externalTemplatesFolder}"`);
-				return partialMap;
-			}
-			let currDir: TFolder | null = relativeTo.parent;
-			// self + ancestors
-			while (currDir) {
-				await addAllPartialsInFolder(currDir, false);
-				if (currDir === externalTemplatesFolder) { break; }
-				currDir = currDir.parent instanceof TFolder ? currDir.parent : null;
-			}
-			// descendants
-			for (const folder of getChildrenFoldersRecursivelyByDepth(relativeTo.parent)) {
-				await addAllPartialsInFolder(folder, false);
-			}
-			// all
-			await addAllPartialsInFolder(externalTemplatesFolder, true);
-		} else {
-			let currDir: TFolder | null = relativeTo.parent;
-			let embeddedTemplatesFolder;
-
-			{ // Within the Templates folder
-				// self + ancestors
-				while (currDir) {
-					await addAllPartialsInFolder(currDir, false);
-					if (currDir.name === this.settings.embeddedTemplatesFolderName) {
-						embeddedTemplatesFolder = currDir;
-						break;
-					}
-					currDir = currDir.parent instanceof TFolder ? currDir.parent : null;
-				}
-				// descendants
-				for (const folder of getChildrenFoldersRecursivelyByDepth(relativeTo.parent)) {
-					await addAllPartialsInFolder(folder, false);
-				}
-				// all
-				if (!embeddedTemplatesFolder) {
-					console.error(`Could not find embedded templates folder "${this.settings.embeddedTemplatesFolderName}"`);
-					return partialMap;
-				}
-				await addAllPartialsInFolder(embeddedTemplatesFolder, true);
-			}
-			{ // Within the Z2K root folder
-				function getAllTemplateFoldersRecursivelyByDepth(folder: TFolder | null): TFolder[] {
-					let folders: TFolder[] = [];
-					if (!folder) { return folders; }
-					for (const child of folder.children) {
-						if (!(child instanceof TFolder)) { continue; }
-						if (child.name !== this.settings.embeddedTemplatesFolderName) { continue; }
-						folders.push(child);
-						break;
-					}
-					for (const child of folder.children) {
-						if (!(child instanceof TFolder)) { continue; }
-						if (child.name === this.settings.embeddedTemplatesFolderName) { continue; }
-						folders = folders.concat(getAllTemplateFoldersRecursivelyByDepth(child));
-					}
-					return folders;
-				}
-
-				let z2kRootFolder = this.getFolder(this.settings.z2kRootFolder);
-				// self + ancestors
-				currDir = embeddedTemplatesFolder.parent;
-				while (currDir) {
-					if (currDir === z2kRootFolder) { break; }
-					for (const child of currDir.children) {
-						if (!(child instanceof TFolder)) { continue; }
-						if (child.name !== this.settings.embeddedTemplatesFolderName) { continue; }
-						await addAllPartialsInFolder(child, true);
-						break;
-					}
-					currDir = currDir.parent instanceof TFolder ? currDir.parent : null;
-				}
-				// descendants
-				for (const folder of getAllTemplateFoldersRecursivelyByDepth(embeddedTemplatesFolder.parent)) {
-					await addAllPartialsInFolder(folder, true);
-				}
-				// all
-				if (!z2kRootFolder) {
-					console.error(`Could not find Z2K root folder "${this.settings.z2kRootFolder}"`);
-					return partialMap;
-				}
-				for (const folder of getAllTemplateFoldersRecursivelyByDepth(z2kRootFolder)) {
-					await addAllPartialsInFolder(folder, true);
-				}
-			}
-		}
-		return partialMap;
-	}
-
+	// Helpers for file/folder operations
 	private getFile(path: string): TFile | null {
-		const normalized = normalizePath(path);
+		const normalized = normalizeFullPath(path);
 		const file = this.app.vault.getAbstractFileByPath(normalized);
 		return file instanceof TFile ? file : null;
 	}
 	private getFolder(path: string): TFolder | null {
-		const normalized = normalizePath(path);
+		const normalized = normalizeFullPath(path);
 		if (normalized === '') { return this.app.vault.getRoot(); } // Special case for root folder
 		const file = this.app.vault.getAbstractFileByPath(normalized);
 		return file instanceof TFolder ? file : null;
 	}
-	private isSubPath(parent: string, child: string): boolean {
-		const normParent = normalizePath(parent);
-		const normChild = normalizePath(child);
+	private isSubPathOf(child: string, parent: string): boolean {
+		const normParent = normalizeFullPath(parent);
+		const normChild = normalizeFullPath(child);
 		if (normParent === '') { return true; } // root is parent of everything
 		if (normChild === normParent) { return true; }
 		return normChild.startsWith(normParent + '/');
 	}
 	private joinPath(...parts: string[]): string {
-		return normalizePath(parts.join('/'));
+		return normalizeFullPath(parts.join('/'));
 	}
 	private getMarkdownFilesInFolder(folder: TFolder, recurse = false): TFile[] {
 		let files: TFile[] = [];
@@ -1143,10 +1133,10 @@ export default class Z2KPlugin extends Plugin {
 	}
 }
 
-function normalizePath(path: string): string {
+function normalizeFullPath(path: string): string {
 	return path
 		.trim()
-		.replace(/\\/g, '/')       // Normalize backslashes
+		.replace(/\\/g, '/')       // Normalize backslashes to '/'
 		.replace(/\/{2,}/g, '/')   // Collapse multiple slashes
 		.replace(/^\.\//, '')      // Remove leading "./"
 		.replace(/^\/+/, '')       // Remove leading slashes
@@ -1248,21 +1238,6 @@ interface CardTypeSelectorProps {
 
 // React component for the modal content
 const CardTypeSelector = ({ cardTypes, settings, onConfirm, onCancel }: CardTypeSelectorProps) => {
-	let cardTypeEntries: [string, TFolder][] = [];
-	for (const cardType of cardTypes) {
-		let visStr = cardType.path;
-		if (settings.useExternalTemplates) {
-			if (cardType.path.startsWith(settings.externalTemplatesFolder + "/")) {
-				visStr = cardType.path.substring(settings.externalTemplatesFolder.length + 1);
-			}
-		} else {
-			if (cardType.path.startsWith(settings.z2kRootFolder + "/")) {
-				visStr = cardType.path.substring(settings.z2kRootFolder.length + 1);
-			}
-		}
-		cardTypeEntries.push([visStr, cardType]);
-	}
-
 	const [selectedIndex, setSelectedIndex] = useState<number>(0);
 	const listRef = useRef<HTMLDivElement>(null);
 
@@ -1278,7 +1253,7 @@ const CardTypeSelector = ({ cardTypes, settings, onConfirm, onCancel }: CardType
 	const handleKeyDown = (e: React.KeyboardEvent) => {
 		if (e.key === 'ArrowDown') {
 			e.preventDefault();
-			const newIndex = Math.min(selectedIndex + 1, cardTypeEntries.length - 1);
+			const newIndex = Math.min(selectedIndex + 1, cardTypes.length - 1);
 			setSelectedIndex(newIndex);
 		} else if (e.key === 'ArrowUp') {
 			e.preventDefault();
@@ -1286,7 +1261,7 @@ const CardTypeSelector = ({ cardTypes, settings, onConfirm, onCancel }: CardType
 			setSelectedIndex(newIndex);
 		} else if (e.key === 'Enter') {
 			e.preventDefault();
-			onConfirm(cardTypeEntries[selectedIndex][1]);
+			onConfirm(cardTypes[selectedIndex]);
 		} else if (e.key === 'Escape') {
 			e.preventDefault();
 			onCancel();
@@ -1294,19 +1269,11 @@ const CardTypeSelector = ({ cardTypes, settings, onConfirm, onCancel }: CardType
 	};
 
 	function getPrettyPath(path: string): string {
-		let normPath = normalizePath(path);
-		if (settings.useExternalTemplates) {
-			let etf = normalizePath(settings.externalTemplatesFolder);
-			if (normPath === etf) { return "/"; }
-			if (normPath.startsWith(etf + "/")) {
-				return "/" + normPath.substring(etf.length + 1);
-			}
-		} else {
-			let z2kRoot = normalizePath(settings.z2kRootFolder);
-			if (normPath === z2kRoot) { return "/"; }
-			if (normPath.startsWith(z2kRoot + "/")) {
-				return "/" + normPath.substring(z2kRoot.length + 1);
-			}
+		let normPath = normalizeFullPath(path);
+		let z2kRoot = normalizeFullPath(settings.z2kRootFolder);
+		if (normPath === z2kRoot) { return "/"; }
+		if (normPath.startsWith(z2kRoot + "/")) {
+			return "/" + normPath.substring(z2kRoot.length + 1);
 		}
 		return normPath;
 	}
@@ -1319,12 +1286,12 @@ const CardTypeSelector = ({ cardTypes, settings, onConfirm, onCancel }: CardType
 			ref={listRef}
 		>
 			<div className="selection-list">
-				{cardTypeEntries.length === 0 ? (
+				{cardTypes.length === 0 ? (
 					<div className="selection-empty-state">No card types found</div>
 				) : (
-					cardTypeEntries.map(([id, cardType], index) => (
+					cardTypes.map((cardType, index) => (
 						<div
-							key={id}
+							key={cardType.path}
 							className={`selection-item ${selectedIndex === index ? 'selected' : ''}`}
 							onClick={() => onConfirm(cardType)}
 							tabIndex={index + 1}
@@ -1402,21 +1369,37 @@ interface TemplateSelectorProps {
 
 // React component for the modal content
 const TemplateSelector = ({ templates, settings, onConfirm, onCancel }: TemplateSelectorProps) => {
+	const getItems = (): { file: TFile, name: string, cardType: string }[] => {
+		return templates.map((template: TFile) => {
+			let cardType = template.parent?.path;
+			if (template.parent?.name === settings.templatesFolderName || template.parent?.name === "." + settings.templatesFolderName) {
+				cardType = template.parent?.parent?.path;
+			}
+			cardType = normalizeFullPath(cardType ?? "");
+			return { file: template, name: template.basename, cardType: cardType }
+		});
+	}
+
 	const [searchTerm, setSearchTerm] = useState<string>('');
-	const [filteredTemplates, setFilteredTemplates] = useState<TFile[]>(templates);
+	const [filteredItems, setFilteredItems] = useState<{ file: TFile, name: string, cardType: string }[]>(getItems());
 	const [selectedIndex, setSelectedIndex] = useState<number>(0);
 	const searchInputRef = useRef<HTMLInputElement>(null);
 	const listRef = useRef<HTMLDivElement>(null);
 
 	// Filter templates when search term changes
 	useEffect(() => {
-		const filtered = templates.filter((template: TFile) => {
-			const nameMatch = displayName(template).toLowerCase().includes(searchTerm.toLowerCase());
-			const pathMatch = template.parent?.path.toLowerCase().includes(searchTerm.toLowerCase()) || false;
-			return nameMatch || pathMatch;
-		});
-
-		setFilteredTemplates(filtered);
+		// const filtered = templates.filter((template: TFile) => {
+		// 	const nameMatch = template.basename.toLowerCase().includes(searchTerm.toLowerCase());
+		// 	const pathMatch = template.parent?.path.toLowerCase().includes(searchTerm.toLowerCase()) || false;
+		// 	return nameMatch || pathMatch;
+		// });
+		setFilteredItems(
+			getItems().filter(item => {
+				const nameMatch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
+				const pathMatch = item.cardType.toLowerCase().includes(searchTerm.toLowerCase());
+				return nameMatch || pathMatch;
+			})
+		);
 		setSelectedIndex(0); // Reset selection when search changes
 	}, [searchTerm, templates]);
 
@@ -1431,7 +1414,7 @@ const TemplateSelector = ({ templates, settings, onConfirm, onCancel }: Template
 	const handleKeyDown = (e: React.KeyboardEvent) => {
 		if (e.key === 'ArrowDown') {
 			e.preventDefault();
-			const newIndex = Math.min(selectedIndex + 1, filteredTemplates.length - 1);
+			const newIndex = Math.min(selectedIndex + 1, filteredItems.length - 1);
 			setSelectedIndex(newIndex);
 			scrollToItem(newIndex);
 		} else if (e.key === 'ArrowUp') {
@@ -1441,7 +1424,7 @@ const TemplateSelector = ({ templates, settings, onConfirm, onCancel }: Template
 			scrollToItem(newIndex);
 		} else if (e.key === 'Enter') {
 			e.preventDefault();
-			onConfirm(filteredTemplates[selectedIndex]);
+			onConfirm(filteredItems[selectedIndex].file);
 		} else if (e.key === 'Escape') {
 			e.preventDefault();
 			onCancel();
@@ -1456,13 +1439,6 @@ const TemplateSelector = ({ templates, settings, onConfirm, onCancel }: Template
 			}
 		}
 	};
-
-	const displayName = (template: TFile): string => {
-		if (template.basename.startsWith(settings.partialPrefixFilter)) {
-			return template.basename.slice(settings.partialPrefixFilter.length);
-		}
-		return template.basename;
-	}
 
 	const highlightMatch = (text: string, search: string) => {
 		if (!search) return <>{text}</>;
@@ -1505,23 +1481,23 @@ const TemplateSelector = ({ templates, settings, onConfirm, onCancel }: Template
 				/>
 			</div>
 			<div className="selection-list" ref={listRef}>
-				{filteredTemplates.length === 0 ? (
+				{filteredItems.length === 0 ? (
 					<div className="selection-empty-state template-list-empty-state">No templates found</div>
 				) : (
-					filteredTemplates.map((template: TFile, index: number) => (
+					filteredItems.map((item: { file: TFile, name: string, cardType: string }, index: number) => (
 						<div
-							key={template.path}
+							key={item.file.path}
 							className={`selection-item ${selectedIndex === index ? 'selected' : ''}`}
-							onClick={() => onConfirm(template)}
+							onClick={() => onConfirm(item.file)}
 							tabIndex={index + 2} // +2 because search is tabIndex 1
 						>
-							{/* <span className="selection-primary">{displayName(template)}</span>
+							{/* <span className="selection-primary">{template.basename}</span>
 							<span className="selection-secondary">{template.parent?.path || ''}</span> */}
 							<span className="selection-primary">
-								{highlightMatch(displayName(template), searchTerm)}
+								{highlightMatch(item.name, searchTerm)}
 							</span>
 							<span className="selection-secondary">
-								{highlightMatch(template.parent?.path || '', searchTerm)}
+								{highlightMatch(item.cardType, searchTerm)}
 							</span>
 						</div>
 					))
@@ -1533,8 +1509,8 @@ const TemplateSelector = ({ templates, settings, onConfirm, onCancel }: Template
 				</button>
 				<button
 					className="btn btn-primary"
-					onClick={() => onConfirm(filteredTemplates[selectedIndex])}
-					disabled={filteredTemplates.length === 0}
+					onClick={() => onConfirm(filteredItems[selectedIndex].file)}
+					disabled={filteredItems.length === 0}
 				>
 					Select
 				</button>
@@ -1557,12 +1533,12 @@ const TemplateSelector = ({ templates, settings, onConfirm, onCancel }: Template
  */
 export class FieldCollectionModal extends Modal {
 	title: string;
-	templateState: TemplateStateNew;
+	templateState: TemplateState;
 	resolve: () => void;
 	reject: (error: Error) => void;
 	root: any; // React root
 
-	constructor(app: App, title: string, templateState: TemplateStateNew, resolve: () => void, reject: (error: Error) => void) {
+	constructor(app: App, title: string, templateState: TemplateState, resolve: () => void, reject: (error: Error) => void) {
 		super(app);
 		this.title = title;
 		this.templateState = templateState;
@@ -1602,12 +1578,15 @@ export class FieldCollectionModal extends Modal {
  * Handles form state, dependencies between fields, and validation
  */
 interface FieldCollectionFormProps {
-	templateState: TemplateStateNew;
+	templateState: TemplateState;
 	onComplete: () => void;
 	onCancel: () => void;
 }
 // This component assumes that varInfoMap will not be changing.
 const FieldCollectionForm = ({ templateState, onComplete, onCancel }: FieldCollectionFormProps) => {
+	function formatFieldName(str: string): string {
+		return str.charAt(0).toUpperCase() + str.slice(1).replace(/([A-Z0-9])/g, ' $1');
+	}
 	function computeInitialFieldStates(): Record<string, FieldState> {
 		const initialFieldStates: Record<string, FieldState> = {};
 
@@ -1620,6 +1599,7 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel }: FieldColle
 				...promptInfo.miss ? Z2KTemplateEngine.reducedGetDependencies(promptInfo.miss) : [],
 			];
 
+
 			// Set initial field state
 			initialFieldStates[fieldName] = {
 				value: templateState.resolvedValues[fieldName] ?? promptInfo.default ?? '',
@@ -1630,9 +1610,9 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel }: FieldColle
 				hasError: false,
 				dependencies: [...new Set(dependencies)],
 				dependentFields: [],
-				resolvedPrompt: promptInfo.prompt ?? fieldName,
-				resolvedDefault: promptInfo.default ?? '',
-				resolvedMiss: promptInfo.miss ?? ''
+				resolvedPrompt: promptInfo.prompt ?? formatFieldName(fieldName),
+				resolvedDefault: promptInfo.default ?? "",
+				resolvedMiss: promptInfo.miss ?? ""
 			};
 		}
 
@@ -1717,7 +1697,7 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel }: FieldColle
 			};
 
 			// Update all resolved text fields
-			newFieldStates[fieldName].resolvedPrompt = Z2KTemplateEngine.reducedRenderContent(promptInfo.prompt || fieldName, context)
+			newFieldStates[fieldName].resolvedPrompt = Z2KTemplateEngine.reducedRenderContent(promptInfo.prompt || formatFieldName(fieldName), context)
 			newFieldStates[fieldName].resolvedDefault = Z2KTemplateEngine.reducedRenderContent(promptInfo.default || "", context);
 			newFieldStates[fieldName].resolvedMiss = Z2KTemplateEngine.reducedRenderContent(promptInfo.miss || "", context);
 
