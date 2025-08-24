@@ -48,6 +48,30 @@ npm run dev
 ```
 
 
+### Releasing
+- Make sure to build
+```bash
+npm run dev
+```
+- Update version number in package.json and manifest.json
+- Create a commit
+```bash
+git commit -m "release: v0.1.0"
+```
+- Tag it with the version
+```bash
+git tag v0.1.0
+```
+- Push it and the tag
+```bash
+git push
+git push --tags
+```
+- Create the release zip (zip manifest.json, main.js, styles.css into z2k-plugin-templates)
+- Create the release on github (upload 3 files and zip)
+
+
+
 
 ---
 ### License
