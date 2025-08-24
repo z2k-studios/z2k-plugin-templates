@@ -15,7 +15,7 @@ An Obsidian plugin using the Z2K Template Engine to create new cards and update 
 ```bash
 # Clone the repository
 git clone [repository-url]
-cd z2k-plugin-new-card
+cd z2k-plugin-templates
 
 # Install dependencies
 npm install
