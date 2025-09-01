@@ -1,6 +1,6 @@
 {
 	"name": "z2k-plugin-templates",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "Provides template functionality for Z2K and more, allowing you to create new cards and perform other actions using templates and blocks.",
 	"main": "main.js",
 	"scripts": {
