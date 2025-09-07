@@ -1,7 +1,6 @@
 ---
 sidebar_position: 40
 ---
-
 Z2K includes a number of pre-defined [[Template Fields]] names that will be automatically filled in whenever the template is created.
 
 # Contents

@@ -9,17 +9,18 @@ sidebar_position: 1
 ## Table of Contents
 
 Top level sections are:
-1. [[Template Files]] - Describes the anatomy and lifecycle of a template file
-2. [[Template Fields]] - Introduces template fields and how to use then in your template files
-3. [[Template Folders]] - Where template files are stored
-4. [[Built-In Template Fields]] - A list of all built-in fields supported by the Z2K Templates plugin
+1. [[Template Files]] - The anatomy and lifecycle of a template file
+2. [[Template Fields]] - Introduction to template fields and how to use then in your template files
+3. [[Template Folders]] - Where template files are stored in your vault
+4. [[Built-In Template Fields]] - Built-in fields supported by the Z2K Templates plugin
 5. [[Data Formatting]] - How data is formatted during insertion into template fields
 6. [[Prompting]] - How to customize the prompting for data for a field
 7. [[Handlebars Support]] - How Z2K's field language is similar to and differs from the Handlebars.js library
-8. [[Helper Functions]] - Introduces the concept of helper functions inside templates
+8. [[Helper Functions]] - Introduction to using helper functions inside templates
 9. [[Built-In Helper Functions]] - A list of built-in Helper Functions and how to use them
-10. [[Partial Templates]] - Details the use of hierarchical and block level templates through partials
+10. [[Partial Templates]] - Details the use of hierarchical and block level templates through partial templates
 11. [[Z2K Templates and YAML]] - Using fields inside YAML fields.
 12. [[Z2K Templates, URI, and JSON]] - Triggering template fields externally through URI and passing JSON packages
-13. [[Plugin Settings Page]] - Steps through the features in the Settings Page for the Z2K Templates Plugin.
-14. 
+13. [[Plugin Settings Page]] - Details on the Settings Page for the Z2K Templates Plugin
+14. [[Z2K System Specific Features]] - Additional features specific to the larger Z2K System
+

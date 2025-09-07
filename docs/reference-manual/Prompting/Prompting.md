@@ -1,7 +1,6 @@
 ---
 sidebar_position: 60
 ---
-
 In many circumstances, a template will be activated directly by the user by using a "New Card" command. In these instances, a template file can help specify how to prompt the user for data for each field in the template file. It uses the `|` symbol to specify how to prompt the user for the data.
 
 For more details, see:

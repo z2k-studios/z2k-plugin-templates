@@ -3,7 +3,9 @@ sidebar_position: 46
 ---
 # Card References
 
-You can also specify references to other well known cards in the Z2K vault. Note: these cards have particular meaning within the [[Z2K System]], but may have limited value when used outside of an installed Z2K System.
+You can also specify references to other well known cards in the Z2K vault. 
+
+*Note: these cards have particular meaning within the [[Z2K System]], but may have limited value when used outside of an installed Z2K System.*
 
 | Field                  | Value to be inserted                 | Example *(assuming today is 2026-01-09)* |
 | ---------------------- | ------------------------------------ | ---------------------------------------- |

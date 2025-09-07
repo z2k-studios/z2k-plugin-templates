@@ -1,8 +1,9 @@
 ---
 sidebar_position: 90
 ---
+The Z2K Templates plugin supports Handlebars idea of "[[Helper Functions]]" and includes a number of common useful functions to control the formatting and prompting of data to be placed into fields. 
 
-Z2K Template Fields use predefined "built-in" helper functions to format the data being entered into a field. Please see:
+# Built-In Helper Functions
 
 - [[Built-In Functions - Formatting]]
 - [[Built-In Functions - Linking]]
