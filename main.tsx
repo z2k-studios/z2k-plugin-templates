@@ -1,47 +1,83 @@
 
 // TODO: Add error handling for errors within react components by using React Error Boundaries
 
-import { App, Plugin, Modal, Notice, TAbstractFile, TFolder, TFile, PluginSettingTab, Setting, MarkdownView, Editor } from 'obsidian';
+import { App, Plugin, Modal, Notice, TAbstractFile, TFolder, TFile, PluginSettingTab, Setting, MarkdownView, Editor, Command } from 'obsidian';
 import { Z2KTemplateEngine, Z2KYamlDoc, TemplateState, VarValueType, PromptInfo, TemplateError } from 'z2k-template-engine';
 import React, { useState, useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import moment from 'moment';   // npm i moment
 
+import { EditorView, ViewPlugin, ViewUpdate, Decoration, DecorationSet } from "@codemirror/view";
+import { RangeSetBuilder, type Extension } from "@codemirror/state";
+import { handlebarsLanguage } from "@xiechao/codemirror-lang-handlebars"; // npm i @xiechao/codemirror-lang-handlebars
+import { highlightTree, classHighlighter } from "@lezer/highlight"; // npm i @lezer/highlight
+
 interface Z2KPluginSettings {
-	z2kRootFolder: string;
+	templatesRootFolder: string;
 	creator: string;
 	templatesFolderName: string;
-	templateEditingEnabled: boolean;
+	cardReferenceName: string;
+	dynamicCardCommands: Array<{
+		id: string; // stable id (to retain keyboard shortcuts)
+		name: string; // display name
+		targetFolder: string; // vault-relative path to folder
+	}>;
+	// templateEditingEnabled: boolean;
 }
 
 const DEFAULT_SETTINGS: Z2KPluginSettings = {
-	z2kRootFolder: '/Z2K',
+	// templatesRootFolder: '/Z2K',
+	templatesRootFolder: '',
 	creator: '',
 	templatesFolderName: 'Templates',
-	templateEditingEnabled: true,
+	cardReferenceName: 'note',
+	dynamicCardCommands: [],
+	// templateEditingEnabled: true,
 };
 
 class Z2KSettingTab extends PluginSettingTab {
 	plugin: Z2KPlugin;
+	private refs = {
+		descTemplatesRootFolder: null as Setting | null,
+		descEmbeddedTemplatesFolderName: null as Setting | null,
+		quickCreateDesc: null as HTMLElement | null,
+	}
 
 	constructor(app: App, plugin: Z2KPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}
 
+	private applyDescs() {
+		this.refs.descTemplatesRootFolder?.setDesc(`Folder where the ${cardRefNameLowerPlural(this.plugin.settings)} will be created (root of the ${cardRefNameLower(this.plugin.settings)} type folders). Leave empty to use vault root.`);
+		this.refs.descEmbeddedTemplatesFolderName?.setDesc(createFragment(f => {
+			f.appendText(`Any ${cardRefNameLowerPlural(this.plugin.settings)} within folders of this name will show up as templates `)
+			f.createEl('a', {
+				text: '(?)',
+				href: 'https://z2k-studios.github.io/z2k-plugin-templates-docs/docs/reference-manual/Template%20Folders',
+			});
+		}));
+		this.refs.quickCreateDesc?.setText(`You can create custom commands to quickly create ${cardRefNameLowerPlural(this.plugin.settings)} in specific folders. These commands will appear in the command palette and can be assigned keyboard shortcuts.`);
+	}
+
 	display(): void {
 		const {containerEl} = this;
 		containerEl.empty();
 		containerEl.addClass('z2k-settings');
-		containerEl.createEl('h2', {text: 'Z2K Template Settings'});
+		containerEl.createEl('h3', {text: 'Z2K Template Settings'});
 
-		new Setting(containerEl)
-			.setName('Z2K root folder')
-			.setDesc('Folder where card structure starts')
+		// About block
+		const about = containerEl.createDiv({cls: ['z2k-about', 'setting-item']});
+		// const aboutInfo = about.createDiv({cls: 'setting-item-info'});
+		about.createEl('div', {cls: 'setting-item-description', text: 'Here you can customize some of the functionality of the template plugin.'});
+
+		this.refs.descTemplatesRootFolder = new Setting(containerEl)
+			.setName('Templates root folder')
+			.setDesc('') // Description is set dynamically
 			.addText(text => {
 				const input = text
-					.setPlaceholder(DEFAULT_SETTINGS.z2kRootFolder)
-					.setValue(this.plugin.settings.z2kRootFolder)
+					.setPlaceholder(DEFAULT_SETTINGS.templatesRootFolder)
+					.setValue(this.plugin.settings.templatesRootFolder)
 					.inputEl;
 
 				this.validateTextInput(input,
@@ -50,13 +86,19 @@ class Z2KSettingTab extends PluginSettingTab {
 						return null;
 					},
 					async (validValue) => {
-						this.plugin.settings.z2kRootFolder = validValue;
+						this.plugin.settings.templatesRootFolder = validValue;
 						await this.plugin.saveData(this.plugin.settings);
 					});
 			});
 		new Setting(containerEl)
 			.setName('Creator name')
-			.setDesc('Name to put in YAML when creating new cards (disabled if empty)')
+			.setDesc(createFragment(f => {
+				f.appendText(`Name to use for the built-in {{creator}} fields `)
+				f.createEl('a', {
+					text: '(?)',
+					href: 'https://z2k-studios.github.io/z2k-plugin-templates-docs/docs/reference-manual/Z2K%20Built-In%20Template%20Fields',
+				});
+			}))
 			.addText(text => {
 				const input = text
 					.setPlaceholder(DEFAULT_SETTINGS.creator)
@@ -73,9 +115,9 @@ class Z2KSettingTab extends PluginSettingTab {
 						await this.plugin.saveData(this.plugin.settings);
 					});
 			});
-		new Setting(containerEl)
+		this.refs.descEmbeddedTemplatesFolderName = new Setting(containerEl)
 			.setName('Embedded templates folder name')
-			.setDesc('Any files within folders of this name will show up as templates')
+			.setDesc('') // Description is set dynamically
 			.addText(text => {
 				const input = text
 					.setPlaceholder(DEFAULT_SETTINGS.templatesFolderName)
@@ -95,6 +137,33 @@ class Z2KSettingTab extends PluginSettingTab {
 						await this.plugin.saveData(this.plugin.settings);
 					});
 			});
+		new Setting(containerEl)
+			.setName('Name for files')
+			.setDesc(createFragment(f => {
+				f.appendText("This is the name to use when referring to files in the system. ('note', 'card', 'file', etc.) ");
+				f.createEl('a', {
+					text: '(?)',
+					href: 'https://z2k-studios.github.io/z2k-plugin-templates-docs/docs/reference-manual/Template%20Folders', // TODO
+				})
+			}))
+			.addText(text => {
+				const input = text
+					.setPlaceholder(DEFAULT_SETTINGS.cardReferenceName)
+					.setValue(this.plugin.settings.cardReferenceName)
+					.inputEl;
+
+				this.validateTextInput(input,
+					(value) => {
+						if (!value.trim()) { return "File reference name cannot be empty"; }
+						return null;
+					},
+					async (validValue) => {
+						this.plugin.settings.cardReferenceName = validValue;
+						await this.plugin.saveData(this.plugin.settings);
+						this.applyDescs(); // Update descriptions
+						this.plugin.queueRefreshCommands();
+					});
+			});
 		// new Setting(containerEl)
 		// 	.setName('Enable template editing')
 		// 	.setDesc('Enables editing of templates in the Templates folder')
@@ -109,6 +178,98 @@ class Z2KSettingTab extends PluginSettingTab {
 		// 				await this.plugin.disableTemplateEditing();
 		// 			}
 		// 		}));
+
+		containerEl.createEl('h3', {text: 'Quick Create Commands'});
+		const quickCreateDesc = containerEl.createDiv({cls: 'setting-item'});
+		this.refs.quickCreateDesc = quickCreateDesc.createDiv({cls: 'setting-item-description'});
+		const dyn = this.plugin.settings.dynamicCardCommands;
+		for (let i = 0; i < dyn.length; i++) {
+			const row = new Setting(containerEl)
+				.setName(`Command ${i + 1}`);
+				// .setDesc('Command label and target folder');
+
+			row.addText((text) => {
+				text.setPlaceholder('New Thought').setValue(dyn[i].name || '');
+				text.onChange(async v => {
+					const nv = v.trim();
+					if (nv === dyn[i].name) return;
+					dyn[i].name = nv;
+					await this.plugin.saveData(this.plugin.settings);
+					this.plugin.queueRefreshCommands();
+				});
+			});
+
+			row.addText((text) => {
+				text.setPlaceholder('/Thoughts').setValue(dyn[i].targetFolder || '');
+				text.onChange(async v => {
+					const nv = v.trim();
+					if (nv === dyn[i].targetFolder) return;
+					dyn[i].targetFolder = nv;
+					await this.plugin.saveData(this.plugin.settings);
+					this.plugin.queueRefreshCommands();
+				});
+			});
+
+			row.addExtraButton((button) => {
+				button.setIcon('arrow-up').setTooltip('Move up').setDisabled(i === 0).onClick(async () => {
+					if (i <= 0) { return; }
+					const tmp = dyn[i - 1];
+					dyn[i - 1] = dyn[i];
+					dyn[i] = tmp;
+					await this.plugin.saveData(this.plugin.settings);
+					this.plugin.queueRefreshCommands();
+					this.display();
+				});
+			});
+
+			row.addExtraButton((button) => {
+				button.setIcon('arrow-down').setTooltip('Move down').setDisabled(i >= dyn.length - 1).onClick(async () => {
+					if (i >= dyn.length - 1) { return; }
+					const tmp = dyn[i + 1];
+					dyn[i + 1] = dyn[i];
+					dyn[i] = tmp;
+					await this.plugin.saveData(this.plugin.settings);
+					this.plugin.queueRefreshCommands();
+					this.display();
+				});
+			});
+
+			row.addExtraButton((button) => {
+				button.setIcon('plus').setTooltip('Insert below').onClick(async () => {
+					const id = Math.random().toString(36).slice(2,10) + Date.now().toString(36); // unique id
+					dyn.splice(i + 1, 0, { id, name: '', targetFolder: '' }); // insert after this row
+					await this.plugin.saveData(this.plugin.settings);
+					this.plugin.queueRefreshCommands();
+					this.display(); // structural change: repaint
+				});
+			});
+
+			row.addExtraButton((button) => {
+				button.setIcon('trash').setTooltip('Delete').onClick(async () => {
+					const id = dyn[i]?.id;
+					if (id) { this.plugin.removeCommand(id); }
+					dyn.splice(i, 1);
+					await this.plugin.saveData(this.plugin.settings);
+					this.plugin.queueRefreshCommands();
+					this.display(); // structural change: safe to repaint
+				});
+			});
+		}
+
+		new Setting(containerEl)
+			.addButton((button) => {
+				button.setButtonText('Add Command').onClick(async () => {
+					const id = Math.random().toString(36).slice(2,10) + Date.now().toString(36);
+					// No need to add the command, the command will be added in the refresh
+					dyn.push({ id, name: '', targetFolder: '' });
+					await this.plugin.saveData(this.plugin.settings);
+					this.plugin.queueRefreshCommands();
+					this.display(); // structural change: repaint is fine
+				});
+			});
+
+
+		this.applyDescs(); // Apply dynamic descriptions
 	}
 
 	validateTextInput(
@@ -159,12 +320,17 @@ class Z2KSettingTab extends PluginSettingTab {
 export default class Z2KPlugin extends Plugin {
 	templateEngine: Z2KTemplateEngine;
 	settings: Z2KPluginSettings;
+	private _refreshTimer: number | null = null;
 
 	async onload() {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
 		this.templateEngine = new Z2KTemplateEngine();
-		this.registerCommands();
+		this.refreshMainCommands(false); // Don't delete existing, since none exist yet
+		this.refreshDynamicCommands(false);
+		this.registerEvents();
 		this.addSettingTab(new Z2KSettingTab(this.app, this));
+		this.registerEditorExtension(handlebarsOverlay());
+		this.registerURIHandler();
 
 		// // API?
 		// this.registerObsidianProtocolHandler("z2k-templates", async (params) => {
@@ -187,7 +353,7 @@ export default class Z2KPlugin extends Plugin {
 		// 		let timestampFilename = moment().format("YYYY-MM-DD_HH-mm-ss") + ".md";
 		// 		if (!rawPath) {
 		// 			// No filepath → root + timestamp
-		// 			finalPath = this.joinPath(this.settings.z2kRootFolder, timestampFilename);
+		// 			finalPath = this.joinPath(this.settings.templatesRootFolder, timestampFilename);
 		// 		} else if (!rawPath.includes("/")) {
 		// 			// Filename only → resolve folder from template
 		// 			const folder = this.resolveTemplateParentFolder(templateFile);
@@ -213,7 +379,7 @@ export default class Z2KPlugin extends Plugin {
 		// 		} else if (filepath.includes("/")) {
 		// 			folderPath = filepath.substring(0, filepath.lastIndexOf("/"));
 		// 		} else {
-		// 			folderPath = this.settings.z2kRootFolder;
+		// 			folderPath = this.settings.templatesRootFolder;
 		// 		}
 
 		// 		// Filename fallback
@@ -277,69 +443,42 @@ export default class Z2KPlugin extends Plugin {
 	}
 	onunload() {}
 
-	registerCommands() {
-		{ // Creating
-			// Command palette commands
-			this.addCommand({
+	refreshMainCommands(deleteExisting: boolean = true) {
+		let mainCommands: Command[] = [
+			{
 				id: 'z2k-create-new-card',
-				name: 'Create card from template',
+				name: `Create new ${cardRefNameLower(this.settings)}`,
 				callback: () => this.createCard(),
-			});
-
-			// Command palette commands for when text is selected
-			this.addCommand({
+			},
+			{
 				id: 'z2k-create-card-from-selected-text',
-				name: 'Create card from selected text',
+				name: `Create ${cardRefNameLower(this.settings)} from selected text`,
 				editorCheckCallback: (checking, editor) => {
 					const selectedText = editor.getSelection();
 					if (checking) { return selectedText.length > 0; } // Only enable if text is selected
 					this.createCardFromSelection();
 				},
-			});
-
-			// Context menu 'new card from selection' when text is selected
-			this.registerEvent(
-				this.app.workspace.on('editor-menu', (menu, editor) => {
-					const selectedText = editor.getSelection();
-					if (selectedText.length === 0) return;
-					menu.addItem((item) => {
-						item.setTitle("Z2K: Create card from selection...")
-							.onClick(() => {
-								this.createCardFromSelection();
-							});
-					});
-				})
-			);
-
-			// Command palette 'convert file to card' when a file is active
-			this.addCommand({
+			},
+			{
 				id: 'z2k-convert-file-to-card',
-				name: 'Convert file to card',
+				name: `Convert existing file to templated ${cardRefNameLower(this.settings)}`,
 				checkCallback: (checking) => {
 					const activeFile = this.app.workspace.getActiveFile();
 					// Only enable if there's an active file and it's a markdown file
 					if (checking) { return !!activeFile && activeFile.extension === 'md'; }
 					this.createCardFromFile(activeFile as TFile);
 				},
-			});
-		}
-
-		{ // Continuing
-			// Command palette 'continue card creation' to continue creating a card from an existing file
-			this.addCommand({
+			},
+			{
 				id: 'z2k-continue-filling-card',
-				name: 'Continue filling card',
+				name: `Continue filling ${cardRefNameLower(this.settings)}`,
 				editorCheckCallback: (checking, editor) => {
 					const activeFile = this.app.workspace.getActiveFile();
 					if (checking) { return !!activeFile && activeFile.extension === 'md'; }
 					this.continueCard(activeFile as TFile);
 				},
-			});
-		}
-
-		{ // Inserting partials
-			// Command palette for inserting a partial when no text is selected
-			this.addCommand({
+			},
+			{
 				id: 'z2k-insert-partial-template',
 				name: 'Insert partial template',
 				editorCheckCallback: (checking, editor) => {
@@ -350,26 +489,8 @@ export default class Z2KPlugin extends Plugin {
 					}
 					this.insertPartial();
 				}
-			});
-
-			// Context menu for inserting a partial template when no text is selected
-			this.registerEvent(
-				this.app.workspace.on('editor-menu', (menu, editor) => {
-					const file = this.app.workspace.getActiveFile();
-					if (!(file instanceof TFile) || file.extension !== 'md') return;
-					const selectedText = editor.getSelection();
-					if (selectedText.length > 0) return;
-					menu.addItem((item) => {
-						item.setTitle("Z2K: Insert partial template...")
-							.onClick(() => {
-								this.insertPartial();
-							});
-					});
-				})
-			);
-
-			// Command palette for inserting a partial template when text is selected
-			this.addCommand({
+			},
+			{
 				id: 'z2k-insert-partial-template-from-selection',
 				name: 'Insert partial template using selected text',
 				editorCheckCallback: (checking, editor) => {
@@ -380,24 +501,152 @@ export default class Z2KPlugin extends Plugin {
 					}
 					this.insertPartialFromSelection();
 				}
-			});
+			},
+			// {
+			// 	id: 'z2k-enable-template-editing',
+			// 	name: 'Enable template editing mode',
+			// 	checkCallback: (checking) => {
+			// 		if (checking) { return !this.settings.templateEditingEnabled; }
+			// 		this.enableTemplateEditing();
+			// 	},
+			// },
+			// {
+			// 	id: 'z2k-disable-template-editing',
+			// 	name: 'Disable template editing mode',
+			// 	checkCallback: (checking) => {
+			// 		if (checking) { return this.settings.templateEditingEnabled; }
+			// 		this.disableTemplateEditing();
+			// 	},
+			// },
+			{
+				id: "z2k-convert-file-to-template",
+				name: "Convert file to named template",
+				checkCallback: (checking) => {
+					let file = this.app.workspace.getActiveFile();
+					if (checking) { return !!file && this.getFileTemplateType(file) !== "named"; }
+					this.convertFileTemplateType(file as TFile, "named");
+				},
+			},
+			{
+				id: "z2k-convert-file-to-partial",
+				name: "Convert file to partial template",
+				checkCallback: (checking) => {
+					let file = this.app.workspace.getActiveFile();
+					if (checking) { return !!file && this.getFileTemplateType(file) !== "partial"; }
+					this.convertFileTemplateType(file as TFile, "partial");
+				},
+			},
+			{
+				id: "z2k-convert-file-to-md",
+				name: "Convert file to markdown",
+				checkCallback: (checking) => {
+					let file = this.app.workspace.getActiveFile();
+					if (checking) { return !!file && this.getFileTemplateType(file) !== "normal"; }
+					this.convertFileTemplateType(file as TFile, "normal");
+				},
+			}
 
-			// Context menu for inserting a partial template when text is selected
-			this.registerEvent(
-				this.app.workspace.on('editor-menu', (menu, editor) => {
-					const file = this.app.workspace.getActiveFile();
-					if (!(file instanceof TFile) || file.extension !== 'md') return;
-					const selectedText = editor.getSelection();
-					if (selectedText.length === 0) return;
-					menu.addItem((item) => {
-						item.setTitle("Z2K: Insert partial template using selection...")
-							.onClick(() => {
-								this.insertPartialFromSelection();
-							});
-					});
-				})
-			);
+		]
+		if (deleteExisting) {
+			for (const cmd of mainCommands) {
+				this.removeCommand(cmd.id);
+			}
 		}
+		for (const cmd of mainCommands) {
+			this.addCommand(cmd);
+		}
+	}
+
+	refreshDynamicCommands(deleteExisting: boolean = true) {
+		for (const cmd of this.settings.dynamicCardCommands) {
+			if (deleteExisting) {
+				this.removeCommand(cmd.id); // Just returns if not found
+			}
+		}
+		// Dynamic commands for creating cards in specific folders
+		for (const cmd of this.settings.dynamicCardCommands) {
+			if (!cmd.id || !cmd.name || !cmd.targetFolder) { continue; }
+			this.addCommand({
+				id: cmd.id,
+				name: cmd.name,
+				callback: async () => {
+					const folder = this.getFolder(cmd.targetFolder);
+					if (!folder) {
+						new Notice(`Target folder not found: ${cmd.targetFolder}`);
+						return;
+					}
+					await this.createCard(folder);
+				},
+			});
+		}
+	}
+
+	queueRefreshCommands(delay=1000) {
+		// 1s debounce so we don't churn while typing
+		if (this._refreshTimer != null) { window.clearTimeout(this._refreshTimer); }
+		this._refreshTimer = window.setTimeout(() => {
+			this._refreshTimer = null;
+			this.refreshMainCommands();
+			this.refreshDynamicCommands();
+		}, delay);
+	}
+
+	registerEvents() {
+		// Context menu 'new card from selection' when text is selected
+		this.registerEvent(
+			this.app.workspace.on('editor-menu', (menu, editor) => {
+				const selectedText = editor.getSelection();
+				if (selectedText.length === 0) return;
+				menu.addItem((item) => {
+					item.setTitle(`Z2K: Create ${cardRefNameLower(this.settings)} from selection...`)
+						.onClick(() => {
+							this.createCardFromSelection();
+						});
+				});
+			})
+		);
+		// Context menu 'create new card here'
+		this.registerEvent(
+			this.app.workspace.on("file-menu", (menu, folder) => {
+				if (!(folder instanceof TFolder)) return;
+				menu.addItem((item) => {
+					item.setTitle(`Z2K - Create new ${cardRefNameLower(this.settings)} here`)
+						.onClick(() => this.createCard(folder as TFolder));
+				});
+			})
+		);
+
+		// Context menu for inserting a partial template when no text is selected
+		this.registerEvent(
+			this.app.workspace.on('editor-menu', (menu, editor) => {
+				const file = this.app.workspace.getActiveFile();
+				if (!(file instanceof TFile) || file.extension !== 'md') return;
+				const selectedText = editor.getSelection();
+				if (selectedText.length > 0) return;
+				menu.addItem((item) => {
+					item.setTitle("Z2K: Insert partial template...")
+						.onClick(() => {
+							this.insertPartial();
+						});
+				});
+			})
+		);
+
+		// Context menu for inserting a partial template when text is selected
+		this.registerEvent(
+			this.app.workspace.on('editor-menu', (menu, editor) => {
+				const file = this.app.workspace.getActiveFile();
+				if (!(file instanceof TFile) || file.extension !== 'md') return;
+				const selectedText = editor.getSelection();
+				if (selectedText.length === 0) return;
+				menu.addItem((item) => {
+					item.setTitle("Z2K: Insert partial template using selection...")
+						.onClick(() => {
+							this.insertPartialFromSelection();
+						});
+				});
+			})
+		);
 
 		// { // Template editing mode toggle
 		// 	// Toggle command
@@ -444,65 +693,101 @@ export default class Z2KPlugin extends Plugin {
 		// 	);
 		// }
 
-		{ // Template conversion
-			// Command
-			this.addCommand({
-				id: "z2k-convert-file-to-template",
-				name: "Convert file to named template",
-				checkCallback: (checking) => {
-					let file = this.app.workspace.getActiveFile();
-					if (checking) { return !!file && this.getFileTemplateType(file) !== "named"; }
-					this.convertFileTemplateType(file as TFile, "named");
-				},
-			});
-			this.addCommand({
-				id: "z2k-convert-file-to-partial",
-				name: "Convert file to partial template",
-				checkCallback: (checking) => {
-					let file = this.app.workspace.getActiveFile();
-					if (checking) { return !!file && this.getFileTemplateType(file) !== "partial"; }
-					this.convertFileTemplateType(file as TFile, "partial");
-				},
-			});
-			this.addCommand({
-				id: "z2k-convert-file-to-md",
-				name: "Convert file to markdown",
-				checkCallback: (checking) => {
-					let file = this.app.workspace.getActiveFile();
-					if (checking) { return !!file && this.getFileTemplateType(file) !== "normal"; }
-					this.convertFileTemplateType(file as TFile, "normal");
-				},
-			});
+		// Template conversion context menu in file explorer
+		this.registerEvent(
+			this.app.workspace.on("file-menu", (menu, file) => {
+				if (!(file instanceof TFile) || this.getFileTemplateType(file) === "named") return;
+				menu.addItem((item) => {
+					item.setTitle("Z2K - Convert to named template")
+						.onClick(() => this.convertFileTemplateType(file as TFile, "named"));
+				});
+			})
+		);
+		this.registerEvent(
+			this.app.workspace.on("file-menu", (menu, file) => {
+				if (!(file instanceof TFile) || this.getFileTemplateType(file) === "partial") return;
+				menu.addItem((item) => {
+					item.setTitle("Z2K - Convert to partial template")
+						.onClick(() => this.convertFileTemplateType(file as TFile, "partial"));
+				});
+			})
+		);
+		this.registerEvent(
+			this.app.workspace.on("file-menu", (menu, file) => {
+				if (!(file instanceof TFile) || this.getFileTemplateType(file) === "normal") return;
+				menu.addItem((item) => {
+					item.setTitle("Z2K - Convert to markdown")
+						.onClick(() => this.convertFileTemplateType(file as TFile, "normal"));
+				});
+			})
+		);
+	}
 
-			// Context menu in file explorer
-			this.registerEvent(
-				this.app.workspace.on("file-menu", (menu, file) => {
-					if (!(file instanceof TFile) || this.getFileTemplateType(file) === "named") return;
-					menu.addItem((item) => {
-						item.setTitle("Z2K - Convert to named template")
-							.onClick(() => this.convertFileTemplateType(file as TFile, "named"));
-					});
-				})
-			);
-			this.registerEvent(
-				this.app.workspace.on("file-menu", (menu, file) => {
-					if (!(file instanceof TFile) || this.getFileTemplateType(file) === "partial") return;
-					menu.addItem((item) => {
-						item.setTitle("Z2K - Convert to partial template")
-							.onClick(() => this.convertFileTemplateType(file as TFile, "partial"));
-					});
-				})
-			);
-			this.registerEvent(
-				this.app.workspace.on("file-menu", (menu, file) => {
-					if (!(file instanceof TFile) || this.getFileTemplateType(file) === "normal") return;
-					menu.addItem((item) => {
-						item.setTitle("Z2K - Convert to markdown")
-							.onClick(() => this.convertFileTemplateType(file as TFile, "normal"));
-					});
-				})
-			);
-		}
+	registerURIHandler() {
+		// this.registerObsidianProtocolHandler("z2k-templates", async (params) => {
+		// 	try {
+		// 		const action = params.action?.trim();
+		// 		if (!action) { throw new Error("Missing 'action'"); }
+
+		// 		// Common: field overrides (anything not in known set)
+		// 		const known = new Set(["action","vault","templatepath","partialpath","filepath","existingfilepath","templateJSONdata","destheader","location"]);
+		// 		const fieldOverrides: Record<string,string> = {};
+		// 		for (const k in params) {
+		// 			if (!known.has(k)) { fieldOverrides[k] = decodeURIComponent(params[k]); }
+		// 		}
+		// 		let jsonOverrides: Record<string, any> = {};
+		// 		if (params.templateJSONdata) {
+		// 			try {
+		// 				jsonOverrides = JSON.parse(decodeURIComponent(params.templateJSONdata));
+		// 			} catch { new Notice("Failed to parse templateJSONdata JSON"); }
+		// 		}
+		// 		const mergedOverrides = { ...jsonOverrides, ...fieldOverrides };
+
+		// 		if (action.toLowerCase() === "new") {
+		// 			const templatePath = decodeURIComponent(params.templatepath || "").trim();
+		// 			if (!templatePath) { throw new Error("Missing 'templatepath'"); }
+		// 			const templateFile = this.getFile(templatePath);
+		// 			if (!templateFile || templateFile.extension !== "md") { throw new Error(`Template not found: ${templatePath}`); }
+
+		// 			const rawPath = decodeURIComponent(params.filepath || "").trim();
+		// 			const parentFallback = this.getTemplateCardType(templateFile) || this.getTemplatesRootFolder();
+		// 			let finalPath: string;
+		// 			if (!rawPath) {
+		// 				finalPath = this.joinPath(parentFallback.path, moment().format("YYYY-MM-DD_HH-mm-ss") + ".md");
+		// 			} else if (!rawPath.includes("/")) {
+		// 				const folder = parentFallback;
+		// 				const filename = rawPath.endsWith(".md") ? rawPath : `${rawPath}.md`;
+		// 				finalPath = this.joinPath(folder, filename);
+		// 			} else {
+		// 				const endsWithSlash = rawPath.endsWith("/") || !rawPath.includes(".");
+		// 				if (endsWithSlash) {
+		// 					finalPath = this.joinPath(rawPath.replace(/\/+$/,""), `${Date.now()}.md`);
+		// 				} else {
+		// 					finalPath = rawPath.endsWith(".md") ? rawPath : `${rawPath}.md`;
+		// 				}
+		// 			}
+		// 			await this.createFromTemplateUri(templateFile, finalPath, mergedOverrides);
+		// 			return;
+		// 		}
+
+		// 		if (action.toLowerCase() === "insertpartial") {
+		// 			const partialPath = decodeURIComponent(params.partialpath || "").trim();
+		// 			if (!partialPath) { throw new Error("Missing 'partialpath'"); }
+		// 			const partialFile = this.getFile(partialPath);
+		// 			if (!partialFile || partialFile.extension !== "md") { throw new Error(`Partial not found: ${partialPath}`); }
+		// 			const existingPath = decodeURIComponent(params.existingfilepath || "").trim();
+		// 			const destHeader = params.destheader ? decodeURIComponent(params.destheader) : "";
+		// 			const location = (params.location || "top").toLowerCase(); // "top" | "bottom"
+		// 			await this.insertPartialFromUri(partialFile, existingPath, destHeader, location, mergedOverrides);
+		// 			return;
+		// 		}
+
+		// 		new Notice(`Unknown Z2K action: ${action}`);
+		// 	} catch (e) {
+		// 		console.error("[Z2K URI handler error]", e);
+		// 		new Notice("Failed to process z2k-templates URI");
+		// 	}
+		// });
 	}
 
 	//// Functions called from commands/context menu/etc
@@ -510,9 +795,11 @@ export default class Z2KPlugin extends Plugin {
 	// Card creation and management
 	// 	(I couldn't find a good way to de-duplicate these functions,
 	// 	so I made them separate and tried to reduce the repetition as much as I could)
-	async createCard() {
+	async createCard(cardTypeFolder: TFolder | null = null) {
 		try {
-			const cardTypeFolder = await this.promptForCardTypeFolder();
+			if (!cardTypeFolder) {
+				cardTypeFolder = await this.promptForCardTypeFolder();
+			}
 			const templateFile = await this.promptForTemplateFile(cardTypeFolder, "named");
 
 			let z2kSystemYaml = await this.GetZ2KSystemYaml(cardTypeFolder);
@@ -604,7 +891,6 @@ export default class Z2KPlugin extends Plugin {
 			await this.updateTitleAndContent(continueFile, title, contentOut);
 		} catch (error) { this.handleErrors(error); }
 	}
-	// TODO: support yaml for inserting partials and update yaml as needed.
 	async insertPartial() {
 		try {
 			const editor = this.getEditorOrThrow();
@@ -728,7 +1014,6 @@ export default class Z2KPlugin extends Plugin {
 	// 		await this.saveData(this.settings);
 	// 		for (const f of this.getAllZ2KFiles()) {
 	// 			// Not using await
-	// 			console.log(f);
 	// 			if (f instanceof TFolder && f.name === "." + this.settings.templatesFolderName) {
 	// 				this.unhideFolder(f);
 	// 			}
@@ -764,7 +1049,7 @@ export default class Z2KPlugin extends Plugin {
 	async promptForCardTypeFolder(): Promise<TFolder> {
 		const cardTypes = this.getAllCardTypes("named");
 		if (cardTypes.length === 0) {
-			throw new Error("No card types available. Please create a template folder first.");
+			throw new Error(`No ${cardRefNameLower(this.settings)} types available. Please create a template folder first.`);
 		}
 		return new Promise<TFolder>((resolve, reject) => {
 			new CardTypeSelectionModal(this.app, cardTypes, this.settings, resolve, reject).open();
@@ -773,7 +1058,7 @@ export default class Z2KPlugin extends Plugin {
 	async promptForTemplateFile(cardType: TFolder, type: "named" | "partial"): Promise<TFile> {
 		const templates = this.getAssociatedTemplates(type, cardType);
 		if (templates.length === 0) {
-			throw new Error("No templates available in the selected card type folder.");
+			throw new Error(`No ${type === "named" ? "" : "partial "}templates available in the selected ${cardRefNameLower(this.settings)} type folder.`);
 		}
 		return new Promise<TFile>((resolve, reject) => {
 			new TemplateSelectionModal(this.app, templates, this.settings, resolve, reject).open();
@@ -782,7 +1067,7 @@ export default class Z2KPlugin extends Plugin {
 	async promptForFieldCollection(templateState: TemplateState): Promise<TemplateState> {
 		if (this.hasFillableFields(templateState.promptInfos)) {
 			await new Promise<void>((resolve, reject) => {
-				new FieldCollectionModal(this.app, "Field Collection for Card", templateState, resolve, reject).open();
+				new FieldCollectionModal(this.app, `Field Collection for ${cardRefNameUpper(this.settings)}`, templateState, resolve, reject).open();
 			});
 		} else {
 			new Notice("No fields to prompt for.");
@@ -849,18 +1134,18 @@ export default class Z2KPlugin extends Plugin {
 	// 	const newPath = parentPath ? `${parentPath}/${newName}` : newName;
 	// 	await this.app.vault.rename(folder, newPath);
 	// }
-	registerTemplateFileExtension() {
-		// @ts-expect-error: internal API
-		this.app.viewRegistry.registerExtensions(["template"], "markdown");
-	}
-	unregisterTemplateFileExtension() {
-		// @ts-expect-error: internal API
-		this.app.viewRegistry.unregisterExtensions("template");
-	}
+	// registerTemplateFileExtension() {
+	// 	// @ts-expect-error: internal API
+	// 	this.app.viewRegistry.registerExtensions(["template"], "markdown");
+	// }
+	// unregisterTemplateFileExtension() {
+	// 	// @ts-expect-error: internal API
+	// 	this.app.viewRegistry.unregisterExtensions("template");
+	// }
 
 	getAllTemplates(): { file: TFile, type: "named" | "partial" }[] {
 		let list = [];
-		for (const f of this.getAllZ2KFiles()) {
+		for (const f of this.getAllTemplatesRootFiles()) {
 			if (!(f instanceof TFile)) { continue; }
 			const type = this.getFileTemplateType(f);
 			if (type === "normal") { continue; }
@@ -884,9 +1169,9 @@ export default class Z2KPlugin extends Plugin {
 		return folders;
 	}
 	getAssociatedTemplates(filter: "named" | "partial", cardType: TFolder): TFile[] {
-		const z2kRootFolder = this.getZ2KRootFolder();
-		if (!this.isSubPathOf(cardType.path, z2kRootFolder.path)) {
-			throw new Error("Card type folder is not inside the Z2K root folder.");
+		const templatesRootFolder = this.getTemplatesRootFolder();
+		if (!this.isSubPathOf(cardType.path, templatesRootFolder.path)) {
+			throw new Error(`The selected ${cardRefNameLower(this.settings)} type folder is not inside your templates root folder.`);
 		}
 		let currFolder: TFolder = cardType;
 		let templates: TFile[] = [];
@@ -900,11 +1185,20 @@ export default class Z2KPlugin extends Plugin {
 					continue;
 				}
 			}
-			if (currFolder === z2kRootFolder || !currFolder.parent) { break; }
+			if (currFolder === templatesRootFolder || !currFolder.parent) { break; }
 			currFolder = currFolder.parent as TFolder;
 		}
 		templates.sort((a, b) => a.path.localeCompare(b.path));
 		return templates;
+	}
+	getTemplateCardType(template: TFile): TFolder | null {
+		if (this.getFileTemplateType(template) === "normal") { return null; } // not a template
+		let folder = template.parent;
+		if (folder?.name === this.settings.templatesFolderName ||
+				folder?.name === '.' + this.settings.templatesFolderName) {
+			folder = folder.parent as TFolder; // templates are in the templates folder, so we want the parent folder
+		}
+		return folder || null;
 	}
 	getPartialCallbackFunc(): (name: string, path: string) => Promise<[found: boolean, content: string, path: string]> {
 		// Store [file, normalized path] pairs for all partials
@@ -920,7 +1214,7 @@ export default class Z2KPlugin extends Plugin {
 			// name can be just the title (partial.md) or an absolute path (/folder/partial.md).
 			// path is the folder of the template/partial where the partial was referenced (so it's relative to here).
 			if (name.startsWith("/")) { // absolute path
-				const absolutePath = normalizeFullPath(this.joinPath(this.getZ2KRootFolder().path, name.substring(1))); // DOCS: relative to Z2K root folder
+				const absolutePath = normalizeFullPath(this.joinPath(this.getTemplatesRootFolder().path, name.substring(1))); // DOCS: relative to templates root folder
 				const file = this.getFile(absolutePath);
 				if (!file) { return [false, "", ""]; }
 				const normPath = normalizeFullPath(file.path);
@@ -950,7 +1244,7 @@ export default class Z2KPlugin extends Plugin {
 							return [true, await this.app.vault.read(match[0]), match[1]];
 						}
 					}
-					if (currFolder === this.getZ2KRootFolder() || !currFolder.parent) { break; }
+					if (currFolder === this.getTemplatesRootFolder() || !currFolder.parent) { break; }
 					currFolder = currFolder.parent as TFolder;
 				}
 				// if we reach here, no match was found in the current folder or its parents, so return the first match
@@ -972,25 +1266,25 @@ export default class Z2KPlugin extends Plugin {
 	}
 	isInsideTemplatesFolder(file: TFile): boolean {
 		const tfn = this.settings.templatesFolderName;
-		const z2kRoot = this.getZ2KRootFolder();
-		if (!this.isSubPathOf(file.path, z2kRoot.path)) { return false; }
+		const templatesRoot = this.getTemplatesRootFolder();
+		if (!this.isSubPathOf(file.path, templatesRoot.path)) { return false; }
 		const normPath = normalizeFullPath(file.path);
 		return normPath.includes(`/${tfn}/`) || normPath.includes(`/.${tfn}/`) || normPath.startsWith(`${tfn}/`) || normPath.startsWith(`.${tfn}/`);
 	}
-	getAllZ2KFiles(): TAbstractFile[] {
+	getAllTemplatesRootFiles(): TAbstractFile[] {
 		let files: TAbstractFile[] = [];
-		const z2kRootPath = this.getZ2KRootFolder().path;
+		const templatesRootPath = this.getTemplatesRootFolder().path;
 		for (const f of this.app.vault.getAllLoadedFiles()) {
-			if (this.isSubPathOf(f.path, z2kRootPath)) {
+			if (this.isSubPathOf(f.path, templatesRootPath)) {
 				files.push(f);
 			}
 		}
 		return files;
 	}
-	getZ2KRootFolder(): TFolder {
-		let z2kRoot = this.getFolder(this.settings.z2kRootFolder)
-		if (!z2kRoot) { throw new Error(`Z2K root folder '${this.settings.z2kRootFolder}' not found.`); }
-		return z2kRoot;
+	getTemplatesRootFolder(): TFolder {
+		let templatesRoot = this.getFolder(this.settings.templatesRootFolder)
+		if (!templatesRoot) { throw new Error(`Templates root folder '${this.settings.templatesRootFolder}' not found.`); }
+		return templatesRoot;
 	}
 
 	getEditorOrThrow(): Editor {
@@ -1119,7 +1413,7 @@ export default class Z2KPlugin extends Plugin {
 
 	private async GetZ2KSystemYaml(cardTypeFolder: TFolder): Promise<string> {
 		// Get all the z2k system yaml files between here and the root
-		const z2kRoot = this.getFolder(this.settings.z2kRootFolder);
+		const templatesRoot = this.getFolder(this.settings.templatesRootFolder);
 		let currentFolder: TFolder | null = cardTypeFolder;
 		let systemYamls: string[] = [];
 		while (currentFolder) {
@@ -1130,7 +1424,7 @@ export default class Z2KPlugin extends Plugin {
 			} catch {
 				// Can't find/read the file
 			}
-			if (currentFolder === z2kRoot) break; // Stop at the Z2K root
+			if (currentFolder === templatesRoot) break; // Stop at the templates root
 			currentFolder = currentFolder.parent;
 		}
 
@@ -1211,6 +1505,180 @@ function normalizeFullPath(path: string): string {
 		.replace(/\/+$/, '');      // Remove trailing slashes
 }
 
+function cardRefNameUpper(settings: { cardReferenceName: string }): string {
+	const s = settings.cardReferenceName || "Card";
+	return s.charAt(0).toLocaleUpperCase() + s.slice(1);
+}
+function cardRefNameLower(settings: { cardReferenceName: string }): string {
+	const s = settings.cardReferenceName || "Card";
+	return s.charAt(0).toLocaleLowerCase() + s.slice(1);
+}
+function cardRefNameUpperPlural(settings: { cardReferenceName: string }): string {
+	return cardRefNameUpper(settings) + "s";
+}
+function cardRefNameLowerPlural(settings: { cardReferenceName: string }): string {
+	return cardRefNameLower(settings) + "s";
+}
+
+// ------------------------------------------------------------------------------------------------
+// Handlebars syntax highlighting
+// ------------------------------------------------------------------------------------------------
+
+type SpanType = "normal" | "triple" | "comment" | "raw";
+type Span = { from: number; to: number; type: SpanType };
+
+export function handlebarsOverlay(): Extension {
+	const spanMark = (cls: string) => Decoration.mark({class: cls});
+	const tokMark  = (cls: string) => Decoration.mark({class: `cm-hbs-token ${cls}`});
+
+	function build(view: EditorView): DecorationSet {
+		const b = new RangeSetBuilder<Decoration>();
+
+		for (const {from, to} of view.visibleRanges) {
+			const text = view.state.doc.sliceString(from, to);
+
+			for (const m of scanAll(text)) {
+				const baseCls =
+					m.type === "comment" ? "cm-hbs-comment" :
+					m.type === "raw" ? "cm-hbs-raw" :
+					m.type === "triple" ? "cm-hbs-triple" : "cm-hbs";
+
+				// whole-span tint (lightweight)
+				b.add(from + m.from, from + m.to, spanMark(baseCls));
+
+				// deep tokenization with Handlebars Lezer (cap length for perf)
+				const spanLen = m.to - m.from;
+				if (spanLen <= 4000) {
+					const slice = text.slice(m.from, m.to);
+					const tree  = handlebarsLanguage.parser.parse(slice);
+
+					// Use Lezer’s classHighlighter to get tag-based classes like "tok-string"
+					highlightTree(tree, classHighlighter, (s, e, classes) => {
+						// Map "tok-foo tok-bar" -> "cm-tok-foo cm-tok-bar"
+						const cls = classes.split(/\s+/).map(c => `cm-${c}`).join(" ");
+						b.add(from + m.from + s, from + m.from + e, tokMark(cls));
+					});
+				}
+			}
+		}
+		return b.finish();
+	}
+
+	return [
+		// Theme defaults: inherit from Obsidian’s code vars
+		EditorView.baseTheme({
+			".cm-hbs": { color: "var(--text-faint)" },
+			".cm-hbs-triple": { color: "var(--text-muted)" },
+			".cm-hbs-comment": { color: "var(--text-faint)", fontStyle: "italic" },
+			".cm-hbs-raw": { color: "var(--text-muted)" },
+
+			/* token-level colors (from classHighlighter) */
+			".cm-hbs-token.cm-tok-string": { color: "var(--code-string)" },
+			".cm-hbs-token.cm-tok-number": { color: "var(--code-number)" },
+			".cm-hbs-token.cm-tok-comment": { color: "var(--code-comment)", fontStyle: "italic" },
+			".cm-hbs-token.cm-tok-keyword": { color: "var(--code-keyword)" },
+			".cm-hbs-token.cm-tok-operator": { color: "var(--code-operator)" },
+			".cm-hbs-token.cm-tok-variableName": { color: "var(--code-property)" },
+			".cm-hbs-token.cm-tok-atom": { color: "var(--code-important)" },
+			".cm-hbs-token.cm-tok-tagName": { color: "var(--code-tag)" },
+			".cm-hbs-token.cm-tok-propertyName": { color: "var(--code-property)" },
+		}),
+		ViewPlugin.fromClass(class {
+			decorations: DecorationSet;
+			constructor(view: EditorView) { this.decorations = build(view); }
+			update(u: ViewUpdate) {
+				if (u.docChanged || u.viewportChanged) this.decorations = build(u.view);
+			}
+		}, { decorations: v => v.decorations })
+	];
+}
+
+function scanAll(text: string): Span[] {
+	const out: Span[] = [];
+	let i = 0;
+	while (i < text.length) {
+		const j = text.indexOf("{{", i);
+		if (j < 0) break;
+		// skip escaped \{{ (odd number of backslashes)
+		if (isEscapedAt(text, j)) { i = j + 2; continue; }
+		const res = scanHandlebarsSpan(text, j);
+		if (res) { out.push({ from: j, to: res.end, type: res.type }); i = res.end; }
+		else { i = j + 2; }
+	}
+	return out;
+}
+
+// odd backslashes immediately before position => escaped
+function isEscapedAt(text: string, pos: number): boolean {
+	let b = 0; for (let k = pos - 1; k >= 0 && text.charCodeAt(k) === 92; k--) { b++; }
+	return (b & 1) === 1;
+}
+
+function scanHandlebarsSpan(text: string, start: number): { end: number; type: SpanType } | null {
+	if (!text.startsWith("{{", start)) { return null; }
+	if (isEscapedAt(text, start)) { return null; }
+
+	// support trim marker right after open: {{~... / {{{~...
+	const afterOpen = start + 2;
+	const hasTrimOpen = text.charCodeAt(afterOpen) === 126; // '~'
+	const p = hasTrimOpen ? afterOpen + 1 : afterOpen;
+
+	// Long comment: {{~!-- ... --}}
+	if (text.startsWith("!--", p)) {
+		const end = text.indexOf("--}}", p + 3);
+		return end >= 0 ? { end: end + 4, type: "comment" } : null;
+	}
+	// Short comment: {{~! ... }}
+	if (text.charCodeAt(p) === 33 /* '!' */) {
+		const end = text.indexOf("}}", p + 1);
+		// allow optional trim before close: ~}}
+		return end >= 0 ? { end: end + 2, type: "comment" } : null;
+	}
+
+	// Raw block: {{{{~name}}}} ... {{{{/name~}}}}
+	if (text.startsWith("{{{{", start)) {
+		let q = start + 4;
+		if (text.charCodeAt(q) === 126) { q++; } // optional ~ after {{{{
+		const m = text.slice(q).match(/^\s*([A-Za-z_][\w:-]*)/);
+		if (!m) { return null; }
+		const name = m[1];
+		const openRest = q + m[0].length;
+		// find matching close: {{{{/name ... }}}}
+		const closeHead = `{{{{/${name}`;
+		let idx = text.indexOf(closeHead, openRest);
+		if (idx < 0) { return null; }
+		const endBraces = text.indexOf("}}}}", idx); // allows optional ~/ws before braces
+		return endBraces >= 0 ? { end: endBraces + 4, type: "raw" } : null;
+	}
+
+	// Normal or triple mustache (allow trim after open)
+	const triple = text.startsWith("{{{", start);
+	let i = start + (triple ? 3 : 2);
+	if (text.charCodeAt(i) === 126) { i++; } // skip {{~ or {{{~
+	let inDQ = false, inSQ = false;
+
+	while (i < text.length) {
+		const ch = text.charCodeAt(i);
+		if (inDQ) { if (ch === 34 && !isEscapedAt(text, i)) { inDQ = false; } i++; continue; } // "
+		if (inSQ) { if (ch === 39 && !isEscapedAt(text, i)) { inSQ = false; } i++; continue; } // '
+		if (ch === 34) { inDQ = true; i++; continue; }
+		if (ch === 39) { inSQ = true; i++; continue; }
+		// closer with optional trim before braces: ~}} or ~}}}
+		if (text.charCodeAt(i) === 126 /* '~' */) {
+			if (triple ? text.startsWith("}}}", i + 1) : text.startsWith("}}", i + 1)) {
+				return { end: i + 1 + (triple ? 3 : 2), type: triple ? "triple" : "normal" };
+			}
+		}
+		if (triple ? text.startsWith("}}}", i) : text.startsWith("}}", i)) {
+			return { end: i + (triple ? 3 : 2), type: triple ? "triple" : "normal" };
+		}
+		i++;
+	}
+	return null;
+}
+
+
+
 // ------------------------------------------------------------------------------------------------
 // Errors
 // ------------------------------------------------------------------------------------------------
@@ -1271,7 +1739,7 @@ export class CardTypeSelectionModal extends Modal {
 
 	onOpen() {
 		this.modalEl.addClass('z2k', 'card-type-selection-modal');
-		this.titleEl.setText('Select Card Type');
+		this.titleEl.setText(`Select ${cardRefNameUpper(this.settings)} Type`);
 		this.contentEl.empty();
 		this.contentEl.addClass('modal-content');
 		this.root = createRoot(this.contentEl);
@@ -1284,7 +1752,7 @@ export class CardTypeSelectionModal extends Modal {
 					this.close();
 				}}
 				onCancel={() => {
-					this.reject(new UserCancelError("User cancelled card type selection"));
+					this.reject(new UserCancelError(`User cancelled ${cardRefNameLower(this.settings)} type selection`));
 					this.close();
 				}}
 			/>
@@ -1338,10 +1806,10 @@ const CardTypeSelector = ({ cardTypes, settings, onConfirm, onCancel }: CardType
 
 	function getPrettyPath(path: string): string {
 		let normPath = normalizeFullPath(path);
-		let z2kRoot = normalizeFullPath(settings.z2kRootFolder);
-		if (normPath === z2kRoot) { return "/"; }
-		if (normPath.startsWith(z2kRoot + "/")) {
-			return "/" + normPath.substring(z2kRoot.length + 1);
+		let templatesRoot = normalizeFullPath(settings.templatesRootFolder);
+		if (normPath === templatesRoot) { return "/"; }
+		if (normPath.startsWith(templatesRoot + "/")) {
+			return "/" + normPath.substring(templatesRoot.length + 1);
 		}
 		return normPath;
 	}
@@ -1355,7 +1823,7 @@ const CardTypeSelector = ({ cardTypes, settings, onConfirm, onCancel }: CardType
 		>
 			<div className="selection-list">
 				{cardTypes.length === 0 ? (
-					<div className="selection-empty-state">No card types found</div>
+					<div className="selection-empty-state">No {cardRefNameLower(settings)} types found</div>
 				) : (
 					cardTypes.map((cardType, index) => (
 						<div
@@ -1653,7 +2121,11 @@ interface FieldCollectionFormProps {
 // This component assumes that varInfoMap will not be changing.
 const FieldCollectionForm = ({ templateState, onComplete, onCancel }: FieldCollectionFormProps) => {
 	function formatFieldName(str: string): string {
-		return str.charAt(0).toUpperCase() + str.slice(1).replace(/([A-Z0-9])/g, ' $1');
+		str = str.charAt(0).toUpperCase() + str.slice(1);
+		return str
+			.replace(/([a-z0-9])([A-Z])/g, '$1 $2')      // parseXML → parse XML, GLTF2L → GLTF2 L
+			.replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')   // XMLFile → XML File, HTTPServer → HTTP Server
+			.trim();
 	}
 	function computeInitialFieldStates(): Record<string, FieldState> {
 		const initialFieldStates: Record<string, FieldState> = {};

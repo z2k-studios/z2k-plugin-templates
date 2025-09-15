@@ -51,7 +51,7 @@ npm run dev
 ### Releasing
 - Make sure to build
 ```bash
-npm run dev
+npm run build
 ```
 - Update version number in package.json and manifest.json
 - Create a commit
