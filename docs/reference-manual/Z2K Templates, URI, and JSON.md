@@ -23,7 +23,7 @@ Features
     1. Follow Advanced URI plugin ([https://publish.obsidian.md/advanced-uri-doc/Actions/Writing](https://publish.obsidian.md/advanced-uri-doc/Actions/Writing) )
         
     
-2. Add a NewCard command.
+2. Add a New File command.
     
     1. Simple action that takes a vault, and a template file, and creates a new file with the template
         
@@ -31,7 +31,7 @@ Features
         
     3. If filepath is missing a path, it will use the template’s path to determine the location, and failing that will place it in the root path. If file path is missing a filename, then it will use a millisecond timestamp for the file.
         
-3. Add a NewCard + data command
+3. Add a New File + data command
     
     1. Action that takes a vault, and a template file, and creates a new file with the template. Note: filepath
         

@@ -2,7 +2,7 @@
 sidebar_position: 22
 ---
 
-There are a number of [[reference-manual|Template Field]] types available to the user to include in their [[Docs/z2k-system-docs/4 - Z2K Reference Docs/4h - Z2K Templates/Z2K Templates]] cards. They are:
+There are a number of [[reference-manual|Template Field]] types available to the user to include in their cards. They are:
 
 1. [[#Template Field Type User Specified Fields|User Specified Fields]]
 2. [[#Template Field Type Built-In Fields|Built-In Fields]]

@@ -7,10 +7,11 @@ Welcome to the **Best Practices** section for Z2K Templates. Included below are 
 
 ---
 
-- [[Embedded vs External Template Folders - How to Decide]]
-- [[How to Make Use of Hierarchical YAML text]]
-- [[How and When to Use Partials]]
-- [[A Guide to Making Your Templates Modular]]
+- Embedded vs External Template Folders - How to Decide
+- How to Make Use of Hierarchical YAML text
+- How and When to Use Partials
+- Case sensitivity and field names
+- A Guide to Making Your Templates Modular
 	- Steps through how to use partials for creating common sections, discusses the benefits
 	- Also, step through how the modular sections can be stored at different hierarchical levels.
 
