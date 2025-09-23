@@ -53,8 +53,10 @@ Now that we have a well-featured book template in our vault, let's create what i
 
 ```markdown
 ## Quote:: {{Quotation Name}}
-> {{Quote}}
-> -- {{Author}} <-- ==TODO NOTE - this only works if YAML fields can be accessed during insertion==
+> {{Quote-Text}}
+{{%IF {{Quote-Author}} != "" }}
+> -- {{Quote-Author default="{{Book-Author}}"}}
+{{%ENDIF}}
 - References: 
     - Tags: {{prompt-info Tags description="Please list out all Tags relevant to this quotation"}}
 
