@@ -1,5 +1,7 @@
 ---
 sidebar_position: 120
+folder_position: 120
+
 ---
 
 The templating function is performed with an optional JSON package provided externally (for instance, programmatically through a URI call.) In this instance, the templating routine will use the information from the JSON package as data input first before prompting the user for the data. 

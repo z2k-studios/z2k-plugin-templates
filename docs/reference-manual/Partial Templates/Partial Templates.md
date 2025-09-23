@@ -1,5 +1,7 @@
 ---
 sidebar_position: 100
+folder_position: 100
+
 ---
 
 The Z2K Template Plugin supports the concept of "*Partial Templates*", or also just called "*Partials*". These special templates are intended to be *block level* template text that can be inserted inside of another file. 

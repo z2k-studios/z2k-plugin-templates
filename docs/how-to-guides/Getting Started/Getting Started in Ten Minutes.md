@@ -1,11 +1,11 @@
 ---
 sidebar_position: 111
 ---
-# Getting Started
-Here's how to get started with Z2K Templates in ten minutes:
+# Getting Started in Ten Minutes
+Here's how to get started with [[README|Z2K Templates]] in ten minutes:
 
 ## 1. First, The Basics
-First step through the basics of creating a Templates folder and creating your first template by following the [[How to Get Started in Under Two Minutes]] guide. 
+First step through the basics of creating a Templates folder and creating your first template by following the [[Getting Started in Two Minutes]] guide. 
 
 ## 2. Add Some New Features to the Book Template
 Now that you have a barebones "`Book Template.md`" file, now let's try out some new features. Load the file in Obsidian and replace it with the following text:

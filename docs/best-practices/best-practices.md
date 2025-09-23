@@ -1,9 +1,11 @@
 ---
+sidebar_position: 1
 folder_position: 20
+title: Best Practices
 ---
 # Best Practices for Z2K Templates
 
-Welcome to the **Best Practices** section for Z2K Templates. Included below are various guides to help you set up, configure, and use Z2K Templates effectively. The plugin is very powerful, but with the power, templates can quickly become unwieldy in their use. These best practices give you real world advice on how to manage your templates.
+Welcome to the **Best Practices** section for [[README|Z2K Templates]]. Included below are various guides to help you set up, configure, and use Z2K Templates effectively. The plugin is very powerful, but with the power, templates can quickly become unwieldy in their use. These best practices give you real world advice on how to manage your templates.
 
 ---
 

@@ -1,4 +1,5 @@
 ---
+folder_position: 10
 sidebar_position: 10
 ---
 At the very core of Z2K Templates is the Template File. In short, a template file is a markdown file that is used as a template to create new files. 
