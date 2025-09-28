@@ -1,7 +1,7 @@
 ---
 sidebar_position: 1
 folder_position: 20
-title: Best Practices
+title: Overview
 ---
 # Best Practices for Z2K Templates
 

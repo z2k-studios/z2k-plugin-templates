@@ -19,8 +19,8 @@ Card-Created: {{today}}
 My Book Review - {{Title}} by {{Author}}
 
 # Citation
-- **Book Title**:: {{prompt-info Title description="Enter the Book Title (without subtitle)"}}
-- **Author**:: {{prompt-info Author description="Enter the Author name. If multiple authors, separate with semicolons"}}
+- **Book Title**:: {{prompt-field Title description="Enter the Book Title (without subtitle)"}}
+- **Author**:: {{prompt-field Author description="Enter the Author name. If multiple authors, separate with semicolons"}}
 
 # History
 - Month I Read the Book: {{yearMonth}}

@@ -1,5 +1,5 @@
 ---
-title: Reference Manual
+title: Table of Contents
 folder_position: 30
 sidebar_position: 1
 ---
