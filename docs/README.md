@@ -20,3 +20,7 @@ Time is finite. Here is how to get started in with Z2K Templates as quick as pos
 - [[Getting Started in Two Minutes]]
 - [[Getting Started in Ten Minutes]]
 
+## Want to Know What's Possible?
+If you want to know how powerful Z2K Templates can be, check out these pages for a quick glimpse:
+- [[automation|Automation Examples]]
+- [[Intermediate]] and [[Advanced]] Guides
