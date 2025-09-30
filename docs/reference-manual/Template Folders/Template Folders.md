@@ -11,5 +11,5 @@ All Templates used by the Z2K Templates Plugin must be saved in a separate Templ
 > [!NOTE] One or the Other
 > These two options are mutually exclusive - you must choose either External or Embedded Template Folders. Similarly, you must have a Templates folder specified somewhere with your vault - as this is the only way in which the Templates Plugin knows what files are Templates and what files are normal cards/notes in your vault. 
 
-To configure which style of Template Folders you wish to use, use the [[Plugin Settings Page]]. You can also specify the name of the root Template Folder as well. 
+To configure which style of Template Folders you wish to use, use the [[Settings Page]]. You can also specify the name of the root Template Folder as well. 
 

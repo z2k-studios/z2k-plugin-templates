@@ -21,6 +21,6 @@ Top level sections are:
 10. [[Partial Templates]] - Details the use of hierarchical and block level templates through partial templates
 11. [[Z2K Templates and YAML]] - Using fields inside YAML fields.
 12. [[Z2K Templates, URI, and JSON]] - Triggering template fields externally through URI and passing JSON packages
-13. [[Plugin Settings Page]] - Details on the Settings Page for the Z2K Templates Plugin
+13. [[Settings Page]] - Details on the Settings Page for the Z2K Templates Plugin
 14. [[Z2K System Specific Features]] - Additional features specific to the larger Z2K System
 

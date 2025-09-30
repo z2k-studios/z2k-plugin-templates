@@ -6,7 +6,7 @@ sidebar_position: 110
 Here's how to get started with Z2K Templates in under two minutes:
 
 ## 1. Create a Template Folder
-To start using Z2K Templates, you will first need to create a folder call "`Templates`" in your Vault's root folder. (Note: this folder name and location can be changed in the Plugin's [[Plugin Settings Page|Settings]] page. Also, Template folders can be stored [[Template Folders|hierarchally]] to make Templates more context aware within your Vault.)
+To start using Z2K Templates, you will first need to create a folder call "`Templates`" in your Vault's root folder. (Note: this folder name and location can be changed in the Plugin's [[Settings Page|Settings]] page. Also, Template folders can be stored [[Template Folders|hierarchally]] to make Templates more context aware within your Vault.)
 
 ## 2. Create a Template File
 To create a Template file, simply create a new markdown file in your newly created "`Templates`" folder. For instance, create a file named "`Book Template.md`" that contains:
