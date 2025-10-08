@@ -18,3 +18,8 @@ Welcome to the **Best Practices** section for [[README|Z2K Templates]]. Included
 	- Also, step through how the modular sections can be stored at different hierarchical levels.
 
 
+## 11. Best Practices
+- Designing Reusable Templates  
+- When to use `preserve` vs `clear`  
+- Structuring Prompts for Usability  
+- Naming Conventions for Variables  

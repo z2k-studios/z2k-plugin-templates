@@ -1,0 +1,195 @@
+---
+
+## sidebar\_position: 14 doc\_state: initial\_ai\_draft
+
+# Why Z2K Templates
+
+Z2K Templates is one of several ways to templatize notes in Obsidian. This page outlines friendly alternatives, offers a neutral compare/contrast, and then clarifies where Z2K Templates’ design choices differ. Links below go to official docs or plugin listings.
+
+---
+
+## Why Another Templating Plugin?
+Why a new templating plugin when the impressive [Templater plugin](https://silentvoid13.github.io/Templater/) already does so much? Templater is a fine option for users who prefer script-like control and advanced logic. **Z2K Templates** takes the [[How is it Different than other Template Plugins|opposite approach]]: less scripting, more structure. It focuses on reusable pieces — partials, nested templates, hierarchical yaml, and built-in formatting so you can build systems instead of snippets. And rest easy, you can keep both installed: Templater for logic, Z2K Templates for systems.
+
+
+## Alternatives in the Obsidian Ecosystem
+Let's step back and review the top alternatives to **Z2K Templates**:
+
+- **Templater (community plugin)** — Full-featured templating language with JavaScript execution and prompts. Widely adopted by power users. [Docs](https://silentvoid13.github.io/Templater/introduction.html) · [GitHub](https://github.com/SilentVoid13/Templater)
+- **Templates (core plugin)** — Simple snippet insertion with date/title variables and a designated template folder. [Obsidian Help](https://help.obsidian.md/plugins/templates)
+- **QuickAdd (community plugin)** — Workflow accelerator that *invokes* templates (core or community), captures, and macros. Often used alongside Templater or core Templates. [Docs](https://quickadd.obsidian.guide/docs/) · [GitHub](https://github.com/chhoumann/quickadd)
+- **Liquid Templates (community plugin)** — Alternative templating engine using LiquidJS tags. Smaller but active. [Obsidian Hub](https://publish.obsidian.md/hub/02%2B-%2BCommunity%2BExpansions/02.05%2BAll%2BCommunity%2BExpansions/Plugins/liquid-templates) · [GitHub](https://github.com/oeN/liquid-template)
+- **Periodic Notes (community plugin)** — Specialized periodic-note workflows with template hooks for daily/weekly/monthly notes. [GitHub](https://github.com/liamcain/obsidian-periodic-notes)
+
+> These are complementary tools. Many vaults successfully combine Core Templates + QuickAdd, or Templater + QuickAdd. Z2K Templates can also coexist with them.
+
+---
+
+## Top‑Line Compare & Contrast (Narrative)
+
+- **Core Templates** is the easiest entry point: insert prewritten text and a few built‑in variables. No logic, no language to learn. Ideal for lightweight snippets.
+- **Templater** adds a **programmable layer**: JavaScript execution, file ops, and a rich API. This is excellent for complex automation, with the trade‑off of more moving parts and code in your notes.
+- **Liquid Templates** swaps in a **LiquidJS** syntax. It emphasizes template tags over code, landing between Core Templates and Templater in capability.
+- **Z2K Templates** takes a **declarative `{{fields}}` approach** backed by [Handlebars.js](https://handlebarsjs.com/). It focuses on structured fields, interactive prompting, YAML integration, partials, and *context-aware* discovery (hierarchical templates). The intent is to standardize structure without requiring JavaScript in your notes.
+
+---
+
+## Design Approach Comparison
+
+| Aspect                            | **Z2K Templates**                                                                   | **Templater**                                                                                  | **Liquid Templates**                                          |
+| --------------------------------- | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| **Style**                         | Declarative `{{fields}}` with prompting and helpers                                 | Functional `<% code %>` blocks + JS API                                                        | Declarative Liquid tags (`{% ... %}`, `{{ ... }}`)            |
+| **Instantiation**                 | Immediate **or deferred**; unresolved fields can persist and be **finalized** later | Immediate expansion on command; event triggers available; no first-class deferred placeholders | Immediate expansion on command                                |
+| **Interactive data-prompting UI** | **Yes** — native, field-driven modal prompts (text, number, select, etc.)           | **Yes** — prompts/suggesters via API (`tp.system.prompt/suggester`)                            | Typically **No** — Liquid is a static engine (no built-in UI) |
+| **Underlying language**           | Handlebars (expressions, conditionals, partials)                                    | Custom template syntax + **JavaScript** execution                                              | **LiquidJS** (filters/tags)                                   |
+| **Primary emphasis**              | Structured fields, YAML merging, hierarchical discovery, partials                   | Programmable automation, JS scripting, file ops                                                | Liquid-style tags/filters in notes                            |
+| **Typical pairings**              | Stands alone; pairs well with QuickAdd                                              | Frequently paired with QuickAdd                                                                | Sometimes paired with QuickAdd                                |
+
+> Notes: “Deferred” means leaving unresolved `{{fields}}` in a note to fill later. Z2K Templates handles these explicitly at **[[Lifecycle of a Template#Finalize|Finalize]]** time.
+
+### Capabilities present in other plugins (not core to Z2K Templates)
+- **Templater:** Arbitrary **JavaScript execution**, Obsidian API access, file system operations (create/move/rename), shell/process execution via JS, complex programmatic control flow.
+- **Liquid Templates:** Liquid-specific filter ecosystem and tag syntax; useful if you prefer Liquid across multiple tools.
+
+
+---
+
+## Feature Matrix (Z2K Templates vs. Templater)
+
+| Feature                               | **Z2K Templates**                              | **Templater**                                |
+| ------------------------------------- | ---------------------------------------------- | -------------------------------------------- |
+| **Interactive prompting UI**          | **Yes** — native modal prompts per field       | **Yes** — `tp.system.prompt/suggester` in JS |
+| **Date & time constants**             | **Yes** (e.g., `{{date}}`)                     | **Yes** (`<% tp.date.now() %>`, etc.)        |
+| **String/date formatting helpers**    | **Yes** (`format-string`, `format-date`, etc.) | **Yes** (via JS functions/libraries)         |
+| **Context-aware template discovery**  | **Yes** (folder ancestry)                      | Not built-in (QuickAdd/scripts)              |
+| **Hierarchical System YAML**          | **Yes** (merged on create)                     | Not built-in (scriptable)                    |
+| **Partials / includes**               | **Yes** (Handlebars partials)                  | **Yes** (`tp.file.include()`)                |
+| **Deferred fields & Finalize step**   | **Yes** (continue filling, then finalize)      | Not a first-class concept                    |
+| **YAML merge across templates**       | **Yes** (built-in)                             | Scriptable                                   |
+| **URI triggers / JSON command lists** | **Yes** (URIs + packages)                      | Possible via JS/QuickAdd                     |
+| **Custom user functions / execution** | Roadmap (helper registration)                  | **Yes** — full **JavaScript** execution      |
+| **File system operations**            | Not in scope (by design)                       | **Yes** — create/move/rename via JS          |
+| **Event-based triggers**              | Via Obsidian command; finalize workflow        | **Yes** — on open/create hooks via JS        |
+| **Safety / Sandbox**                  | No code execution inside notes                 | Runs user JS (powerful; requires care)       |
+
+> This matrix reflects native emphasis. Templater can often **script** comparable behaviors; Z2K Templates makes many behaviors **declarative** and built-in.
+
+
+---
+
+## Side‑by‑Side Code Examples (Templater ↔ Z2K)
+
+### Comparison: Date, Time, Conditionals
+
+**Goal:** Insert today’s date and a title, then show a conditional section if notes exist.
+
+- **Templater** (from the official docs style):
+
+```md
+# <% tp.date.now('YYYY-MM-DD') %> — <% tp.file.title %>
+<%* if (tp.frontmatter.notes) { %>
+## Notes
+<%* tR += tp.frontmatter.notes %>
+<%* } %>
+```
+
+Source: Templater docs — Introduction: variables and JS execution.
+
+- **Z2K Templates**:
+
+```md
+---
+Title: {{TitleText}}
+Date: {{date}}
+---
+# {{date}} — {{TitleText}}
+{{#if notes}}
+## Notes
+{{notes}}
+{{/if}}
+```
+
+---
+
+### Comparison: Resuable Blocks
+
+**Goal:** Include a reusable block (participants/contact info).
+
+- **Templater**:
+
+```md
+<%* tR += await tp.file.include("_partials/participants.md") %>
+```
+
+- **Z2K Templates**:
+
+```md
+{{> ParticipantsBlock}}
+```
+
+> The Z2K version keeps logic out of code blocks and standardizes on fields and partials. Templater enables deep automation through JavaScript.
+
+
+---
+
+### Comparison: Field Fata Types, YAML, Multiple Entries
+
+**Goal:** Prompt the user for a category from a list and insert it in YAML and body.
+
+- **Templater**:
+```md
+---
+Category: <%* const c = await tp.system.suggester(['Work','Home','Study'], ['work','home','study']); tR += c %>
+---
+# Note — <%* tR += c %>
+```
+
+- **Z2K Templates**:
+```md
+---
+Category: {{Category|select:Work,Home,Study}}
+---
+# Note — {{Category}}
+```
+
+---
+
+### Comparison: Deferred Data Entry
+
+**Goal:** Start a daily note with deferred fields you’ll fill later; finalize when done.
+
+- **Templater** (conceptual; no first-class deferred placeholders):
+```md
+---
+Title: <% tp.date.now('YYYY-MM-DD') %>
+---
+Steps: 
+Breakfast: 
+Dinner: 
+Weight: 
+Mood: 
+```
+(You would manually edit later or script a custom command.)
+
+- **Z2K Templates**:
+```md
+---
+Title: {{date}}
+---
+Steps: {{StepsTaken}}
+Breakfast: {{Breakfast}}
+Dinner: {{Dinner}}
+Weight: {{Weight}}
+Mood: {{Mood}}
+```
+Use **Continue filling file** during the day; **Finalize** applies miss-handling for anything left unresolved.
+
+---
+
+> [!DANGER] INTERNAL NOTE
+>
+> - Re‑verify example parity against the latest Templater docs. If needed, add a more exact citation for each snippet and a screenshot of the equivalent Z2K prompt.
+> - Confirm “custom user functions” status in Z2K (helpers registration roadmap) before publishing.
+> - Consider adding QuickAdd launch examples in a future “Workflows” page.
+> - Fix the | syntax with current field-info
+
