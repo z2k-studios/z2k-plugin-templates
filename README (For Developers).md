@@ -34,6 +34,14 @@ npm link
 npm link z2k-template-engine
 ```
 
+TODO: At some point, this should be included as a dependency by either publishing the template engine or using a git tag dep.
+
+### Development
+During development, you can keep a terminal open for both the template-engine and the plugin and in each one run:
+```bash
+npm run dev
+```
+
 ### Building
 ```bash
 # Build the plugin
@@ -42,34 +50,29 @@ npm run build
 
 This creates a bundled `main.js` file that includes the template engine.
 
-Use this while developing:
-```bash
-npm run dev
-```
+
+### Testing
+A testing vault is included in the repository that can be opened in obsidian.
+The plugin files are copied into here whenever `npm run build` or `npm run dev` runs so that the plugin shows up.
+
 
 
 ### Releasing
-- Make sure to build
+The script 'release.mjs' has been made to handle most of the steps for creating a new release. Once you have committed all changes and the plugin is ready, run the script using:
 ```bash
-npm run build
+npm run release 0.1.0
 ```
-- Update version number in package.json and manifest.json
-- Create a commit
-```bash
-git commit -m "release: v0.1.0"
-```
-- Tag it with the version
-```bash
-git tag v0.1.0
-```
-- Push it and the tag
-```bash
-git push
-git push --tags
-```
-- Create the release zip (zip manifest.json, main.js, styles.css into z2k-plugin-templates)
-- Create the release on github (upload 3 files and zip)
 
+This will:
+- Update the version number in the needed places
+- Make a new git commit for the release with the correct tag
+- Push the commit to remote (along with tags)
+
+Once this completes,
+- Go to the github repository
+- Create a new release (on the right)
+- Fill out the change log
+- Upload main.js, manifest.json, styles.css, and z2k-plugin-templates.zip
 
 
 

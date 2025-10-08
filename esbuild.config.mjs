@@ -1,6 +1,7 @@
 import esbuild from "esbuild";
 import process from "process";
 import builtins from "builtin-modules";
+import { mkdir, cp } from "fs/promises";
 
 const banner =
 `/*
@@ -10,6 +11,29 @@ if you want to view the source, please visit the github repository of this plugi
 `;
 
 const prod = (process.argv[2] === "production");
+
+const testingVaultPluginDir = "testing-vault/.obsidian/plugins/z2k-plugin-templates";
+
+async function copyIntoTestingVault() {
+	// ensure target exists, then copy required files
+	const d = testingVaultPluginDir;
+	await mkdir(d, { recursive: true });
+	await cp("main.js", `${d}/main.js`);
+	await cp("manifest.json", `${d}/manifest.json`);
+	try { await cp("styles.css", `${d}/styles.css`); } catch {}
+	try { await cp("versions.json", `${d}/versions.json`); } catch {}
+	console.log(`[z2k test vault] synced -> ${d}`);
+}
+const CopyOnEndPlugin = {
+	name: "copy-on-end",
+	setup(build) {
+		build.onEnd(async (result) => {
+			if (result.errors?.length) return;
+			try { await copyIntoTestingVault(); } catch (e) { console.error(e); }
+		});
+	},
+};
+
 
 const context = await esbuild.context({
 	banner: {
@@ -40,11 +64,20 @@ const context = await esbuild.context({
 	outfile: "main.js",
 	jsx: "automatic",
 	minify: prod,
+	plugins: [CopyOnEndPlugin],
 });
 
+
 if (prod) {
-	await context.rebuild();
+	context.rebuild();
 	process.exit(0);
 } else {
 	await context.watch();
 }
+
+
+
+
+
+
+

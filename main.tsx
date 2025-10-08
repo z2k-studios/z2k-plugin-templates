@@ -12,7 +12,7 @@ import { RangeSetBuilder, type Extension } from "@codemirror/state";
 import { handlebarsLanguage } from "@xiechao/codemirror-lang-handlebars"; // npm i @xiechao/codemirror-lang-handlebars
 import { highlightTree, classHighlighter } from "@lezer/highlight"; // npm i @lezer/highlight
 
-interface Z2KPluginSettings {
+interface Z2KTemplatesPluginSettings {
 	templatesRootFolder: string;
 	creator: string;
 	templatesFolderName: string;
@@ -25,7 +25,7 @@ interface Z2KPluginSettings {
 	// templateEditingEnabled: boolean;
 }
 
-const DEFAULT_SETTINGS: Z2KPluginSettings = {
+const DEFAULT_SETTINGS: Z2KTemplatesPluginSettings = {
 	// templatesRootFolder: '/Z2K',
 	templatesRootFolder: '',
 	creator: '',
@@ -35,15 +35,15 @@ const DEFAULT_SETTINGS: Z2KPluginSettings = {
 	// templateEditingEnabled: true,
 };
 
-class Z2KSettingTab extends PluginSettingTab {
-	plugin: Z2KPlugin;
+class Z2KTemplatesSettingTab extends PluginSettingTab {
+	plugin: Z2KTemplatesPlugin;
 	private refs = {
 		descTemplatesRootFolder: null as Setting | null,
 		descEmbeddedTemplatesFolderName: null as Setting | null,
 		quickCreateDesc: null as HTMLElement | null,
 	}
 
-	constructor(app: App, plugin: Z2KPlugin) {
+	constructor(app: App, plugin: Z2KTemplatesPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}
@@ -317,9 +317,9 @@ class Z2KSettingTab extends PluginSettingTab {
 	}
 }
 
-export default class Z2KPlugin extends Plugin {
+export default class Z2KTemplatesPlugin extends Plugin {
 	templateEngine: Z2KTemplateEngine;
-	settings: Z2KPluginSettings;
+	settings: Z2KTemplatesPluginSettings;
 	private _refreshTimer: number | null = null;
 
 	async onload() {
@@ -328,118 +328,9 @@ export default class Z2KPlugin extends Plugin {
 		this.refreshMainCommands(false); // Don't delete existing, since none exist yet
 		this.refreshDynamicCommands(false);
 		this.registerEvents();
-		this.addSettingTab(new Z2KSettingTab(this.app, this));
+		this.addSettingTab(new Z2KTemplatesSettingTab(this.app, this));
 		this.registerEditorExtension(handlebarsOverlay());
 		this.registerURIHandler();
-
-		// // API?
-		// this.registerObsidianProtocolHandler("z2k-templates", async (params) => {
-		// 	try {
-		// 		const action = params.action;
-		// 		if (!action) throw new Error("Missing 'action' parameter");
-
-		// 		const templatePath = decodeURIComponent(params.templatepath || params.partialpath || "").trim();
-		// 		if (!templatePath) throw new Error("Missing 'templatepath' or 'partialpath'");
-
-		// 		// Resolve template file
-		// 		const templateFile = this.getFile(templatePath);
-		// 		if (!templateFile || templateFile.extension !== "md") {
-		// 			throw new Error(`Template not found: ${templatePath}`);
-		// 		}
-
-		// 		// Determine target folder and filename
-		// 		let rawPath = decodeURIComponent(params.filepath || "").trim();
-		// 		let finalPath = "";
-		// 		let timestampFilename = moment().format("YYYY-MM-DD_HH-mm-ss") + ".md";
-		// 		if (!rawPath) {
-		// 			// No filepath → root + timestamp
-		// 			finalPath = this.joinPath(this.settings.templatesRootFolder, timestampFilename);
-		// 		} else if (!rawPath.includes("/")) {
-		// 			// Filename only → resolve folder from template
-		// 			const folder = this.resolveTemplateParentFolder(templateFile);
-		// 			const filename = rawPath.endsWith(".md") ? rawPath : `${rawPath}.md`;
-		// 			finalPath = this.joinPath(folder, filename);
-
-		// 		} else {
-		// 			const endsWithSlash = rawPath.endsWith("/") || !rawPath.includes(".");
-		// 			if (endsWithSlash) {
-		// 				// Case 2: Folder path → use folder + timestamp
-		// 				const folder = rawPath.replace(/\/+$/, "");
-		// 				const filename = `${Date.now()}.md`;
-		// 				finalPath = this.joinPath(folder, filename);
-		// 			} else {
-		// 				// Case 4: Full path → use as-is, just ensure `.md`
-		// 				finalPath = rawPath.endsWith(".md") ? rawPath : `${rawPath}.md`;
-		// 			}
-		// 		}
-
-
-		// 		if (filepath && filepath.endsWith("/")) {
-		// 			folderPath = filepath.slice(0, -1);
-		// 		} else if (filepath.includes("/")) {
-		// 			folderPath = filepath.substring(0, filepath.lastIndexOf("/"));
-		// 		} else {
-		// 			folderPath = this.settings.templatesRootFolder;
-		// 		}
-
-		// 		// Filename fallback
-		// 		let fileName = filepath.substring(filepath.lastIndexOf("/") + 1) || `${Date.now()}`;
-		// 		if (!fileName.endsWith(".md")) fileName += ".md";
-		// 		finalPath = this.joinPath(folderPath, fileName);
-
-		// 		// Extract template fields (skip known ones)
-		// 		const known = new Set(["action", "vault", "templatepath", "partialpath", "filepath", "existingfilepath", "templateJSONdata", "destheader", "location"]);
-		// 		const templateVars: Record<string, string> = {};
-		// 		for (const key in params) {
-		// 			if (!known.has(key)) {
-		// 				templateVars[key] = decodeURIComponent(params[key]);
-		// 			}
-		// 		}
-
-		// 		// Optional: decode JSON fields
-		// 		let parsedJson = {};
-		// 		if (params.templateJSONdata) {
-		// 			try {
-		// 				parsedJson = JSON.parse(decodeURIComponent(params.templateJSONdata));
-		// 			} catch (e) {
-		// 				new Notice("Failed to parse templateJSONdata");
-		// 				return;
-		// 			}
-		// 		}
-
-		// 		if (action === "New") {
-		// 			await this.createOrContinueCard({
-		// 				inputFile: undefined,
-		// 				continueFile: undefined,
-		// 				// Inject preloaded content/vars if needed
-		// 				__uriInjected: {
-		// 					templateFile,
-		// 					filepath: finalPath,
-		// 					fieldOverrides: { ...parsedJson, ...templateVars },
-		// 				},
-		// 			});
-
-		// 		} else if (action === "InsertPartial") {
-		// 			await this.insertPartialTemplate({
-		// 				inputText: "",
-		// 				__uriInjected: {
-		// 					partialFile: templateFile,
-		// 					existingFilePath: filepath,
-		// 					destHeader: params.destheader,
-		// 					insertLocation: params.location || "top",
-		// 					fieldOverrides: { ...parsedJson, ...templateVars },
-		// 				},
-		// 			});
-
-		// 		} else {
-		// 			new Notice(`Unknown Z2K action: ${action}`);
-		// 		}
-
-		// 	} catch (e) {
-		// 		console.error("[Z2K URI handler error]", e);
-		// 		new Notice("Failed to process z2k-templates URI");
-		// 	}
-		// });
 	}
 	onunload() {}
 
@@ -724,83 +615,227 @@ export default class Z2KPlugin extends Plugin {
 	}
 
 	registerURIHandler() {
-		// this.registerObsidianProtocolHandler("z2k-templates", async (params) => {
-		// 	try {
-		// 		const action = params.action?.trim();
-		// 		if (!action) { throw new Error("Missing 'action'"); }
+		this.registerObsidianProtocolHandler("z2k-templates", async (params) => {
+			try {
+				await this.handleZ2KUri(params);
+			} catch (e) { this.handleErrors(e); }
+		});
+	}
+	// DOCS: all field parameters start with _ so they don't clash with uri params
+	// Non-field parameters can be templatePath, TemplatePath, template-path, template_path, etc. for robustness
+	// DOCS: but we should just say templatePath in the docs for simplicity
+	private async handleZ2KUri(rawParams: Record<string,string>) {
+		const params: Record<string,string> = {};
+		const fieldParams: Record<string,string> = {};
+		for (const k in rawParams) {
+			if (k.startsWith("_")) {
+				const fieldKey = k.substring(1);
+				fieldParams[fieldKey] = decodeURIComponent(rawParams[k]);
+			} else {
+				const key = k.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+				params[key] = decodeURIComponent(rawParams[k]);
+			}
+		}
 
-		// 		// Common: field overrides (anything not in known set)
-		// 		const known = new Set(["action","vault","templatepath","partialpath","filepath","existingfilepath","templateJSONdata","destheader","location"]);
-		// 		const fieldOverrides: Record<string,string> = {};
-		// 		for (const k in params) {
-		// 			if (!known.has(k)) { fieldOverrides[k] = decodeURIComponent(params[k]); }
-		// 		}
-		// 		let jsonOverrides: Record<string, any> = {};
-		// 		if (params.templateJSONdata) {
-		// 			try {
-		// 				jsonOverrides = JSON.parse(decodeURIComponent(params.templateJSONdata));
-		// 			} catch { new Notice("Failed to parse templateJSONdata JSON"); }
-		// 		}
-		// 		const mergedOverrides = { ...jsonOverrides, ...fieldOverrides };
+		const cmd = params.cmd?.trim().toLowerCase();
+		if (!cmd) { throw new TemplatePluginError("URI: Missing 'cmd'"); }
 
-		// 		if (action.toLowerCase() === "new") {
-		// 			const templatePath = decodeURIComponent(params.templatepath || "").trim();
-		// 			if (!templatePath) { throw new Error("Missing 'templatepath'"); }
-		// 			const templateFile = this.getFile(templatePath);
-		// 			if (!templateFile || templateFile.extension !== "md") { throw new Error(`Template not found: ${templatePath}`); }
+		const templatePath = (params.templatePath || params.partialPath || "").trim();
+		if (!templatePath) { throw new TemplatePluginError("URI: Missing 'templatePath' or 'partialPath'"); }
+		const templateFile = this.getFile(templatePath);
+		if (!templateFile || templateFile.extension !== "md") { throw new TemplatePluginError(`Template not found: ${templatePath}`); }
 
-		// 			const rawPath = decodeURIComponent(params.filepath || "").trim();
-		// 			const parentFallback = this.getTemplateCardType(templateFile) || this.getTemplatesRootFolder();
-		// 			let finalPath: string;
-		// 			if (!rawPath) {
-		// 				finalPath = this.joinPath(parentFallback.path, moment().format("YYYY-MM-DD_HH-mm-ss") + ".md");
-		// 			} else if (!rawPath.includes("/")) {
-		// 				const folder = parentFallback;
-		// 				const filename = rawPath.endsWith(".md") ? rawPath : `${rawPath}.md`;
-		// 				finalPath = this.joinPath(folder, filename);
-		// 			} else {
-		// 				const endsWithSlash = rawPath.endsWith("/") || !rawPath.includes(".");
-		// 				if (endsWithSlash) {
-		// 					finalPath = this.joinPath(rawPath.replace(/\/+$/,""), `${Date.now()}.md`);
-		// 				} else {
-		// 					finalPath = rawPath.endsWith(".md") ? rawPath : `${rawPath}.md`;
-		// 				}
-		// 			}
-		// 			await this.createFromTemplateUri(templateFile, finalPath, mergedOverrides);
-		// 			return;
-		// 		}
+		// Gather field overrides, field params override templateJsonData
+		let fieldOverrides: Record<string,string> = {};
+		if (params.templateJsonData) {
+			try {
+				const parsed = JSON.parse(params.templateJsonData);
+				if (parsed && typeof parsed === "object") { fieldOverrides = {...parsed}; }
+			} catch { throw new TemplatePluginError("URI: Invalid templateJsonData (must be URL-encoded JSON)"); }
+		}
+		for (const k in fieldParams) { fieldOverrides[k] = fieldParams[k]; }
 
-		// 		if (action.toLowerCase() === "insertpartial") {
-		// 			const partialPath = decodeURIComponent(params.partialpath || "").trim();
-		// 			if (!partialPath) { throw new Error("Missing 'partialpath'"); }
-		// 			const partialFile = this.getFile(partialPath);
-		// 			if (!partialFile || partialFile.extension !== "md") { throw new Error(`Partial not found: ${partialPath}`); }
-		// 			const existingPath = decodeURIComponent(params.existingfilepath || "").trim();
-		// 			const destHeader = params.destheader ? decodeURIComponent(params.destheader) : "";
-		// 			const location = (params.location || "top").toLowerCase(); // "top" | "bottom"
-		// 			await this.insertPartialFromUri(partialFile, existingPath, destHeader, location, mergedOverrides);
-		// 			return;
-		// 		}
+		const promptMode = (params.prompt || "remaining").toLowerCase(); // none|remaining|all
 
-		// 		new Notice(`Unknown Z2K action: ${action}`);
-		// 	} catch (e) {
-		// 		console.error("[Z2K URI handler error]", e);
-		// 		new Notice("Failed to process z2k-templates URI");
-		// 	}
-		// });
+		// if (cmd === "new") { await this.handleUriNew({ templateFile, params, fieldOverrides, promptMode }); return; }
+		// if (cmd === "insertpartial") { await this.handleUriInsertPartial({ templateFile, params, fieldOverrides, promptMode }); return; }
+		if (cmd === "new") {
+			await this.createCard(
+				this.getTemplateCardType(templateFile) ?? (templateFile.parent ?? this.app.vault.getRoot()),
+				templateFile,
+				{
+					fieldOverrides,
+					promptMode,
+					rawPath: (params.filepath || "").trim()
+				}
+			);
+			return;
+		}
+		if (cmd === "insertpartial") {
+			const existingPath = (params.existingfilepath || "").trim();
+			if (!existingPath) { throw new TemplatePluginError("Missing 'existingfilepath'"); }
+			const currFile = this.getFile(existingPath);
+			if (!currFile || currFile.extension !== "md") { throw new TemplatePluginError(`File not found: ${existingPath}`); }
+			await this.insertPartial(currFile, templateFile, {
+				destHeader: params.destheader || "",
+				location: ((params.location || "top").toLowerCase() === "bottom") ? "bottom" : "top",
+				fieldOverrides,
+				promptMode,
+				sourceText: fieldOverrides.sourceText || ""
+			});
+			return;
+		}
+
+		throw new TemplatePluginError(`URI: Unknown cmd '${cmd}'`);
 	}
 
-	//// Functions called from commands/context menu/etc
+	private async handleUriNew(opts: {
+		templateFile: TFile,
+		params: Record<string,string>,
+		fieldOverrides: Record<string,string>,
+		promptMode: "none"|"remaining"|"all"|string
+	}) {
+		const {templateFile, params, fieldOverrides, promptMode} = opts;
+		const cardTypeFolder = this.getTemplateCardType(templateFile) ?? (templateFile.parent ?? this.app.vault.getRoot());
+
+		let z2kSystemYaml = await this.GetZ2KSystemYaml(cardTypeFolder);
+		let content = await this.app.vault.read(templateFile);
+		let { fm, body } = Z2KYamlDoc.splitFrontmatter(content);
+		fm = Z2KYamlDoc.mergeFirstWins([z2kSystemYaml, fm]);
+		fm = this.updateYamlOnCreate(fm, templateFile.basename);
+		content = Z2KYamlDoc.joinFrontmatter(fm, body);
+
+		let state = await this.parseTemplate(content, cardTypeFolder);
+		state = this.addBuiltIns(state, { sourceText: fieldOverrides.sourceText });
+		state = this.setDefaultTitle(state);
+		state = this.applyOverrides(state, fieldOverrides);
+
+		if (promptMode === "all") {
+			state = await this.promptForFieldCollection(state);
+		} else if (promptMode === "remaining" && this.hasFillableFields(state.promptInfos)) {
+			state = await this.promptForFieldCollection(state);
+		}
+
+		let { fm: fmOut, body: bodyOut } = Z2KTemplateEngine.renderTemplate(state);
+		let contentOut = Z2KYamlDoc.joinFrontmatter(fmOut, bodyOut);
+
+		const rawPath = (params.filepath || "").trim();
+		const { folderPath, filenameNoExt } = await this.resolveNewFilePath(rawPath, templateFile, state);
+		const folder = this.getFolder(folderPath);
+		if (!(folder instanceof TFolder)) { throw new TemplatePluginError(`Folder not found: ${folderPath}`); }
+
+		const newFile = await this.createFile(folder, filenameNoExt, contentOut);
+		await this.app.workspace.openLinkText(newFile.path, "");
+	}
+
+	private async handleUriInsertPartial(opts: {
+		templateFile: TFile,
+		params: Record<string,string>,
+		fieldOverrides: Record<string,string>,
+		promptMode: "none"|"remaining"|"all"|string
+	}) {
+		const {templateFile, params, fieldOverrides, promptMode} = opts;
+		const existingPath = (params.existingfilepath || "").trim();
+		if (!existingPath) { throw new TemplatePluginError("Missing 'existingfilepath'"); }
+		const destHeader = params.destheader || "";
+		const location = (params.location || "top").toLowerCase() as ("top"|"bottom");
+
+		const currFile = this.getFile(existingPath);
+		if (!currFile || currFile.extension !== "md") { throw new TemplatePluginError(`File not found: ${existingPath}`); }
+
+		let content = await this.app.vault.read(templateFile);
+		let state = await this.parseTemplate(content, templateFile.parent ?? this.app.vault.getRoot());
+		const hadSourceTextField = state.promptInfos["sourceText"] !== undefined;
+		state = this.addBuiltIns(state, { existingTitle: currFile.basename, sourceText: fieldOverrides.sourceText });
+		state = this.setDefaultTitle(state);
+		state = this.applyOverrides(state, fieldOverrides);
+
+		if (promptMode === "all") {
+			state = await this.promptForFieldCollection(state);
+		} else if (promptMode === "remaining" && this.hasFillableFields(state.promptInfos)) {
+			state = await this.promptForFieldCollection(state);
+		}
+
+		let { fm: partialFm, body: partialBody } = Z2KTemplateEngine.renderTemplate(state);
+		partialFm = this.updatePartialYamlOnInsert(partialFm);
+		partialBody = this.ensureSourceText(partialBody, hadSourceTextField, fieldOverrides.sourceText || "");
+
+		await this.insertIntoFileAtHeader(currFile, destHeader, partialBody, location);
+		let fileContent = await this.app.vault.read(currFile);
+		let { fm: fileFm, body: fileBody } = Z2KYamlDoc.splitFrontmatter(fileContent);
+		const mergedFm = Z2KYamlDoc.mergeFirstWins([fileFm, partialFm]);
+		const newFileContent = Z2KYamlDoc.joinFrontmatter(mergedFm, fileBody);
+		await this.app.vault.modify(currFile, newFileContent);
+		await this.app.workspace.openLinkText(currFile.path, "");
+	}
+
+	private async resolveNewFilePath(rawPath: string, templateFile: TFile, state: TemplateState): Promise<{folderPath:string, filenameNoExt:string}> {
+		const tsName = moment().format("YYYY-MM-DD_HH-mm-ss");
+		const title = (state.resolvedValues["title"] as string) || "Untitled";
+		const renderedTitle = Z2KTemplateEngine.reducedRenderContent(title, state.resolvedValues);
+		const safeTitle = this.getValidFilename(renderedTitle) || tsName;
+		const tplFolderPath = (this.getTemplateCardType(templateFile)?.path) || (templateFile.parent?.path || "");
+
+		if (!rawPath) { return { folderPath: tplFolderPath, filenameNoExt: safeTitle }; }
+		if (!rawPath.includes("/")) {
+			const name = rawPath.endsWith(".md") ? rawPath.slice(0, -3) : rawPath;
+			return { folderPath: tplFolderPath, filenameNoExt: this.getValidFilename(name) };
+		}
+		const endsWithSlash = /\/$/.test(rawPath) || !/\.[^/]+$/.test(rawPath);
+		if (endsWithSlash) {
+			const folderPath = normalizeFullPath(rawPath.replace(/\/+$/,""));
+			return { folderPath, filenameNoExt: safeTitle };
+		}
+		const folderPath = normalizeFullPath(rawPath.substring(0, rawPath.lastIndexOf("/")));
+		let filename = rawPath.substring(rawPath.lastIndexOf("/") + 1);
+		if (filename.endsWith(".md")) { filename = filename.slice(0, -3); }
+		return { folderPath, filenameNoExt: this.getValidFilename(filename) };
+	}
+
+	private async insertIntoFileAtHeader(file: TFile, header: string, text: string, location: "top"|"bottom") {
+		const content = await this.app.vault.read(file);
+		if (!header) {
+			await this.app.vault.modify(file, content + (content.endsWith("\n") ? "" : "\n") + text + "\n");
+			return;
+		}
+		const lines = content.split("\n");
+		const idx = lines.findIndex(l => /^#{1,6}\s+/.test(l) && l.replace(/^#{1,6}\s+/, "").trim() === header.trim());
+		if (idx === -1) {
+			new Notice(`Header not found: ${header}. Appending to end.`);
+			await this.app.vault.modify(file, content + (content.endsWith("\n") ? "" : "\n") + text + "\n");
+			return;
+		}
+		let insertAt = idx + 1;
+		if (location === "bottom") {
+			let i = idx + 1;
+			while (i < lines.length && !/^#{1,6}\s+/.test(lines[i])) { i++; }
+			insertAt = i;
+		}
+		lines.splice(insertAt, 0, text);
+		await this.app.vault.modify(file, lines.join("\n"));
+	}
+
+	//// Functions called from [commands/context menu/uris/etc]
 
 	// Card creation and management
 	// 	(I couldn't find a good way to de-duplicate these functions,
 	// 	so I made them separate and tried to reduce the repetition as much as I could)
-	async createCard(cardTypeFolder: TFolder | null = null) {
+	async createCard(
+		cardTypeFolder: TFolder | null = null,
+		templateFile: TFile | null = null,
+		opts: {
+			fieldOverrides?: Record<string,string>,
+			promptMode?: "none"|"remaining"|"all",
+			destDir?: string
+		} = {}
+	) {
 		try {
 			if (!cardTypeFolder) {
 				cardTypeFolder = await this.promptForCardTypeFolder();
 			}
-			const templateFile = await this.promptForTemplateFile(cardTypeFolder, "named");
+			if (!templateFile) {
+				templateFile = await this.promptForTemplateFile(cardTypeFolder, "named");
+			}
 
 			let z2kSystemYaml = await this.GetZ2KSystemYaml(cardTypeFolder);
 			let content = await this.app.vault.read(templateFile);
@@ -809,9 +844,14 @@ export default class Z2KPlugin extends Plugin {
 			fm = this.updateYamlOnCreate(fm, templateFile.basename);
 			content = Z2KYamlDoc.joinFrontmatter(fm, body);
 			let state = await this.parseTemplate(content, templateFile.parent ?? this.app.vault.getRoot());
-			state = this.addBuiltIns(state);
+			state = this.addBuiltIns(state, { sourceText: opts.fieldOverrides?.sourceText });
 			state = this.setDefaultTitle(state);
-			state = await this.promptForFieldCollection(state);
+
+			const promptMode = (opts.promptMode || "all");
+			state = this.handleOverrides(state, opts.fieldOverrides, promptMode);
+			if (this.hasFillableFields(state.promptInfos) && promptMode !== "none") {
+				state = await this.promptForFieldCollection(state);
+			}
 
 			let { fm: fmOut, body: bodyOut } = Z2KTemplateEngine.renderTemplate(state);
 			let contentOut = Z2KYamlDoc.joinFrontmatter(fmOut, bodyOut);
@@ -981,6 +1021,23 @@ export default class Z2KPlugin extends Plugin {
 		// } catch (error) {
 		// 	rethrowWithMessage(error, "Error occurred while updating the existing file");
 		// }
+	}
+	handleOverrides(state: TemplateState, fieldOverrides: Record<string,string> | undefined, promptMode: "none"|"remaining"|"all"): TemplateState {
+		if (fieldOverrides) {
+			state.resolvedValues = {...state.resolvedValues, ...fieldOverrides};
+			if (promptMode === "remaining") {
+				// Set no-prompt on any fields that have overrides
+				for (const k in fieldOverrides) {
+					if (state.promptInfos[k]) {
+						if (!state.promptInfos[k].directives) { state.promptInfos[k].directives = []; }
+						if (!state.promptInfos[k].directives.includes("no-prompt")) {
+							state.promptInfos[k].directives.push("no-prompt");
+						}
+					}
+				}
+			}
+		}
+		return state;
 	}
 
 
@@ -1724,12 +1781,12 @@ function rethrowWithMessage(error: unknown, message: string): never {
 // ------------------------------------------------------------------------------------------------
 export class CardTypeSelectionModal extends Modal {
 	cardTypes: TFolder[];
-	settings: Z2KPluginSettings;
+	settings: Z2KTemplatesPluginSettings;
 	resolve: (cardType: TFolder) => void;
 	reject: (error: Error) => void;
 	root: any; // For React root
 
-	constructor(app: App, cardTypes: TFolder[], settings: Z2KPluginSettings, resolve: (cardType: TFolder) => void, reject: (error: Error) => void) {
+	constructor(app: App, cardTypes: TFolder[], settings: Z2KTemplatesPluginSettings, resolve: (cardType: TFolder) => void, reject: (error: Error) => void) {
 		super(app);
 		this.cardTypes = cardTypes;
 		this.settings = settings;
@@ -1767,7 +1824,7 @@ export class CardTypeSelectionModal extends Modal {
 
 interface CardTypeSelectorProps {
 	cardTypes: TFolder[];
-	settings: Z2KPluginSettings;
+	settings: Z2KTemplatesPluginSettings;
 	onConfirm: (cardType: TFolder) => void;
 	onCancel: () => void;
 }
@@ -1855,12 +1912,12 @@ const CardTypeSelector = ({ cardTypes, settings, onConfirm, onCancel }: CardType
 // ------------------------------------------------------------------------------------------------
 export class TemplateSelectionModal extends Modal {
 	templates: TFile[];
-	settings: Z2KPluginSettings;
+	settings: Z2KTemplatesPluginSettings;
 	resolve: (template: TFile) => void;
 	reject: (error: Error) => void;
 	root: any; // For React root
 
-	constructor(app: App, templates: TFile[], settings: Z2KPluginSettings, resolve: (template: TFile) => void, reject: (error: Error) => void){
+	constructor(app: App, templates: TFile[], settings: Z2KTemplatesPluginSettings, resolve: (template: TFile) => void, reject: (error: Error) => void){
 		super(app);
 		this.templates = templates;
 		this.settings = settings;
@@ -1898,7 +1955,7 @@ export class TemplateSelectionModal extends Modal {
 
 interface TemplateSelectorProps {
 	templates: TFile[];
-	settings: Z2KPluginSettings;
+	settings: Z2KTemplatesPluginSettings;
 	onConfirm: (template: TFile) => void;
 	onCancel: () => void;
 }
@@ -2118,7 +2175,6 @@ interface FieldCollectionFormProps {
 	onComplete: () => void;
 	onCancel: () => void;
 }
-// This component assumes that varInfoMap will not be changing.
 const FieldCollectionForm = ({ templateState, onComplete, onCancel }: FieldCollectionFormProps) => {
 	function formatFieldName(str: string): string {
 		str = str.charAt(0).toUpperCase() + str.slice(1);
@@ -2187,7 +2243,7 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel }: FieldColle
 			return templateState.promptInfos[fieldName]?.directives?.includes('required') ?? false;
 		});
 		const optionalFields = renderOrderFieldNames.filter(fieldName => {
-			return !templateState.promptInfos[fieldName]?.directives?.includes('required') ?? true;
+			return !(templateState.promptInfos[fieldName]?.directives?.includes('required') ?? false);
 		});
 		renderOrderFieldNames = [...requiredFields, ...optionalFields];
 

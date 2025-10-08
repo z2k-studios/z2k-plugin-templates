@@ -26,3 +26,7 @@ data.json
 
 # Output Logs
 *.log
+
+
+# Testing vault
+testing-vault/.obsidian
