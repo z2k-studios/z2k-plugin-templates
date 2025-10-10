@@ -11,11 +11,11 @@ Z2K Templates builds on a few foundational ideas that make templating in Obsidia
 
 ## 1. Template Files
 
-A **[[Template Files|template file]]**is a Markdown document that may contain both YAML frontmatter and Markdown body content. Within either section, you can include placeholders called `{{fields}}`. Each field represents a data point — text, date, number, or list — that gets resolved when you create a new file from the template, or later when you [[Lifecyle of a Template|finalize]] the file. 
+A **[[Template Files|template file]]** is a Markdown document (just like any other Obsidian file) that may contain both YAML frontmatter and Markdown body content. Within either section, you can include placeholders called `{{fields}}`. Each field represents a data point — text, date, number, or list — that gets resolved when you create a new file from the template, or later when you [[Lifecyle of a Template|finalize]] the file. 
 
 Example:
 
-```md
+```md title="Template - Project.md"
 ---
 Title: {{ProjectName}}
 Date: {{date}}
@@ -43,7 +43,7 @@ A **[[Template Fields|field]]** is the heart of a template — a placeholder enc
 
 You can also nest fields using dot notation for structured data:
 
-```md
+```md title="Partial Template - Person.md"
 {{person.firstname}} {{person.lastname}}
 ```
 
@@ -57,8 +57,8 @@ Z2K Templates uses [[Handlebars Support|Handlebars.js]] internally to evaluate l
 
 Examples:
 
-```md
-{{format-date date 'MMMM D, YYYY'}}
+```md title="Partial Template - Status Update.md"
+Date::{{format-date date 'MMMM D, YYYY'}}
 Status:: {{#if Completed}}✅{{else}}❌{{/if}}
 ```
 
@@ -74,7 +74,7 @@ When a field’s value can’t be resolved (for example, it isn’t provided via
 
 Example:
 
-```md
+```md title="Template - Prompting.md"
 {{Location|text}}
 {{Mood|select:Happy,Neutral,Stressed}}
 ```
@@ -86,7 +86,7 @@ The plugin also supports **deferred field resolution**, allowing you to create f
 Then, when you eventually explicitly **[[Lifecycle of a Template#Finalize|finalize]]** the file, Z2K Templates will handle the remaining unresolved fields according to the configured [[Prompting#Miss Handling|miss handling rules]].
 
 For example, consider a daily log template that includes:
-```md
+```md title="Template - Daily Log.md"
 Steps:: {{StepsTaken}} 
 Weight:: {{Weight}} 
 Mood:: {{Mood}}
@@ -105,7 +105,7 @@ Fields can also appear in YAML frontmatter. YAML allows dynamic metadata such as
 
 Example:
 
-```md
+```md title: "Template - Book Review.md"
 ---
 Title: {{BookTitle}}
 Tags: 
@@ -138,7 +138,7 @@ Large templates can be broken into smaller, reusable “partial” templates. Th
 
 Example:
 
-```md
+```md "Partials - Example.md"
 {{> ContactBlock}}
 ```
 
@@ -160,7 +160,7 @@ Template availability is context-sensitive — determined by the destination fil
 
 For example, creating a note under `/Projects/Work/2025/` will include templates from:
 
-```
+```text
 /Templates/
 /Projects/Templates/
 /Projects/Work/Templates/

@@ -1,9 +1,10 @@
 ---
 sidebar_position: 13 
-doc_state: initial_ai_draft
+doc_state: revised_ai_draft_2
+title: "Why Use Templates?"
 ---
 
-# Why Use Templates
+# Why Use Templates?
 
 Templates are more than time-savers — they are the foundation of a consistent, maintainable, and intelligent note‑taking system. By capturing both structure and intent, Z2K Templates turns the process of writing into the process of *designing information flow*.
 
@@ -17,7 +18,7 @@ Every note should look and behave the same way when it represents the same type 
 
 Example:
 
-```md
+```md title="Template - YAML.md"
 ---
 Project: {{ProjectName}}
 Date: {{date}}
@@ -53,7 +54,7 @@ Through [[Core Concepts#Modular Template Organization|Modular Template Organizat
 
 Example:
 
-```md
+```md title="Template - With Partials.md"
 {{> ContactBlock}}
 {{> ProjectSummary}}
 ```
@@ -72,7 +73,7 @@ Z2K Templates allows you to apply template changes retroactively. Using the `{{S
 
 Templates can minimize copy errors and data input effort. For instance, the same data can appear in multiple places within a note. Her, you can define a title field once and reference it both in YAML and the body:
 
-```md
+```md title="Template - Meeting.md"
 ---
 Title: {{MeetingTitle}}
 ---
@@ -93,7 +94,7 @@ Once your structure is defined, templates handle all boilerplate text, YAML meta
 
 Example:
 
-```md
+```md title="Template - Daily Reflection.md"
 {{date}} — Daily Reflection
 {{Mood|select:Happy,Neutral,Stressed}}
 ```

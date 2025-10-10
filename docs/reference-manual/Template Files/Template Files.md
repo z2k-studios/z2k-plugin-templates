@@ -6,7 +6,7 @@ At the very core of Z2K Templates is the Template File. In short, a template fil
 
 ## Overview
 - [[#What is a Template?]]
-- [[Why Use Templates]]
+- [[reference-manual/Template Files/Why Use Templates]]
 - [[Lifecycle of a Template]]
 - [[Obsidian Commands]]
 

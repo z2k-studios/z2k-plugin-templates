@@ -1,18 +1,26 @@
 ---
+sidebar_position: 14 
+doc_state: revised_ai_draft_2
+title: "Why Use Z2K Templates?"
+---
 
-## sidebar\_position: 14 doc\_state: initial\_ai\_draft
+# Why Use Z2K Templates
 
-# Why Z2K Templates
+Obsidian is famous for diverse plugin marketplace. Z2K Templates is only one of several plugins you can install to templatize notes in Obsidian. This page outlines alternatives, offers a neutral compare/contrast, and then clarifies where Z2K Templates’ design choices differ. Links below go to official docs or plugin listings.
 
-Z2K Templates is one of several ways to templatize notes in Obsidian. This page outlines friendly alternatives, offers a neutral compare/contrast, and then clarifies where Z2K Templates’ design choices differ. Links below go to official docs or plugin listings.
+Note: we *love* our fellow plugin developers - many thanks go out to [@silentvoid13](https://github.com/SilentVoid13), [@oeN](https://github.com/oeN), [@chhouman](https://github.com/chhoumann) and others for their fine work in making templating solutions for Obsdian. 
 
 ---
 
 ## Why Another Templating Plugin?
-Why a new templating plugin when the impressive [Templater plugin](https://silentvoid13.github.io/Templater/) already does so much? Templater is a fine option for users who prefer script-like control and advanced logic. **Z2K Templates** takes the [[How is it Different than other Template Plugins|opposite approach]]: less scripting, more structure. It focuses on reusable pieces — partials, nested templates, hierarchical yaml, and built-in formatting so you can build systems instead of snippets. And rest easy, you can keep both installed: Templater for logic, Z2K Templates for systems.
+Why a new templating plugin when the impressive [Templater plugin](https://silentvoid13.github.io/Templater/) already does so much? Templater is a fine option for users who prefer script-like control and advanced logic. Templater has a strong "coding" vibe - to use it, it helps to have a background as a programmer. 
+
+**Z2K Templates** takes the [[How is it Different than other Template Plugins|opposite approach]]: less scripting, more static field names. Z2K Templates also focuses on building out a larger templating system beyond individual snippets (for example, [[Partial Templates|partials]] and [[Hierarchical Template Folders|hierarchical folders]].
+
+If you like both approaches, rest easy, you can keep both installed: Templater for logic, Z2K Templates for systems. In fact, **they can work together fantastically**, for instance see this article on [[How to Wrap Templater Code Snippets into Fields|wrapping templater code into Z2K Templates Fields]].
 
 
-## Alternatives in the Obsidian Ecosystem
+## Alternative Plugins
 Let's step back and review the top alternatives to **Z2K Templates**:
 
 - **Templater (community plugin)** — Full-featured templating language with JavaScript execution and prompts. Widely adopted by power users. [Docs](https://silentvoid13.github.io/Templater/introduction.html) · [GitHub](https://github.com/SilentVoid13/Templater)
@@ -30,7 +38,7 @@ Let's step back and review the top alternatives to **Z2K Templates**:
 - **Core Templates** is the easiest entry point: insert prewritten text and a few built‑in variables. No logic, no language to learn. Ideal for lightweight snippets.
 - **Templater** adds a **programmable layer**: JavaScript execution, file ops, and a rich API. This is excellent for complex automation, with the trade‑off of more moving parts and code in your notes.
 - **Liquid Templates** swaps in a **LiquidJS** syntax. It emphasizes template tags over code, landing between Core Templates and Templater in capability.
-- **Z2K Templates** takes a **declarative `{{fields}}` approach** backed by [Handlebars.js](https://handlebarsjs.com/). It focuses on structured fields, interactive prompting, YAML integration, partials, and *context-aware* discovery (hierarchical templates). The intent is to standardize structure without requiring JavaScript in your notes.
+- **Z2K Templates** takes a **declarative `{{fields}}` approach** backed by the [Handlebars.js](https://handlebarsjs.com/) language. It focuses on structured fields, interactive prompting, YAML integration, partials, and *context-aware* discovery (hierarchical templates). The intent is to standardize structure without requiring JavaScript in your notes.
 
 ---
 
@@ -85,7 +93,7 @@ Let's step back and review the top alternatives to **Z2K Templates**:
 
 - **Templater** (from the official docs style):
 
-```md
+```md title="Example A - Templater.md"
 # <% tp.date.now('YYYY-MM-DD') %> — <% tp.file.title %>
 <%* if (tp.frontmatter.notes) { %>
 ## Notes
@@ -97,7 +105,7 @@ Source: Templater docs — Introduction: variables and JS execution.
 
 - **Z2K Templates**:
 
-```md
+```md title="Example A - Z2K Templates.md"
 ---
 Title: {{TitleText}}
 Date: {{date}}
@@ -117,13 +125,13 @@ Date: {{date}}
 
 - **Templater**:
 
-```md
+```md title="Example B - Templater.md"
 <%* tR += await tp.file.include("_partials/participants.md") %>
 ```
 
 - **Z2K Templates**:
 
-```md
+```md title="Example B - Z2K Templates.md"
 {{> ParticipantsBlock}}
 ```
 
@@ -137,7 +145,7 @@ Date: {{date}}
 **Goal:** Prompt the user for a category from a list and insert it in YAML and body.
 
 - **Templater**:
-```md
+```md title="Example C - Templater.md"
 ---
 Category: <%* const c = await tp.system.suggester(['Work','Home','Study'], ['work','home','study']); tR += c %>
 ---
@@ -145,7 +153,7 @@ Category: <%* const c = await tp.system.suggester(['Work','Home','Study'], ['wor
 ```
 
 - **Z2K Templates**:
-```md
+```md title="Example C - Z2K Templates.md"
 ---
 Category: {{Category|select:Work,Home,Study}}
 ---
@@ -159,7 +167,7 @@ Category: {{Category|select:Work,Home,Study}}
 **Goal:** Start a daily note with deferred fields you’ll fill later; finalize when done.
 
 - **Templater** (conceptual; no first-class deferred placeholders):
-```md
+```md title="Example D - Templater.md"
 ---
 Title: <% tp.date.now('YYYY-MM-DD') %>
 ---
@@ -172,7 +180,7 @@ Mood:
 (You would manually edit later or script a custom command.)
 
 - **Z2K Templates**:
-```md
+```md title="Example D - Z2K Templates.md"
 ---
 Title: {{date}}
 ---

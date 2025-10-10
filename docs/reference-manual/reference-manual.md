@@ -2,6 +2,7 @@
 title: Table of Contents
 folder_position: 30
 sidebar_position: 1
+folder_metacategory: "Getting Started"
 ---
 [[README|Z2K Templates]] is an [Obsidian](https://obsidian.md) Plugin for making powerful templates for your Obsidian vault. These doc pages serve as a Reference Manual for how to use the plugin and make supercharged templates.
 
@@ -9,17 +10,22 @@ sidebar_position: 1
 
 ## Table of Contents
 
+### Getting Started
+
 1. [[Introduction]] - An overview of the Z2K Templates Plugin  
-    - [[What the Plugin Does]]  
+    - [[What is Z2K Templates]]  
     - [[Core Concepts]]  
-    - [[Why Use Templates]]  
-    - [[Why Z2K Templates]]
-    - [[Integration with the Z2K System]]  
+    - [[reference-manual/Introduction/Why Use Templates]]  
+    - [[Why Use Z2K Templates]]
+    - [[The Z2K System]]  
 
 2. [[Installation]] - How to install the plugin  
     - [[Prerequisites]] (Obsidian, dependencies)  
     - [[Installing the Plugin]]  
     - [[Configuring Defaults]] (e.g., miss handling, date formats)  
+
+
+### Basics
 
 3. [[Template Files]] - The anatomy and lifecycle of a template file  
     - [[Template File Structure]] - YAML Frontmatter, Body Content  
@@ -64,6 +70,8 @@ sidebar_position: 1
     - [[Built-in Prompting Directives]]  
     - [[Miss Handling]] (`clear` vs `preserve`)  
     - [[Finalizing and Miss Handling for Z2K Templates]]  
+
+### Intermediate
 
 9. [[Helper Functions]] - Introduction to using helper functions inside templates  
     - [[Helper Functions Usage]]  
@@ -122,13 +130,16 @@ sidebar_position: 1
     - [[Merging Multiple YAML Sources]]  
     - [[Z2K Template YAML Configuration Fields|YAML Fields the Z2K Template Plugin Uses]]  
 
-14. [[URI and JSON Support]] - Triggering template fields externally through URI and/or passing JSON packages 
+14. [[Settings Page]] - Details on the Settings Page for the Z2K Templates Plugin  
+    - TBD  
+
+
+### Advanced 
+
+15. [[URI, JSON, Command Lists]] - Triggering template fields externally through URI and/or passing JSON packages 
     - [[URI Actions]]
     - [[JSON Packages]]
     - [[Command Lists]]
-
-15. [[Settings Page]] - Details on the Settings Page for the Z2K Templates Plugin  
-    - TBD  
 
 16. [[Z2K System Features]] - Additional features specific to the larger Z2K System  
     - TBD  
@@ -141,6 +152,8 @@ sidebar_position: 1
     - Invalid data type  
     - Unclosed variables  
     - Debugging Tips  
+
+### Misc
 
 18. [[Roadmap & Extensibility]]  
     - Planned Features (partials, visualization, marketplace templates)  

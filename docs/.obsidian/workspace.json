@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "reference-manual/Settings Page/Settings Page.md",
+                "file": "reference-manual/Introduction/Core Concepts.md",
                 "mode": "source",
                 "source": true
               },
               "icon": "lucide-file",
-              "title": "Settings Page"
+              "title": "Core Concepts"
             }
           }
         ]
@@ -171,20 +171,26 @@
   },
   "active": "0ec6f4f3ec75b24a",
   "lastOpenFiles": [
-    "reference-manual/Introduction/Integration with the Z2K System.md",
+    "reference-manual/Introduction/Why Use Z2K Templates.md",
+    "reference-manual/Introduction/Why Use Templates.md",
+    "reference-manual/Introduction/What is Z2K Templates.md",
+    "reference-manual/Introduction/The Z2K System.md",
+    "reference-manual/Introduction/Introduction.md",
+    "reference-manual/Introduction/Core Concepts.md",
+    "reference-manual/reference-manual.md",
+    "README.md",
+    "automation/automation.md",
+    "Table of Contents.md",
+    "how-to-guides/Advanced/Advanced.md",
+    "reference-manual/URI, JSON, Command Lists.md",
+    "reference-manual/URI and JSON Support.md",
+    "reference-manual/Settings Page/Settings Page.md",
     "reference-manual/Introduction/integration_with_the_z_2_k_system.md",
     "reference-manual/Introduction/why_z_2_k_templates.md",
-    "reference-manual/Introduction/Why Use Templates.md",
-    "reference-manual/Introduction/Introduction.md",
     "reference-manual/Introduction/why_use_templates.md",
-    "reference-manual/Introduction/Core Concepts.md",
     "reference-manual/Introduction/core_concepts.md",
-    "reference-manual/Introduction/What The Plugin Does.md",
     "reference-manual/Introduction/Why Z2K Templates",
-    "reference-manual/reference-manual.md",
-    "Table of Contents.md",
     "reference-manual/Introduction",
-    "README.md",
     "reference-manual/Z2K Templates and YAML/Z2K System YAML Files.md",
     "reference-manual/Settings Page/Quick Command Settings.md",
     "reference-manual/Template Folders/Hierarchical Template Folders.md",
@@ -192,15 +198,9 @@
     "reference-manual/Template Folders/Template Folders.md",
     "reference-manual/Template Folders/Untitled",
     "reference-manual/Settings Page/General Settings.md",
-    "reference-manual/Settings Page/Settings Page.md",
     "reference-manual/Template Fields/Template Fields.md",
     "reference-manual/Template Fields/Template Field Types.md",
-    "reference-manual/Template Fields/Template Field Naming Conventions.md",
     "reference-manual/Settings Page",
-    "reference-manual/Z2K Templates, URI, and JSON.md",
-    "reference-manual/Z2K System Specific Features.md",
-    "reference-manual/Z2K Templates and YAML/Z2K Templates and YAML.md",
-    "reference-manual/Prompting/Prompting.md",
     "Untitled.canvas",
     "how-to-guides/Getting Started",
     "how-to-guides/Intermediate/Untitled"

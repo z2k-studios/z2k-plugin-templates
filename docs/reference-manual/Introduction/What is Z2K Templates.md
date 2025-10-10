@@ -1,9 +1,10 @@
 ---
 sidebar_position: 11
 doc_state: revised_ai_draft_2
+title: "What is Z2K Templates?"
 ---
 
-# What the Plugin Does
+# What is Z2K Templates?
 
 The **Z2K Templates Plugin** automates the process of creating structured, reusable notes in Obsidian. Instead of typing boilerplate content each time, you define *templates* that contain placeholders — known as `{{fields}}` — which the plugin resolves into complete notes when executed.
 
@@ -26,13 +27,13 @@ This [[Lifecycle of a Template|process]] gives you automation and consistency �
 
 Below is an example showing both the source template and the rendered note.
 
-```md
+```md title="Template - Book Review.md"
 ---
 # YAML Text 
 Title: {{BookTitle}}
 Date: {{date}}
 Author: {{AuthorName|text}}
-Genre: {{Genre|select:Fiction,Nonfiction,Poetry}}
+Genre: {{==prompt-value== Genre|select:Fiction,Nonfiction,Poetry}}
 ---
 
 # {{BookTitle}}
@@ -60,7 +61,7 @@ When executed, the plugin performs the following:
 
 The resulting note might look like:
 
-```md
+```md title="The Great Gatsby.md"
 ---
 Title: The Great Gatsby
 Date: 2025-10-07

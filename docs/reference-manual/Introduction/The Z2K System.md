@@ -3,7 +3,7 @@ sidebar_position: 15
 doc_state: initial_ai_draft
 ---
 
-# Integration with the Z2K System
+# Integration with The Z2K System
 
 ## 1. Dependency
 
