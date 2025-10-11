@@ -16,7 +16,7 @@ That said, Z2K Templates is also a **core component of the larger [[Z2K System]]
 
 ---
 
-## 2. What Is the Z2K System
+## 2. What Is the Z2K System?
 
 The **Z2K System** is a framework for building a digital mind — a second layer of cognition that extends how you think, remember, and create. Unlike other Obsidian frameworks that focus on managing projects or daily notes, the Z2K System is focused on building a **digital you** — your thoughts, beliefs, models, memories, and identity.
 
@@ -26,7 +26,7 @@ The system also includes a diverse set of **starter templates** to help users ge
 
 ---
 
-## 3. Can I Use the Z2K System Alongside My Existing Vault
+## 3. Can I Use the Z2K System Alongside My Existing Vault?
 
 Yes. The Z2K System can be installed into **any folder** of an existing vault using the [[Z2K Core Plugin]]. You can integrate it incrementally — adopting just the templates, or adding the full suite of Z2K plugins.
 

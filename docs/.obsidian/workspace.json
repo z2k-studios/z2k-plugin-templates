@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "reference-manual/Introduction/Core Concepts.md",
+                "file": "reference-manual/Introduction/The Z2K System.md",
                 "mode": "source",
                 "source": true
               },
               "icon": "lucide-file",
-              "title": "Core Concepts"
+              "title": "The Z2K System"
             }
           }
         ]
@@ -171,12 +171,12 @@
   },
   "active": "0ec6f4f3ec75b24a",
   "lastOpenFiles": [
-    "reference-manual/Introduction/Why Use Z2K Templates.md",
     "reference-manual/Introduction/Why Use Templates.md",
-    "reference-manual/Introduction/What is Z2K Templates.md",
-    "reference-manual/Introduction/The Z2K System.md",
-    "reference-manual/Introduction/Introduction.md",
+    "reference-manual/Introduction/Why Use Z2K Templates.md",
     "reference-manual/Introduction/Core Concepts.md",
+    "reference-manual/Introduction/The Z2K System.md",
+    "reference-manual/Introduction/What is Z2K Templates.md",
+    "reference-manual/Introduction/Introduction.md",
     "reference-manual/reference-manual.md",
     "README.md",
     "automation/automation.md",

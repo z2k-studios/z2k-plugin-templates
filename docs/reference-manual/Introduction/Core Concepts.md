@@ -15,13 +15,14 @@ A **[[Template Files|template file]]** is a Markdown document (just like any oth
 
 Example:
 
-```md title="Template - Project.md"
+```yaml title="Template - Project.md"
 ---
 Title: {{ProjectName}}
 Date: {{date}}
 Status: {{Status|select:Planned,In Progress,Complete}}
 ---
-
+```
+```md
 # {{ProjectName}}
 
 {{! Comment: You can document your templates with comments like this directly inside them without affecting the final output. }}
@@ -29,7 +30,8 @@ Status: {{Status|select:Planned,In Progress,Complete}}
 Current project status: **{{Status}}**
 ```
 
-> [!NOTE] Every template must follow standard Markdown and YAML conventions. Invalid YAML or mismatched braces (`{{` / `}}`) will stop rendering until corrected.
+> [!NOTE] 
+> Every template must follow standard Markdown and YAML conventions. Invalid YAML or mismatched braces (`{{` / `}}`) will stop rendering until corrected.
 
 ---
 
@@ -75,22 +77,22 @@ When a field’s value can’t be resolved (for example, it isn’t provided via
 Example:
 
 ```md title="Template - Prompting.md"
-{{Location|text}}
-{{Mood|select:Happy,Neutral,Stressed}}
+My Location :: {{Location|text}}
+My Mood     :: {{Mood|select:Happy,Neutral,Stressed}}
 ```
 
 If a field remains blank, Z2K Templates follows its [[Prompting#Miss Handling|miss handling rules]] — such as clearing it, keeping the placeholder, or applying a default value.
 
-The plugin also supports **deferred field resolution**, allowing you to create files with fields that will be filled in over time. In this state, unresolved `{{fields}}` remain visible in the note but are fully functional placeholders. You can reopen the file later and use the command **[[Lifecycle of a Template|Continue filling file]]** to supply additional data when it becomes available.  
+The plugin also supports **deferred field resolution**, allowing you to create files with fields that will be filled in over time. In this state, unresolved `{{fields}}` remain visible in the note and remain being fully functional placeholders.  You can reopen the file later and use the command **[[Lifecycle of a Template|Continue filling file]]** to supply additional data when it becomes available.  
 
 Then, when you eventually explicitly **[[Lifecycle of a Template#Finalize|finalize]]** the file, Z2K Templates will handle the remaining unresolved fields according to the configured [[Prompting#Miss Handling|miss handling rules]].
 
 For example, consider a daily log template that includes:
 ```md title="Template - Daily Log.md"
-Steps:: {{StepsTaken}} 
-Weight:: {{Weight}} 
-Mood:: {{Mood}}
-Meals::
+Steps  :: {{StepsTaken}} 
+Weight :: {{Weight}} 
+Mood   :: {{Mood}}
+Meals  ::
 - {{Breakfast}} 
 - {{Dinner}} 
 ```
@@ -105,7 +107,7 @@ Fields can also appear in YAML frontmatter. YAML allows dynamic metadata such as
 
 Example:
 
-```md title: "Template - Book Review.md"
+```yaml title:"Template - Book Review.md"
 ---
 Title: {{BookTitle}}
 Tags: 
@@ -122,10 +124,10 @@ Z2K Templates merges YAML from multiple sources — including partials and paren
 
 Templates can pull data from multiple origins. Potential data sources include::
 
-1. **[[Built-In Template Fields|Built-in fields]] and [[Helper Functions|helper functions]]** — values like date, filename, or vault path, plus computed values from helper functions.
-2. **User input via [[Prompting|prompting dialogs]]** — entered interactively at runtime.
+1. **User input via [[Prompting|prompting dialogs]]** — entered interactively at runtime.
+2. **[[Built-In Template Fields|Built-in fields]] and [[Helper Functions|helper functions]]** — values like date, filename, or vault path, plus computed values from helper functions.
 3. **Default values stored directly in the template** — specified in field syntax.
-4. **Existing files** — through built-in fields such as `{{SystemData}}`, which read YAML, fields and text from current vault files.
+4. **Existing files** — other vault files can be read through built-in fields such as `{{SystemData}}`
 5. **External URI calls** — incoming data provided through [[URI and JSON Support|URI triggers]].
 6. **External JSON command lists** — batches of key/value pairs queued for import into your vault.
 7. **Miss handling directives** — fallback behavior applied when all other sources fail.
