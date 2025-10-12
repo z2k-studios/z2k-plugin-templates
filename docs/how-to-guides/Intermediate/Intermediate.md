@@ -1,6 +1,6 @@
 ---
 sidebar_position: 30
-folder_position: 30
+sidebar_folder_position: 30
 title: Intermediate Guides
 hide_title: true
 ---

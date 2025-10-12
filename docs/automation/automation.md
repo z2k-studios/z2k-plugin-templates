@@ -1,6 +1,6 @@
 ---
 sidebar_position: 1
-folder_position: 50
+sidebar_folder_position: 50
 title: Overview
 ---
 # Automating Your Vault with Z2K Templates

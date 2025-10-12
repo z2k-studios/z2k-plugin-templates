@@ -1,7 +1,7 @@
 ---
 sidebar_position: 80
-folder_position: 80
-folder_metacategory: "Intermediate"
+sidebar_folder_position: 80
+sidebar_metacategory: "Intermediate"
 ---
 
 Z2K uses the "helper" functions defined in Mustache / [Handlebars](https://handlebarsjs.com/guide/expressions.html#helpers) to provide additional functionality when replacing Template Fields with data.

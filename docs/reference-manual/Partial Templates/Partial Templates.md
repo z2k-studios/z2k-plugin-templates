@@ -1,6 +1,6 @@
 ---
 sidebar_position: 100
-folder_position: 100
+sidebar_folder_position: 100
 
 ---
 

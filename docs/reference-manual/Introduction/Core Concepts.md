@@ -15,12 +15,12 @@ A **[[Template Files|template file]]** is a Markdown document (just like any oth
 
 Example:
 
-```yaml title="Template - Project.md"
----
+```md title="Template - Project.md"
+–––
 Title: {{ProjectName}}
 Date: {{date}}
 Status: {{Status|select:Planned,In Progress,Complete}}
----
+–––
 ```
 ```md
 # {{ProjectName}}

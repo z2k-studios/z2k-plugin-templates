@@ -1,7 +1,6 @@
 ---
-folder_position: 20
-sidebar_position: 20
-folder_metacategory: "Basics"
+sidebar_folder_position: 30
+sidebar_position: 30
 ---
 
 # Overview
@@ -33,5 +32,5 @@ With these fields specified, Z2K will prompt the user for these fields when crea
 
 # Further Details
 1. [[Template Field Types]] -- Types of fields (automated, user specified)
-2. [[Template Field Naming Conventions]] - Describes how to name a field and the special symbols used for advanced expressions
+2. [[Naming Conventions]] - Describes how to name a field and the special symbols used for advanced expressions
 

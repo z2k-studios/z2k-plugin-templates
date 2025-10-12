@@ -1,6 +1,6 @@
 ---
 sidebar_position: 1
-folder_position: 20
+sidebar_folder_position: 20
 title: Overview
 ---
 # Best Practices for Z2K Templates

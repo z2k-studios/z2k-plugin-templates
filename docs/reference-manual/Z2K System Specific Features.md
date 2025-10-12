@@ -1,6 +1,6 @@
 ---
 sidebar_position: 112
-folder_position: 112
+sidebar_folder_position: 112
 
 ---
 The Z2K System is a framework for organizing and implementing your Second Brain in Obsidian. [[README|Z2K Templates]] was designed to be an integral part of that system, although is perfectly functional outside of it for the general Obsidian community. As a result, the Z2K Templates Plugin has additional support for features found in the Z2K System. While these features will likely not be used outside the Z2K System, they are nonetheless documented here for complete reference.

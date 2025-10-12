@@ -106,10 +106,10 @@ Source: Templater docs — Introduction: variables and JS execution.
 - **Z2K Templates**:
 
 ```md title="Example A - Z2K Templates.md"
----
+–––
 Title: {{TitleText}}
 Date: {{date}}
----
+–––
 # {{date}} — {{TitleText}}
 {{#if notes}}
 ## Notes
@@ -154,9 +154,9 @@ Category: <%* const c = await tp.system.suggester(['Work','Home','Study'], ['wor
 
 - **Z2K Templates**:
 ```md title="Example C - Z2K Templates.md"
----
+–––
 Category: {{Category|select:Work,Home,Study}}
----
+–––
 # Note — {{Category}}
 ```
 
@@ -181,9 +181,9 @@ Mood:
 
 - **Z2K Templates**:
 ```md title="Example D - Z2K Templates.md"
----
+–––
 Title: {{date}}
----
+–––
 Steps: {{StepsTaken}}
 Breakfast: {{Breakfast}}
 Dinner: {{Dinner}}

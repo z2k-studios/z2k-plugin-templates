@@ -1,6 +1,6 @@
 ---
 sidebar_position: 120
-folder_position: 120
+sidebar_folder_position: 120
 folder_metacategory: "Advanced"
 ---
 

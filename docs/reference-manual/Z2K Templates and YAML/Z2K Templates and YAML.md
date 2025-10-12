@@ -1,6 +1,6 @@
 ---
 sidebar_position: 110
-folder_position: 110
+sidebar_folder_position: 110
 ---
 
 A powerful feature of the Z2K Templates plugin is the use of Z2K Template fields directly inside your YAML text to control metadata associated with your Obsidian Notes.

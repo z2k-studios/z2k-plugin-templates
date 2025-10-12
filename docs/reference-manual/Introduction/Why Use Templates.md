@@ -12,6 +12,20 @@ Below are the key reasons to use templates in your vault.
 
 ---
 
+==This needs cleaning up. Combined data from multiple pages==
+
+Templates have many uses:
+- **Workload Reduction** - template can ease the burden for creating the basic scaffolding necessary for creating a new file in your vault. 
+- **Reduce Friction to Capture** - similarly, templates speeds up note-taking by pre-filling structure (e.g. meeting notes, thoughts, daily logs), thereby reducing blank-page paralysis.
+- **Consistency in Formatting** - if the content of similar cards use consistent formatting, it will ease the consumption of browsing of your files with predictability.
+- **Automating and Standardizing Data Fields** - a template file can specify commonly used YAML properties or dataview fields, thereby minimizing errors due to typos. Many of these fields can be automated through the use of templates.
+- **Content Prompting** - templates are great for inserting comments on how to create and organize your content. These comments can then be automatically removed from your new card upon Template Finalization.
+- **Improve AI Integration & Queryability** - AI works best with structure. Templates create predictable patterns that AI agents can parse and reason about. This improves search, summarization, and memory-linking workflows.
+- **Encourage Better Writing and Cognitive Process** - templates forces users to clarify purpose, insight, and next actions. They reduces the “note graveyard” effect where ideas go uncultivated
+
+
+---
+
 ## 1. Consistency of Information
 
 Every note should look and behave the same way when it represents the same type of information. Templates enforce **formatting and field consistency** across your vault, ensuring that recurring data — such as dates, tags, or project metadata — always appear in predictable places. With field types, you can specify allowable values for a field to standardize field entries. *Predictable notes are more easily and quickly consumed when you return to them later.*
@@ -74,9 +88,9 @@ Z2K Templates allows you to apply template changes retroactively. Using the `{{S
 Templates can minimize copy errors and data input effort. For instance, the same data can appear in multiple places within a note. Her, you can define a title field once and reference it both in YAML and the body:
 
 ```md title="Template - Meeting.md"
----
+–––
 Title: {{MeetingTitle}}
----
+–––
 # {{MeetingTitle}}
 ```
 

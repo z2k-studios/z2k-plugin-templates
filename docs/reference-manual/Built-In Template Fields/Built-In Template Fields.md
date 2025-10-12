@@ -1,5 +1,5 @@
 ---
-folder_position: 40
+sidebar_folder_position: 40
 sidebar_position: 40
 ---
 Z2K includes a number of pre-defined [[Template Fields]] names that will be automatically filled in whenever the template is created.
@@ -14,4 +14,4 @@ The following types of built-in fields are available:
 # Note on Field Naming Conventions
 *Note: In general, there is a naming convention used in Z2K to distinguish built-in fields from user specified fields. Built-in template fields all begin with a lower case letter, while we encourage you to denote user specified fields by beginning them with an uppercase letter.*
 
-See [[Template Field Naming Conventions]] for more info. 
+See [[Naming Conventions]] for more info. 

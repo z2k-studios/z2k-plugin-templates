@@ -10,7 +10,7 @@ The general format for specifying a prompt, default answer, and miss expression 
 
 Where:
 - `FieldName` (Required)
-	- The `FieldName` portion is the field name, which must follow the normal naming conventions mentioned in [[Template Field Naming Conventions|Template Field Naming Conventions]]
+	- The `FieldName` portion is the field name, which must follow the normal naming conventions mentioned in [[Naming Conventions|Naming Conventions]]
 - `dataType` (Optional, default: text)
 	- The dataTypes specifies the type of data that is being prompted for. See [[#Data Types]] below for more details.
 - `Prompt with spaces` (Optional)

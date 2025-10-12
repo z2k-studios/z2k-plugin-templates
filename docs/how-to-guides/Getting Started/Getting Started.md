@@ -1,6 +1,6 @@
 ---
 sidebar_position: 10
-folder_position: 10
+sidebar_folder_position: 10
 title: Getting Started
 hide_title: true
 ---

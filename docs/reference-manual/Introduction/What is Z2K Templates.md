@@ -13,7 +13,7 @@ Whether you’re logging a meeting, journaling, or organizing fictional characte
 When you create a new note from a template, the plugin:
 
 1. **Parses** the template file, identifying placeholders and metadata.
-2. **Prompts** you for any missing data using contextual dialogs for each [[Template Fields|field]].
+2. **Prompts** you for any missing data using customizable dialogs for each [[Template Fields|field]].
 3. **Resolves** your input along with [[Built-In Template Fields|built-in values]].
 4. **Renders** a new file, merging YAML metadata and Markdown content into a finished document.
 5. **Iterates** with the new file to continue to allow new data to be placed into fields as data becomes available.
@@ -28,13 +28,13 @@ This [[Lifecycle of a Template|process]] gives you automation and consistency �
 Below is an example showing both the source template and the rendered note.
 
 ```md title="Template - Book Review.md"
----
+–––
 # YAML Text 
 Title: {{BookTitle}}
 Date: {{date}}
 Author: {{AuthorName|text}}
 Genre: {{==prompt-value== Genre|select:Fiction,Nonfiction,Poetry}}
----
+–––
 
 # {{BookTitle}}
 

@@ -1,6 +1,6 @@
 ---
 sidebar_position: 40
-folder_position: 40
+sidebar_folder_position: 40
 title: Advanced Guides
 hide_title: true
 ---

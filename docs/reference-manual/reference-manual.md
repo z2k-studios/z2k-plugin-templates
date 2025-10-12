@@ -1,8 +1,9 @@
 ---
 title: Table of Contents
-folder_position: 30
+sidebar_folder_position: 30
 sidebar_position: 1
-folder_metacategory: "Getting Started"
+sidebar_metacategory: "Getting Started"
+navbar_section_name: "Reference Manual"
 ---
 [[README|Z2K Templates]] is an [Obsidian](https://obsidian.md) Plugin for making powerful templates for your Obsidian vault. These doc pages serve as a Reference Manual for how to use the plugin and make supercharged templates.
 

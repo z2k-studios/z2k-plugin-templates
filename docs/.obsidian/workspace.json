@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "reference-manual/Introduction/The Z2K System.md",
+                "file": "Intro/Docs Hot Links/Docs Hot Links.md",
                 "mode": "source",
                 "source": true
               },
               "icon": "lucide-file",
-              "title": "The Z2K System"
+              "title": "Docs Hot Links"
             }
           }
         ]
@@ -94,7 +94,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "0 - Z2K Template Fields.md",
+                "file": "Intro/Docs Hot Links/Docs Hot Links.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -104,7 +104,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Backlinks for 0 - Z2K Template Fields"
+              "title": "Backlinks for Docs Hot Links"
             }
           },
           {
@@ -113,12 +113,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "0 - Z2K Template Fields.md",
+                "file": "Intro/Docs Hot Links/Docs Hot Links.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Outgoing links from 0 - Z2K Template Fields"
+              "title": "Outgoing links from Docs Hot Links"
             }
           },
           {
@@ -142,21 +142,21 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "0 - Z2K Template Fields.md",
+                "file": "Intro/Docs Hot Links/Docs Hot Links.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline of 0 - Z2K Template Fields"
+              "title": "Outline of Docs Hot Links"
             }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "horizontal",
-    "width": 300,
-    "collapsed": true
+    "width": 300
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -171,35 +171,37 @@
   },
   "active": "0ec6f4f3ec75b24a",
   "lastOpenFiles": [
-    "reference-manual/Introduction/Why Use Templates.md",
-    "reference-manual/Introduction/Why Use Z2K Templates.md",
-    "reference-manual/Introduction/Core Concepts.md",
-    "reference-manual/Introduction/The Z2K System.md",
-    "reference-manual/Introduction/What is Z2K Templates.md",
-    "reference-manual/Introduction/Introduction.md",
+    "Intro/Docs Hot Links/docusaurus_link - The Z2K System.md",
+    "Intro/Docs Hot Links/docusaurus_ref - Core Concepts.md",
+    "Intro/Table of Contents.md",
+    "Intro/Intro.md.md",
+    "Intro/Docs Hot Links/Docs Hot Links.md",
     "reference-manual/reference-manual.md",
     "README.md",
+    "Intro/Docs Hot Links",
+    "how-to-guides/how-to-guides.md",
+    "reference-manual/Template Files/Template Files.md",
+    "Intro",
+    "best-practices/best-practices.md",
     "automation/automation.md",
-    "Table of Contents.md",
+    "reference-manual/Handlebars Support/Handlebars Support.md",
+    "reference-manual/Helper Functions/Helper Functions.md",
+    "reference-manual/Template Fields/Template Fields.md",
+    "reference-manual/Introduction/The Z2K System.md",
+    "reference-manual/Introduction/Introduction.md",
+    "reference-manual/Introduction/Core Concepts.md",
+    "reference-manual/Introduction/What is Z2K Templates.md",
+    "reference-manual/Introduction/Why Use Z2K Templates.md",
+    "reference-manual/Introduction/Why Use Templates.md",
+    "reference-manual/Obsidian Commands.md",
+    "reference-manual/Template Files/Lifecycle of a Template.md",
+    "reference-manual/Template Files/What is a Template File.md",
+    "reference-manual/Template Files/Why Use Templates.md",
+    "reference-manual/Template Fields/Naming Conventions.md",
     "how-to-guides/Advanced/Advanced.md",
-    "reference-manual/URI, JSON, Command Lists.md",
-    "reference-manual/URI and JSON Support.md",
-    "reference-manual/Settings Page/Settings Page.md",
-    "reference-manual/Introduction/integration_with_the_z_2_k_system.md",
-    "reference-manual/Introduction/why_z_2_k_templates.md",
-    "reference-manual/Introduction/why_use_templates.md",
-    "reference-manual/Introduction/core_concepts.md",
     "reference-manual/Introduction/Why Z2K Templates",
     "reference-manual/Introduction",
-    "reference-manual/Z2K Templates and YAML/Z2K System YAML Files.md",
-    "reference-manual/Settings Page/Quick Command Settings.md",
-    "reference-manual/Template Folders/Hierarchical Template Folders.md",
-    "reference-manual/Template Folders/Embedded Template Folders.md",
-    "reference-manual/Template Folders/Template Folders.md",
     "reference-manual/Template Folders/Untitled",
-    "reference-manual/Settings Page/General Settings.md",
-    "reference-manual/Template Fields/Template Fields.md",
-    "reference-manual/Template Fields/Template Field Types.md",
     "reference-manual/Settings Page",
     "Untitled.canvas",
     "how-to-guides/Getting Started",
