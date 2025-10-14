@@ -36,7 +36,7 @@ To alleviate this issue, External Template Folders allows you to use subfolders 
 
 
 > [!NOTE] Tree Traversal
-> When constructing a list of available Templates that a user can use, the plugin will use the matching folder tree location in the External Templates folder. *It will also traverse all parent folders, offering any files found in parent folders as well*. This allows you to create more complex context sensitive templates and [[Partial Templates]] in your vault. 
+> When constructing a list of available Templates that a user can use, the plugin will use the matching folder tree location in the External Templates folder. *It will also traverse all parent folders, offering any files found in parent folders as well*. This allows you to create more complex context sensitive templates and [[Block Templates]] in your vault. 
 
 ### Example External Template Hierarchy
 To demonstrate how External Template Hierarchies work, take our previous example vault folder structure:

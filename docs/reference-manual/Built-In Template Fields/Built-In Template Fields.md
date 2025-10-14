@@ -1,6 +1,10 @@
 ---
 sidebar_folder_position: 40
 sidebar_position: 40
+aliases:
+- Built-In Template Field
+- Built-In Fields
+- Built-In Field
 ---
 Z2K includes a number of pre-defined [[Template Fields]] names that will be automatically filled in whenever the template is created.
 

@@ -20,6 +20,6 @@ In addition to spaces, a Z2K Template Field name cannot use any of the following
 | `\|` (pipe)       | `{{Author\|text\|Who is the Author?}}` | User querying prompts (see [[Prompting]])                                                                              |
 | ! (bang)          | `{{! this is a comment}}`              | Comment Fields                                                                                                                                      |
 | `.` (periods)     | `{{Meals.Dinner}}`                     | JSON hierarchical data (see [[Z2K Templates, URI, and JSON]])                                                                                  |
-| `<` (less than)   | `{{< PartialTemplate.md}}`             | Partial templates (see [[Partial Templates]])                                                                                               |
+| `<` (less than)   | `{{< PartialTemplate.md}}`             | Partial templates (see [[Block Templates]])                                                                                               |
 | ( ) (parenthesis) | `{{wikilink (formatdate today)}}}`     | Nested Helper Functions (see [[Built-In Helper Functions]])                                                                                    |
 | `~` (tilde)       | `{{~FilenameText}}`                    | External Whitespace Trimming (see [[Custom Field Formatting#Handlebars Whitespace Formatting\|Handlebars Whitespace Formatting]]) |

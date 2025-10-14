@@ -1,9 +1,9 @@
 ---
-sidebar_position: 16
+sidebar_position: 75
 ---
 
 
-Step through the different commands availble 
+Step through the different commands available 
 
 | Command                                         | Action Performed |
 | ----------------------------------------------- | ---------------- |

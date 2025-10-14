@@ -5,11 +5,14 @@ hide_title: true
 aliases:
 - Z2K Templates
 - Z2K Templates Plugin
+- Introduction to Z2K Templates Plugin
+- Z2K Templates In-a-Nutshell
 sidebar_metacategory: "Welcome"
 navbar_section_name: "Intro"
 ---
 
 # Z2K Templates In-a-Nutshell
+
 The [Z2K Templates Plugin](https://templates.z2ksystem.com) is an [Obsidian](https://obsidian.md) Plugin for making powerful templates for your Obsidian vault:
 - It uses the intuitive `{{handlebars}}` syntax to specify where to insert data within a template file and unique prompting interface for collecting data for insertion. No coding like interface required - just  `{{fields}}` written as text in your template files
 - At its core, it uses the [handlebars.js](https://handlebars.js) syntax for advanced techniques like [functions](/reference-manual/helper-functions/helper-functions.md) and [formatting](/reference-manual/data-formatting/data-formatting.md)

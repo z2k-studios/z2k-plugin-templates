@@ -13,12 +13,16 @@ navbar_section_name: "Reference Manual"
 
 ### Getting Started
 
-1. [[Introduction]] - An overview of the Z2K Templates Plugin  
+1. [[reference-manual/Introduction/Introduction]] - An overview of the Z2K Templates Plugin  
     - [[What is Z2K Templates]]  
+    - [[Sample Template]] - Steps through a sample template file to showcase some of the capabilities of Z2K Templates.
+    - [[Core Features]] - A brief list of the core features of the Z2K Templates Plugin
     - [[Core Concepts]]  
     - [[reference-manual/Introduction/Why Use Templates]]  
     - [[Why Use Z2K Templates]]
+    - [[What about Templater]] - Compares Z2K Tempalates specifically with the popular Templater Plugin.
     - [[The Z2K System]]  
+
 
 2. [[Installation]] - How to install the plugin  
     - [[Prerequisites]] (Obsidian, dependencies)  
@@ -68,7 +72,7 @@ navbar_section_name: "Reference Manual"
 8. [[Prompting]] - How to customize the prompting for data for a field  
     - [[General Prompting Format]]  
     - [[Prompting Data Types]]  
-    - [[Built-in Prompting Directives]]  
+    - [[Built-in Prompting Helpers]]  
     - [[Miss Handling]] (`clear` vs `preserve`)  
     - [[Finalizing and Miss Handling for Z2K Templates]]  
 
@@ -118,7 +122,7 @@ navbar_section_name: "Reference Manual"
         - [[Partial Parameters]]  
         - [[Inline Partials]]  
 
-12. [[Partial Templates]] - Details the use of hierarchical and block level templates through partial templates  
+12. [[Block Templates]] - Details the use of hierarchical and block level templates through partial templates  
     - [[Partial Basics]]  
     - [[Partial Parameters]]  
 
@@ -130,6 +134,11 @@ navbar_section_name: "Reference Manual"
     - [[YAML and Partials]]  
     - [[Merging Multiple YAML Sources]]  
     - [[Z2K Template YAML Configuration Fields|YAML Fields the Z2K Template Plugin Uses]]  
+	    - z2k_template_type
+	    - z2k_template_name
+	    - z2k_template_title: (still used?)
+	    - z2k_template_default_title
+	    - z2k_template_default_miss_handling
 
 14. [[Settings Page]] - Details on the Settings Page for the Z2K Templates Plugin  
     - TBD  
@@ -144,6 +153,10 @@ navbar_section_name: "Reference Manual"
 
 16. [[Z2K System Features]] - Additional features specific to the larger Z2K System  
     - TBD  
+    - Z2K System YAML Fields
+	    - z2k_card_build_state
+	    - z2k_card_status
+	    - 
 
 17. [[Error Handling]]  
     - TemplateError Class  

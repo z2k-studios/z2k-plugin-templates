@@ -49,7 +49,7 @@ Finally, notice how the template includes more information inside the `{{Author}
 With the introduction of Bases, Obsidian offers some powerful database like options using YAML fields. You can use YAML frontmatter text directly in your template to make copies of entered data directly into yaml field specifiers. 
 
 # 3. Create a Partial Template
-Now that we have a well-featured book template in our vault, let's create what is called a [[Partial Templates|Partial Template]] to create a reusable section that contains a quotation from a book. Partials are templates for blocks of text, rather than whole files.
+Now that we have a well-featured book template in our vault, let's create what is called a [[Block Templates|Partial Template]] to create a reusable section that contains a quotation from a book. Partials are templates for blocks of text, rather than whole files.
 
 ```markdown
 ## Quote:: {{Quotation Name}}

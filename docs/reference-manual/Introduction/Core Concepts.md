@@ -5,11 +5,22 @@ doc_state: revised_ai_draft_1
 
 # Core Concepts
 
-Z2K Templates builds on a few foundational ideas that make templating in Obsidian structured, predictable, and human-readable. These concepts explain how data flows through the system — from how templates are defined, to where their data originates, to how they can be modular and context-aware.
+Z2K Templates builds on a few foundational ideas that make templating in Obsidian structured, predictable, and human-readable. These concepts define how the Z2K Templates plugin works — from how templates are defined, to where their data originates, to how they can be modular and context-aware.
+
+The core concepts are:
+
+    1. [[#Template Files]]
+    2. [[#Template Fields]]
+    3. [[#Built-In Fields and Helper Functions]]
+    4. [[#Prompting, Deferred Resolution and Miss Handling]]
+    5. [[#YAML Integration]]
+    6. [[#Data Sources]]
+    7. [[#Modular Template Organization]]
+    8. [[#Hierarchical Templates]]
 
 ---
 
-## 1. Template Files
+## Template Files
 
 A **[[Template Files|template file]]** is a Markdown document (just like any other Obsidian file) that may contain both YAML frontmatter and Markdown body content. Within either section, you can include placeholders called `{{fields}}`. Each field represents a data point — text, date, number, or list — that gets resolved when you create a new file from the template, or later when you [[Lifecyle of a Template|finalize]] the file. 
 
@@ -35,7 +46,7 @@ Current project status: **{{Status}}**
 
 ---
 
-## 2. Template Fields
+## Template Fields
 
 A **[[Template Fields|field]]** is the heart of a template — a placeholder enclosed in double curly braces like `{{ExampleField}}`. Fields can:
 
@@ -53,7 +64,7 @@ This allows referencing subfields in JSON or YAML inputs — useful when working
 
 ---
 
-## 3. Built-In Fields and Helper Functions
+## Built-In Fields and Helper Functions
 
 Z2K Templates uses [[Handlebars Support|Handlebars.js]] internally to evaluate logic and helpers. Helpers act like small, inline functions that manipulate or format field data.
 
@@ -70,7 +81,7 @@ You can use the plugin’s [[Built-In Helper Functions|built-in helper functions
 
 ---
 
-## 4. Prompting, Deferred Resolution and Miss Handling
+## Prompting, Deferred Resolution and Miss Handling
 
 When a field’s value can’t be resolved (for example, it isn’t provided via JSON, YAML, or a built-in), the plugin **prompts** you for input.
 
@@ -152,7 +163,7 @@ This design allows you to:
 - Create reusable “snippet libraries” for common structures.
 - Reduce duplication and simplify updates.
 
-Learn more under [[Partial Templates]].
+Learn more under [[Block Templates]].
 
 ---
 

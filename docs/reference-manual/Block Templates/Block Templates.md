@@ -8,13 +8,13 @@ The Z2K Template Plugin supports the concept of "*Partial Templates*", or also j
 
 Partials are extremely useful for enforcing consistent naming and formatting of text blocks across multiple files.
 
-# Partial Naming Conventions
-Partials' filenames must be prefixed with the text "`Partial - `". 
+# Block Template Naming Conventions
+Block Templates' filenames must be prefixed with the text "`Partial - `". 
 Note: this prefix can be changed inside the plugin's setting page.
 
-# Inserting Partials
-Partials can be inserted into a file via two methods:
-1. By using the "Insert Template Partial into Card" command inside Obsidian. This can be done via an Obsidian Command request or by right clicking in the text of an existing card.
+# Inserting Blocks
+Blocks can be inserted into a file via two methods:
+1. By using the "Insert Block Template into Card" command inside Obsidian. This can be done via an Obsidian Command request or by right clicking in the text of an existing card.
 2. By forcing a inclusion of the partial template's text using Handlebars' `{{> partialTemplateFile.md}}` field. 
 
 # YAML Data and Partials
@@ -23,13 +23,13 @@ The Z2K Templates Plugin attempts to be smart at how to handle YAML frontmatter 
 *Note:* The plugin will not perform any error checking. For instance, if the YAML field is already present in the destination file's YAML, a duplicate entry may occur. 
 
 # Advanced Field Functions
-Partials support the full range of advance formatting and prompting features. Thus, you can use builtin functions and advanced Handlebars syntax within the partial template, assuming the underlying feature is supported (see [[Handlebars Support]])
+Block Templates support the full range of advance formatting and prompting features. Thus, you can use builtin functions and advanced Handlebars syntax within the partial template, assuming the underlying feature is supported (see [[Handlebars Support]])
 
 # Dev Notes:
 *TODO: Move to Design Notes folder - but first review what items to share with users.*
 Captures all the partials using the same scope logic as the templates, registers them with handlebars.
 
-Do partials ever need partials from other directories besides the template scope logic?
+Do blocks template ever need block templates from other directories besides the template scope logic?
 - Likely, yes
 How should partials be referenced when they are in parent directories?
 - Should be answered now
@@ -42,10 +42,10 @@ Should relative paths be relative to the template or relative to the new card lo
 
 
 
-When referencing partials, use the name of the partial like this:
-`{{> partial}}`
+When referencing block templates, use the name of the block template like this:
+`{{> block template}}`
 
-If there are multiple partials with the same name, it will pick the one that is closest to the template, in this order:
+If there are multiple block templates with the same name, it will pick the one that is closest to the template, in this order:
 1) Same folder
 2) Parent folder
 3) Grandparent folder
@@ -56,7 +56,7 @@ If there are multiple partials with the same name, it will pick the one that is 
 8) ...
 9) Any sibling folder/cousin folder (undefined order)
 
-When using [[Partial Templates]], the extra templates folder name can optionally be omitted from the path. This means that, for example, `/z2k/folderA/Templates/partial` can be referenced using `folderA/Templates/partial` or `folderA/partial`. In cases where this creates ambiguity, you must use the path with the Embedded Templates folder name, like `folderA/Templates/partial`.
+When using [[Block Templates]], the extra templates folder name can optionally be omitted from the path. This means that, for example, `/z2k/folderA/Templates/partial` can be referenced using `folderA/Templates/partial` or `folderA/partial`. In cases where this creates ambiguity, you must use the path with the Embedded Templates folder name, like `folderA/Templates/partial`.
 
 Examples:
 

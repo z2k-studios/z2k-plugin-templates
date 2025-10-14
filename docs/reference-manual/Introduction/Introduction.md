@@ -7,20 +7,7 @@ folder_metacategory: "Getting Started"
 
 # Introduction
 
-The **Z2K Templates Plugin** is a templating engine built for Obsidian that transforms the way you create and maintain notes. Unlike scripting-based systems such as Templater, Z2K Templates uses a declarative `{{fields}}` syntax — focusing on clarity and structure rather than code. Each field can pull from built-in data sources, prompt the user for input, or integrate live data from JSON and URIs.  
-
----
-
-## Features
-Z2K Templates has a rich collection of features, including:
-- An [[Prompting|interactive prompting dialog]] for filling out information for each new file  
-- A series of [[Built-In Template Fields|built-in fields]] that will auto-populate  
-- A rich [[Template Fields|syntax for specifying prompting information]] and handling missing data  
-- [[Handlebars Support|Handlebars.js functions]], including built-in helpers for iteration and conditional formatting  
-- Support for [[Partial Templates|partial templates]] that allow you to build modular block-level templates with consistent formatting  
-- Support for [[YAML Integration|YAML merging]] across templates stored in hierarchical structures  
-- [[URI and JSON Support|URI support]] to allow external data to be fed into your templates to create new files programmatically  
-- External [[URI and JSON Support#JSON Packages|JSON packages and command lists]] to queue up data to be added to your vault when Obsidian is loaded  
+The **Z2K Templates Plugin** is a templating engine built for Obsidian that transforms the way you create and maintain notes. Unlike scripting-based systems such as the [Templater plugin](https://silentvoid13.github.io/Templater/), Z2K Templates uses a declarative `{{fields}}` syntax built in [Handlebars.js](https://handlebarsjs.com/), focusing on clarity and structure rather than code. Each field can be filled with data automatically entered from built-in sources, prompted to the user for input, or by pulling data from external JSON and URIs. 
 
 > [!INFO]
 > **Context:** Z2K Templates is part of the larger [Z2K System](https://www.z2ksystem.com), a framework for digitizing your mind through structured notes, metadata, and cognition tools. The plugin can also stand alone as a robust, user-friendly templating solution for anyone seeking structure and automation within Obsidian.
@@ -30,10 +17,13 @@ Z2K Templates has a rich collection of features, including:
 ## What You’ll Learn in This Section
 The pages under **Introduction** provide a 50,000-foot overview of how Z2K Templates works and why it was designed this way. Each subpage focuses on a specific layer of understanding:
 
-- [[What is Z2K Templates]] — Describes the scope, architecture, and key capabilities of the plugin.  
-- [[Core Concepts]] — Introduces fields, prompting, and YAML integration as foundational ideas.  
-- [[reference-manual/Introduction/Why Use Templates]] — Explains how templates create structure and consistency.  
-- [[Why Use Z2K Templates]] — Compares Z2K Templates with alternatives and outlines its unique approach.  
+- [[What is Z2K Templates|What is Z2K Templates?]] — A quick introduction using an actual template file 
+- [[Sample Template]] - Steps through a sample template file to showcase some of the capabilities of Z2K Templates.
+- [[Core Features]] - A brief list of the core features of the Z2K Templates Plugin
+- [[Core Concepts]] — Introduces fields, prompting, and YAML integration as foundational concepts.
+- [[Why Use Templates|Why Use Templates?]] — Explains how templates create structure and consistency.  
+- [[Why Use Z2K Templates|Why Use Z2K Templates?]] — Compares Z2K Templates with alternatives and outlines its unique approach.  
+- [[What about Templater]] - Compares Z2K Tempalates specifically with the popular Templater Plugin.
 - [[The Z2K System]] — Shows how the plugin fits into the greater Z2K framework.  
 
 ---

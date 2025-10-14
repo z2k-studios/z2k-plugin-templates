@@ -1,22 +1,22 @@
 ---
-sidebar_position: 15
+sidebar_position: 17
 doc_state: initial_ai_draft
 ---
 
 # Integration with The Z2K System
 
-## 1. Dependency
+## Dependency
 
-Z2K Templates is a **standalone plugin** that can be used in nearly any Obsidian vault. Whether you’re managing research notes, creative writing, or keeping code snippets, the plugin brings structure and automation through its declarative templating engine.
+Z2K Templates is a **standalone** plugin that can be used in nearly any Obsidian vault. Whether you’re managing research notes, creative writing, or keeping code snippets, the plugin brings structure and automation through its declarative templating engine.
 
 That said, Z2K Templates is also a **core component of the larger [[Z2K System]]** — a coordinated suite of plugins and files designed to work together to build an extended mind. Within that ecosystem, Z2K Templates serves as the foundation for generating, structuring, and maintaining every type of Z2K card. The Z2K System has a **hard dependency** on Z2K Templates, but the reverse is not true: you can install and use Z2K Templates entirely on its own.
 
 > [!NOTE]
-> Other plugins within the Z2K family — such as the [[Z2K Core Plugin]] — rely on Z2K Templates to provide consistent data fields, metadata handling, and rendering behavior.
+> Other plugins within the Z2K family — such as the [[Z2K Core Plugin]] — all rely on Z2K Templates to provide consistent data fields, metadata handling, and rendering behavior.
 
 ---
 
-## 2. What Is the Z2K System?
+## What Is the Z2K System?
 
 The **Z2K System** is a framework for building a digital mind — a second layer of cognition that extends how you think, remember, and create. Unlike other Obsidian frameworks that focus on managing projects or daily notes, the Z2K System is focused on building a **digital you** — your thoughts, beliefs, models, memories, and identity.
 
@@ -26,7 +26,7 @@ The system also includes a diverse set of **starter templates** to help users ge
 
 ---
 
-## 3. Can I Use the Z2K System Alongside My Existing Vault?
+## Can I Use the Z2K System Alongside My Existing Vault?
 
 Yes. The Z2K System can be installed into **any folder** of an existing vault using the [[Z2K Core Plugin]]. You can integrate it incrementally — adopting just the templates, or adding the full suite of Z2K plugins.
 
@@ -37,7 +37,7 @@ Your existing notes and folder structures remain untouched. The Z2K System simpl
 
 ---
 
-## 4. Z2K Templates Integration with the Z2K System
+## Z2K Templates Integration with the Z2K System
 
 Z2K Templates and the broader Z2K System are designed to work hand-in-hand. When installed together, Z2K Templates automatically recognizes several Z2K-specific YAML fields, filling or updating them as needed.
 

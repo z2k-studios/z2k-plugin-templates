@@ -43,7 +43,7 @@ The "Create from Template" command will create a new file from a specific templa
 The "Create File at Folder" command will create a new file inside a specified folder (specified in the Context field). It then will prompt which template to use given that specific location. If you are using [[Hierarchical Template Folders]], then the list of available templates will be context sensitive to that specific folder. The new file will be created in that specific folder. 
 
 #####  Insert Partial
-The "Insert Partial" command will insert a specific [[Partial Templates|Partial Template]] into the current document at the cursor location. The Context field specifies the partial template to use.
+The "Insert Partial" command will insert a specific [[Block Templates|Partial Template]] into the current document at the cursor location. The Context field specifies the partial template to use.
 
 #####  Insert Partial From Folder
 The "Insert Partial From Folder" command will allow you to chose a partial template from a template folder (specified in the Context field). This is of particular use with [[Hierarchical Template Folders]], in which case you would like to group a number of partials together and have the user choose from a subset of them.

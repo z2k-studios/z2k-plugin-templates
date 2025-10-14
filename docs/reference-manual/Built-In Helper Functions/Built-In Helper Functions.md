@@ -7,8 +7,8 @@ The Z2K Templates plugin supports Handlebars idea of "[[Helper Functions]]" and 
 
 # Built-In Helper Functions
 
-- [[Built-In Functions - Formatting]]
-- [[Built-In Functions - Linking]]
-- [[Built-In Functions - Misc]]
-- [[Built-In Functions - Directives]]
+- [[Prompting Functions]]
+- [[Formatting Functions]]
+- [[Linking Functions]]
+- [[Misc Functions]]
 

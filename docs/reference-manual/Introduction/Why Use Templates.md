@@ -1,5 +1,5 @@
 ---
-sidebar_position: 13 
+sidebar_position: 14
 doc_state: revised_ai_draft_2
 title: "Why Use Templates?"
 ---
@@ -22,6 +22,16 @@ Templates have many uses:
 - **Content Prompting** - templates are great for inserting comments on how to create and organize your content. These comments can then be automatically removed from your new card upon Template Finalization.
 - **Improve AI Integration & Queryability** - AI works best with structure. Templates create predictable patterns that AI agents can parse and reason about. This improves search, summarization, and memory-linking workflows.
 - **Encourage Better Writing and Cognitive Process** - templates forces users to clarify purpose, insight, and next actions. They reduces the “note graveyard” effect where ideas go uncultivated
+
+
+
+## Why It Matters
+
+Z2K Templates replaces repetitive typing with structured automation. Each template becomes a reusable pattern — not just for writing notes, but for thinking systematically about your data. When your notes are consistently formatted, they are more consummable and searchable. You can use it for anything that benefits from repeatable structure: book logs, project trackers, research summaries, or even chapter summaries.
+
+Because the plugin uses [[Handlebars Support|Handlebars.js]] under the hood, you can combine readable placeholders with logic, conditionals, and loops — all while staying within Markdown.
+
+To learn how data flows through templates and how fields are defined, continue to [[Core Concepts]] and [[Template Fields]].
 
 
 ---

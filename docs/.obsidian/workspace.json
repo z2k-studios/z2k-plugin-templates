@@ -4,21 +4,21 @@
     "type": "split",
     "children": [
       {
-        "id": "2f1741ee13857da7",
+        "id": "34d6294398ce5e88",
         "type": "tabs",
         "children": [
           {
-            "id": "0ec6f4f3ec75b24a",
+            "id": "0d0533b9fe3d48b5",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Intro/Docs Hot Links/Docs Hot Links.md",
+                "file": "reference-manual/Introduction/What is Z2K Templates.md",
                 "mode": "source",
-                "source": true
+                "source": false
               },
               "icon": "lucide-file",
-              "title": "Docs Hot Links"
+              "title": "What is Z2K Templates"
             }
           }
         ]
@@ -53,7 +53,7 @@
             "state": {
               "type": "search",
               "state": {
-                "query": "",
+                "query": "format-string-file-friendly",
                 "matchingCase": false,
                 "explainSearch": false,
                 "collapseAll": false,
@@ -94,7 +94,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Intro/Docs Hot Links/Docs Hot Links.md",
+                "file": "reference-manual/Obsidian Commands.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -104,7 +104,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Backlinks for Docs Hot Links"
+              "title": "Backlinks for Obsidian Commands"
             }
           },
           {
@@ -113,12 +113,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "Intro/Docs Hot Links/Docs Hot Links.md",
+                "file": "reference-manual/Introduction/What is Z2K Templates.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Outgoing links from Docs Hot Links"
+              "title": "Outgoing links from What is Z2K Templates"
             }
           },
           {
@@ -142,13 +142,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "Intro/Docs Hot Links/Docs Hot Links.md",
+                "file": "reference-manual/Obsidian Commands.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline of Docs Hot Links"
+              "title": "Outline of Obsidian Commands"
             }
           }
         ],
@@ -169,42 +169,44 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "0ec6f4f3ec75b24a",
+  "active": "0d0533b9fe3d48b5",
   "lastOpenFiles": [
-    "Intro/Docs Hot Links/docusaurus_link - The Z2K System.md",
-    "Intro/Docs Hot Links/docusaurus_ref - Core Concepts.md",
-    "Intro/Table of Contents.md",
-    "Intro/Intro.md.md",
-    "Intro/Docs Hot Links/Docs Hot Links.md",
-    "reference-manual/reference-manual.md",
-    "README.md",
-    "Intro/Docs Hot Links",
-    "how-to-guides/how-to-guides.md",
-    "reference-manual/Template Files/Template Files.md",
-    "Intro",
-    "best-practices/best-practices.md",
-    "automation/automation.md",
-    "reference-manual/Handlebars Support/Handlebars Support.md",
-    "reference-manual/Helper Functions/Helper Functions.md",
-    "reference-manual/Template Fields/Template Fields.md",
-    "reference-manual/Introduction/The Z2K System.md",
+    "reference-manual/Introduction/Sample Template.md",
     "reference-manual/Introduction/Introduction.md",
-    "reference-manual/Introduction/Core Concepts.md",
-    "reference-manual/Introduction/What is Z2K Templates.md",
-    "reference-manual/Introduction/Why Use Z2K Templates.md",
-    "reference-manual/Introduction/Why Use Templates.md",
-    "reference-manual/Obsidian Commands.md",
-    "reference-manual/Template Files/Lifecycle of a Template.md",
-    "reference-manual/Template Files/What is a Template File.md",
-    "reference-manual/Template Files/Why Use Templates.md",
-    "reference-manual/Template Fields/Naming Conventions.md",
-    "how-to-guides/Advanced/Advanced.md",
-    "reference-manual/Introduction/Why Z2K Templates",
-    "reference-manual/Introduction",
-    "reference-manual/Template Folders/Untitled",
-    "reference-manual/Settings Page",
-    "Untitled.canvas",
-    "how-to-guides/Getting Started",
-    "how-to-guides/Intermediate/Untitled"
+    "reference-manual/Reference Manual for AI.md",
+    "reference-manual/Prompting/Built-in Prompting Directives.md",
+    "reference-manual/Prompting/Built-in Prompting Helpers/Built-in Prompting Helpers.md",
+    "reference-manual/Built-In Helper Functions/Prompting Functions/prompt-info.md",
+    "Intro/Docs Hot Links/link - The Z2K System.md",
+    "Intro/Docs Hot Links/ref - Core Concepts.md",
+    "reference-manual/Prompting/Built-in Prompting Helpers/ref - prompt-info.md",
+    "reference-manual/Prompting/Built-in Prompting Helpers/ref - prompt-value.md",
+    "reference-manual/Built-In Helper Functions/Prompting Functions/prompt-value.md",
+    "prompt-value.md",
+    "reference-manual/Built-In Helper Functions/Formatting Functions/Formatting Functions.md",
+    "reference-manual/Built-In Helper Functions/Formatting Functions/format-string-trim.md",
+    "reference-manual/Built-In Helper Functions/Formatting Functions/format-string-to-upper.md",
+    "reference-manual/Built-In Helper Functions/Formatting Functions/format-string-to-lower.md",
+    "reference-manual/Built-In Helper Functions/Formatting Functions/format-string-spacify.md",
+    "reference-manual/Built-In Helper Functions/Formatting Functions/format-string-raw.md",
+    "reference-manual/Built-In Helper Functions/Formatting Functions/format-string-file-friendly.md",
+    "reference-manual/Built-In Helper Functions/Formatting Functions/format-string-bulletize.md",
+    "reference-manual/Built-In Helper Functions/Formatting Functions/format-string.md",
+    "reference-manual/Built-In Helper Functions/Formatting Functions/format-number-toFixed.md",
+    "reference-manual/Built-In Helper Functions/Formatting Functions/format-number.md",
+    "reference-manual/Built-In Helper Functions/Formatting Functions/format-date.md",
+    "reference-manual/Built-In Helper Functions/Formatting Functions/format-to-lower.md",
+    "reference-manual/Built-In Helper Functions/Formatting Functions/format-to-upper.md",
+    "reference-manual/Built-In Helper Functions/Formatting Functions/format-number-toFixed",
+    "reference-manual/Built-In Helper Functions/Formatting Functions/format-number",
+    "reference-manual/Built-In Helper Functions/Formatting Functions/format-string-file-friendly",
+    "reference-manual/Built-In Helper Functions/Formatting Functions/format-string-bulletize",
+    "reference-manual/Built-In Helper Functions/Formatting Functions/format-string-raw",
+    "reference-manual/Built-In Helper Functions/Formatting Functions/format-string-trim",
+    "reference-manual/Built-In Helper Functions/Formatting Functions/format-string-spacify",
+    "reference-manual/Built-In Helper Functions/Formatting Functions/format-string-to-lower",
+    "reference-manual/Built-In Helper Functions/Formatting Functions/format-string-to-upper",
+    "reference-manual/Built-In Helper Functions/Formatting Functions/format-to-lower",
+    "Untitled.canvas"
   ]
 }
