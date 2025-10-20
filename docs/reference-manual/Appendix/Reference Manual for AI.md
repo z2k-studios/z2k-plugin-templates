@@ -1,6 +1,8 @@
 ---
 title: Manual for AI
 sidebar_position: 200
+aliases:
+- Reference Manual for AI
 ---
 
 Do you want your AI to help you write templates for you? Point them to this page for a condensed reference manual that fits in a single document. 

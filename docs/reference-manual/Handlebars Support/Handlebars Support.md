@@ -1,6 +1,6 @@
 ---
-sidebar_position: 70
-sidebar_folder_position: 70
+sidebar_position: 1
+sidebar_folder_position: 120
 ---
 
 Z2K Templates uses [Handlebars](https://handlebarsjs.com/guide/)  to control how fields are parsed and implemented. While not all Handlebar features are supported, the description below captures the core features that are used by Z2K. In addition, Z2K has implemented several extensions of the field specification to suit its own implementation.

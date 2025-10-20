@@ -1,6 +1,8 @@
 ---
-sidebar_folder_position: 30
-sidebar_position: 30
+sidebar_folder_position: 50
+sidebar_position: 1
+aliases:
+- Template Field
 ---
 
 # Overview
@@ -30,7 +32,17 @@ For instance, consider an information card template to be used to collect quotes
 
 With these fields specified, Z2K will prompt the user for these fields when creating a new card with this template. These will then be filled in the new card with the data provided by the user, replacing the field name (e.g. `{{BookTitle}}`) with the actual Book Title provided by the user. 
 
+
+### Dot Notation
+You can also nest fields using dot notation for structured data:
+
+```md title="Partial Template - Person.md"
+{{person.firstname}} {{person.lastname}}
+```
+
+This allows referencing subfields in JSON or YAML inputs — useful when working with external packages or [[URI and JSON Support|imported data sources]].
+
 # Further Details
 1. [[Template Field Types]] -- Types of fields (automated, user specified)
 2. [[Naming Conventions]] - Describes how to name a field and the special symbols used for advanced expressions
-
+3. [[Field Info]] -  how to control how fields work through the built-in `{{field-info}}` helper function

@@ -5,6 +5,6 @@ created: "{{date}}"
 version: 1.0
 ---
 
-# Z2K Template Engine Test Document - prompt-info
+# Z2K Template Engine Test Document - field-info
 
 

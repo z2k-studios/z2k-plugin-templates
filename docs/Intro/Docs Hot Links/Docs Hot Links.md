@@ -7,5 +7,5 @@ sidebar_position: 1
 
 There is a lot to learn about the [[Z2K Templates Plugin|Z2K Templates Plugin]]. Below are links to the most popular pages inside the documentation.
 
-- [[Core Concepts]]
+- [[Core Concepts of Z2K Templates]]
 - [[The Z2K System]]

@@ -43,7 +43,7 @@ The new template file now includes a "`Built-in Field`", in this case `{{yearMon
 Next, notice the Amazon Link: entry. Here it is construct a link to an Amazon search using the entered title. Because the title will be embedded in a URL, it makes use of a [[Helper Functions|Helper Function]] called "`format-sluggify`" that converts the value of a field into a sluggified (i.e. URL friendly) text. 
 
 ### 2c. Prompting information
-Finally, notice how the template includes more information inside the `{{Author}}` and `{{Title}}` fields. In this instance, they are using a [[Built-In Helper Functions|Built-In Helper Function]] called `prompt-info`. This helper function controls how a field is prompted to the user. 
+Finally, notice how the template includes more information inside the `{{Author}}` and `{{Title}}` fields. In this instance, they are using a [[Built-In Helper Functions|Built-In Helper Function]] called `field-info`. This helper function controls how a field is prompted to the user. 
 
 ### 2d. YAML Properties
 With the introduction of Bases, Obsidian offers some powerful database like options using YAML fields. You can use YAML frontmatter text directly in your template to make copies of entered data directly into yaml field specifiers. 
@@ -58,7 +58,7 @@ Now that we have a well-featured book template in our vault, let's create what i
 > -- {{Quote-Author default="{{Book-Author}}"}}
 {{%ENDIF}}
 - References: 
-    - Tags: {{prompt-info Tags description="Please list out all Tags relevant to this quotation"}}
+    - Tags: {{field-info Tags description="Please list out all Tags relevant to this quotation"}}
 
 ```
 

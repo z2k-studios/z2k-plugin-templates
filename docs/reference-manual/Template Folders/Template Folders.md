@@ -1,7 +1,9 @@
 ---
-sidebar_position: 30
-sidebar_folder_position: 30
+sidebar_position: 1
+sidebar_folder_position: 40
 ---
+
+# Template Folders
 All Templates used by the Z2K Templates Plugin must be saved in a separate Templates folder. There are two ways to configure your template folders:
 
 1. [[External Template Folders]], where templates are stored in a separate `Templates` folder of your choosing

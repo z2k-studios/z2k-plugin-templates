@@ -1,7 +1,6 @@
 ---
-sidebar_position: 120
-sidebar_folder_position: 120
-folder_metacategory: "Advanced"
+sidebar_position: 1
+sidebar_folder_position: 160
 ---
 
 The templating function is performed with an optional JSON package provided externally (for instance, programmatically through a URI call.) In this instance, the templating routine will use the information from the JSON package as data input first before prompting the user for the data. 
@@ -11,6 +10,10 @@ The structure of the JSON package follows the standard JSON Schema design, with 
 ==still to be done and documented==
 *Note: may wish to include a field for specifying whether or not the user should be prompted for the remaining fields, all the fields, or none at all.* 
 
+# Overview
+- [[URI Actions]]
+- [[JSON Packages]]
+- [[Command Lists]]
 
 # Dev Notes
 

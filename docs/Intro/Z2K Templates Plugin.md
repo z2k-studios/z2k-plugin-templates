@@ -21,12 +21,15 @@ The [Z2K Templates Plugin](https://templates.z2ksystem.com) is an [Obsidian](htt
 
 Z2K Templates is part of the [Z2K System](https://z2ksystem.com) but works fine as a standalone plugin. We encourage you to check out the greater [Z2K System](https://z2ksystem.com) for how to structure your Obsidian Vault as a digital extension of your mind. 
 
-## How To Get Started Quickly
+## How To Get Started Quickly?
 Time is finite. Here is how to get started in with Z2K Templates as quick as possible:
 - [[Getting Started in Two Minutes]]
 - [[Getting Started in Ten Minutes]]
 
+## How to Begin Seriously?
+If you are ready to get serious about templatizing your vault, you can start by stepping through the [[Introduction]] documentation in the [[reference-manual|Reference Manual]].
+
 ## Want to Know What's Possible?
-If you want to know how powerful Z2K Templates can be, check out these pages for a quick glimpse:
+If you want a sneak peak to know how powerful Z2K Templates can be, check out these pages for a quick glimpse. Brace yourself - there is a lot under the covers for this plugin!
 - [[automation|Automation Examples]]
 - [[Intermediate]] and [[Advanced]] Guides

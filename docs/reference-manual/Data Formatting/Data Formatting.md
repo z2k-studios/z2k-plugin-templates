@@ -1,6 +1,6 @@
 ---
-sidebar_position: 50
-sidebar_folder_position: 50
+sidebar_position: 1
+sidebar_folder_position: 70
 ---
 
 When Template Fields are replaced with their corresponding data, a small amount of formatting is applied by default, and optionally additional formatting can be applied by Helper functions. To learn more, see:

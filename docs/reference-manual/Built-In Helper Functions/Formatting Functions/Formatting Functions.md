@@ -1,11 +1,11 @@
 ---
-folder_sidebar_position: 94
+sidebar_folder_position: 94
 sidebar_position: 1
 ---
 # Formatting Helper Functions
 
-| Helper Function Name          | Purpose                                                                                                                                                                                              |
-| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Helper Function Name            | Purpose                                                                                                                                                                                              |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [[format-date]]                 | Formats a date with a moment.js format string (see [[#format-date Helper\|format-date Helper]])                                                                                                      |
 | [[format-string]]               | Formats a string with additional text (see [[#format-string Helper\|format-string Helper]])                                                                                                          |
 | [[format-string-to-upper]]      | Formats a string into all caps (see [[#format-string-to-upper Helper\|format-string-to-upper Helper]])                                                                                               |

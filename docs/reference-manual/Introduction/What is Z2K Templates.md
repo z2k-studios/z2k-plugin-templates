@@ -1,79 +1,24 @@
 ---
-sidebar_position: 15
+sidebar_position: 10
 doc_state: revised_ai_draft_2
-title: "What is Z2K Templates?"
+title: "What is the Z2K Templates Plugin?"
+sidebar_label: "What is Z2K Templates?"
 ---
-# What is Z2K Templates?
+# What is the Z2K Templates Plugin?
 
 The **Z2K Templates Plugin** automates the process of creating structured, reusable notes in Obsidian. Instead of typing boilerplate content each time, you define templates that contain text placeholders — known as `{{fields}}` — which the plugin resolves into complete notes when executed. Z2K Templates is based on the [handlebars.js](https://handlebarsjs.com) standard for complex field operations.  
-
 No matter how you use Obsidian -- whether you’re logging a meeting, keeping a daily journal, organizing fictional characters, or researching biomedical terms --  Z2K Templates will help you standardize the structure and formatting of your notes and automate the filling in of data for each of your notes. 
 
-## Z2K Template Workflow
-![[Lifecycle of a Template#Templates Workflow]]
-
-This [[Lifecycle of a Template|process]] gives you automation and consistency — no scripting required.
-
----
-## Example: From Template to Note
-So enough broad level description; let's see a real-life template file that you could put in your vault for book reviews:
-
-```md title="Template - Book Review.md"
-–––
-# YAML Text 
-Title: {{BookTitle}}
-Date: {{date}}
-Author: {{prompt-value AuthorName prompt="What is the full name of the author?"}}
-Genre: {{prompt-value Genre type="singleSelect:Fiction,Nonfiction,Poetry}}
-–––
-
-# {{BookTitle}}
-
-{{! Handlebars comment: This is a Handlebars-style comment. It won’t appear     }}
-{{! in the final note. Below we use three different types of fields:            }}
-{{! - BookTitle is a user defined field that will be prompted to the user.      }}
-{{! - AuthorName will also be prompted for and then formatted into a wikilink.  }}
-{{! - date is a built-in field that will be automatically filled by the plugin. }}
-{{! --------------------------------------------------------------------------- }}
-I started reading a {{format-string-to-lower Genre}} book titled *{{BookTitle}}* by {{wikilink AuthorName}} on {{date}}.
-
-{{! Below, we have conditional section that only renders if a review exists.    }}
-{{#if Review}}
-## Review Summary
-{{prompt-info Review prompt="Enter a One Sentence summary review:"}}
-{{/if}}
-```
-
-When executed, the plugin performs the following:
-- First the plugin will prompts you for each missing field (e.g., `{{BookTitle}}`, `{{AuthorName}}`, `{{Genre}}`, `{{OneSentenceReview}}`) using its interactive [[Prompting|prompt dialog]].  
-	- Note that the `{{AuthorName}}` and `{{Review}}` fields will have customized prompts. 
-	- Note also that the `{{Genre}}` field will have a dropdown selection of valid entries.
-- When the user is finished, the plugin will:
-	- Fill in the YAML `{{date}}` entry automatically from the system clock because `{{date}}` is a [[Built-In Template Fields|Built-In Field]]
-	- Format the `{{Genre}}` field into lowercase when it is used in the body text of the note using a [[Helper Function]]. It will also fill it in the yaml frontmatter unformatted.
-	- Remove all `{{! Handlebars comments}}` since they are internal documentation for just the template, not part of any rendered note using the template
-	- Resolve conditional blocks such as `{{#if Review}}...{{/if}}` only when data for that field exists. 
-
-If the user fails to give a response for the `{{Review}}` field, the resulting note might look like:
-
-```md title="The Great Gatsby.md"
----
-Title: The Great Gatsby
-Date: 2025-10-07
-Author: F. Scott Fitzgerald
-Genre: Fiction
----
-
-# The Great Gatsby
-
-I started reading a fiction book titled *The Great Gatsby* by [[F. Scott Fitzgerald]] on 2025-10-07.
-```
-
----
+## Typical Workflow
+How do you put templates into use? Here are the steps:
+1. First, **Create** templates for the different types of notes in your vault.
+2. Then you can **Create New Notes from a Template** with a new Obsidian command. When you do, the plugin will:
+	1. **Prompt you** for any missing data and fills them into the template text
+	2. **Resolve** advanced features, like built-in fields and helper functions
+	3. **Create the new card** with the template boilerplate text
+3. You then can **Iterate** on any remaining fields until you issue the **Finalize** command, in which case any remaining fields are resolved.
 
 > [!DANGER] INTERNAL NOTE
-> - I want the example to have the filename be set to "{{BookTitle}} - {{AuthorName}}.md" - how do i do that? Find out, add it, and then add it to the description
-> - Verify the conditional rendering example (`{{#if Review}}`) matches plugin’s supported subset of Handlebars.
 > - Consider adding a visual flow diagram later to illustrate parse → prompt → resolve → render steps.
 
 

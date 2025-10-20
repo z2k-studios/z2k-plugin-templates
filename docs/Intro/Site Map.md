@@ -9,6 +9,7 @@ The top level sections for the Z2K Templates plugin documentation are:
 - [[reference-manual/Introduction/Introduction]] - Initial Introductory Pages  
 - [[how-to-guides|How-To Guides]] - Guides to get you up and running quickly. 
 - [[best-practices|Best Practices]] - Some guidelines on how to implement Z2K Templates in your vault
-- [[reference-manual]] - Core Reference Manual for the plugin
-- [[automation]] - A guide on using the plugin for advanced automation techniques
+- [[reference-manual|Reference Manual]] - Core Reference Manual for the plugin
+- [[automation|Automation]] - A guide on using the plugin for advanced automation techniques
+- [[template-library|Template Library]] - Download some real world examples of Templates
 

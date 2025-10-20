@@ -2,6 +2,8 @@
 sidebar_position: 1
 sidebar_folder_position: 20
 title: Overview
+aliases:
+- Best Practices
 ---
 # Best Practices for Z2K Templates
 

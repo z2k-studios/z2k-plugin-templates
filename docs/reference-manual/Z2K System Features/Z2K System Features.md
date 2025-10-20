@@ -1,10 +1,20 @@
 ---
-sidebar_position: 112
-sidebar_folder_position: 112
-
+sidebar_position: 1
+sidebar_folder_position: 170
+sidebar_label: Z2K System Features
+aliases:
+- Z2K System Specific Features
 ---
-The Z2K System is a framework for organizing and implementing your Second Brain in Obsidian. [[README|Z2K Templates]] was designed to be an integral part of that system, although is perfectly functional outside of it for the general Obsidian community. As a result, the Z2K Templates Plugin has additional support for features found in the Z2K System. While these features will likely not be used outside the Z2K System, they are nonetheless documented here for complete reference.
+The Z2K System is a framework for organizing and implementing your Second Brain in Obsidian. [[README|Z2K Templates]] was designed to be an integral part of that system, although is perfectly functional outside of it for the general Obsidian community. As a result, the Z2K Templates Plugin has additional support for features found in the Z2K System. 
 
+While these features will likely not be used outside the Z2K System, they are nonetheless documented here for complete reference. Users are welcome to make use of of these features if they want, but be aware that they may change as the Z2K System grows.
+
+# Overview
+- TBD  
+- Z2K System YAML Fields
+	- z2k_card_build_state
+	- z2k_card_status
+	- 
 
 # Z2K System - Card Activation
 The Z2K System has a rich metadata structure to capture the state of cards as they move through development. The act of creating a card and populating it with field values changes the state of the card, and thereby Z2K Metadata YAML Fields will be updated through the process of using the Z2K Templates plugin. 

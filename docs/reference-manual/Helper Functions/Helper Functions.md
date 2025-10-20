@@ -1,6 +1,6 @@
 ---
-sidebar_position: 80
-sidebar_folder_position: 80
+sidebar_position: 1
+sidebar_folder_position: 90
 sidebar_metacategory: "Intermediate"
 ---
 

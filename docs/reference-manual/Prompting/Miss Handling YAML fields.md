@@ -25,11 +25,6 @@ Below are directives whose behavior is stable or clearly implied by current engi
 - **`required`** *(inferred)*  
   Treat the field as mandatory during collection. The dialog should not finalize until a non‑empty value is supplied, or an injected default exists. If paired with `miss="clear"`, the collection UI still enforces input.
 
-- **`auto` / `autofill`** *(inferred)*  
-  Prefer a default or previously supplied value and suppress the prompt if available; otherwise fall back to prompting.
-
-- **`hidden`** *(inferred)*  
-  Collect the value but hide the field in the main dialog; use a separate UI affordance or accept injected values (e.g., via URI/JSON).
 
 > [!WARNING]
 > Directive tokens are a compact control API. Overuse can reduce clarity. Prefer explicit defaults and clear prompting text; reserve directives for enforceable policy or automation hints.
@@ -45,9 +40,4 @@ https://chatgpt.com/share/67ba03b7-44f0-8007-be1d-0267208ea8f3
 
 
 From the source code:
-
-type Directive = "required" | "no-prompt";
-function isValidDirective(value: any): value is Directive {
-	return ["required", "no-prompt"].includes(value);
-}
 

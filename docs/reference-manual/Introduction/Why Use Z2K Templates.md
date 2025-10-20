@@ -1,17 +1,16 @@
 ---
-sidebar_position: 15
+sidebar_position: 60
 doc_state: revised_ai_draft_2
 title: "Why Use Z2K Templates?"
+sidebar_label: "Why Z2K Templates?"
 ---
-
-# Why Use Z2K Templates
+# Why Use Z2K Templates?
 
 Obsidian is famous for diverse plugin marketplace. Z2K Templates is only one of several plugins you can install to templatize notes in Obsidian. This page outlines alternatives, offers a neutral compare/contrast, and then clarifies where Z2K Templates’ design choices differ. Links below go to official docs or plugin listings.
 
 Note: we *love* our fellow plugin developers - many thanks go out to [@silentvoid13](https://github.com/SilentVoid13), [@oeN](https://github.com/oeN), [@chhouman](https://github.com/chhoumann) and others for their fine work in making templating solutions for Obsdian. 
 
 ---
-
 ## Alternative Plugins
 Let's step back and review the top alternatives to **Z2K Templates**:
 
@@ -24,7 +23,6 @@ Let's step back and review the top alternatives to **Z2K Templates**:
 > These are complementary tools. Many vaults successfully combine Core Templates + QuickAdd, or Templater + QuickAdd. Z2K Templates can also coexist with them.
 
 ---
-
 ## Top‑Line Compare & Contrast
 
 - **Core Templates** is the easiest entry point: insert prewritten text and a few built‑in variables. No logic, no language to learn. Ideal for lightweight snippets.
@@ -33,7 +31,6 @@ Let's step back and review the top alternatives to **Z2K Templates**:
 - **Z2K Templates** takes a **declarative `{{fields}}` approach** backed by the [Handlebars.js](https://handlebarsjs.com/) language. It focuses on structured fields, interactive prompting, YAML integration, partials, and *context-aware* discovery (hierarchical templates). The intent is to standardize structure without requiring JavaScript in your notes.
 
 ---
-
 ## Design Approach Comparison
 
 | Aspect                            | **Z2K Templates**                                                                   | **Templater**                                                                                  | **Liquid Templates**                                          |
@@ -52,7 +49,6 @@ Let's step back and review the top alternatives to **Z2K Templates**:
 - **Liquid Templates:** Liquid-specific filter ecosystem and tag syntax; useful if you prefer Liquid across multiple tools.
 
 ---
-
 ## Z2K Templates and Templater
 
 For a more detailed analysis of Z2K Templates in contrast to the popular Templater plugin, continue to the [[Z2K Templates vs. Templater|next page]].

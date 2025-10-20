@@ -1,21 +1,18 @@
 ---
-sidebar_position: 17
+sidebar_position: 70
 doc_state: revised_ai_draft_2
-title: "What about Templater?"
+title: "Comparison with Templater Plugin"
+sidebar_label: "Templater Comparison"
+aliases:
+- What about Templater?
 ---
-
-
 # Why Another Templating Plugin?
 Why a new templating plugin when the impressive [Templater plugin](https://silentvoid13.github.io/Templater/) already does so much? Templater is a fine option for users who prefer script-like control and advanced logic. Templater has a strong "coding" vibe - to use it, it helps to have a background as a programmer. 
 
 **Z2K Templates** takes the [[How is it Different than other Template Plugins|opposite approach]]: less scripting, more static field names. Z2K Templates also focuses on building out a larger templating system beyond individual snippets (for example, [[Block Templates|block templates]] and [[Hierarchical Template Folders|hierarchical folders]]).
 
-
-
-# Use them both!
+# Use them Both!
 If you like both approaches, rest easy, you can keep both installed: Templater for logic, Z2K Templates for systems. In fact, **they can work together fantastically**, for instance see this article on [[How to Wrap Templater Code Snippets into Fields|wrapping templater code into Z2K Templates Fields]].
-
-
 
 
 ---

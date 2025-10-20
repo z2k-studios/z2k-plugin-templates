@@ -8,7 +8,7 @@ Explain how a template goes from a template to a partially filled card to a fina
 It is a novel concept to having some fields not be all the way filled in. 
 
 
-<% note: this section is included in [[What is Z2K Templates]] %>
+==Alternative version:: [[What is Z2K Templates#Typical Workflow]]==
 ## Templates Workflow
 
 The typical Z2K Templates workflow includes the following steps when you create a new note from a template:

@@ -4,31 +4,34 @@ sidebar_folder_position: 30
 sidebar_position: 1
 sidebar_metacategory: "Getting Started"
 navbar_section_name: "Reference Manual"
+aliases:
+- Reference Manual
 ---
 [[README|Z2K Templates]] is an [Obsidian](https://obsidian.md) Plugin for making powerful templates for your Obsidian vault. These doc pages serve as a Reference Manual for how to use the plugin and make supercharged templates.
 
 ---
 
+
+==At the moment, these are just copied and pasted from the different sections==
 ## Table of Contents
 
 ### Getting Started
 
 1. [[reference-manual/Introduction/Introduction]] - An overview of the Z2K Templates Plugin  
-    - [[What is Z2K Templates]]  
-    - [[Sample Template]] - Steps through a sample template file to showcase some of the capabilities of Z2K Templates.
-    - [[Core Features]] - A brief list of the core features of the Z2K Templates Plugin
-    - [[Core Concepts]]  
-    - [[reference-manual/Introduction/Why Use Templates]]  
-    - [[Why Use Z2K Templates]]
-    - [[What about Templater]] - Compares Z2K Tempalates specifically with the popular Templater Plugin.
-    - [[The Z2K System]]  
+	- [[What is Z2K Templates|What is Z2K Templates?]] — A quick introduction using an actual template file 
+	- [[Sample Template]] - Learn by example with a sample template file
+	- [[Core Features of Z2K Templates]] - A brief list of the core features of the plugin
+	- [[Core Concepts of Z2K Templates]] — Introduces the core concepts to know when using the plugin
+	- [[Why Use Templates|Why Use Templates?]] — Steps through why we should use Templates in the first place
+	- [[Why Use Z2K Templates|Why Use Z2K Templates?]] — Compares Z2K Templates with alternative approaches
+	- [[Comparison with Templater Plugin|What about Templater?]] - A detailed comparison with the popular Templater Plugin.
+	- [[The Z2K System]] — Shows how the plugin fits into the greater Z2K framework.  
 
 
 2. [[Installation]] - How to install the plugin  
     - [[Prerequisites]] (Obsidian, dependencies)  
     - [[Installing the Plugin]]  
     - [[Configuring Defaults]] (e.g., miss handling, date formats)  
-
 
 ### Basics
 
@@ -72,7 +75,7 @@ navbar_section_name: "Reference Manual"
 8. [[Prompting]] - How to customize the prompting for data for a field  
     - [[General Prompting Format]]  
     - [[Prompting Data Types]]  
-    - [[Built-in Prompting Helpers]]  
+    - [[Built-in Helpers for Prompting]]  
     - [[Miss Handling]] (`clear` vs `preserve`)  
     - [[Finalizing and Miss Handling for Z2K Templates]]  
 
@@ -100,12 +103,30 @@ navbar_section_name: "Reference Manual"
         - `wikilink`  
         - `wikilink-named`  
         - `url`  
-        - `url-named`  
-    - [[Misc Functions]]  
-        - Raw Preservation  
+        - `url-named`
+        - `google`
+        - `chatGPT`
         - `z2k-preserve-raw`  
 
-11. [[Handlebars Support]] - How Z2K's field language is similar to and differs from the Handlebars.js library  
+11. [[field-info Helper]]
+	- [[field-info Cheat Sheet|Cheat Sheet]] - a brief one page summary of the `{{field-info}}` helper function
+	- [[field-info Syntax|Syntax]] - syntax of the underlying helper function
+	- [[field-info Output|Output]] - what does the `{{field-info}}` helper output?
+	- [[field-info Parameters|Parameters]] - steps through `{{field-info}}` (and `{{field-output}}`) parameters
+		- [[field-info type|type]] Parameter
+		- [[field-info prompt|prompt]] Parameter
+		- [[field-info default|default]] Parameter
+		- [[field-info miss|miss]] Parameter
+		- [[field-info value|value]] Parameter
+		- [[field-info directives|directives]] Parameter
+	- [[field-info Usage Tips|Usage Tips]] - tips to understanding how to use `{{field-info}}`
+	- [[field-info Examples|Examples]] - presents a variety of `{{field-info}}` related examples
+	- [[field-info Variations]] - similar functions within the same family of helper functions
+		- [[field-output Helper]] - sister function that outputs the field value 
+		- [[fi Helper]] - abbreviated version of `{{field-info}}`
+		- [[fo Helper]] - abbreviated version of `{{field-output}}`
+		
+12. [[Handlebars Support]] - How Z2K's field language is similar to and differs from the Handlebars.js library  
     - [[Template Comments]] (`{{! comment }}`)  
     - [[Unescaped Expressions]] (`{{{var}}}`)  
     - [[Whitespace Control]] (`{{~tilde}}`)  
@@ -122,11 +143,18 @@ navbar_section_name: "Reference Manual"
         - [[Partial Parameters]]  
         - [[Inline Partials]]  
 
-12. [[Block Templates]] - Details the use of hierarchical and block level templates through partial templates  
+13. [[Block Templates]] - Details the use of hierarchical and block level templates through partial templates  
     - [[Partial Basics]]  
     - [[Partial Parameters]]  
 
-13. [[YAML Integration]]  
+14. [[Settings Page]] - Details on the Settings Page for the Z2K Templates Plugin  
+    - TBD  
+
+
+
+### Advanced 
+
+15. [[Z2K Templates and YAML|YAML Integration]] 
     - [[Using Fields inside YAML Text]]  
         - How To Guide: [[How to Use Z2K Fields Inside YAML Metadata]]  
     - [[System YAML Files]]  
@@ -140,41 +168,20 @@ navbar_section_name: "Reference Manual"
 	    - z2k_template_default_title
 	    - z2k_template_default_miss_handling
 
-14. [[Settings Page]] - Details on the Settings Page for the Z2K Templates Plugin  
-    - TBD  
+16. [[URI, JSON, Command Lists]] - Triggering template fields externally through URI and/or passing JSON packages 
+	- [[URI Actions]]
+	- [[JSON Packages]]
+	- [[Command Lists]]
+	
+17. [[Z2K System Features|Z2K System Features]] - Additional features specific to the larger Z2K System  
 
+18. [[Error Handling]]  
 
-### Advanced 
-
-15. [[URI, JSON, Command Lists]] - Triggering template fields externally through URI and/or passing JSON packages 
-    - [[URI Actions]]
-    - [[JSON Packages]]
-    - [[Command Lists]]
-
-16. [[Z2K System Features]] - Additional features specific to the larger Z2K System  
-    - TBD  
-    - Z2K System YAML Fields
-	    - z2k_card_build_state
-	    - z2k_card_status
-	    - 
-
-17. [[Error Handling]]  
-    - TemplateError Class  
-    - Common Error Messages & Fixes  
-    - Unmatched braces  
-    - Invalid directives  
-    - Invalid data type  
-    - Unclosed variables  
-    - Debugging Tips  
 
 ### Misc
 
-18. [[Roadmap & Extensibility]]  
-    - Planned Features (partials, visualization, marketplace templates)  
-    - Extending with Custom Helpers  
-    - Integration with Other Obsidian Plugins  
-
 19. [[Appendix]]  
     - Full Variable & Helper Reference (alphabetical)  
-    - Example Templates (copy/paste)  
-    - Glossary
+    - [[Glossary]]
+    - [[Roadmap and Extensibility]]  
+    - [[Reference Manual for AI|Reference Manual for AI]]
