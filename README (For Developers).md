@@ -74,6 +74,8 @@ Once this completes,
 - Fill out the change log
 - Upload main.js, manifest.json, styles.css, and z2k-plugin-templates.zip
 
+Don't forget to update the template engine too! (if changes were made)
+
 
 
 ---
