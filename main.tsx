@@ -2,7 +2,7 @@
 // TODO: Add error handling for errors within react components by using React Error Boundaries
 
 import { App, Plugin, Modal, Notice, TAbstractFile, TFolder, TFile, PluginSettingTab, Setting, MarkdownView, Editor, Command } from 'obsidian';
-import { Z2KTemplateEngine, Z2KYamlDoc, TemplateState, VarValueType, PromptInfo, TemplateError } from 'z2k-template-engine';
+import { Z2KTemplateEngine, Z2KYamlDoc, TemplateState, VarValueType, FieldInfo, TemplateError } from 'z2k-template-engine';
 import React, { useState, useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import moment from 'moment';   // npm i moment
@@ -643,12 +643,6 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		const cmd = getParam("cmd")?.trim().toLowerCase();
 		if (!cmd) { throw new TemplatePluginError("URI: Missing 'cmd'"); }
 
-		// const templatePath = (getParam("templatePath") || getParam("blockPath") || "").trim();
-		// if (!templatePath) { throw new TemplatePluginError("URI: Missing 'templatePath' or 'blockPath'"); }
-		// const templateFile = this.getFile(templatePath);
-		// if (!templateFile) { throw new TemplatePluginError(`Template not found: ${templatePath}`); }
-		// const cardTypeFolder = this.getTemplateCardType(templateFile) ?? templateFile.parent as TFolder;
-
 		// Get template file
 		let templateFile: TFile | undefined;
 		const templatePathParam = (getParam("templatePath") || getParam("blockPath") || "").trim();
@@ -758,12 +752,12 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			fm = this.updateYamlOnCreate(fm, opts.templateFile.basename);
 			content = Z2KYamlDoc.joinFrontmatter(fm, body);
 			let state = await this.parseTemplate(content, opts.templateFile.parent as TFolder);
-			let hadSourceTextField = !!state.promptInfos["sourceText"];
+			let hadSourceTextField = !!state.fieldInfos["sourceText"];
 			state = this.handleOverrides(state, opts.fieldOverrides, opts.promptMode || "all");
 			state = this.addBuiltIns(state, { sourceText: opts.fieldOverrides.sourceText, templateName: opts.templateFile.basename });
 			state = this.setDefaultTitleFromYaml(state);
 
-			if (this.hasFillableFields(state.promptInfos) && opts.promptMode !== "none") {
+			if (this.hasFillableFields(state.fieldInfos) && opts.promptMode !== "none") {
 				state = await this.promptForFieldCollection(state);
 			}
 
@@ -793,7 +787,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			let state = await this.parseTemplate(content, opts.existingFile.parent as TFolder);
 			state = this.handleOverrides(state, opts.fieldOverrides, opts.promptMode || "all");
 			state = this.addBuiltIns(state, { existingTitle: opts.existingFile.basename });
-			let hasFillableFields = this.hasFillableFields(state.promptInfos);
+			let hasFillableFields = this.hasFillableFields(state.fieldInfos);
 			// TODO: handle the case where fieldOverrides fills all fields and promptMode is "remaining"
 			if (!hasFillableFields && !opts.fieldOverrides) {
 				new Notice("No fillable fields found in the template.");
@@ -838,11 +832,11 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			// Parse and resolve partial
 			let content = await this.app.vault.read(opts.templateFile);
 			let state = await this.parseTemplate(content, opts.templateFile.parent as TFolder);
-			let hadSourceTextField = !!state.promptInfos["sourceText"];
+			let hadSourceTextField = !!state.fieldInfos["sourceText"];
 			state = this.handleOverrides(state, opts.fieldOverrides, opts.promptMode || "all");
 			state = this.addBuiltIns(state, { sourceText: opts.fieldOverrides.sourceText, existingTitle: opts.existingFile.basename });
 
-			if (this.hasFillableFields(state.promptInfos) && opts.promptMode !== "none") {
+			if (this.hasFillableFields(state.fieldInfos) && opts.promptMode !== "none") {
 				state = await this.promptForFieldCollection(state);
 			}
 
@@ -926,15 +920,15 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		if (!fieldOverrides) { return state; }
 		state.resolvedValues = {...state.resolvedValues, ...fieldOverrides};
 		for (const k in fieldOverrides) {
-			if (!state.promptInfos[k]) {
-				state.promptInfos[k] = { varName: k };
+			if (!state.fieldInfos[k]) {
+				state.fieldInfos[k] = { varName: k };
 			}
 			if (promptMode === "remaining") {
-				if (!state.promptInfos[k].directives) {
-					state.promptInfos[k].directives = [];
+				if (!state.fieldInfos[k].directives) {
+					state.fieldInfos[k].directives = [];
 				}
-				if (!state.promptInfos[k].directives.includes("no-prompt")) {
-					state.promptInfos[k].directives.push("no-prompt");
+				if (!state.fieldInfos[k].directives.includes("no-prompt")) {
+					state.fieldInfos[k].directives.push("no-prompt");
 				}
 			}
 		}
@@ -1023,7 +1017,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		});
 	}
 	async promptForFieldCollection(templateState: TemplateState): Promise<TemplateState> {
-		if (this.hasFillableFields(templateState.promptInfos)) {
+		if (this.hasFillableFields(templateState.fieldInfos)) {
 			await new Promise<void>((resolve, reject) => {
 				new FieldCollectionModal(this.app, `Field Collection for ${cardRefNameUpper(this.settings)}`, templateState, resolve, reject).open();
 			});
@@ -1312,14 +1306,14 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			if (typeof defaultTitle !== "string") {
 				throw new TemplatePluginError(`z2k_template_default_title must be a string (got a ${typeof defaultTitle})`);
 			}
-			state.promptInfos["title"].default = defaultTitle;
+			state.fieldInfos["title"].default = defaultTitle;
 			break; // take the first one we find
 		}
 		return state;
 	}
 	addBuiltIns(state: TemplateState, opts: { sourceText?: string, existingTitle?: string, templateName?: string } = {}): TemplateState {
 		// sourceText
-		state.promptInfos["sourceText"] = {
+		state.fieldInfos["sourceText"] = {
 			varName: "sourceText",
 			type: "text",
 			directives: ['no-prompt'],
@@ -1327,7 +1321,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		state.resolvedValues["sourceText"] = opts.sourceText || "";
 
 		// creator
-		state.promptInfos["creator"] = {
+		state.fieldInfos["creator"] = {
 			varName: "creator",
 			type: "text",
 			directives: ['no-prompt'],
@@ -1335,7 +1329,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		state.resolvedValues["creator"] = this.settings.creator || "";
 
 		// template name
-		state.promptInfos["templateName"] = {
+		state.fieldInfos["templateName"] = {
 			varName: "templateName",
 			type: "text",
 			directives: ['no-prompt'],
@@ -1357,7 +1351,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		state.resolvedValues["templateName"] = opts.templateName || "";
 
 		// title
-		state.promptInfos["title"] = {
+		state.fieldInfos["title"] = {
 			varName: "title",
 			type: "titleText",
 			directives: opts.existingTitle ? ['required', 'no-prompt'] : ['required'],
@@ -1467,9 +1461,9 @@ export default class Z2KTemplatesPlugin extends Plugin {
 
 		return files;
 	}
-	private hasFillableFields(promptInfos: Record<string, PromptInfo>): boolean {
-		for (const promptInfo of Object.values(promptInfos)) {
-			if (!promptInfo.directives?.includes("no-prompt")) { return true; }
+	private hasFillableFields(fieldInfos: Record<string, FieldInfo>): boolean {
+		for (const fieldInfo of Object.values(fieldInfos)) {
+			if (!fieldInfo.directives?.includes("no-prompt")) { return true; }
 		}
 		return false;
 	}
@@ -2105,7 +2099,7 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel }: FieldColle
 	function formatFieldName(str: string): string {
 		str = str.charAt(0).toUpperCase() + str.slice(1);
 		return str
-			.replace(/([a-z0-9])([A-Z])/g, '$1 $2')      // parseXML → parse XML, GLTF2L → GLTF2 L
+			.replace(/([a-z0-9])([A-Z])/g, '$1 $2')      // ParseXML → Parse XML, GLTF2L → GLTF2 L
 			.replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')   // XMLFile → XML File, HTTPServer → HTTP Server
 			.trim();
 	}
@@ -2113,28 +2107,28 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel }: FieldColle
 		const initialFieldStates: Record<string, FieldState> = {};
 
 		// Initialize field states with metadata
-		for (const [fieldName, promptInfo] of Object.entries(templateState.promptInfos)) {
+		for (const [fieldName, fieldInfo] of Object.entries(templateState.fieldInfos)) {
 			// Get dependencies from prompt text, default value, and miss text
 			const dependencies = [
-				...promptInfo.prompt ? Z2KTemplateEngine.reducedGetDependencies(promptInfo.prompt) : [],
-				...promptInfo.default ? Z2KTemplateEngine.reducedGetDependencies(promptInfo.default) : [],
-				...promptInfo.miss ? Z2KTemplateEngine.reducedGetDependencies(promptInfo.miss) : [],
+				...fieldInfo.prompt ? Z2KTemplateEngine.reducedGetDependencies(fieldInfo.prompt) : [],
+				...fieldInfo.default ? Z2KTemplateEngine.reducedGetDependencies(fieldInfo.default) : [],
+				...fieldInfo.miss ? Z2KTemplateEngine.reducedGetDependencies(fieldInfo.miss) : [],
 			];
 
 
 			// Set initial field state
 			initialFieldStates[fieldName] = {
-				value: templateState.resolvedValues[fieldName] ?? promptInfo.default ?? '',
+				value: templateState.resolvedValues[fieldName] ?? fieldInfo.default ?? '',
 				alreadyResolved: templateState.resolvedValues[fieldName] !== undefined,
-				omitFromForm: promptInfo.directives?.contains('no-prompt') ?? false,
+				omitFromForm: fieldInfo.directives?.contains('no-prompt') ?? false,
 				touched: false,
 				focused: false,
 				hasError: false,
 				dependencies: [...new Set(dependencies)],
 				dependentFields: [],
-				resolvedPrompt: promptInfo.prompt ?? formatFieldName(fieldName),
-				resolvedDefault: promptInfo.default ?? "",
-				resolvedMiss: promptInfo.miss ?? ""
+				resolvedPrompt: fieldInfo.prompt ?? formatFieldName(fieldName),
+				resolvedDefault: fieldInfo.default ?? "",
+				resolvedMiss: fieldInfo.miss ?? ""
 			};
 		}
 
@@ -2166,10 +2160,10 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel }: FieldColle
 		renderOrderFieldNames = renderOrderFieldNames.filter(fieldName => !fieldStates[fieldName].omitFromForm);
 		// Put required fields at the top
 		const requiredFields = renderOrderFieldNames.filter(fieldName => {
-			return templateState.promptInfos[fieldName]?.directives?.includes('required') ?? false;
+			return templateState.fieldInfos[fieldName]?.directives?.includes('required') ?? false;
 		});
 		const optionalFields = renderOrderFieldNames.filter(fieldName => {
-			return !(templateState.promptInfos[fieldName]?.directives?.includes('required') ?? false);
+			return !(templateState.fieldInfos[fieldName]?.directives?.includes('required') ?? false);
 		});
 		renderOrderFieldNames = [...requiredFields, ...optionalFields];
 
@@ -2210,8 +2204,8 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel }: FieldColle
 
 	function updateFieldStates(newFieldStates: Record<string, FieldState>, reEvalValues: boolean = false) {
 		for (const fieldName of dependencyOrderedFieldNames) { // dependencyOrderedFieldNames ensures dependencies are resolved first
-			const promptInfo = templateState.promptInfos[fieldName];
-			if (!promptInfo || newFieldStates[fieldName].omitFromForm) { continue; }
+			const fieldInfo = templateState.fieldInfos[fieldName];
+			if (!fieldInfo || newFieldStates[fieldName].omitFromForm) { continue; }
 
 			let context = {
 				...Object.fromEntries(Object.entries(newFieldStates).map(
@@ -2219,9 +2213,9 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel }: FieldColle
 			};
 
 			// Update all resolved text fields
-			newFieldStates[fieldName].resolvedPrompt = Z2KTemplateEngine.reducedRenderContent(promptInfo.prompt || formatFieldName(fieldName), context)
-			newFieldStates[fieldName].resolvedDefault = Z2KTemplateEngine.reducedRenderContent(promptInfo.default || "", context);
-			newFieldStates[fieldName].resolvedMiss = Z2KTemplateEngine.reducedRenderContent(promptInfo.miss || "", context);
+			newFieldStates[fieldName].resolvedPrompt = Z2KTemplateEngine.reducedRenderContent(fieldInfo.prompt || formatFieldName(fieldName), context)
+			newFieldStates[fieldName].resolvedDefault = Z2KTemplateEngine.reducedRenderContent(fieldInfo.default || "", context);
+			newFieldStates[fieldName].resolvedMiss = Z2KTemplateEngine.reducedRenderContent(fieldInfo.miss || "", context);
 
 			if (!newFieldStates[fieldName].alreadyResolved && !newFieldStates[fieldName].touched) {
 				newFieldStates[fieldName].value = newFieldStates[fieldName].resolvedDefault;
@@ -2240,9 +2234,9 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel }: FieldColle
 	function	validateAllFields(newFieldStates: Record<string, FieldState>): boolean {
 		let isValid: boolean = true;
 		for (const fieldName of Object.keys(newFieldStates)) {
-			const promptInfo = templateState.promptInfos[fieldName];
-			if (!promptInfo) {
-				console.error(`Field ${fieldName} not found in promptInfos`);
+			const fieldInfo = templateState.fieldInfos[fieldName];
+			if (!fieldInfo) {
+				console.error(`Field ${fieldName} not found in fieldInfos`);
 				return true; // Skip validation if field not found
 			}
 
@@ -2251,10 +2245,10 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel }: FieldColle
 			let errorMessage = '';
 
 			// Basic validation based on field type
-			if (promptInfo.type === 'number' && isNaN(Number(value))) {
+			if (fieldInfo.type === 'number' && isNaN(Number(value))) {
 				hasError = true;
 				errorMessage = 'Please enter a valid number';
-			} else if (value === '' && promptInfo.directives?.contains('required')) {
+			} else if (value === '' && fieldInfo.directives?.contains('required')) {
 				hasError = true;
 				errorMessage = 'This field is required';
 			}
@@ -2330,7 +2324,7 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel }: FieldColle
 
 		// Update template state with resolved values
 		for (const fieldName of dependencyOrderedFieldNames) {
-			const propmtInfo = templateState.promptInfos[fieldName];
+			const propmtInfo = templateState.fieldInfos[fieldName];
 			if (!propmtInfo) { continue; }
 			if (fieldStates[fieldName].alreadyResolved || fieldStates[fieldName].touched || fieldName === 'title') {
 				templateState.resolvedValues[fieldName] = fieldStates[fieldName].value;
@@ -2359,10 +2353,10 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel }: FieldColle
 	}
 
 	function getFieldContainer(fieldName: string) {
-		const promptInfo = templateState.promptInfos[fieldName];
+		const fieldInfo = templateState.fieldInfos[fieldName];
 		const fieldState = fieldStates[fieldName];
 
-		if (!promptInfo || !fieldState) return null;
+		if (!fieldInfo || !fieldState) return null;
 
 		return (
 			<div key={fieldName} className={`field-container ${
@@ -2371,7 +2365,7 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel }: FieldColle
 				<FieldInput
 					name={fieldName}
 					label={fieldState.resolvedPrompt || fieldName}
-					promptInfo={promptInfo}
+					fieldInfo={fieldInfo}
 					fieldState={fieldState}
 					onChange={(value) => handleFieldChange(fieldName, value)}
 					onFocus={() => handleFieldFocus(fieldName)}
@@ -2384,7 +2378,7 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel }: FieldColle
 
 	return (
 		<form onSubmit={handleSubmit} className="field-collection-form">
-			{templateState.promptInfos['title'] && fieldStates['title']?.omitFromForm !== true && (
+			{templateState.fieldInfos['title'] && fieldStates['title']?.omitFromForm !== true && (
 				<div className="field-title-container">{getFieldContainer('title')}</div>
 			)}
 			<div className="field-list">
@@ -2504,7 +2498,7 @@ function calculateFieldDependencyOrder(fieldStates: Record<string, FieldState>):
 interface FieldInputProps {
 	name: string;
 	label: string;
-	promptInfo: PromptInfo;
+	fieldInfo: FieldInfo;
 	fieldState: FieldState;
 	onChange: (value: any) => void;
 	onFocus: () => void;
@@ -2512,7 +2506,7 @@ interface FieldInputProps {
 	onReset: () => void;
 }
 
-const FieldInput = ({ name, label, promptInfo, fieldState, onChange, onFocus, onBlur, onReset }: FieldInputProps) => {
+const FieldInput = ({ name, label, fieldInfo, fieldState, onChange, onFocus, onBlur, onReset }: FieldInputProps) => {
 	// Generate a unique ID for the input element
 	const inputId = `field-${name}`;
 
@@ -2527,7 +2521,7 @@ const FieldInput = ({ name, label, promptInfo, fieldState, onChange, onFocus, on
 
 	// Render the appropriate input based on data type
 	function renderInput() {
-		const dataType = promptInfo.type || 'text';
+		const dataType = fieldInfo.type || 'text';
 
 		switch(dataType) {
 			case 'titleText':
@@ -2625,7 +2619,7 @@ const FieldInput = ({ name, label, promptInfo, fieldState, onChange, onFocus, on
 						{...commonProps}
 					>
 						<option value="">Select an option</option>
-						{promptInfo.typeOptions?.map((option) => (
+						{fieldInfo.typeOptions?.map((option) => (
 							<option key={option} value={option}>
 								{option}
 							</option>
@@ -2638,7 +2632,7 @@ const FieldInput = ({ name, label, promptInfo, fieldState, onChange, onFocus, on
 				const selectedValues = Array.isArray(fieldState.value) ? fieldState.value : [];
 				return (
 					<div className={`multi-select-container ${fieldState.hasError ? 'has-error' : ''}`}>
-						{promptInfo.typeOptions?.map((option) => (
+						{fieldInfo.typeOptions?.map((option) => (
 							<div key={option} className="multi-select-option">
 								<input
 									type="checkbox"
@@ -2662,7 +2656,7 @@ const FieldInput = ({ name, label, promptInfo, fieldState, onChange, onFocus, on
 	function generateHoverText() {
 		let finalText = "";
 		finalText += `Field name: ${name}`;
-		finalText += promptInfo.directives?.length ?? 0 > 0 ? `\nDirectives: ${promptInfo.directives?.join(', ')}` : '';
+		finalText += fieldInfo.directives?.length ?? 0 > 0 ? `\nDirectives: ${fieldInfo.directives?.join(', ')}` : '';
 		finalText += fieldState.dependencies.length > 0 ? `\nDepends on: ${fieldState.dependencies.join(', ')}` : '';
 		finalText += fieldState.dependentFields.length > 0 ? `\nUsed by: ${fieldState.dependentFields.join(', ')}` : '';
 		return finalText;
@@ -2692,7 +2686,7 @@ const FieldInput = ({ name, label, promptInfo, fieldState, onChange, onFocus, on
 	// );
 	return (
 		<div className="field-input">
-			{promptInfo.type !== 'boolean' && (
+			{fieldInfo.type !== 'boolean' && (
 				<div className="label-wrapper">
 					<label htmlFor={inputId} title={generateHoverText()}>{label}</label>
 					<span className="reset-icon-wrapper">
