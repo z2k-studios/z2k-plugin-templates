@@ -748,7 +748,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			let z2kSystemYaml = await this.GetZ2KSystemYaml(opts.cardTypeFolder);
 			let content = await this.app.vault.read(opts.templateFile);
 			let { fm, body } = Z2KYamlDoc.splitFrontmatter(content);
-			fm = Z2KYamlDoc.mergeFirstWins([z2kSystemYaml, fm]);
+			fm = Z2KYamlDoc.mergeLastWins([z2kSystemYaml, fm]);
 			fm = this.updateYamlOnCreate(fm, opts.templateFile.basename);
 			content = Z2KYamlDoc.joinFrontmatter(fm, body);
 			let state = await this.parseTemplate(content, opts.templateFile.parent as TFolder);
@@ -851,7 +851,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			if (opts.destHeader) {
 				const fileContent = await this.app.vault.read(opts.existingFile);
 				const { fm: fileFm, body: fileBody } = Z2KYamlDoc.splitFrontmatter(fileContent);
-				const mergedFm = Z2KYamlDoc.mergeFirstWins([fileFm, partialFm]);
+				const mergedFm = Z2KYamlDoc.mergeLastWins([fileFm, partialFm]);
 				const newBody = this.insertIntoHeaderSection(fileBody, opts.destHeader, partialBody, opts.location);
 				newFileContent = Z2KYamlDoc.joinFrontmatter(mergedFm, newBody);
 			} else {
@@ -863,7 +863,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				}
 				const full = editor.getValue();
 				const { fm: fileFm, body: newBody } = Z2KYamlDoc.splitFrontmatter(full);
-				const mergedFm = Z2KYamlDoc.mergeFirstWins([fileFm, partialFm]);
+				const mergedFm = Z2KYamlDoc.mergeLastWins([fileFm, partialFm]);
 				newFileContent = Z2KYamlDoc.joinFrontmatter(mergedFm, newBody);
 			}
 
@@ -921,7 +921,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		state.resolvedValues = {...state.resolvedValues, ...fieldOverrides};
 		for (const k in fieldOverrides) {
 			if (!state.fieldInfos[k]) {
-				state.fieldInfos[k] = { varName: k };
+				state.fieldInfos[k] = { fieldName: k };
 			}
 			if (promptMode === "remaining") {
 				if (!state.fieldInfos[k].directives) {
@@ -1314,7 +1314,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	addBuiltIns(state: TemplateState, opts: { sourceText?: string, existingTitle?: string, templateName?: string } = {}): TemplateState {
 		// sourceText
 		state.fieldInfos["sourceText"] = {
-			varName: "sourceText",
+			fieldName: "sourceText",
 			type: "text",
 			directives: ['no-prompt'],
 		};
@@ -1322,7 +1322,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 
 		// creator
 		state.fieldInfos["creator"] = {
-			varName: "creator",
+			fieldName: "creator",
 			type: "text",
 			directives: ['no-prompt'],
 		};
@@ -1330,7 +1330,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 
 		// template name
 		state.fieldInfos["templateName"] = {
-			varName: "templateName",
+			fieldName: "templateName",
 			type: "text",
 			directives: ['no-prompt'],
 		};
@@ -1352,7 +1352,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 
 		// title
 		state.fieldInfos["title"] = {
-			varName: "title",
+			fieldName: "title",
 			type: "titleText",
 			directives: opts.existingTitle ? ['required', 'no-prompt'] : ['required'],
 		};
@@ -1405,7 +1405,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		let fm = "";
 		// Combine in reverse order (root first)
 		for (const yamlStr of systemYamls.reverse()) {
-			fm = Z2KYamlDoc.mergeFirstWins([yamlStr, fm]);
+			fm = Z2KYamlDoc.mergeLastWins([yamlStr, fm]);
 		}
 		return fm;
 	}
