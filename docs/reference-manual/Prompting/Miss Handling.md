@@ -4,6 +4,8 @@ sidebar_position: 68
 
 A miss is when a Template Field exists in a template but does not have any data provided for it during an update action.
 
+Performed during the [[Finalizing a File|Finalize]] step of the [[Lifecycle of a Template]]
+
 Miss Handling is different from Z2K than for classic Handlebars Field Replacement for a number of reasons:
 1. Some cards are repeatedly being operated on, with not all data known at once (e.g. Log Files that are updated throughout the day).
 2. Some cards will have data that is not known at creation (e.g. say, creating a card for a book, you will not know how you will rate it until you are finished)
@@ -14,6 +16,10 @@ By default, if a field is not provided with data during a processing event, the 
 If a field specifies a [[Prompting#^DefaultAnswer|Default Answer]], then that is a signal that unspecified fields should be filled in with that Default Answer upon use of the template file.
 
 # Override - Default Miss Handling 
+
+See [[Z2K Template YAML Configuration Fields]]
+
+
 If a template file contains in its YAML code includes the key `z2k_template_default_miss_handling`, it will use the method specified in the key's value:
 
 | Key                                  | Key Value  | Miss Handling                                                                                    |

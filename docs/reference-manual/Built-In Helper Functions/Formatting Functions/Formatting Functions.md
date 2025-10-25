@@ -1,5 +1,5 @@
 ---
-sidebar_folder_position: 94
+sidebar_folder_position: 20
 sidebar_position: 1
 ---
 # Formatting Helper Functions

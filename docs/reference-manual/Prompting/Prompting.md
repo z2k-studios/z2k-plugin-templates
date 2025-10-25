@@ -9,4 +9,4 @@ For more details, see:
 1. [[General Prompting Format]]
 2. [[Prompting Data Types]]
 3. [[Built-in Helpers for Prompting]]
-4. [[Finalizing and Miss Handling for Z2K Templates]]
+4. [[Miss Handling]]

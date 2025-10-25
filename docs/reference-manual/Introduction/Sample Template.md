@@ -49,7 +49,7 @@ Now that you have your template file, it is time to make your first book review 
     - Note that the `{{BookTitle}}` is a required field and the prompting dialog box will require you to enter the title.
 	- Note that the `{{AuthorName}}` and `{{Review}}` fields will have customized prompts. 
 	- Note also that the `{{Genre}}` field will have a dropdown selection of valid entries.
-    - If you do not have all the information yet, they can enter what they have and then come back later to [[Finalize]]
+    - If you do not have all the information yet, they can enter what they have and then come back later to [[Finalizing a File]]
 4. When your are finished and ready to **create the card**, the plugin will:
 	- Fill in the YAML `{{date}}` entry automatically from the system clock because `{{date}}` is a [[Built-In Template Fields|Built-In Field]]
 	- Format the `{{Genre}}` field into lowercase when it is used in the body text of the note using a [[Helper Function]]. It will also fill it in the yaml frontmatter unformatted.

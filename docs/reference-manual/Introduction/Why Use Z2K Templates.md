@@ -4,7 +4,7 @@ doc_state: revised_ai_draft_2
 title: "Why Use Z2K Templates?"
 sidebar_label: "Why Z2K Templates?"
 ---
-# Why Use Z2K Templates?
+# Why Another Templating Plugin?
 
 Obsidian is famous for diverse plugin marketplace. Z2K Templates is only one of several plugins you can install to templatize notes in Obsidian. This page outlines alternatives, offers a neutral compare/contrast, and then clarifies where Z2K Templates’ design choices differ. Links below go to official docs or plugin listings.
 
@@ -14,18 +14,20 @@ Note: we *love* our fellow plugin developers - many thanks go out to [@silentvoi
 ## Alternative Plugins
 Let's step back and review the top alternatives to **Z2K Templates**:
 
-- **Templater (community plugin)** — Full-featured templating language with JavaScript execution and prompts. Widely adopted by power users. [Docs](https://silentvoid13.github.io/Templater/introduction.html) · [GitHub](https://github.com/SilentVoid13/Templater)
-- **Templates (core plugin)** — Simple snippet insertion with date/title variables and a designated template folder. [Obsidian Help](https://help.obsidian.md/plugins/templates)
-- **QuickAdd (community plugin)** — Workflow accelerator that *invokes* templates (core or community), captures, and macros. Often used alongside Templater or core Templates. [Docs](https://quickadd.obsidian.guide/docs/) · [GitHub](https://github.com/chhoumann/quickadd)
-- **Liquid Templates (community plugin)** — Alternative templating engine using LiquidJS tags. Smaller but active. [Obsidian Hub](https://publish.obsidian.md/hub/02%2B-%2BCommunity%2BExpansions/02.05%2BAll%2BCommunity%2BExpansions/Plugins/liquid-templates) · [GitHub](https://github.com/oeN/liquid-template)
-- **Periodic Notes (community plugin)** — Specialized periodic-note workflows with template hooks for daily/weekly/monthly notes. [GitHub](https://github.com/liamcain/obsidian-periodic-notes)
+- Core Plugin:
+	- **Templates** — Simple snippet insertion with date/title variables and a designated template folder. [Obsidian Help](https://help.obsidian.md/plugins/templates)
+- Community Plugins:
+	- **Templater** — Full-featured templating language with JavaScript execution and prompts. Widely adopted by power users. [Docs](https://silentvoid13.github.io/Templater/introduction.html) · [GitHub](https://github.com/SilentVoid13/Templater)
+	- **QuickAdd** — Workflow accelerator that *invokes* templates (core or community), captures, and macros. Often used alongside Templater or core Templates. [Docs](https://quickadd.obsidian.guide/docs/) · [GitHub](https://github.com/chhoumann/quickadd)
+	- **Liquid Templates** — Alternative templating engine using LiquidJS tags. Smaller but active. [Obsidian Hub](https://publish.obsidian.md/hub/02%2B-%2BCommunity%2BExpansions/02.05%2BAll%2BCommunity%2BExpansions/Plugins/liquid-templates) · [GitHub](https://github.com/oeN/liquid-template)
+	- **Periodic Notes** — Specialized periodic-note workflows with template hooks for daily/weekly/monthly notes. [GitHub](https://github.com/liamcain/obsidian-periodic-notes)
 
 > These are complementary tools. Many vaults successfully combine Core Templates + QuickAdd, or Templater + QuickAdd. Z2K Templates can also coexist with them.
 
 ---
 ## Top‑Line Compare & Contrast
 
-- **Core Templates** is the easiest entry point: insert prewritten text and a few built‑in variables. No logic, no language to learn. Ideal for lightweight snippets.
+- **Core Templates** is the easiest entry point: insert prewritten text and a few built‑in variables. No logic, no language to learn. Ideal for lightweight snippets. Uses `{{fields}}` just like Z2K Templates does.
 - **Templater** adds a **programmable layer**: JavaScript execution, file ops, and a rich API. This is excellent for complex automation, with the trade‑off of more moving parts and code in your notes.
 - **Liquid Templates** swaps in a **LiquidJS** syntax. It emphasizes template tags over code, landing between Core Templates and Templater in capability.
 - **Z2K Templates** takes a **declarative `{{fields}}` approach** backed by the [Handlebars.js](https://handlebarsjs.com/) language. It focuses on structured fields, interactive prompting, YAML integration, partials, and *context-aware* discovery (hierarchical templates). The intent is to standardize structure without requiring JavaScript in your notes.

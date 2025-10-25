@@ -1,11 +1,15 @@
+Z2K Templates is all about taking data in, and inserting that information into templates to make new files in your vault. The information that can be inserted into [[Template Fields]] can come from a variety of places.
 
-%% This is included into the [[Core Concepts of Z2K Templates]] page %%
-## Data Source Types
+## Data Sources
+Here are the different ways in which data can be inserted into a template using its template fields:
 
-1. **User input via [[Prompting|prompting dialogs]]** — entered interactively at runtime.
-2. **[[Built-In Template Fields|Built-in fields]] and [[Helper Functions|helper functions]]** — values like `date` or computed values from helper functions.
-3. **Default values stored directly in the template** — specified in field syntax using  [[field-info]]
-4. **Existing files** — other vault files can be read through built-in fields such as `{{SystemData}}` and [[Block Templates]].
-5. **External URI calls** — incoming data provided through [[URI and JSON Support|URI triggers]].
-6. **External JSON command lists** — batches of Z2K Templates Actions written in to JSON packets
-7. **Miss handling directives** — fallback behavior applied when all other sources fail.
+| Data Type                  | Data Source | Description                                                                                                                                | Learn More                                                        |
+| -------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------- |
+| **Prompting**              | User        | User is prompted via the prompting interface for any missing data.                                                                         | [[Prompting]]                                                     |
+| **Built-Ins**              | Computed    | Built-in fields and helper functions — values like `{{date}}` or computed values from helper functions.                                    | [[Built-In Template Fields]], [[Built-In Helper Functions]]       |
+| **Defaults**               | User        | User can use `{{field-info}}` to specify the default value for each field                                                                  | [[field-info default]]                                            |
+| **Existing Files**         | The Vault   | Other vault files can be fed into a template via the `{{sourceText}}` field, or through the use of block templates.                        | [[Built-In Fields - sourceText\|sourceText]], [[Block Templates]] |
+| **3rd Party URI Calls**    | External    | Other applications (e.g. Apple Shortcuts, batch scripts) can insert data into templates to create new files via URI calls.                 | [[URI Calls\|URI]]                                                |
+| **3rd Party JSON packets** | External    | 3rd party applications (e.g. Apple Shortcuts) can create actions inside JSON files that will be read automatically by the Templates Plugin | [[Command Lists]], [[JSON Packages\|JSON]]                        |
+| **Misses**                 | User        | Lastly, the user can specify fallback behaviors ("miss handling") in the event that all other data sources fail.                           | [[Miss Handling]]                                                 |
+

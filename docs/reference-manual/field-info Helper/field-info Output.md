@@ -5,7 +5,8 @@ title: field-info Output
 sidebar_label: field-info Output
 ---
 
-
+# field-info Output
+`{{field-info}}` is a [[Silent Helper Functions]], meaning that it does not have any output when it is finalized. Instead it simply disapppears when then resultant file is [[finalized]]
 
 what is the output?
 what if you use ~

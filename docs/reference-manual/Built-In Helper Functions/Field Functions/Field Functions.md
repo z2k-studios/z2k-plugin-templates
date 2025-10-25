@@ -1,5 +1,5 @@
 ---
-sidebar_folder_position: 92
+sidebar_folder_position: 10
 sidebar_position: 1
 ---
 

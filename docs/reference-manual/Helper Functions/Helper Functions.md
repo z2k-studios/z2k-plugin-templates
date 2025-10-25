@@ -8,4 +8,5 @@ Z2K uses the "helper" functions defined in Mustache / [Handlebars](https://handl
 
 For more information, please see:
 1. [[Helper Functions Usage]]
-2. [[Built-In Helper Functions|List of Built-In Helper Functions]]
+2. [[Silent Helper Functions]]
+3. [[Built-In Helper Functions|List of Built-In Helper Functions]]

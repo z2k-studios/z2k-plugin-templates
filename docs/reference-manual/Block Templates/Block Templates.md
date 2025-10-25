@@ -1,7 +1,10 @@
 ---
 sidebar_position: 1
 sidebar_folder_position: 130
-
+aliases:
+- Partials
+- Partial Templates
+- Block Template
 ---
 
 The Z2K Template Plugin supports the concept of "*Partial Templates*", or also just called "*Partials*". These special templates are intended to be *block level* template text that can be inserted inside of another file. 

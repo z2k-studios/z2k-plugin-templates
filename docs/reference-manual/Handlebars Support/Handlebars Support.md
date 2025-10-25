@@ -25,7 +25,7 @@ Z2K supports the following features in Handlebars:
 There are a few subtle differences:
 1. Z2K has several additional advanced expressions (see [[#Z2K Advanced Expressions not in Handlebars]] below)
 2. Z2K does not assume the output is HTML, but rather Markdown. Therefore the default escaping handling is implemented differently. Similarly, Raw output is handled differently
-3. Z2K assumes that if a field is not specified with data, then the field remains in the resultant template file. See [[Finalizing and Miss Handling for Z2K Templates]] for more details. 
+3. Z2K assumes that if a field is not specified with data, then the field remains in the resultant template file. See [[Miss Handling]] for more details. 
 
 # Z2K Advanced Expressions not in Handlebars
 For quick reference, the following are augmentations to the Handlebars language that are only used in Z2K's implementation:

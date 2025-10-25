@@ -14,11 +14,11 @@ It is a novel concept to having some fields not be all the way filled in.
 The typical Z2K Templates workflow includes the following steps when you create a new note from a template:
 
 1. **Parses** the template file, identifying placeholders and metadata.
-2. **Prompts** you for any missing data using customizable dialogs for each [[Template Fields|field]].
+2. **Prompts** you for any missing data using customizable dialogs for each [[Template Fields|field]] - see [[Prompting]]
 3. **Resolves** your input along with [[Built-In Template Fields|built-in values]].
 4. **Renders** a new file, merging YAML metadata and Markdown content into a finished document.
 5. **Iterates** with the new file to continue to allow new data to be placed into fields as data becomes available.
-6. **Finalize** the new document to process any unresolved fields.
+6. **Finalize** the new document to process any unresolved fields - see [[Finalizing a File|Finalize]]
 
 
 ## Next Heading

@@ -33,7 +33,7 @@ Because `{{field-info}}` is so powerful, its documentation is spread out over se
 	- [[field-info miss|miss]] Parameter
 	- [[field-info value|value]] Parameter
 	- [[field-info directives|directives]] Parameter
-- [[field-info Usage Tips|Usage Tips]] - tips to understanding how to use `{{field-info}}`
+- [[field-info Usage Tips|Usage Tips]] - tips to understanding how to use `{{field-info}}` & best practices
 - [[field-info Examples|Examples]] - presents a variety of `{{field-info}}` related examples
 - [[field-info Variations]] - similar functions within the same family of helper functions
 	- [[field-output Helper]] - sister function that outputs the field value 

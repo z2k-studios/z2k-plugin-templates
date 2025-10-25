@@ -11,8 +11,8 @@ aliases:
 
 ---
 
-
 ==At the moment, these are just copied and pasted from the different sections==
+
 ## Table of Contents
 
 ### Getting Started
@@ -41,7 +41,9 @@ aliases:
     - [[Lifecycle of a Template]]  
         - Parse Phase  
         - Resolve Variables (from JSON, built-ins, defaults, user input)  
-        - Render Phase (YAML + Body + Title)  
+        - Render Phase (YAML + Body + Title)
+	- [[Finalizing a File]]
+	- [[Miss Handling]]
     - [[Obsidian Commands]]  
 
 4. [[Template Folders]] - Where template files are stored in your vault  
@@ -63,9 +65,9 @@ aliases:
     - [[Raw vs HTML Escaping]]  
 
 6. [[Built-In Template Fields]] - Built-in fields supported by the Z2K Templates plugin  
-    - [[Date and Time Fields]]  
-    - [[File Data Fields]]  
-    - [[File Reference Fields]]  
+    - [[Built-In Fields - Date and Time|Date and Time Built-Ins]]
+    - [[Built-In Fields - File Data|File Data Built-Ins]]
+    - [[Built-In Fields - Z2K System|Z2K Card References Built-Ins]]
 
 7. [[Data Formatting]] - How data is formatted during insertion into template fields  
     - [[Default Data Formatting]]  
@@ -77,16 +79,16 @@ aliases:
     - [[Prompting Data Types]]  
     - [[Built-in Helpers for Prompting]]  
     - [[Miss Handling]] (`clear` vs `preserve`)  
-    - [[Finalizing and Miss Handling for Z2K Templates]]  
+    - [[Miss Handling]]  
 
 ### Intermediate
 
 9. [[Helper Functions]] - Introduction to using helper functions inside templates  
     - [[Helper Functions Usage]]  
+    - [[Silent Helper Functions]]
     - [[Custom Helper Functions]]  
     - [[Handlebars Built-In Functions]]  
         - [[Lookup Function]] (`{{lookup }}`)  
-    - [[Directives]]  
 
 10. [[Built-In Helper Functions]] - A list of built-in Helper Functions and how to use them  
     - [[Formatting Functions]]  

@@ -1,5 +1,5 @@
 ---
-sidebar_position: 10
+sidebar_position: 24
 ---
 
 ## format-string-trim Helper

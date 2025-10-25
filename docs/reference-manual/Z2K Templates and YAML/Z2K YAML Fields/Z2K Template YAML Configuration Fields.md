@@ -11,7 +11,7 @@ The following fields can be inserted into the yaml text of the source template f
 # Supported YAML Configuration Fields
 
 ## z2k_template_default_miss_handling
-This key specifies the default method that is used for handling data misses (i.e. when a user fails to provide data for a particular field). See [[Finalizing and Miss Handling for Z2K Templates]] for more details. 
+This key specifies the default method that is used for handling data misses (i.e. when a user fails to provide data for a particular field). See [[Miss Handling]] for more details. 
 
 | Key                                  | Key Value  | Result                                                                                           |
 | ------------------------------------ | ---------- | ------------------------------------------------------------------------------------------------ |
@@ -39,13 +39,20 @@ Example:
  
 
 ## z2k_template_name
-This key specifies the name of the template to use for the `{{templateName}}` builtin field, overriding the actual name.  This will likely be used except for unusual circumstances where the template name needs to be different than the actual name.
+This key specifies the name of the template to use for the `{{templateName}}` [[Built-In Fields - File Data#Template File Fields|File Data Built-In field]], overriding the actual name.  This will likely be used except for unusual circumstances where the template name needs to be different than the actual name.
 
 | Key                 | Key Value | Result                                                                                           |
 | ------------------- | --------- | ------------------------------------------------------------------------------------------------ |
 | `z2k_template_name` | string    | Specifies a string to use as the title of the template for the `{{templateName}}` builtin field. |
 
- 
+## z2k_template_version
+This key specifies the version of the template to use for the `{{templateVersion}}` [[Built-In Fields - File Data#Template File Fields|File Data Built-In field]].  This will likely be used except for unusual circumstances where the template name needs to be different than the actual name.
+
+| Key                    | Key Value | Result                                                                                                                                                    |
+| ---------------------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `z2k_template_version` | string    | Specifies a string that represents the version number of the template. It will be used to fill in references to the  `{{templateVersion}}` builtin field. |
+
+
 # Notes
 
 1. Note: If you include multiple, conflicting YAML Configuration Field entries (e.g. from multiple layers of System YAML files, or by including a partial), you may experience inconsistent enforcement of those configuration settings.

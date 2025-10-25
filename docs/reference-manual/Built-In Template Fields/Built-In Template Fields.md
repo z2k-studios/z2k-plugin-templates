@@ -10,12 +10,18 @@ Z2K includes a number of pre-defined [[Template Fields]] names that will be auto
 
 # Contents
 The following types of built-in fields are available:
-- [[Built In Fields - Date and Time|Date and Time]] - built-in date and time fields
-- [[Built-In Fields - Card Data|Card Data]] - built-in fields associated with a card
-- [[Built-In Fields - Card Reference|Card References]] - built-in links to other cards in the Z2K System compliant vault.
+- [[Built-In Fields - Date and Time|Date and Time]] - built-in date and time fields
+- [[Built-In Fields - File Data|File Data]] - built-in fields associated with a card
+- [[Built-In Fields - Z2K System|Z2K Card References]] - built-in links to other cards in the Z2K System compliant vault.
+- [[Built-In Fields - sourceText|sourceText]] - a special built-in field for applying templates to an existing file
 
----
-# Note on Field Naming Conventions
-*Note: In general, there is a naming convention used in Z2K to distinguish built-in fields from user specified fields. Built-in template fields all begin with a lower case letter, while we encourage you to denote user specified fields by beginning them with an uppercase letter.*
+Additional Information:
+- [[Built-In Fields and Field-Info]] - using [[field-info Helper|field-info]] to modify how built-in fields behave
 
-See [[Naming Conventions]] for more info. 
+
+# Field Naming Conventions
+
+> [!TIP] Field Naming Conventions
+> Note: In general, the naming convention used to distinguish built-in fields from user specified fields is via initial capitalization: Built-in template fields all begin with a lower case letter, while we encourage you to denote user specified fields by beginning them with an uppercase letter.
+> 
+> See [[Naming Conventions]] for more info. 

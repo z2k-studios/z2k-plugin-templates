@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "reference-manual/Built-In Helper Functions/Field Functions/refhtml - fi (Field Functions).md",
+                "file": "best-practices/best-practices.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "refhtml - fi (Field Functions)"
+              "title": "best-practices"
             }
           }
         ]
@@ -53,7 +53,7 @@
             "state": {
               "type": "search",
               "state": {
-                "query": "",
+                "query": "google",
                 "matchingCase": false,
                 "explainSearch": false,
                 "collapseAll": false,
@@ -94,7 +94,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "reference-manual/Built-In Helper Functions/Field Functions/refhtml - fi (Field Functions).md",
+                "file": "best-practices/best-practices.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -104,7 +104,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Backlinks for refhtml - fi (Field Functions)"
+              "title": "Backlinks for best-practices"
             }
           },
           {
@@ -113,12 +113,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "reference-manual/Built-In Helper Functions/Field Functions/refhtml - fi (Field Functions).md",
+                "file": "reference-manual/URI, JSON, Command Lists/URI Calls/URI Calls.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Outgoing links from refhtml - fi (Field Functions)"
+              "title": "Outgoing links from URI Calls"
             }
           },
           {
@@ -155,8 +155,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300,
-    "collapsed": true
+    "width": 300
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -171,42 +170,42 @@
   },
   "active": "319a99325c39d204",
   "lastOpenFiles": [
-    "reference-manual/Built-In Helper Functions/Field Functions/refhtml - fo (Field Functions).md",
-    "reference-manual/Built-In Helper Functions/Field Functions/refhtml - field-output (Field Functions).md",
-    "reference-manual/Prompting/Built-in Helpers for Prompting/refhtml - field-output (Prompting).md",
-    "reference-manual/Prompting/Built-in Helpers for Prompting/refhtml - field-info (Prompting).md",
+    "reference-manual/field-info Helper/field-info Helper.md",
+    "reference-manual/field-info Helper/field-info Usage Tips.md",
+    "reference-manual/Built-In Template Fields/Built-In Fields - File Data/Built-In Fields - Creator.md",
+    "reference-manual/Built-In Template Fields/Built-In Fields - Date and Time/Built-In Fields - Date and Time.md",
+    "reference-manual/Data Formatting/Custom Field Formatting.md",
+    "reference-manual/Built-In Template Fields/Built-In Fields - File Data/Built-In Fields - Template File Data.md",
+    "reference-manual/Built-In Template Fields/Built-In Fields - File Data/Built-In Fields - File Title Variants.md",
+    "reference-manual/Built-In Template Fields/Built-In Fields - File Data/Built-In Fields - File Data.md",
+    "reference-manual/URI, JSON, Command Lists/URI Calls/URI Action - insertBlock.md",
+    "reference-manual/URI, JSON, Command Lists/URI Calls/URI Calls.md",
+    "reference-manual/Built-In Helper Functions/Formatting Functions/format-date.md",
+    "reference-manual/Built-In Template Fields/Built-In Fields - sourceText/Built-In Fields - sourceText.md",
+    "reference-manual/Built-In Template Fields/Built-In Fields - Z2K System/Built-In Fields - Z2K System.md",
+    "reference-manual/Built-In Template Fields/Built-In Fields - Date and Time/refhtml - date.md",
     "reference-manual/Built-In Helper Functions/Field Functions/refhtml - field-info (Field Functions).md",
     "reference-manual/Built-In Helper Functions/Field Functions/refhtml - fi (Field Functions).md",
-    "reference-manual/field-info Helper/field-info Variations/field-info Variations.md",
-    "reference-manual/Built-In Helper Functions/Formatting Functions/Formatting Functions.md",
     "reference-manual/Built-In Helper Functions/Field Functions/Field Functions.md",
-    "reference-manual/field-info Helper/field-info Parameters/field-info Parameters.md",
-    "reference-manual/field-info Helper/field-info Helper.md",
-    "reference-manual/field-info Helper/field-info Output.md",
-    "reference-manual/reference-manual.md",
-    "reference-manual/Z2K Templates and YAML/Z2K Templates and YAML.md",
-    "reference-manual/field-info Helper/field-info Parameters/field-info type.md",
-    "reference-manual/field-info Helper/field-info Parameters/field-info fieldName.md",
-    "reference-manual/field-info Helper/field-info Examples.md",
-    "reference-manual/field-info Helper/field-info Usage Tips.md",
-    "reference-manual/field-info Helper/field-info Syntax.md",
-    "reference-manual/field-info Helper/field-info Cheat Sheet.md",
-    "reference-manual/field-info Helper/fi and fo Helpers.md",
-    "reference-manual/Introduction/Introduction.md",
-    "reference-manual/Z2K Templates and YAML/Z2K System YAML Files.md",
-    "reference-manual/URI, JSON, Command Lists/URI, JSON, Command Lists.md",
-    "reference-manual/Settings Page/Settings Page.md",
-    "reference-manual/Handlebars Support/Handlebars Support.md",
-    "reference-manual/URI, JSON, Command Lists",
-    "reference-manual/Error Handling",
-    "reference-manual/Z2K System Features",
-    "reference-manual/Installation",
-    "reference-manual/field-info Helper/field-info Variations",
-    "reference-manual/field-info Helper/field-info Parameters",
-    "reference-manual/field-info Helper",
-    "template-libary 1",
-    "template-libary",
-    "reference-manual/Built-In Helper Functions/Formatting Functions/format-number-toFixed",
+    "reference-manual/Built-In Helper Functions/Formatting Functions/format-number-toFixed.md",
+    "reference-manual/Built-In Helper Functions/Formatting Functions/Formatting Functions.md",
+    "reference-manual/Built-In Helper Functions/Formatting Functions/format-number.md",
+    "reference-manual/Built-In Helper Functions/Formatting Functions/format-string-file-friendly.md",
+    "reference-manual/Built-In Helper Functions/Formatting Functions/format-string-bulletize.md",
+    "reference-manual/Built-In Helper Functions/Formatting Functions/format-string-raw.md",
+    "reference-manual/Built-In Helper Functions/Formatting Functions/format-string-trim.md",
+    "reference-manual/Built-In Helper Functions/Formatting Functions/format-string-spacify.md",
+    "reference-manual/Built-In Helper Functions/Formatting Functions/format-string-to-lower.md",
+    "reference-manual/Built-In Template Fields/Built-In Fields - Z2K System",
+    "reference-manual/Built-In Template Fields/Built-In Fields - sourceText",
+    "reference-manual/Built-In Template Fields/Built-In Fields - File Data",
+    "Untitled",
+    "reference-manual/Built-In Template Fields/Built-In Fields - Date and Time",
+    "reference-manual/URI, JSON, Command Lists/JSON Packages",
+    "reference-manual/URI, JSON, Command Lists/Command Lists",
+    "reference-manual/URI, JSON, Command Lists/URI Calls",
+    "reference-manual/Z2K Templates and YAML/Z2K YAML Fields",
+    "template-libary/File Templates",
     "Untitled.canvas"
   ]
 }

@@ -1,5 +1,5 @@
 ---
-sidebar_position: 96
+sidebar_position: 30
 ---
 
 # Linking Helper Functions
@@ -12,6 +12,7 @@ sidebar_position: 96
 | `url-named`          | Formats a field as if it were a wikilink with an alternative name (see [[#url-named Helper]] below)      | `name`                             |
 | `google`             | Generates a link to a google search using a field name                                                   | `searchString`                     |
 | `chatGPT`            | Generates a link to a chatGPT chat using the field value and a prompt string                             | `chat preface`                     |
+| `wikipedia`          | Generates a search link in wikipedia                                                                     | `searchString`                     |
 
 
 # Linking Helper Functions

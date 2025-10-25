@@ -55,7 +55,7 @@ Current project status: **{{Status}}**
 
 A **[[Template Fields|field]]** is the heart of a template — a placeholder enclosed in double curly braces like `{{ProjectName}}` in the above example. Fields can:
 
-- Pull in values from automatic [[Built-In Template Fields|built-in data sources]], from [[URI, JSON, Command Lists|external sources]] via JSON or URI, or from the user via a rich [[Prompting|prompting interface]].
+- Pull in values from automatic [[Built-In Template Fields|built-in data sources]], from [[URI, JSON, Command Lists|external sources]] via [[JSON Packages|JSON]] or [[URI Calls|URI]], or from the user via a rich [[Prompting|prompting interface]].
 - Can have different input types, like `text`, `number`, or `multiSelect`
 
 - Read More: [[Template Fields]]
@@ -141,7 +141,12 @@ Z2K Templates merges YAML from multiple sources — including partials and paren
 
 Templates can pull data from multiple origins. Potential data sources include::
 
-![[Field Data Sources#Data Source Types]]
+1. **[[Built-In Template Fields|Built-in fields]] and [[Helper Functions|helper functions]]** — values like `date` or computed values from helper functions.
+2. **Default values stored directly in the template** — specified in field syntax using  [[field-info]]
+3. **Existing files** — other vault files can be read through built-in fields such as `{{SystemData}}` and [[Block Templates]].
+4. **External URI calls** — incoming data provided through [[URI and JSON Support|URI triggers]].
+5. **External JSON command lists** — batches of Z2K Templates actions written in to [[JSON Packages]]
+6. **Miss handling directives** — [[Miss Handling|fallback behavior]] applied when all other sources fail.
 
 - Read more: [[Field Data Sources]]
 

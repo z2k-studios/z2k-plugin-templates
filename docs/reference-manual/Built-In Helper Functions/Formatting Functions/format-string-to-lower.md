@@ -1,5 +1,5 @@
 ---
-sidebar_position: 10
+sidebar_position: 22
 ---
 
 ## format-string-to-lower Helper

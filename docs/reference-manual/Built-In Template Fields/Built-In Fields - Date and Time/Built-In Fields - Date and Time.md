@@ -1,5 +1,10 @@
 ---
-sidebar_position: 42
+sidebar_position: 1
+sidebar_folder_position: 10
+sidebar_label: Date and Time
+aliases:
+- Date and Time
+- Date and Time Built-Ins
 ---
 
 # Date and Time
@@ -15,6 +20,7 @@ The following built-in date and time template fields can be used in templates:
 | `{{timestamp}}`     | A full zettelkasten timestamp of the format `YYYYMMDDHHmmss` | `20260109185559`                         |
 | `{{dayOfWeek}}`     | The name of the day of the week with the format `dddd`       | `Friday`                                 |
 | `{{weekNum}}`       | The week number with the format `YYYY-[w]ww`                 | `2024-w02`                               |
+| `{{year}}`          | The current year                                             | `2025`                                   |
 | `{{yearMonth}}`     | The date with the format `YYYY-MM`                           | `2025-03`                                |
 | `{{yearMonthName}}` | The date with the format `YYYY-MM MMMM`                      | `2025-09 September`                      |
 | `{{yearQuarter}}`   | The current year and quarter with the format `YYYY-[Q]Q`     | `2025-Q1`                                |
