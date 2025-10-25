@@ -8,18 +8,47 @@ aliases:
 - field-info directives Parameter
 ---
 
-# Overview
-The [[field-info directives|directives]] parameter allows some fine tuning of prompting-interfaces:
-- **[[field-info directives#no-prompt|no-prompt]]** :: Directs the [[Prompting Interface]] to skip prompting the user for a field
-- **[[field-info directives#required|required]]** :: Tells the [[Prompting Interface]] that a field requires a value in order to ==finalize== the card
-- **[[field-info directives#miss-preserve|miss-preserve]]** :: Instructs the plugin to preserve the `{{field}}` entry in the final generated file if the user does not specify a value
-- **[[field-info directives#miss-clear|miss-clear]]** :: Directs the plugin to clear out the value of this field if no value is provided.
+# field-info directives Parameter
+The [[field-info directives|directives]] parameter is a comma‑separated list for fine tuning the prompting-interfaces. Options include:
+
+- Prompting:
+	- **[[field-info directives#no-prompt|no-prompt]]** :: Directs the [[Prompting Interface]] to skip prompting the user for a field
+	- **[[field-info directives#yes-prompt|yes-prompt]]** :: Directs the [[Prompting Interface]] to force the prompting of a user for a field
+- Required: 
+	- **[[field-info directives#required|required]]** :: Tells the [[Prompting Interface]] that a field requires a value in order to ==finalize== the card
+	- **[[field-info directives#not-required|not-required]]** :: Tells the [[Prompting Interface]] that a field does not require a value in order to ==finalize== the card
+- Miss Handling Special Cases:
+	- **[[field-info directives#finalize-preserve|finalize-preserve]]** :: Instructs the plugin to preserve the `{{field}}` entry in the final generated file if the user does not specify a value
+	- **[[field-info directives#finalize-clear|finalize-clear]]** :: Directs the plugin to clear out the value of this field if no value is provided.
+
+## Syntax
+
+
+## Examples
 
 
 
-# Fill In
-### `directives`
-  A comma‑separated list of prompting directives (engine‑level controls). Examples include `no-prompt` (documented below). Others are enumerated by the engine; unknown entries are rejected.    See the [[#Directives]] section below. ==needs cleaning up!==
+
+## Directives
+
+### no-prompt
+
+### yes-prompt
+
+
+### required
+
+### not-required
+
+
+### finalize-preserve
+
+finalize-preserve is actually equivalent to miss="\{\{theFieldName\}\}".  
+miss="{{theFieldName}}" is a circular reference
+
+
+### finalize-clear
+
 
 
 

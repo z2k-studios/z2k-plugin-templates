@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "reference-manual/field-info Helper/field-info Parameters/field-info type.md",
+                "file": "reference-manual/Built-In Template Fields/Built-In Fields - Date and Time/refhtml - date.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "field-info type"
+              "title": "refhtml - date"
             }
           }
         ]
@@ -94,7 +94,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "reference-manual/field-info Helper/field-info Parameters/field-info type.md",
+                "file": "reference-manual/Built-In Template Fields/Built-In Fields - Date and Time/refhtml - date.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -104,7 +104,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Backlinks for field-info type"
+              "title": "Backlinks for refhtml - date"
             }
           },
           {
@@ -170,12 +170,14 @@
   },
   "active": "319a99325c39d204",
   "lastOpenFiles": [
-    "reference-manual/field-info Helper/field-info Parameters/field-info prompt.md",
-    "reference-manual/field-info Helper/field-info Parameters/field-info Parameters.md",
+    "reference-manual/field-info Helper/field-info Parameters/field-info directives.md",
+    "reference-manual/field-info Helper/field-info Parameters/field-info fieldName.md",
     "reference-manual/field-info Helper/field-info Parameters/field-info miss.md",
-    "reference-manual/field-info Helper/field-info Parameters/field-info default.md",
-    "reference-manual/field-info Helper/field-info Parameters/field-info type.md",
+    "reference-manual/field-info Helper/field-info Parameters/field-info prompt.md",
     "reference-manual/field-info Helper/field-info Syntax.md",
+    "reference-manual/field-info Helper/field-info Parameters/field-info Parameters.md",
+    "reference-manual/field-info Helper/field-info Parameters/field-info type.md",
+    "reference-manual/field-info Helper/field-info Parameters/field-info default.md",
     "reference-manual/Built-In Helper Functions/Formatting Functions/format-string-spacify.md",
     "reference-manual/Template Fields/Restricted Functionality Mode.md",
     "reference-manual/field-info Helper/field-info Parameters/field-info value.md",
@@ -194,8 +196,6 @@
     "reference-manual/Error Handling/Error Handling.md",
     "reference-manual/Z2K System Features/Z2K System Features.md",
     "reference-manual/URI, JSON, Command Lists/URI, JSON, Command Lists.md",
-    "reference-manual/Z2K Templates and YAML/Z2K Templates and YAML.md",
-    "reference-manual/Block Templates/Block Templates.md",
     "reference-manual/System Block Templates",
     "reference-manual/Built-In Template Fields/Built-In Fields - Z2K System",
     "reference-manual/Built-In Template Fields/Built-In Fields - sourceText",

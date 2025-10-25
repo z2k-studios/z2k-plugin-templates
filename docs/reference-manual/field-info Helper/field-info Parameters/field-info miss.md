@@ -63,11 +63,11 @@ You can use the `miss` value as a pre-filled quick response to a field prompt. W
 ## miss vs. default
 ![[field-info default#default vs. miss]]
 
-
 ## Miss Directives
-The [[field-info Helper|field-info]] related helper functions also support the `directives` parameter (see [[field-info directives|directives]]). There are two options in the list of possible directives that also influence the processing of a missed field: [[field-info miss#miss-clear|miss-clear]] and  [[field-info miss#miss-preserve|miss-preserve]]. 
+The [[field-info Helper|field-info]] related helper functions also support the `directives` parameter (see [[field-info directives|directives]]). There are two options in the list of possible directives that also influence the processing of a missed field: [[field-info directive#finalize-clear|finalize-clear]] and  [[field-info directives#finalize-preserve|finalize-preserve]]. 
 
-Please note that the `miss` parameter overrules either the `miss-clear` and `miss-preserve` directives. 
+==Clean up resolution of conflicts between miss and miss directives and yaml setting==
+Please note that the `miss` parameter overrules both the `finalize-clear` and `finalize-preserve` directives. 
 
 Please see the [[Miss Handling]] page for more details. 
 
