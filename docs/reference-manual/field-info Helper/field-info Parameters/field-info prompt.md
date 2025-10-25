@@ -8,16 +8,8 @@ aliases:
 - field-info prompt Parameter
 ---
 
-# field-info prompt
-The optional `prompt` parameter in the [[field-info Helper]] informs the Z2K Templates Plugin what message to display inside the [[Prompting Interface]]. If omitted, the plugin will simply use the default. 
-Human‑readable prompt text shown in the dialog. If omitted, the engine can fall back to the variable name or other heuristics.
-
-
-Protip - reference other fields in your prompt
-
-
-# field-info default
-The `default` parameter in the [[field-info Helper]] specifies a string that represents the "default" value inside the [[Prompting Interface]].
+# field-info prompt parameter
+The frequently used, but optional, `prompt` parameter in the [[field-info Helper]] informs the Z2K Templates Plugin what message to display inside the [[Prompting Interface]]. 
 
 ## Syntax
 The `default` parameter can be specified with the `default` keyword for the [[field-info Syntax#Named Parameters|Named Parameter]]. For example:
@@ -26,51 +18,45 @@ The `default` parameter can be specified with the `default` keyword for the [[fi
 {{field-info CharacterName prompt="Which Character?" default="Sherlock Holmes"}}
 ```
 
+If you are using positional parameters, please see the [[field-info Syntax]] for more  [[field-info Syntax#Positional Parameters|information on its position]].
+
+## Default prompt Value
+If omitted, the default `prompt` value is the field name itself. The plugin will make its best attempt to "prettify" the field name for use in the prompting interface (e.g. similar to the output of the [[Built-In Helper Functions|built-in helper]] `{{format-string-spacify}}`).
+
 ## Embedded Fields
-Please note that the `default` parameter allows you to use `{{fields}}` inside it, thereby simplifying repetitive data entry and minimizing duplication errors. You can't go crazy with complex field entries (e.g. inserting a [[Block Templates|Block Template]] into a default value) - please see the article on [[Restricted Functionality Mode]]. But you can do most everything else, including most helper functions. 
+Please note that the `prompt` parameter allows you to use `{{fields}}` inside it. This is really useful for making a prompting interface that feels more natural. 
 
+You can't go crazy with complex field entries (e.g. inserting a Block Template into a default value) - please see the article on [[Restricted Functionality Mode]] for field-info parameters. But you can do most everything else, including most helper functions. 
 
-> [!TIP] Simplified Data Entry
-> Using embedded fields in your `default` prompt answer can lead to great simplification. For instance, say that you want to include a link to an Author's wikipedia page on a book review. You can present a default answer that includes a [[Linking Functions|linking helper function]] to perform a wikipedia search, but still allow the user to override and specify the actual answer:
-> 
-> ```md
-> {{field-info WikipediaLink default="{{wikipedia BookAuthor}}"}}
-> ```
+For instance, let's take the classic "Book Review" template. You can use a prompt that includes information from previously supplied fields to dynamically change the prompts for subsequent fields. 
 
-
-## Uses
-There are typically two ways in which the `default` parameter are used:
-### Use: Prefilled Response
-You can use the `default` value as a pre-filled quick response to a field prompt. Note, however, that the user will need to "[[Prompt Touching|touch]]" the value in order for the default to be accepted as the actual value. 
-
-> [!TIP] Default + Miss
-> One way to solve the need to "touch" the value for quick data entry is to provide a [[field-info miss|miss]] parameter with the same value. 
-> 
-> For example:
-> ```md
-> {{field-info TypeOfDay prompt="What type of day was it?" default="Normal" miss="Normal"}}
-> ```
-
-### Use: Guided Response
-You can also use the `default` value to help guide the user on how to respond to the prompt. The [[Prompting Interface]] will pre-select the text allowing for quick replacement. For example:
-
-```md
-{{field-info HistoricFigureFullName default="John Wilkes Booth"}}
+```md title="Book Review Template.md"
+# Summary
+- Book Author :: {{fo BookAuthor prompt="Who is the author of the book?" directives="required"}}
+- Book Title :: {{fo BookTitle prompt="What book did {{BookAuthor}} write?"}}
 ```
 
-> [!TIP] Default Filenames
-> In this way, the default response is very useful for the `{{fileTitle}}` [[Built-In Fields - File Data#Destination File Fields|built-in destination filename field]]. For instance, if you prefer to have your book reviews filenames be formatted as "*Title - Author*", you can provide that as a default and miss value:
-> ```md
-> {{field-info fileTitle default="{{BookTitle}} - {{BookAuthor}}" miss="{{BookTitle}} - {{BookAuthor}}"}}
-> ```
+In this example, the prompt for the Title will automatically include the author's name as you type it into the Author field.
+
+## Embedded Helper Functions
+You can also use [[Built-In Helper Functions|built-in helpers]] in the prompt interface (again, some [[Restricted Functionality Mode|limitations]]).
+
+Take for instance the previous example. Say you want to have a prompt for the title that handles the case where a user has not yet written an author's name in (and possible never will). You can use a simple `{{if}}` helper function to display an alternative prompt instead.
+
+```md title="Book Review Template #2.md"
+# Summary
+- Book Author :: {{fo BookAuthor prompt="Who is the author of the book?"}}
+- Book Title :: {{fo BookTitle prompt="{{#if BookAuthor}}What book did {{BookAuthor}} write?{{else}}What is the title of the book?{{/if}}"}}
+```
 
 
-## default vs. miss
-The `default` value is similar to a `miss`, but logically separate:
-- **Default values** are the pre-fed answer into the [[Prompting Interface]]. They do not actually become the value of the field unless the users [[Prompt Touching|touches]] the answer. 
-- **Miss** values, on the other hand, are the value assigned to the field if no value was given by the user. This includes the instance where the user fails to [[Prompt Touching|touch]] the default answer in the prompting interface.
+> [!TIP] Readability and Usability
+> These advanced `prompt` settings can seem like a bit much. But using customized prompts are a way to really add polish to the quality of your template files. Make use of prompts to:
+> 1. Provide details of what exactly is being asked for.
+> 2. Provide Tips on how to answer
+> 3. Provide suggested answers to consider (or move these to the [[field-info default|default]] parameter)
+> 4. Soften the otherwise quite utilitarian [[Prompting Interface]], welcoming users to provide as much detail as possible. 
 
-Separating the `default` value from the `miss` value allows you to make much more useful and streamlined prompting scenarios. For more information, please see [[Miss Handling]].
 
-## default `default`
-==The default `default` value (ha!) is `What is the value of {{fieldName}}?`== 
+
+

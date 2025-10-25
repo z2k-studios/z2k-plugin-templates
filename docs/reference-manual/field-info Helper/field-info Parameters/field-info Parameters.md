@@ -58,7 +58,7 @@ Where:
 	- `Prompt with spaces` is a suggested prompt to display to the user to describe the data to enter. 
 	- This prompt may contain `{{fields}}`, in which case it will use the current known value for other fields (advanced feature)
 	- This prompt may contain built-in field `{{FieldName}}` that refers to the actual FieldName that has been spacified and converted to lowercase. 
-	- Note: this may be empty, in which case Z2K will ask generically for data using just the field name, or the default prompt phrase. See [[Z2K Template YAML Configuration Fields]]
+	- Note: this may be empty, in which case Z2K will ask generically for data using just the field name, or the default prompt phrase. See [[YAML Configuration Fields]]
 - `Default Answer` (Optional) ^DefaultAnswer
 	- This is the default answer to provide to the user to help with answering or minimize data entry
 	- Note: This can use other Template Fields, but it is fine if they remain unresolved if those fields have not yet been specified `{{fields}}`.

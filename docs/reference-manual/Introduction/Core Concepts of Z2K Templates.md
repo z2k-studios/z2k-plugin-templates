@@ -180,9 +180,9 @@ This design allows you to:
 
 The list of templates you can choose from can be context-sensitive by determining the destination file’s location within your vault. When creating a new file, Z2K Templates only lists templates found in `Templates` subfolders located along the path leading up to your vault root. This allows you to see only those templates relevant for a particular destination folder. 
 
-Additionally, by using the [[Z2K System YAML Files|System YAML feature]], you can attach YAML entries at each folder level in your vault. When a new file is created in that path, these YAML entries automatically merge into the file — providing inherited context and consistent metadata throughout your hierarchy.
+Additionally, by using the [[Intro to System Blocks|System YAML feature]], you can attach YAML entries at each folder level in your vault. When a new file is created in that path, these YAML entries automatically merge into the file — providing inherited context and consistent metadata throughout your hierarchy.
 
-- Read More: [[Hierarchical Template Folders]], [[Z2K System YAML Files]]
+- Read More: [[Hierarchical Template Folders]], [[Intro to System Blocks]]
 
 ---
 

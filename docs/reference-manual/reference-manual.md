@@ -146,43 +146,48 @@ aliases:
         - [[Inline Partials]]  
 
 13. [[Block Templates]] - Details the use of hierarchical and block level templates through partial templates  
-    - [[Partial Basics]]  
-    - [[Partial Parameters]]  
+    - [[Block Template Basics]]  
+    - [[Block Template Parameters]]  
 
-14. [[Settings Page]] - Details on the Settings Page for the Z2K Templates Plugin  
+14. [[System Block Templates]]
+	- Intro to System Block Templates
+	- Using System Block Templates and field-info
+
+15. [[Settings Page]] - Details on the Settings Page for the Z2K Templates Plugin  
     - TBD  
 
 
 
 ### Advanced 
 
-15. [[Z2K Templates and YAML|YAML Integration]] 
+16. [[Z2K Templates and YAML|YAML Integration]] 
     - [[Using Fields inside YAML Text]]  
         - How To Guide: [[How to Use Z2K Fields Inside YAML Metadata]]  
-    - [[System YAML Files]]  
     - [[Using YAML fields inside Templates]]  
-    - [[YAML and Partials]]  
+    - [[YAML and Block Templates]]  
     - [[Merging Multiple YAML Sources]]  
-    - [[Z2K Template YAML Configuration Fields|YAML Fields the Z2K Template Plugin Uses]]  
+    - [[YAML Configuration Fields|YAML Fields the Z2K Template Plugin Uses]]  
 	    - z2k_template_type
 	    - z2k_template_name
 	    - z2k_template_title: (still used?)
 	    - z2k_template_default_title
 	    - z2k_template_default_miss_handling
+	    - author?
+	    - Version?
 
-16. [[URI, JSON, Command Lists]] - Triggering template fields externally through URI and/or passing JSON packages 
+17. [[URI, JSON, Command Lists]] - Triggering template fields externally through URI and/or passing JSON packages 
 	- [[URI Actions]]
 	- [[JSON Packages]]
 	- [[Command Lists]]
 	
-17. [[Z2K System Features|Z2K System Features]] - Additional features specific to the larger Z2K System  
+18. [[Z2K System Features|Z2K System Features]] - Additional features specific to the larger Z2K System  
 
-18. [[Error Handling]]  
+19. [[Error Handling]]  
 
 
 ### Misc
 
-19. [[Appendix]]  
+20. [[Appendix]]  
     - Full Variable & Helper Reference (alphabetical)  
     - [[Glossary]]
     - [[Roadmap and Extensibility]]  

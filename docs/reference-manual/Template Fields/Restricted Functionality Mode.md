@@ -1,3 +1,7 @@
+---
+aliases:
+- limitations
+---
 
 This mode is used during certain circumstances to restict the capabilities of the field replacement capability. 
 

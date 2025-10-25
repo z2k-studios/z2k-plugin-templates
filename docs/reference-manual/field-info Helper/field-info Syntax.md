@@ -25,7 +25,7 @@ The optional parameters range from prompting information to details on how to ha
 Positional Parameters are identified by the order that they are listed after the field name. You can not skip a parameter, but you can end providing parameters before the end of all possible parameters. Here is an example:
 
 ```md
-{{field-info BookTitle "text" "Short title for this book?" "Untitled" "required"}}
+{{field-info BookTitle "text" "Short title for this book?" "Untitle" "Unspecified" "required"}}
 ```
 
 The order they are accepted are as follows:

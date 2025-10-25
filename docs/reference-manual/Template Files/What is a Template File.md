@@ -31,7 +31,7 @@ My Book Review - {{Title}} by {{Author}}
 
 ```
 
-When using this template to create a new card, it will prompt the user for three pieces of information (Author, Title and Summary) and then will replace each instance of their corresponding `{{field}}` with the provided data. In this instance, it will also automatically assign a filename to the new card based on the provided title through the use of the [[Z2K Template YAML Configuration Fields#z2k_template_default_title|z2k_template_default_title]] field. 
+When using this template to create a new card, it will prompt the user for three pieces of information (Author, Title and Summary) and then will replace each instance of their corresponding `{{field}}` with the provided data. In this instance, it will also automatically assign a filename to the new card based on the provided title through the use of the [[YAML Configuration Fields#z2k_template_default_title|z2k_template_default_title]] field. 
 
 
 > [!NOTE] 

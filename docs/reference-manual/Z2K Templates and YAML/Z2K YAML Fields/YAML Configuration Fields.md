@@ -5,7 +5,7 @@ sidebar_position: 116
 The Z2K Template plugin uses settings stored in the YAML fields of a template file to control how the Template plugin behaves. This allows the template plugin to behave differently on a per-template file basis. All fields are prefaced with `z2k_template` to separate them from other Z2K YAML configuration settings
 
 # Using Template YAML Configuration Fields
-The following fields can be inserted into the yaml text of the source template file directly. They are also allowed to be inserted into [[Z2K System YAML Files|Z2K System YAML Files]] to configure execution across a larger set of files as needed. 
+The following fields can be inserted into the yaml text of the source template file directly. They are also allowed to be inserted into [[Intro to System Blocks|Intro to System Blocks]] to configure execution across a larger set of files as needed. 
 
 
 # Supported YAML Configuration Fields
@@ -45,14 +45,19 @@ This key specifies the name of the template to use for the `{{templateName}}` [[
 | ------------------- | --------- | ------------------------------------------------------------------------------------------------ |
 | `z2k_template_name` | string    | Specifies a string to use as the title of the template for the `{{templateName}}` builtin field. |
 
+## z2k_template_author
+This key allows you to assign an "author name" to the template file. This can be useful when sharing the template file with others (e.g. you can provide a link to your website in the `z2k_template_author` text).
+
+This field will also be used whenever the [[Built-In Template Fields|Built-In Field]] `{{templateAuthor}}` is used within the template file. See [[Built-In Fields - Template File Data#templateAuthor|{{templateAuthor}}]] for more details.
+
+| Key                   | Key Value | Result                                                                                                                                         |
+| --------------------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `z2k_template_author` | string    | Specifies a string that represents the author of a template. It will be used to fill in references to the  `{{templateAuthor}}` builtin field. |
 ## z2k_template_version
-This key specifies the version of the template to use for the `{{templateVersion}}` [[Built-In Fields - File Data#Template File Fields|File Data Built-In field]].  This will likely be used except for unusual circumstances where the template name needs to be different than the actual name.
+This key specifies the version of the template. This is useful to help distinguish between files created from different versions of the same template file.  
+
+This field is also used as the value for the [[Built-In Template Fields|Built-In Field]] `{{templateVersion}}`. See [[Built-In Fields - Template File Data#templateVersion|{{templateVersion}}]] for more details.
 
 | Key                    | Key Value | Result                                                                                                                                                    |
 | ---------------------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `z2k_template_version` | string    | Specifies a string that represents the version number of the template. It will be used to fill in references to the  `{{templateVersion}}` builtin field. |
-
-
-# Notes
-
-1. Note: If you include multiple, conflicting YAML Configuration Field entries (e.g. from multiple layers of System YAML files, or by including a partial), you may experience inconsistent enforcement of those configuration settings.
