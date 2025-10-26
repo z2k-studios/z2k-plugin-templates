@@ -6,7 +6,7 @@ aliases:
 - File Data
 ---
 ## Creator Built-In Field
-The `{{creator}}` [[Built-In Template Fields|Built-In Field]] allows you to insert your name (whatever you chose it to be) into every file that you create. The [[Settings Page]] allows you to specify a Creator text string that will be inserted every place the plugin sees a `{{creator}}` built-in field. 
+The `{{creator}}` [[Built-In Fields|Built-In Field]] allows you to insert your name (whatever you chose it to be) into every file that you create. The [[Settings Page]] allows you to specify a Creator text string that will be inserted every place the plugin sees a `{{creator}}` built-in field. 
 
 
 > [!TIP] Simple Copyright Statement

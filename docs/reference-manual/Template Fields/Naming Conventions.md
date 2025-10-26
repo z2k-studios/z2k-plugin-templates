@@ -6,7 +6,7 @@ sidebar_position: 24
 # Template Field Naming Conventions
 When using Z2K Template Fields, there are some important considerations for how to name a field
 - **A Field Name must not contain any spaces**. Thus, `{{Book Title}}` will be interpreted as a field name `Title` with a "helper" function named `Book`, which will likely result in an error. Instead, the field should be `{{BookTitle}}`
-- A general convention for field names is that [[Built-In Template Fields|automated fields]] begin with lowercase (e.g. `{{weekNum}}`) whereas user specified fields begin with an Uppercase letter (e.g. `{{BookAuthor}}`)
+- A general convention for field names is that [[Built-In Fields|automated fields]] begin with lowercase (e.g. `{{weekNum}}`) whereas user specified fields begin with an Uppercase letter (e.g. `{{BookAuthor}}`)
 - Field names are case sensitive. Fields that only differ by case will still be treated as separate fields. So a field like `{{BookTitle}}` is a different field than `{{Booktitle}}`.
 
 ## Special Field Characters

@@ -48,7 +48,7 @@ This new version introduces a field that allows the user to select from a variet
 
 ### 2b. Built-In Field - `{{yearMonth}}`
 The new template file now includes a "`Built-in Field`", in this case `{{yearMonth}}`. Built-in fields are fields that are recognized and handled automatically by the Z2K Template Plugin. In [[Built-In Fields - Date and Time#Date and Time|this case]], when the Template is used to create a new file, the current year and month will be inserted automatically into the file. 
-- Learn More: [[Built-In Template Fields]]
+- Learn More: [[Built-In Fields]]
 
 ### 2c. Field Formatting
 Next, notice the Amazon Link: entry. Here it is construct a link to an Amazon search using the entered title. Because the title will be embedded in a URL, it makes use of a [[Helper Functions|Helper Function]] called `format-sluggify` that converts the value of a field into a sluggified (i.e. URL friendly) text. 

@@ -11,7 +11,7 @@ aliases:
 - Card Data Built-Ins
 ---
 ## Overview
-Within this section, you can discover [[Built-In Template Fields|Built-In Fields]] associated with the source template file and the destination file.
+Within this section, you can discover [[Built-In Fields|Built-In Fields]] associated with the source template file and the destination file.
 
 1. [[Built-In Fields - File Title Variants|Destination File Fields]]  - information about the file being created
 	- `{{fileTitle}}` 

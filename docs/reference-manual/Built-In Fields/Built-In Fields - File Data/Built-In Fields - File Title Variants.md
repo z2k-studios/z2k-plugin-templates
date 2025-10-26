@@ -33,7 +33,7 @@ What about Obsidian's `{{title}}` field?
 - The [[The Z2K System|Z2K System]] calls a file a "card" with the assumption that a file in the Z2K System can contain information that is not typically referred to as a "*note*". Z2K embraces the idea that each file in the system is merely a "container", and uses the word "*card*" - like the index card of an old school zettelkasten - to reflect that.
 
 ### `{{field-info}}` and `{{fileTitle}}`
-Even though `{{fileTitle}}` is a [[Built-In Template Fields|Built-In Field]], you can still use the `{{field-info}}` function on the field to change how it is prompted for. In fact, that is the most common use of the `{{fileTitle}}` field - to use [[field-info Helper|field-info]] to specify a default name for a file. 
+Even though `{{fileTitle}}` is a [[Built-In Fields|Built-In Field]], you can still use the `{{field-info}}` function on the field to change how it is prompted for. In fact, that is the most common use of the `{{fileTitle}}` field - to use [[field-info Helper|field-info]] to specify a default name for a file. 
 
 > [!TIP] Naming your Resultant Files with User Entered Fields
 > The most common use of the `{{fileTitle}}` built-in field is to use it within a [[field-info Helper]]. With `{{field-info}}`, you can specify the prompting and naming of any resultant file created from the template. 

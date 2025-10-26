@@ -55,7 +55,7 @@ Current project status: **{{Status}}**
 
 A **[[Template Fields|field]]** is the heart of a template — a placeholder enclosed in double curly braces like `{{ProjectName}}` in the above example. Fields can:
 
-- Pull in values from automatic [[Built-In Template Fields|built-in data sources]], from [[URI, JSON, Command Lists|external sources]] via [[JSON Packages|JSON]] or [[URI Calls|URI]], or from the user via a rich [[Prompting|prompting interface]].
+- Pull in values from automatic [[Built-In Fields|built-in data sources]], from [[URI, JSON, Command Lists|external sources]] via [[JSON Packages|JSON]] or [[URI Calls|URI]], or from the user via a rich [[Prompting|prompting interface]].
 - Can have different input types, like `text`, `number`, or `multiSelect`
 
 - Read More: [[Template Fields]]
@@ -65,9 +65,9 @@ A **[[Template Fields|field]]** is the heart of a template — a placeholder enc
 ---
 ## Built-In Fields and Helper Functions
 
-Z2K Templates uses [[Handlebars Support|Handlebars.js]] as it's underlying syntax and `{{field}}` language. Z2K The Via Handlebars, the Z2K Templates plugin provides a number of predefined ("Built-In") [[Built-In Template Fields|automatic fields]] and [[Built-In Helper Functions|helper functions]] (small inline functions that operate on field values). Rest easy - no coding knowledge necessary. 
+Z2K Templates uses [[Handlebars Support|Handlebars.js]] as it's underlying syntax and `{{field}}` language. Z2K The Via Handlebars, the Z2K Templates plugin provides a number of predefined ("Built-In") [[Built-In Fields|automatic fields]] and [[Built-In Helper Functions|helper functions]] (small inline functions that operate on field values). Rest easy - no coding knowledge necessary. 
 
-- Read More: [[Built-In Template Fields]], [[Built-In Helper Functions]]
+- Read More: [[Built-In Fields]], [[Built-In Helper Functions]]
 - Example:
 ```md title="Partial Template - Status Update.md"
 Date::{{format-date date 'MMMM D, YYYY'}}
@@ -141,7 +141,7 @@ Z2K Templates merges YAML from multiple sources — including partials and paren
 
 Templates can pull data from multiple origins. Potential data sources include::
 
-1. **[[Built-In Template Fields|Built-in fields]] and [[Helper Functions|helper functions]]** — values like `date` or computed values from helper functions.
+1. **[[Built-In Fields|Built-in fields]] and [[Helper Functions|helper functions]]** — values like `date` or computed values from helper functions.
 2. **Default values stored directly in the template** — specified in field syntax using  [[field-info]]
 3. **Existing files** — other vault files can be read through built-in fields such as `{{SystemData}}` and [[Block Templates]].
 4. **External URI calls** — incoming data provided through [[URI and JSON Support|URI triggers]].

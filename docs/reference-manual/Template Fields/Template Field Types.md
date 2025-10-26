@@ -20,9 +20,9 @@ For example, a Template card might read:
 In this instance, `{{BookTitle}}` and `{{Author}}` are user specified fields, because the user provides the actual book title for the card during card creation from a template.
 
 # Template Field Type: Built-In Fields
-In addition to user specified fields, Z2K also includes a number of [[Built-In Template Fields|built-in fields]] that will be filled in by the system automatically during card creation (e.g. daily card creation, new card action). 
+In addition to user specified fields, Z2K also includes a number of [[Built-In Fields|built-in fields]] that will be filled in by the system automatically during card creation (e.g. daily card creation, new card action). 
 
-For instance, the field `{{today}}` will automatically insert the current date into its location in the template card's content when a card is created using that template card. See [[Built-In Template Fields|Built-In Template Fields]] below for a list of all known built-in fields.
+For instance, the field `{{today}}` will automatically insert the current date into its location in the template card's content when a card is created using that template card. See [[Built-In Fields|Built-In Template Fields]] below for a list of all known built-in fields.
 
 
 

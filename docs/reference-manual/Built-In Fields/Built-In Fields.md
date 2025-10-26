@@ -2,6 +2,7 @@
 sidebar_folder_position: 60
 sidebar_position: 1
 aliases:
+- Built-In Template Fields
 - Built-In Template Field
 - Built-In Fields
 - Built-In Field

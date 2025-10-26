@@ -48,7 +48,7 @@ This key specifies the name of the template to use for the `{{templateName}}` [[
 ## z2k_template_author
 This key allows you to assign an "author name" to the template file. This can be useful when sharing the template file with others (e.g. you can provide a link to your website in the `z2k_template_author` text).
 
-This field will also be used whenever the [[Built-In Template Fields|Built-In Field]] `{{templateAuthor}}` is used within the template file. See [[Built-In Fields - Template File Data#templateAuthor|{{templateAuthor}}]] for more details.
+This field will also be used whenever the [[Built-In Fields|Built-In Field]] `{{templateAuthor}}` is used within the template file. See [[Built-In Fields - Template File Data#templateAuthor|{{templateAuthor}}]] for more details.
 
 | Key                   | Key Value | Result                                                                                                                                         |
 | --------------------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -56,7 +56,7 @@ This field will also be used whenever the [[Built-In Template Fields|Built-In Fi
 ## z2k_template_version
 This key specifies the version of the template. This is useful to help distinguish between files created from different versions of the same template file.  
 
-This field is also used as the value for the [[Built-In Template Fields|Built-In Field]] `{{templateVersion}}`. See [[Built-In Fields - Template File Data#templateVersion|{{templateVersion}}]] for more details.
+This field is also used as the value for the [[Built-In Fields|Built-In Field]] `{{templateVersion}}`. See [[Built-In Fields - Template File Data#templateVersion|{{templateVersion}}]] for more details.
 
 | Key                    | Key Value | Result                                                                                                                                                    |
 | ---------------------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |

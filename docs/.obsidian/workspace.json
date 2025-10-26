@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "reference-manual/Built-In Template Fields/Built-In Fields - Date and Time/refhtml - date.md",
+                "file": "reference-manual/field-info Helper/field-info Usage Tips.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "refhtml - date"
+              "title": "field-info Usage Tips"
             }
           }
         ]
@@ -94,7 +94,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "reference-manual/Built-In Template Fields/Built-In Fields - Date and Time/refhtml - date.md",
+                "file": "reference-manual/field-info Helper/field-info Usage Tips.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -104,7 +104,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Backlinks for refhtml - date"
+              "title": "Backlinks for field-info Usage Tips"
             }
           },
           {
@@ -170,38 +170,38 @@
   },
   "active": "319a99325c39d204",
   "lastOpenFiles": [
+    "reference-manual/field-info Helper/field-info Syntax.md",
+    "reference-manual/field-info Helper/field-info Output.md",
+    "reference-manual/field-info Helper/field-info Examples.md",
+    "reference-manual/field-info Helper/field-info Helper.md",
+    "reference-manual/field-info Helper/refheader - field-info and Built-In Fields.md",
+    "reference-manual/Built-In Fields/Built-In Fields - Date and Time/refheader - date.md",
+    "reference-manual/Built-In Fields/Built-In Fields and Field-Info.md",
+    "reference-manual/Built-In Fields/Built-In Fields.md",
+    "reference-manual/reference-manual.md",
+    "reference-manual/field-info Helper/field-info Parameters/field-info Parameters.md",
+    "reference-manual/Error Handling/Error Handling.md",
+    "reference-manual/field-info Helper/field-info Usage Tips.md",
+    "reference-manual/field-info Helper/field-info Variations/fo Helper.md",
+    "reference-manual/field-info Helper/field-info Variations/fi Helper.md",
     "reference-manual/field-info Helper/field-info Parameters/field-info directives.md",
+    "reference-manual/Built-In Helper Functions/Formatting Functions/format-string-bulletize.md",
+    "reference-manual/Built-In Helper Functions/Formatting Functions/Formatting Functions.md",
     "reference-manual/field-info Helper/field-info Parameters/field-info fieldName.md",
     "reference-manual/field-info Helper/field-info Parameters/field-info miss.md",
     "reference-manual/field-info Helper/field-info Parameters/field-info prompt.md",
-    "reference-manual/field-info Helper/field-info Syntax.md",
-    "reference-manual/field-info Helper/field-info Parameters/field-info Parameters.md",
     "reference-manual/field-info Helper/field-info Parameters/field-info type.md",
     "reference-manual/field-info Helper/field-info Parameters/field-info default.md",
     "reference-manual/Built-In Helper Functions/Formatting Functions/format-string-spacify.md",
     "reference-manual/Template Fields/Restricted Functionality Mode.md",
     "reference-manual/field-info Helper/field-info Parameters/field-info value.md",
     "reference-manual/Template Fields/Deferred Field Resolution.md",
-    "reference-manual/Built-In Helper Functions/Built-In Helper Functions.md",
-    "reference-manual/Built-In Helper Functions/Linking Functions/Linking Functions.md",
-    "reference-manual/Built-In Helper Functions/Formatting Functions/Formatting Functions.md",
-    "reference-manual/Z2K Templates and YAML/Z2K YAML Fields/Miss Handling YAML fields.md",
-    "reference-manual/Z2K Templates and YAML/Z2K YAML Fields/YAML Configuration Fields.md",
-    "reference-manual/Built-In Template Fields/Built-In Fields - File Data/Built-In Fields - File Title Variants.md",
-    "reference-manual/Built-In Template Fields/Built-In Fields and Field-Info.md",
-    "reference-manual/Built-In Template Fields/Built-In Fields - File Data/Built-In Fields - Template File Data.md",
-    "reference-manual/Built-In Template Fields/Built-In Fields - File Data/Built-In Fields - File Data.md",
-    "reference-manual/reference-manual.md",
-    "reference-manual/Appendix/Appendix.md",
-    "reference-manual/Error Handling/Error Handling.md",
-    "reference-manual/Z2K System Features/Z2K System Features.md",
-    "reference-manual/URI, JSON, Command Lists/URI, JSON, Command Lists.md",
     "reference-manual/System Block Templates",
-    "reference-manual/Built-In Template Fields/Built-In Fields - Z2K System",
-    "reference-manual/Built-In Template Fields/Built-In Fields - sourceText",
-    "reference-manual/Built-In Template Fields/Built-In Fields - File Data",
+    "reference-manual/Built-In Fields/Built-In Fields - Z2K System",
+    "reference-manual/Built-In Fields/Built-In Fields - sourceText",
+    "reference-manual/Built-In Fields/Built-In Fields - File Data",
     "Untitled",
-    "reference-manual/Built-In Template Fields/Built-In Fields - Date and Time",
+    "reference-manual/Built-In Fields/Built-In Fields - Date and Time",
     "reference-manual/URI, JSON, Command Lists/JSON Packages",
     "reference-manual/URI, JSON, Command Lists/Command Lists",
     "reference-manual/URI, JSON, Command Lists/URI Calls",

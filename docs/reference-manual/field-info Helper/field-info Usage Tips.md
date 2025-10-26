@@ -19,7 +19,12 @@ sidebar_label: field-info Usage Tips
 - Did you know that field-info paramters can have fields in them as well? The prompting interface will dynamically update as you provide data for fields
 
 
+
+
 ## Field-info placements:
+
+## Embedded field-outputs
+
 
 Best practices for field info: either at the beginning at the end or use field output to put it embedded in the template file avoid YAML.
 - General suggestion is i to try to be consistent in your template files. 

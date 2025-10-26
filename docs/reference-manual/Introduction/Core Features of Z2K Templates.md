@@ -11,7 +11,7 @@ Z2K Templates has a rich collection of features, including:
 - A `{{field}}` syntax based on the industry standard [handlebars.js](https://handlebarsjs.com/) library.
 - An [[Prompting|interactive prompting dialog]] for filling out information for each new file. 
 - The prompting dialog is customizable on a per template basis with a rich [[Template Fields|syntax for specifying prompting information]] (e.g. required fields, prompting text, default values) and handling missing data.
-- A series of [[Built-In Template Fields|built-in fields]] that will auto-populate data into the new notes
+- A series of [[Built-In Fields|built-in fields]] that will auto-populate data into the new notes
 - [[Handlebars Support|Handlebars.js functions]], including built-in helpers for ==iteration and conditional formatting==  
 - Support for [[Block Templates|block templates]] that allow you to build modular templates with consistent formatting.
 - Support for [[Hierarchical Template Folders|Hierarchical Structures]] that allow you to build templates up as you traverse through a folder-based vault, including support for [[YAML Integration|YAML merging]] across templates  

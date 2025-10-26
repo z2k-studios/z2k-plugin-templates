@@ -19,7 +19,8 @@ The [[field-info directives|directives]] parameter is a comma‑separated list f
 	- **[[field-info directives#not-required|not-required]]** :: Tells the [[Prompting Interface]] that a field does not require a value in order to ==finalize== the card
 - Miss Handling Special Cases:
 	- **[[field-info directives#finalize-preserve|finalize-preserve]]** :: Instructs the plugin to preserve the `{{field}}` entry in the final generated file if the user does not specify a value
-	- **[[field-info directives#finalize-clear|finalize-clear]]** :: Directs the plugin to clear out the value of this field if no value is provided.
+	- **[[field-info directives#finalize-clear|finalize-clear]]** :: Directs the plugin to clear out the value of this field if no value is provided
+	- finalize-default :: 
 
 ## Syntax
 

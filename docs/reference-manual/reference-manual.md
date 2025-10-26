@@ -64,7 +64,7 @@ aliases:
     - [[Path Expressions]] (`{{person.lastname}}`)  
     - [[Raw vs HTML Escaping]]  
 
-6. [[Built-In Template Fields]] - Built-in fields supported by the Z2K Templates plugin  
+6. [[Built-In Fields]] - Built-in fields supported by the Z2K Templates plugin  
     - [[Built-In Fields - Date and Time|Date and Time Built-Ins]]
     - [[Built-In Fields - File Data|File Data Built-Ins]]
     - [[Built-In Fields - Z2K System|Z2K Card References Built-Ins]]

@@ -36,6 +36,6 @@ For quick reference, the following are augmentations to the Handlebars language 
 3. Support for User Prompting
 	- See [[Prompting]]
 4. Support for automated fields
-	- See [[Built-In Template Fields]]
+	- See [[Built-In Fields]]
 5. Support for required fields
 	- See ==TBD==
