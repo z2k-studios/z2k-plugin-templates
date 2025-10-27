@@ -36,7 +36,7 @@ This simple example handles automatic naming of a file based on fields located i
 ## Work Out Log Template
 This example demonstrates the most basic example of using embedded `{{field-output}}` commands (in their abbreviated `{{fo}}` [[fo Helper|form]]). The is for a Workout Log template file. It uses `{{fo}}` to directly embed the prompting information into the summary list. 
 
-```md title="Workout Log.md"
+```md title="Template - Workout Log.md"
 {{field-info fileTitle default="{{today}} - {{Duration}} min workout - {{WorkoutType}}" directives="finalize-default" ~}}
 
 ## Summary

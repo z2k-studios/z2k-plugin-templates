@@ -111,7 +111,7 @@ Category: <%* const c = await tp.system.suggester(['Work','Home','Study'], ['wor
 - **Z2K Templates**:
 ```md title="Example C - Z2K Templates.md"
 –––
-Category: {{Category typeselect:Work,Home,Study}}
+Category: {{field-output Category "single-select:Work,Home,Study"}}
 –––
 # Note — {{Category}}
 ```
@@ -137,9 +137,7 @@ Mood:
 
 - **Z2K Templates**:
 ```md title="Example D - Z2K Templates.md"
-–––
-Title: {{date}}
-–––
+{{field-info fileTitle="{{today}}.md"}}
 Steps: {{StepsTaken}}
 Breakfast: {{Breakfast}}
 Dinner: {{Dinner}}
@@ -147,6 +145,26 @@ Weight: {{Weight}}
 Mood: {{Mood}}
 ```
 Use **Continue filling file** during the day; **Finalize** applies miss-handling for anything left unresolved.
+
+---
+
+
+### Comparison: Interactive Data Entry
+
+**Goal:** Create a snippet that prompts you for the current mood
+
+- **Templater** (conceptual; no first-class deferred placeholders):
+```md title="Example E - Templater.md"
+---
+- Mood:: <% await tp.system.multi_suggester(["Happy", "Sad", "Confused"], ["Happy", "Sad", "Confused"]) %>
+```
+
+- **Z2K Templates**:
+```md title="Example E - Z2K Templates.md"
+- Mood:: {{field-output Mood "multi-select:Happy,Sad,Confused"}}
+```
+
+
 
 ---
 
