@@ -13,3 +13,6 @@ sidebar_position: 1
 | [[fo Helper\|fo]]                     | Abbreviated version of [[field-output Helper\|field-output]]                                                        | see [[field-info Parameters]]      |
 
 
+
+==infinity-field helper==
+{{infinity-field expression="- {{CurrentMood}} at {{format-date today "HH:MM"}}}}"}}
