@@ -11,6 +11,7 @@ import { EditorView, ViewPlugin, ViewUpdate, Decoration, DecorationSet } from "@
 import { RangeSetBuilder, type Extension } from "@codemirror/state";
 import { handlebarsLanguage } from "@xiechao/codemirror-lang-handlebars"; // npm i @xiechao/codemirror-lang-handlebars
 import { highlightTree, classHighlighter } from "@lezer/highlight"; // npm i @lezer/highlight
+import { title } from 'process';
 
 interface Z2KTemplatesPluginSettings {
 	templatesRootFolder: string;
@@ -652,7 +653,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		}
 
 		// Gather field overrides, field params override templateJsonData
-		// DOCS: field params override templateJsonData
+		// DOCS: field params in the URI override field values in templateJsonData
 		let fieldOverrides: Record<string,string> = { ...fieldParams };
 		const templateJsonDataParam = getParam("templateJsonData");
 		if (templateJsonDataParam) {
@@ -723,6 +724,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		destDir?: TFolder,
 		sourceFile?: TFile,
 		fromSelection?: boolean,
+		finalize?: boolean,
 	}) {
 		try {
 			if (!opts) { opts = {}; }
@@ -753,15 +755,16 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			content = Z2KYamlDoc.joinFrontmatter(fm, body);
 			let state = await this.parseTemplate(content, opts.templateFile.parent as TFolder);
 			let hadSourceTextField = !!state.fieldInfos["sourceText"];
-			state = this.handleOverrides(state, opts.fieldOverrides, opts.promptMode || "all");
-			state = this.addBuiltIns(state, { sourceText: opts.fieldOverrides.sourceText, templateName: opts.templateFile.basename });
-			state = this.setDefaultTitleFromYaml(state);
+			// DOCS: field overrides override the values specified in fieldinfos
+			this.handleOverrides(state, opts.fieldOverrides, opts.promptMode || "all");
+			this.addBuiltIns(state, { sourceText: opts.fieldOverrides.sourceText, templateName: opts.templateFile.basename });
+			this.setDefaultTitleFromYaml(state);
 
 			if (this.hasFillableFields(state.fieldInfos) && opts.promptMode !== "none") {
-				state = await this.promptForFieldCollection(state);
+				opts.finalize = await this.promptForFieldCollection(state);
 			}
 
-			let { fm: fmOut, body: bodyOut } = Z2KTemplateEngine.renderTemplate(state);
+			let { fm: fmOut, body: bodyOut } = Z2KTemplateEngine.renderTemplate(state, opts.finalize ?? false);
 			if (!hadSourceTextField && opts.fieldOverrides.sourceText) {
 				bodyOut += `\n\n${opts.fieldOverrides.sourceText}\n`;
 			}
@@ -781,12 +784,13 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		existingFile: TFile,
 		fieldOverrides?: Record<string,string>,
 		promptMode?: "none"|"remaining"|"all",
+		finalize?: boolean,
 	}) {
 		try {
 			let content = await this.app.vault.read(opts.existingFile);
 			let state = await this.parseTemplate(content, opts.existingFile.parent as TFolder);
-			state = this.handleOverrides(state, opts.fieldOverrides, opts.promptMode || "all");
-			state = this.addBuiltIns(state, { existingTitle: opts.existingFile.basename });
+			this.handleOverrides(state, opts.fieldOverrides, opts.promptMode || "all");
+			this.addBuiltIns(state, { existingTitle: opts.existingFile.basename });
 			let hasFillableFields = this.hasFillableFields(state.fieldInfos);
 			// TODO: handle the case where fieldOverrides fills all fields and promptMode is "remaining"
 			if (!hasFillableFields && !opts.fieldOverrides) {
@@ -794,10 +798,10 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				return;
 			}
 			if (hasFillableFields && opts.promptMode !== "none") {
-				state = await this.promptForFieldCollection(state);
+				opts.finalize = await this.promptForFieldCollection(state);
 			}
 
-			let { fm, body } = Z2KTemplateEngine.renderTemplate(state);
+			let { fm, body } = Z2KTemplateEngine.renderTemplate(state, opts.finalize ?? false);
 			let contentOut = Z2KYamlDoc.joinFrontmatter(fm, body);
 			let title = state.resolvedValues["title"] as string || "Untitled";
 			title = Z2KTemplateEngine.reducedRenderContent(title, state.resolvedValues);
@@ -812,6 +816,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		fieldOverrides?: Record<string,string>,
 		promptMode?: "none"|"remaining"|"all",
 		fromSelection?: boolean,
+		finalize?: boolean,
 	}) {
 		try {
 			if (!opts) { opts = {}; }
@@ -833,14 +838,15 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			let content = await this.app.vault.read(opts.templateFile);
 			let state = await this.parseTemplate(content, opts.templateFile.parent as TFolder);
 			let hadSourceTextField = !!state.fieldInfos["sourceText"];
-			state = this.handleOverrides(state, opts.fieldOverrides, opts.promptMode || "all");
-			state = this.addBuiltIns(state, { sourceText: opts.fieldOverrides.sourceText, existingTitle: opts.existingFile.basename });
+			this.handleOverrides(state, opts.fieldOverrides, opts.promptMode || "all");
+			this.addBuiltIns(state, { sourceText: opts.fieldOverrides.sourceText, existingTitle: opts.existingFile.basename });
 
-			if (this.hasFillableFields(state.fieldInfos) && opts.promptMode !== "none") {
-				state = await this.promptForFieldCollection(state);
+			// if (this.hasFillableFields(state.fieldInfos) && opts.promptMode !== "none") {
+			if (opts.promptMode !== "none") {
+				opts.finalize = await this.promptForFieldCollection(state);
 			}
 
-			let { fm: partialFm, body: partialBody } = Z2KTemplateEngine.renderTemplate(state);
+			let { fm: partialFm, body: partialBody } = Z2KTemplateEngine.renderTemplate(state, opts.finalize ?? false);
 			partialFm = this.updatePartialYamlOnInsert(partialFm);
 			if (!hadSourceTextField && opts.fieldOverrides.sourceText) {
 				partialBody += `\n\n${opts.fieldOverrides.sourceText}\n`;
@@ -916,8 +922,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		// 	rethrowWithMessage(error, "Error occurred while updating the existing file");
 		// }
 	}
-	handleOverrides(state: TemplateState, fieldOverrides: Record<string,string> | undefined, promptMode: "none"|"remaining"|"all"): TemplateState {
-		if (!fieldOverrides) { return state; }
+	handleOverrides(state: TemplateState, fieldOverrides: Record<string,string> | undefined, promptMode: "none"|"remaining"|"all") {
+		if (!fieldOverrides) { return; }
 		state.resolvedValues = {...state.resolvedValues, ...fieldOverrides};
 		for (const k in fieldOverrides) {
 			if (!state.fieldInfos[k]) {
@@ -932,7 +938,6 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				}
 			}
 		}
-		return state;
 	}
 
 
@@ -1010,21 +1015,16 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	async promptForTemplateFile(cardType: TFolder, type: "named" | "partial"): Promise<TFile> {
 		const templates = this.getAssociatedTemplates(type, cardType);
 		if (templates.length === 0) {
-			throw new Error(`No ${type === "named" ? "" : "partial "}templates available in the selected ${cardRefNameLower(this.settings)} type folder.`);
+			throw new Error(`No ${type === "named" ? "" : "block "}templates available in the selected ${cardRefNameLower(this.settings)} type folder.`);
 		}
 		return new Promise<TFile>((resolve, reject) => {
 			new TemplateSelectionModal(this.app, templates, this.settings, resolve, reject).open();
 		});
 	}
-	async promptForFieldCollection(templateState: TemplateState): Promise<TemplateState> {
-		if (this.hasFillableFields(templateState.fieldInfos)) {
-			await new Promise<void>((resolve, reject) => {
-				new FieldCollectionModal(this.app, `Field Collection for ${cardRefNameUpper(this.settings)}`, templateState, resolve, reject).open();
-			});
-		} else {
-			new Notice("No fields to prompt for.");
-		}
-		return templateState;
+	async promptForFieldCollection(templateState: TemplateState): Promise<boolean> {
+		return await new Promise<boolean>((resolve, reject) => {
+			new FieldCollectionModal(this.app, `Field Collection for ${cardRefNameUpper(this.settings)}`, templateState, resolve, reject).open();
+		});
 	}
 	async promptAndDeleteFile(file: TFile) {
 		const shouldDelete = await new Promise<boolean>(resolve => {
@@ -1295,7 +1295,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		}
 		return fullPath;
 	}
-	setDefaultTitleFromYaml(state: TemplateState): TemplateState {
+	setDefaultTitleFromYaml(state: TemplateState) {
 		// look through all the yaml (including from partials) and find any z2k_template_default_title field
 		for (const yamlStr of state.templatesYaml) {
 			let yaml = Z2KYamlDoc.fromString(yamlStr);
@@ -1309,9 +1309,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			state.fieldInfos["title"].default = defaultTitle;
 			break; // take the first one we find
 		}
-		return state;
 	}
-	addBuiltIns(state: TemplateState, opts: { sourceText?: string, existingTitle?: string, templateName?: string } = {}): TemplateState {
+	addBuiltIns(state: TemplateState, opts: { sourceText?: string, existingTitle?: string, templateName?: string } = {}) {
 		// sourceText
 		state.fieldInfos["sourceText"] = {
 			fieldName: "sourceText",
@@ -1351,14 +1350,22 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		state.resolvedValues["templateName"] = opts.templateName || "";
 
 		// title
-		state.fieldInfos["title"] = {
-			fieldName: "title",
-			type: "titleText",
-			directives: opts.existingTitle ? ['required', 'no-prompt'] : ['required'],
-		};
-		state.resolvedValues["title"] = opts.existingTitle || "Untitled";
-
-		return state;
+		let tfi = state.fieldInfos["title"]; // tfi = titleFieldInfo
+		if (!tfi) { tfi = { fieldName: "title" }; }
+		tfi.type = "titleText"; // Always make it titleText
+		if (!state.resolvedValues["title"]) {
+			if (opts.existingTitle) {
+				state.resolvedValues["title"] = opts.existingTitle;
+			}
+			tfi.default = "Untitled";
+		}
+		if (opts.existingTitle) {
+			tfi.directives = tfi.directives || [];
+			if (!tfi.directives.includes("no-prompt")) {
+				tfi.directives.push("no-prompt");
+			}
+		}
+		state.fieldInfos["title"] = tfi;
 	}
 	updateYamlOnCreate(fm: string, templateName: string): string {
 		const doc = Z2KYamlDoc.fromString(fm);
@@ -2047,11 +2054,11 @@ const TemplateSelector = ({ templates, settings, onConfirm, onCancel }: Template
 export class FieldCollectionModal extends Modal {
 	title: string;
 	templateState: TemplateState;
-	resolve: () => void;
+	resolve: (finalize: boolean) => void;
 	reject: (error: Error) => void;
 	root: any; // React root
 
-	constructor(app: App, title: string, templateState: TemplateState, resolve: () => void, reject: (error: Error) => void) {
+	constructor(app: App, title: string, templateState: TemplateState, resolve: (finalize: boolean) => void, reject: (error: Error) => void) {
 		super(app);
 		this.title = title;
 		this.templateState = templateState;
@@ -2068,8 +2075,8 @@ export class FieldCollectionModal extends Modal {
 		this.root.render(
 			<FieldCollectionForm
 				templateState={this.templateState}
-				onComplete={() => {
-					this.resolve();
+				onComplete={(finalize) => {
+					this.resolve(finalize);
 					this.close();
 				}}
 				onCancel={() => {
@@ -2092,7 +2099,7 @@ export class FieldCollectionModal extends Modal {
  */
 interface FieldCollectionFormProps {
 	templateState: TemplateState;
-	onComplete: () => void;
+	onComplete: (finalize: boolean) => void;
 	onCancel: () => void;
 }
 const FieldCollectionForm = ({ templateState, onComplete, onCancel }: FieldCollectionFormProps) => {
@@ -2198,7 +2205,7 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel }: FieldColle
 	useEffect(() => {
 		let newFieldStates = {...fieldStates};
 		updateFieldStates(newFieldStates, true);
-		validateAllFields(newFieldStates);
+		validateAllFields(newFieldStates, false);
 		setFieldStates(newFieldStates);
 	}, []);
 
@@ -2231,7 +2238,7 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel }: FieldColle
 		}
 	}
 
-	function	validateAllFields(newFieldStates: Record<string, FieldState>): boolean {
+	function	validateAllFields(newFieldStates: Record<string, FieldState>, finalize: boolean): boolean {
 		let isValid: boolean = true;
 		for (const fieldName of Object.keys(newFieldStates)) {
 			const fieldInfo = templateState.fieldInfos[fieldName];
@@ -2242,37 +2249,40 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel }: FieldColle
 
 			const value = fieldStates[fieldName].value;
 			let hasError = false;
+			let hasFinalizeError = false;
 			let errorMessage = '';
 
 			// Basic validation based on field type
 			if (fieldInfo.type === 'number' && isNaN(Number(value))) {
 				hasError = true;
 				errorMessage = 'Please enter a valid number';
-			} else if (value === '' && fieldInfo.directives?.contains('required')) {
-				hasError = true;
-				errorMessage = 'This field is required';
 			}
-			if (fieldName === "title") {
+			if (value === '' && fieldInfo.directives?.contains('required')) {
+				hasFinalizeError = true;
+				errorMessage = 'This field is required to finalize';
+			}
+			if (fieldInfo.type === "titleText") {
 				const val = (value as string).trim();
-				if (!val) {
+				if (!val && fieldName === 'title') {
 					hasError = true;
-					errorMessage = 'Title cannot be empty';
+					errorMessage = 'A title is required';
 				} else if (/^[.]+$/.test(val)) {
 					hasError = true;
-					errorMessage = 'Title cannot be just dots';
+					errorMessage = 'Cannot be just dots';
 				} else if (/[<>:"/\\|?*\u0000-\u001F]/.test(val)) {
 					hasError = true;
-					errorMessage = 'Title contains invalid characters (\\ / : * ? " < > |)';
+					errorMessage = 'Contains invalid characters (\\ / : * ? " < > |)';
 				} else if (/[. ]+$/.test(val)) {
 					hasError = true;
-					errorMessage = 'Title cannot end with a space or dot';
+					errorMessage = 'Cannot end with a space or dot';
 				}
 			}
-			newFieldStates[fieldName].hasError = hasError;
+			newFieldStates[fieldName].hasError = hasError || hasFinalizeError;
 			newFieldStates[fieldName].errorMessage = errorMessage;
-			if (hasError) {
-				isValid = false;
-			}
+
+			// Only block submission for required fields if finalize is true
+			if (hasError) { isValid = false; }
+			if (hasFinalizeError && finalize) { isValid = false; }
 		}
 		return isValid;
 	}
@@ -2282,7 +2292,7 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel }: FieldColle
 		newFieldStates[fieldName].value = value;
 		newFieldStates[fieldName].touched = true;
 		updateFieldStates(newFieldStates);
-		validateAllFields(newFieldStates);
+		validateAllFields(newFieldStates, false);
 		setFieldStates(newFieldStates);
 	};
 
@@ -2291,7 +2301,7 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel }: FieldColle
 		newFieldStates[fieldName].touched = true;
 		newFieldStates[fieldName].focused = true;
 		updateFieldStates(newFieldStates);
-		validateAllFields(newFieldStates);
+		validateAllFields(newFieldStates, false);
 		setFieldStates(newFieldStates);
 	};
 
@@ -2299,7 +2309,7 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel }: FieldColle
 		let newFieldStates = { ...fieldStates };
 		newFieldStates[fieldName].focused = false;
 		updateFieldStates(newFieldStates, true);
-		validateAllFields(newFieldStates);
+		validateAllFields(newFieldStates, false);
 		setFieldStates(newFieldStates);
 	};
 
@@ -2308,7 +2318,7 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel }: FieldColle
 		newFieldStates[fieldName].touched = false;
 		newFieldStates[fieldName].value = newFieldStates[fieldName].resolvedDefault;
 		updateFieldStates(newFieldStates, true);
-		validateAllFields(newFieldStates);
+		validateAllFields(newFieldStates, false);
 		setFieldStates(newFieldStates);
 	}
 
@@ -2316,7 +2326,7 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel }: FieldColle
 		e.preventDefault();
 
 		// Abort if there are errors
-		let isValid = validateAllFields(fieldStates);
+		let isValid = validateAllFields(fieldStates, finalize);
 		if (!isValid) {
 			scrollToFirstError();
 			return;
@@ -2336,7 +2346,7 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel }: FieldColle
 			}
 		}
 
-		onComplete();
+		onComplete(finalize);
 	};
 
 	function scrollToFirstError() {
@@ -2382,9 +2392,13 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel }: FieldColle
 				<div className="field-title-container">{getFieldContainer('title')}</div>
 			)}
 			<div className="field-list">
-				{renderOrderFieldNames
-					.filter(fieldName => fieldName !== 'title')
-					.map(fieldName => getFieldContainer(fieldName))}
+				{renderOrderFieldNames.filter(fieldName => fieldName !== 'title').length > 0 ? (
+					renderOrderFieldNames
+						.filter(fieldName => fieldName !== 'title')
+						.map(fieldName => getFieldContainer(fieldName))
+				) : (
+					<div className="no-fields-message">No fields to fill.</div>
+				)}
 			</div>
 
 			<div className="form-actions">
