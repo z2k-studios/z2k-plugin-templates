@@ -111,7 +111,7 @@ Category: <%* const c = await tp.system.suggester(['Work','Home','Study'], ['wor
 - **Z2K Templates**:
 ```md title="Example C - Z2K Templates.md"
 –––
-Category: {{field-output Category "single-select:Work,Home,Study"}}
+Category: {{field-output Category "singleSelect:Work,Home,Study"}}
 –––
 # Note — {{Category}}
 ```
@@ -161,7 +161,7 @@ Use **Continue filling file** during the day; **Finalize** applies miss-handling
 
 - **Z2K Templates**:
 ```md title="Example E - Z2K Templates.md"
-- Mood:: {{field-output Mood "multi-select:Happy,Sad,Confused"}}
+- Mood:: {{field-output Mood "multiselect:Happy,Sad,Confused"}}
 ```
 
 

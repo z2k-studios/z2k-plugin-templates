@@ -18,7 +18,7 @@ The `{{field-info}}` helper function (also abbreviated to `{{fi}}`) is a major w
 - The [[field-info miss|"miss" value]] to use for the field if it is not specified
 - Advanced [[field-info directives]] to control how prompting is performed
 
-While using `{{field-info}}` (and its sibling `{{field-output}}`) is purely optional, you will quickly find that it can be a powerful tool for making your templates professional and more predictable. 
+While using `{{field-info}}` and its sibling `{{field-output}}` is purely optional, you will quickly find that it can be a powerful tool for making your templates more professional and predictable. 
 ## Contents
 
 Because `{{field-info}}` is so powerful, its documentation is spread out over several pages:
@@ -27,12 +27,13 @@ Because `{{field-info}}` is so powerful, its documentation is spread out over se
 - [[field-info Syntax|Syntax]] - syntax of the underlying helper function
 - [[field-info Output|Output]] - what does the `{{field-info}}` helper output?
 - [[field-info Parameters|Parameters]] - steps through `{{field-info}}` (and `{{field-output}}`) parameters
-	- [[field-info type|type]] Parameter
 	- [[field-info prompt|prompt]] Parameter
 	- [[field-info default|default]] Parameter
+	- [[field-info type|type]] Parameter
 	- [[field-info miss|miss]] Parameter
-	- [[field-info value|value]] Parameter
 	- [[field-info directives|directives]] Parameter
+	- [[field-info opts|opts]] Parameter
+	- [[field-info value|value]] Parameter
 - [[field-info Usage Tips|Usage Tips]] - tips to understanding how to use `{{field-info}}` & best practices
 - [[field-info Examples|Examples]] - presents a number of example templates that make use of `{{field-info}}`
 - [[field-info Variations]] - similar functions within the same family of helper functions
@@ -40,3 +41,4 @@ Because `{{field-info}}` is so powerful, its documentation is spread out over se
 	- [[fi Helper]] - abbreviated version of `{{field-info}}`
 	- [[fo Helper]] - abbreviated version of `{{field-output}}`
 - [[Built-In Fields and Field-Info|field-info and Built-In Fields]] - how `{{field-info}}` works with [[Built-In Fields]]
+- [[field-info and Block Templates]] - steps through how to use `{{field-info}}` with block templates

@@ -1,5 +1,5 @@
 ---
-sidebar_position: 30
+sidebar_position: 50
 doc_state: initial_ai_draft
 title: field-info default Parameter
 sidebar_label: default
@@ -8,8 +8,11 @@ aliases:
 - field-info default Parameter
 ---
 
-# field-info default
-The optional `default` parameter in the [[field-info Helper]] specifies a string that represents the "default" value inside the [[Prompting Interface]].
+# field-info opts
+The optional `opts` parameter in the [[field-info Helper]] specifies a string that represents the "default" value inside the [[Prompting Interface]].
+
+==NEEDS TO BE DONE STILL ==
+
 ## Syntax
 The `default` parameter can be specified with the `default` keyword for the [[field-info Syntax#Named Parameters|Named Parameter]]. For example:
 

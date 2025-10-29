@@ -10,6 +10,6 @@ If you want to convert a collapsed string of words back into an expression with 
 ```
 
 where:
-	- `format-string-allcaps` is the predefined name of the helper function for formatting back into an expression with spaces.
+	- `format-string-spacify` is the predefined name of the helper function for formatting back into an expression with spaces.
 	- `fieldname` is the name of the field that will receive the data to be capitalized
 

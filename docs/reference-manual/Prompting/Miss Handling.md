@@ -19,7 +19,6 @@ If a field specifies a [[Prompting#^DefaultAnswer|Default Answer]], then that is
 
 See [[YAML Configuration Fields]]
 
-
 If a template file contains in its YAML code includes the key `z2k_template_default_miss_handling`, it will use the method specified in the key's value:
 
 | Key                                  | Key Value  | Miss Handling                                                                                    |
@@ -65,4 +64,25 @@ This way you can handle empty values so you still get ProductVersion:
 Where `{{^Version}}{{/Version}}` is called an inverted section and will be rendered if the value of that section's tag is null, undefined, false, falsy or an empty list. As it is explained in the doc.
 
 
+
+
+
+
+
+
+
+
+==Clean up resolution of conflicts between miss and miss directives and yaml setting==
+Please note that the `miss` parameter overrules both the `finalize-clear` and `finalize-preserve` directives. 
+
+Move the following to Miss Handling and ! include it here.
+
+Order of precedence:
+- Any `miss` `{{field-info}}` parameter takes highest precedence. If there are multiple `miss` values specified for a field (across all [[field-info Variations]]), then the latest miss value is used.
+- If there is not a `miss` value, then the plugin checks to see if a `finalize-xxx` [[field-info directives|directive]] has been specified. If multiple have been specified, again, it uses the most recent.
+- If there is not a `miss` nor a `finalize-xxx` directive, then the plugin will use the [[Miss Handling YAML fields]] to determine the default miss handling method. 
+- If none of the above were found, then the field is cleared.
+
+
+Please see the [[Miss Handling]] page for more details. 
 

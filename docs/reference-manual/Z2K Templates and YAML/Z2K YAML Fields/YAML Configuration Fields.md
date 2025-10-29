@@ -11,12 +11,18 @@ The following fields can be inserted into the yaml text of the source template f
 # Supported YAML Configuration Fields
 
 ## z2k_template_default_miss_handling
-This key specifies the default method that is used for handling data misses (i.e. when a user fails to provide data for a particular field). See [[Miss Handling]] for more details. 
+This key specifies the default method that is used for handling data misses (i.e. when a user fails to provide data for a particular field). 
 
-| Key                                  | Key Value  | Result                                                                                           |
-| ------------------------------------ | ---------- | ------------------------------------------------------------------------------------------------ |
-| `z2k_template_default_miss_handling` | `preserve` | (default) If a miss occurs for a field, the field will be preserved as is in the resultant file. |
-| `z2k_template_default_miss_handling` | `clear`    | If a miss occurs for a field, it will clear the field from the resultant file.                   |
+| Key                                  | Key Value  | Result                                                                                                                                                                                                                   |
+| ------------------------------------ | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `z2k_template_default_miss_handling` | `preserve` | (default) If a miss occurs for a field, the field will be preserved as is in the resultant                                                                                                                               |
+| `z2k_template_default_miss_handling` | `clear`    | If a miss occurs for a field, it will clear the field from the result                                                                                                                                                    |
+| `z2k_template_default_miss_handling` | `default`  | If a miss occurs for a field, it will use the value of the `default` response as specified in a `{{field-info}}` for the field. If no `default` has been provided, then it will clear the field from the resultant file. |
+
+> [!TIP] Miss Handling is More Than This
+> Note that field-level [[field-info directives|directives]] and [[field-info miss|miss]] parameters in a [[field-info Helper|field-info]] statement can override these file-level requests. Please see [[Miss Handling]] for more details.
+
+
 
 ## z2k_template_default_prompt
 This key specifies the default prompt to use for a field. Like the Default answer, this can use the built-in field `{{FieldName}}` to reference the field's name.
@@ -26,6 +32,8 @@ This key specifies the default prompt to use for a field. Like the Default answe
 | `z2k_template_default_prompt` | string    | Specifies a prompt string to use. |
 Example:
 	`z2k_template_default_prompt : "Please specify the value of {{FieldName)}}"`
+
+
 
 
 ## z2k_template_default_title

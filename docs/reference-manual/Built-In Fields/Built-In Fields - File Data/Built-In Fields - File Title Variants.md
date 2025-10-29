@@ -32,7 +32,10 @@ What about Obsidian's `{{title}}` field?
 ###  What is a Card?
 - The [[The Z2K System|Z2K System]] calls a file a "card" with the assumption that a file in the Z2K System can contain information that is not typically referred to as a "*note*". Z2K embraces the idea that each file in the system is merely a "container", and uses the word "*card*" - like the index card of an old school zettelkasten - to reflect that.
 
-### `{{field-info}}` and `{{fileTitle}}`
+### File Extension
+When you assign a value to the `{{fileTitle}}` built-in, you do not need to specify a file extension (e.g. "`.md`"). The plugin will automatically add an extension to the file for you. 
+
+### field-info and fileTitle
 Even though `{{fileTitle}}` is a [[Built-In Fields|Built-In Field]], you can still use the `{{field-info}}` function on the field to change how it is prompted for. In fact, that is the most common use of the `{{fileTitle}}` field - to use [[field-info Helper|field-info]] to specify a default name for a file. 
 
 > [!TIP] Naming your Resultant Files with User Entered Fields

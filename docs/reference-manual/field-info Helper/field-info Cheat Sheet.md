@@ -12,9 +12,9 @@ There is a lot behind this tiny look workhorse of a helper. Sometimes you just n
 ## Syntax
 The [[field-info Syntax|Syntax]] supports both positional and named parameters:
 - **Positional Parameters**: 
-  - `{{field-info FieldName `[[field-info type|type]] [[field-info prompt|prompt]] [[field-info default|default]] [[field-info miss|miss]] [[field-info directives|directives]]`}}`
+  - `{{field-info` [[field-info fieldName]] [[field-info prompt|prompt]] [[field-info default|default]] [[field-info type|type]]`}}`
 - **Named Parameters**: 
-  - `{{field-info FieldName type=`*[[field-info type|type]]*` prompt=`*[[field-info prompt|prompt]]*` default=`*[[field-info default|default]]*` miss=`*[[field-info miss|miss]]*` directives=`*[[field-info directives|directives]]`}}`
+  - `{{field-info FieldName prompt=`*[[field-info prompt|prompt]]*` default=`*[[field-info default|default]]*` type=`*[[field-info type|type]]*` opts=`*[[field-info opts|opts]]*` miss=`*[[field-info miss|miss]]*` directives=`*[[field-info directives|directives]]`}}`
 
 ## Parameters
 ![[field-info Parameters#Overview]]

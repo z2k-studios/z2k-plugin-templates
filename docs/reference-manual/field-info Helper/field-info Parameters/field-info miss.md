@@ -1,5 +1,5 @@
 ---
-sidebar_position: 50
+sidebar_position: 60
 doc_state: initial_ai_draft
 title: field-info miss Parameter
 sidebar_label: miss
@@ -21,14 +21,13 @@ If you are using positional parameters, please see the [[field-info Syntax]] for
 
 
 ## Default miss Value
-If omitted, the default `miss` value is simply an empty string - that is, all referenced to the `{{fieldName}}` will just simply be removed. 
-
+If omitted, then the plugin uses the [[Miss Handling]] procedure to determine what to do with the field. By default, this will result in using an empty string as the miss value - that is, all referenced to the `{{fieldName}}` will just simply be removed. But there are other ways to modify the final output using with [[field-info directives]] or [[Miss Handling YAML fields]]. See [[Miss Handling]] for more details.
 
 ## Embedded Fields and Helper Functions
 The `miss` parameter allows for the use of embedded fields and helper functions directly into the `miss` string value. This allows for some advanced auto-filling of values in the event that a user fails to provide a response. 
 
 ## Example
-Take for example a daily health log template that tracks, say heart palpitations:
+Take for example a daily health log template that tracks, say, heart palpitations:
 ```md title="Template - Daily Health Log.md"
 # Heart
 - Number of Heart Palpitations :: {{fo NumPalpitations "number" prompt="How many heart palpitations did you have today? Leave blank if none." directives="clear"}}
@@ -63,11 +62,10 @@ You can use the `miss` value as a pre-filled quick response to a field prompt. W
 ## miss vs. default
 ![[field-info default#default vs. miss]]
 
-## Miss Directives
-The [[field-info Helper|field-info]] related helper functions also support the `directives` parameter (see [[field-info directives|directives]]). There are two options in the list of possible directives that also influence the processing of a missed field: [[field-info directive#finalize-clear|finalize-clear]] and  [[field-info directives#finalize-preserve|finalize-preserve]]. 
+## Finalize Directives and YAML Configuration Fields
+The [[field-info Helper|field-info]] related helper functions also support the `directives` parameter (see [[field-info directives|directives]]). There are several "finalize" directives that also influence the processing of a missed field. Also, a template or block template can specify a default miss handling for all fields in a file - see [[YAML Configuration Fields]]. 
 
-==Clean up resolution of conflicts between miss and miss directives and yaml setting==
-Please note that the `miss` parameter overrules both the `finalize-clear` and `finalize-preserve` directives. 
+For the most complete and consolidated understanding of how to miss handling is performed, please see the documentation page [[Miss Handling]].
 
-Please see the [[Miss Handling]] page for more details. 
+
 

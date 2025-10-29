@@ -23,35 +23,35 @@ This simple example handles automatic naming of a file based on fields located i
 # Person: {{FullName}}
 - First Name :: {{LastName}}
 - Last Name  :: {{FirstName}}
-- Relationship :: {{fo Relationship "multiselect:#Friend,#Family,#Acquaintance,#Colleague" }}
+- Relationship :: {{fo Relationship type="multiselect" opts=['#Friend','#Family','#Acquaintance','#Colleague'] }}
 ```
 
 **Behavior Breakdown**:
 - The template has fields for the person First and Last Names. These will just use default prompting interfaces.
 - The template creates a Header that inserts a Full Name. By default this will combine the First and Last Names, but can be override
-- Then lastly, the template sets the default name for the resultant file to be the Full Name (which in turn is built on the First and Last Names unless otherwise overriden). 
-- ==does it need an extension?==
+- Then lastly, the template sets the default name for the resultant file to be the Full Name (which in turn is built on the First and Last Names unless otherwise overriden). This uses `{{field-info}}` on a [[Built-In Fields|Built-In Field]] named [[Built-In Fields - File Title Variants|fileTitle]].
+- ==Does the fileTitle built-in Field need an extension?==
 
 
 ## Work Out Log Template
-This example demonstrates the most basic example of using embedded `{{field-output}}` commands (in their abbreviated `{{fo}}` [[fo Helper|form]]). The is for a Workout Log template file. It uses `{{fo}}` to directly embed the prompting information into the summary list. 
+This "Workout Log" example demonstrates the most basic example of using embedded `{{field-output}}` commands (in its abbreviated `{{fo}}` [[fo Helper|form]]). It uses `{{fo}}` to directly embed the prompting information into the summary list. 
 
 ```md title="Template - Workout Log.md"
 {{field-info fileTitle default="{{today}} - {{Duration}} min workout - {{WorkoutType}}" directives="finalize-default" ~}}
 
 ## Summary
 **Date**:: {{fo WorkoutDate default="{{today}}" directives="finalize-default"}}
-**Workout Type**:: {{fo WorkoutType type="multiSelectL:Strength,Cardio,Mobility" prompt="What types of workouts did you have today?" default="Strength" miss="Unspecified"}}  
-**Duration**:: {{fo Duration type="number" prompt="Duration in Minutes:"}}  
-**Intensity**:: {{fo Intensity type="singleSelect:"Low,Moderate,High"}}  
-**Location**:: {{fo Location type="text" default="Home Gym"}}  
+**Workout Type**:: {{fo WorkoutType "What types of workouts did you have today?" "Strength" "multiSelect" opts=["Strength","Cardio","Mobility"] miss="Unspecified"}}  
+**Duration**:: {{fo Duration "Duration in Minutes:" type="number"}}  
+**Intensity**:: {{fo Intensity type="singleSelect" opts=["Low","Moderate","High"]}}  
+**Location**:: {{fo Location "Where?" "Home Gym" "text"}}  
 ```
 
 **Behavior Breakdown**:
 - The template asks for a number of fields:
 	- Date - Asks for a workout date and then uses a builtin to automatically suggest today. If the user fails to recommend one then it uses the default answer
 	- Workout Type - a multi select dropdown of workout types, defaulting to Strength. 
-		- ==Notice that the miss is not a valid entry for the multi-select. Is that ok?==
+		- ==Notice that the miss is not a valid entry for the multiselect. Is that ok?==
 	- Duration  - a numeric field
 	- Intensity - a single select dropdown field
 	- Location - the location of the exercise

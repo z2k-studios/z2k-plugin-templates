@@ -4,7 +4,7 @@ sidebar_folder_position: 140
 aliases:
 - System Block Templates
 - Z2K System Block Templates
-- .z2k-system-template.md
+- .system-block.md
 ---
 
 
