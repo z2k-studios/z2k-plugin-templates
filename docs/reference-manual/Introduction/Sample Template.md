@@ -18,7 +18,7 @@ Some times it is just best to dive into a real-life example. Say for instance yo
 Title: {{field-output BookTitle directives="required"}}
 Date: {{date}}
 Author: {{field-output AuthorName prompt="What is the full name of the author?"}}
-Genre: {{field-output Genre type="singleSelect:Fiction,Nonfiction,Poetry}}
+Genre: {{field-output Genre type="singleSelect" opt=['Fiction', 'Nonfiction', 'Poetry']}}
 –––
 
 # {{BookTitle}}
@@ -34,7 +34,7 @@ I started reading a {{format-string-to-lower Genre}} book titled *{{BookTitle}}*
 {{! Below, we have conditional section that only renders if a review exists.    }}
 {{#if Review}}
 ## Review Summary
-{{field-info Review prompt="Enter a One Sentence summary review:"}}
+{{field-info Review "Enter a One Sentence summary review:"}}
 {{/if}}
 ```
 

@@ -101,13 +101,13 @@ Z2K Templates allows you to apply template changes retroactively. Using the `{{S
 ---
 ## 9. Minimize Duplication Errors
 
-Templates can minimize duplicat errors and data input effort by using the same fields in multiple locations. For instance, the same data can appear in multiple places within a note. Here, you can define a title field once and then reference it in a) the YAML frontmatter, b) the filename of the note and c) the body text of your note.
+Templates can minimize duplicate errors and data input effort by using the same fields in multiple locations. For instance, the same data can appear in multiple places within a note. Here, you can define a title field once and then reference it in a) the YAML frontmatter, b) the filename of the note and c) the body text of your note.
 
 ```md title="Template - Meeting.md"
 –––
 Title: {{MeetingTitle}}
 –––
-{{field-info title default="Meeting Notes - {{MeetingTitle}}}}
+{{field-info fileTitle default="Meeting Notes - {{MeetingTitle}"}}}
 # {{MeetingTitle}}
 ```
 

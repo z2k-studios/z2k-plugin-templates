@@ -36,10 +36,10 @@ A **[[Template Files|template file]]** is a Markdown document (just like any oth
 –––
 Title: {{ProjectName}}
 Date: {{date}}
-Status: {{Status|select:Planned,In Progress,Complete}}
+Status: {{Status}}
 –––
-```
-```md
+{{field-info Status type="singleSelect" opts=['Planned','In Progress', 'Complete']}}
+
 # Project: {{ProjectName}}
 
 {{! Comment: You can document your templates with comments like this directly inside them without affecting the final output. }}
@@ -82,8 +82,8 @@ Status:: {{#if Completed}}✅{{else}}❌{{/if}}
 When a field’s value can’t be resolved (for example, it isn’t provided via JSON, YAML frontmatter, or a built-in function), the plugin will **prompt** you for the data. Z2K Templates allows you to configure how the prompting interface works with the Built-in Helper Function [[field-output]].  Example:
 
 ```md title="Template - Prompting.md"
-My Location :: {{field-output Location prompt="Where were you today?" default="NYC, NY"}}
-My Mood     :: {{field-output Mood type="singleSelect:Happy,Neutral,Stressed"}}
+My Location :: {{field-output Location "Where were you today?" "NYC, NY"}}
+My Mood     :: {{field-output Mood type="singleSelect" opts=['Happy', 'Neutral', 'Stressed']}}
 ```
 
 If a field remains blank, Z2K Templates follows its [[Prompting#Miss Handling|miss handling rules]] — such as clearing it, keeping the placeholder, or applying a default value.
