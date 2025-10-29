@@ -1,6 +1,6 @@
 ---
 sidebar_folder_position: 30
-sidebar_label: {{sourceText}}
+sidebar_label: "{{sourceText}}"
 title: "{{sourceText}}"
 aliases:
 - sourceText

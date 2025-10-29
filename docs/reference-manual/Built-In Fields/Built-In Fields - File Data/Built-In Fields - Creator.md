@@ -1,7 +1,7 @@
 ---
 sidebar_folder_position: 20
 sidebar_position: 1
-sidebar_label: {{creator}}
+sidebar_label: "{{creator}}"
 aliases:
 - File Data
 ---
