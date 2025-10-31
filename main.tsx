@@ -673,6 +673,17 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			}
 		}
 
+		// Determine finalization
+		const finalizeParam = getParam("finalize");
+		let finalize: boolean | undefined = undefined;
+		if (finalizeParam) {
+			if (["true","1","yes"].includes(finalizeParam.toLowerCase())) { finalize = true; }
+			else if (["false","0","no"].includes(finalizeParam.toLowerCase())) { finalize = false; }
+			else {
+				throw new TemplatePluginError(`URI: Invalid finalize value '${finalizeParam}' (must be 'true' or 'false')`);
+			}
+		}
+
 		// Determine destination folder
 		let destDir: TFolder | undefined = templateFile ? (this.getTemplateCardType(templateFile) ?? templateFile.parent as TFolder) : undefined;
 		const destDirParam = getParam("destDir");
@@ -694,12 +705,12 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		if (cmd === "new") {
 			if (!templateFile) { throw new TemplatePluginError("URI: 'new' cmd requires 'templatePath'"); }
 			const cardTypeFolder = this.getTemplateCardType(templateFile) ?? templateFile.parent as TFolder;
-			await this.createCard({ cardTypeFolder, templateFile, fieldOverrides, promptMode, destDir });
+			await this.createCard({ cardTypeFolder, templateFile, fieldOverrides, promptMode, destDir, finalize });
 			return;
 		}
 		if (cmd === "continue") {
 			if (!existingFile) { throw new TemplatePluginError("URI: 'continue' cmd requires 'existingFilePath'"); }
-			await this.continueCard({ existingFile, fieldOverrides, promptMode });
+			await this.continueCard({ existingFile, fieldOverrides, promptMode, finalize });
 			return;
 		}
 		if (cmd === "insertblock") {
@@ -709,7 +720,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			if (!["top","bottom"].includes(location)) {
 				throw new TemplatePluginError(`URI: Invalid location '${locationParam}' (must be 'top' or 'bottom')`);
 			}
-			await this.insertPartial({ templateFile, existingFile, destHeader, location, fieldOverrides, promptMode });
+			await this.insertPartial({ templateFile, existingFile, destHeader, location, fieldOverrides, promptMode, finalize });
 			return;
 		}
 		throw new TemplatePluginError(`URI: Unknown cmd '${cmd}'`);
@@ -747,13 +758,12 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				opts.destDir = opts.cardTypeFolder;
 			}
 
-			let z2kSystemYaml = await this.GetZ2KSystemYaml(opts.cardTypeFolder);
 			let content = await this.app.vault.read(opts.templateFile);
 			let { fm, body } = Z2KYamlDoc.splitFrontmatter(content);
-			fm = Z2KYamlDoc.mergeLastWins([z2kSystemYaml, fm]);
 			fm = this.updateYamlOnCreate(fm, opts.templateFile.basename);
 			content = Z2KYamlDoc.joinFrontmatter(fm, body);
-			let state = await this.parseTemplate(content, opts.templateFile.parent as TFolder);
+			let systemBlocksContent = await this.GetSystemBlocksContent(opts.cardTypeFolder);
+			let state = await this.parseTemplate(content, systemBlocksContent, opts.templateFile.parent as TFolder);
 			let hadSourceTextField = !!state.fieldInfos["sourceText"];
 			// DOCS: field overrides override the values specified in fieldinfos
 			this.handleOverrides(state, opts.fieldOverrides, opts.promptMode || "all");
@@ -788,7 +798,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	}) {
 		try {
 			let content = await this.app.vault.read(opts.existingFile);
-			let state = await this.parseTemplate(content, opts.existingFile.parent as TFolder);
+			let state = await this.parseTemplate(content, "", opts.existingFile.parent as TFolder);
 			this.handleOverrides(state, opts.fieldOverrides, opts.promptMode || "all");
 			this.addBuiltIns(state, { existingTitle: opts.existingFile.basename });
 			let hasFillableFields = this.hasFillableFields(state.fieldInfos);
@@ -836,7 +846,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 
 			// Parse and resolve partial
 			let content = await this.app.vault.read(opts.templateFile);
-			let state = await this.parseTemplate(content, opts.templateFile.parent as TFolder);
+			let state = await this.parseTemplate(content, "", opts.templateFile.parent as TFolder);
 			let hadSourceTextField = !!state.fieldInfos["sourceText"];
 			this.handleOverrides(state, opts.fieldOverrides, opts.promptMode || "all");
 			this.addBuiltIns(state, { sourceText: opts.fieldOverrides.sourceText, existingTitle: opts.existingFile.basename });
@@ -878,9 +888,9 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	}
 
 	// de-duplication helper functions
-	async parseTemplate(content: string, relativeFolder: TFolder): Promise<TemplateState> {
+	async parseTemplate(content: string, systemBlocksContent: string, relativeFolder: TFolder): Promise<TemplateState> {
 		try {
-			return await Z2KTemplateEngine.parseTemplate(content, relativeFolder.path, this.getPartialCallbackFunc());
+			return await Z2KTemplateEngine.parseTemplate(content, systemBlocksContent, relativeFolder.path, this.getPartialCallbackFunc());
 		} catch (error) {
 			rethrowWithMessage(error, "Error occurred while parsing the template");
 		}
@@ -1392,30 +1402,30 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		}
 	}
 
-	private async GetZ2KSystemYaml(cardTypeFolder: TFolder): Promise<string> {
-		// Get all the z2k system yaml files between here and the root
+	private async GetSystemBlocksContent(cardTypeFolder: TFolder): Promise<string> {
+		// Get all the system block files between here and the root
 		const templatesRoot = this.getFolder(this.settings.templatesRootFolder);
 		let currentFolder: TFolder | null = cardTypeFolder;
-		let systemYamls: string[] = [];
+		let systemBlocks: string[] = [];
+
 		while (currentFolder) {
-			const filePath = this.joinPath(currentFolder.path, '.z2k-system.yaml');
+			const filePath = this.joinPath(currentFolder.path, '.system-block.md');
 			try {
 				// Need to use adapter because the usual file read doesn't work for files that start with .
-				systemYamls.push(await this.app.vault.adapter.read(filePath));
-			} catch {
-				// Can't find/read the file
-			}
+				systemBlocks.push(await this.app.vault.adapter.read(filePath));
+			} catch {} // Can't find/read the file
+
 			if (currentFolder === templatesRoot) break; // Stop at the templates root
 			currentFolder = currentFolder.parent;
 		}
-
-		let fm = "";
-		// Combine in reverse order (root first)
-		for (const yamlStr of systemYamls.reverse()) {
-			fm = Z2KYamlDoc.mergeLastWins([yamlStr, fm]);
-		}
-		return fm;
+		systemBlocks.reverse(); // So root is first
+		let yamls = systemBlocks.map(b => Z2KYamlDoc.splitFrontmatter(b).fm);
+		let bodies = systemBlocks.map(b => Z2KYamlDoc.splitFrontmatter(b).body);
+		let mergedFm = Z2KYamlDoc.mergeLastWins(yamls);
+		let combinedBody = bodies.join('');
+		return Z2KYamlDoc.joinFrontmatter(mergedFm, combinedBody);
 	}
+
 	private handleErrors(error: unknown) {
 		// Display error messages to the user
 		if (error instanceof TemplatePluginError) {
@@ -2133,9 +2143,9 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel }: FieldColle
 				hasError: false,
 				dependencies: [...new Set(dependencies)],
 				dependentFields: [],
-				resolvedPrompt: fieldInfo.prompt ?? formatFieldName(fieldName),
-				resolvedDefault: fieldInfo.default ?? "",
-				resolvedMiss: fieldInfo.miss ?? ""
+				resolvedPrompt: String(fieldInfo.prompt) ?? formatFieldName(fieldName),
+				resolvedDefault: String(fieldInfo.default) ?? "",
+				resolvedMiss: String(fieldInfo.miss) ?? ""
 			};
 		}
 
@@ -2204,12 +2214,12 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel }: FieldColle
 	// Update fields after the first render to distribute and apply dependencies
 	useEffect(() => {
 		let newFieldStates = {...fieldStates};
-		updateFieldStates(newFieldStates, true);
+		updateFieldStates(newFieldStates);
 		validateAllFields(newFieldStates, false);
 		setFieldStates(newFieldStates);
 	}, []);
 
-	function updateFieldStates(newFieldStates: Record<string, FieldState>, reEvalValues: boolean = false) {
+	function updateFieldStates(newFieldStates: Record<string, FieldState>) {
 		for (const fieldName of dependencyOrderedFieldNames) { // dependencyOrderedFieldNames ensures dependencies are resolved first
 			const fieldInfo = templateState.fieldInfos[fieldName];
 			if (!fieldInfo || newFieldStates[fieldName].omitFromForm) { continue; }
@@ -2220,21 +2230,13 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel }: FieldColle
 			};
 
 			// Update all resolved text fields
-			newFieldStates[fieldName].resolvedPrompt = Z2KTemplateEngine.reducedRenderContent(fieldInfo.prompt || formatFieldName(fieldName), context)
+			newFieldStates[fieldName].resolvedPrompt = String(Z2KTemplateEngine.reducedRenderContent(fieldInfo.prompt || formatFieldName(fieldName), context));
 			newFieldStates[fieldName].resolvedDefault = Z2KTemplateEngine.reducedRenderContent(fieldInfo.default || "", context);
 			newFieldStates[fieldName].resolvedMiss = Z2KTemplateEngine.reducedRenderContent(fieldInfo.miss || "", context);
 
 			if (!newFieldStates[fieldName].alreadyResolved && !newFieldStates[fieldName].touched) {
 				newFieldStates[fieldName].value = newFieldStates[fieldName].resolvedDefault;
 			}
-			// // I don't remember what this did, but I'm going to leave it disabled for now
-			// if (reEvalValues) {
-			// 	// Go ahead and parse and render any values regardless. This
-			// 	if (typeof(newFieldStates[fieldName].value) === 'string') {
-			// 		let parsedValue = Z2KTemplateEngine.parseReducedSetSegmentsText(newFieldStates[fieldName].value as string);
-			// 		newFieldStates[fieldName].value = Z2KTemplateEngine.renderReducedSetText(parsedValue, context);
-			// 	}
-			// }
 		}
 	}
 
@@ -2261,12 +2263,13 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel }: FieldColle
 				hasFinalizeError = true;
 				errorMessage = 'This field is required to finalize';
 			}
+			const val = (value as string).trim();
+			if (!val && fieldName === 'title') {
+				hasError = true;
+				errorMessage = 'A title is required';
+			}
 			if (fieldInfo.type === "titleText") {
-				const val = (value as string).trim();
-				if (!val && fieldName === 'title') {
-					hasError = true;
-					errorMessage = 'A title is required';
-				} else if (/^[.]+$/.test(val)) {
+				if (/^[.]+$/.test(val)) {
 					hasError = true;
 					errorMessage = 'Cannot be just dots';
 				} else if (/[<>:"/\\|?*\u0000-\u001F]/.test(val)) {
@@ -2308,7 +2311,7 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel }: FieldColle
 	function handleFieldBlur(fieldName: string) {
 		let newFieldStates = { ...fieldStates };
 		newFieldStates[fieldName].focused = false;
-		updateFieldStates(newFieldStates, true);
+		updateFieldStates(newFieldStates);
 		validateAllFields(newFieldStates, false);
 		setFieldStates(newFieldStates);
 	};
@@ -2317,7 +2320,7 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel }: FieldColle
 		let newFieldStates = { ...fieldStates };
 		newFieldStates[fieldName].touched = false;
 		newFieldStates[fieldName].value = newFieldStates[fieldName].resolvedDefault;
-		updateFieldStates(newFieldStates, true);
+		updateFieldStates(newFieldStates);
 		validateAllFields(newFieldStates, false);
 		setFieldStates(newFieldStates);
 	}
@@ -2429,8 +2432,8 @@ interface FieldState {
 	dependentFields: string[]; // Fields that depend on this field
 	dependencies: string[]; // Fields this field depends on
 	resolvedPrompt?: string; // Prompt text with references resolved
-	resolvedDefault?: string; // Default value with references resolved
-	resolvedMiss?: string; // Miss text with references resolved
+	resolvedDefault?: VarValueType; // Default value with references resolved
+	resolvedMiss?: VarValueType; // Miss text with references resolved
 }
 
 /**
@@ -2546,6 +2549,9 @@ const FieldInput = ({ name, label, fieldInfo, fieldState, onChange, onFocus, onB
 						value={fieldState.value?.toString() || ''}
 						onChange={(e) => onChange(e.target.value)}
 						placeholder={fieldState.resolvedDefault}
+
+						// Leaving off: get all these to handle VarValueType
+
 						{...commonProps}
 					/>
 				);
