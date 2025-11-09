@@ -2143,6 +2143,7 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel }: FieldColle
 				hasError: false,
 				dependencies: [...new Set(dependencies)],
 				dependentFields: [],
+				// these will be set properly in updateFieldStates, but we need initial values
 				resolvedPrompt: String(fieldInfo.prompt) ?? formatFieldName(fieldName),
 				resolvedDefault: String(fieldInfo.default) ?? "",
 				resolvedMiss: String(fieldInfo.miss) ?? ""
@@ -2290,7 +2291,7 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel }: FieldColle
 		return isValid;
 	}
 
-	function handleFieldChange(fieldName: string, value: string | number | string[]) {
+	function handleFieldChange(fieldName: string, value: VarValueType) {
 		let newFieldStates = { ...fieldStates };
 		newFieldStates[fieldName].value = value;
 		newFieldStates[fieldName].touched = true;
@@ -2526,6 +2527,7 @@ interface FieldInputProps {
 const FieldInput = ({ name, label, fieldInfo, fieldState, onChange, onFocus, onBlur, onReset }: FieldInputProps) => {
 	// Generate a unique ID for the input element
 	const inputId = `field-${name}`;
+	const dataType = fieldInfo.type || 'text';
 
 	// Common props for input elements
 	const commonProps = {
@@ -2536,22 +2538,69 @@ const FieldInput = ({ name, label, fieldInfo, fieldState, onChange, onFocus, onB
 		'aria-invalid': fieldState.hasError
 	};
 
+	const toHumanReadable = (value: VarValueType): string => {
+		if (moment.isMoment(value)) {
+			if (!value.isValid()) {
+				return '[invalid date]';
+			}
+			if (dataType === 'date') {
+				return value.format("YYYY-MM-DD");
+			} else if (dataType === 'datetime') {
+				return value.format("YYYY-MM-DD HH:mm:ss");
+			}
+			// inside a single/multi-select
+			if (value.hour() === 0 && value.minute() === 0 && value.second() === 0) {
+				return value.format("YYYY-MM-DD");
+			} else {
+				return value.format("YYYY-MM-DD HH:mm:ss");
+			}
+		}
+		if (Array.isArray(value)) { return value.map(v => String(v)).join(', '); }
+		if (value === null) { return '[null]'; }
+		if (value === undefined) { return '[undefined]'; }
+		return String(value);
+	};
+
+	const encodeValue = (value: VarValueType): string => {
+		if (moment.isMoment(value)) { return 'datetime:' + value.toISOString(); }
+		if (Array.isArray(value)) { throw new Error("Cannot encode array value to string"); }
+		if (value === null) { return 'null'; }
+		if (value === undefined) { return 'undefined'; }
+		if (typeof value === 'number') { return 'number:' + value.toString(); }
+		if (typeof value === 'boolean') { return 'boolean:' + value.toString(); }
+		return 'string:' + String(value);
+	}
+	const decodeValue = (str: string): VarValueType => {
+		if (str.startsWith('datetime:')) {
+			const isoStr = str.substring('datetime:'.length);
+			const m = moment(isoStr);
+			return m.isValid() ? m : undefined;
+		}
+		if (str.startsWith('number:')) {
+			const numStr = str.substring('number:'.length);
+			const num = Number(numStr);
+			return isNaN(num) ? undefined : num;
+		}
+		if (str.startsWith('boolean:')) {
+			const boolStr = str.substring('boolean:'.length);
+			return boolStr === 'true';
+		}
+		if (str.startsWith('string:')) { return str.substring('string:'.length); }
+		if (str === 'null') { return null; }
+		if (str === 'undefined') { return undefined; }
+		return str;
+	};
+
 	// Render the appropriate input based on data type
 	function renderInput() {
-		const dataType = fieldInfo.type || 'text';
-
 		switch(dataType) {
 			case 'titleText':
 				return (
 					<input
 						type="text"
 						className={`title-text-input ${fieldState.hasError ? 'has-error' : ''}`}
-						value={fieldState.value?.toString() || ''}
+						value={toHumanReadable(fieldState.value)}
 						onChange={(e) => onChange(e.target.value)}
-						placeholder={fieldState.resolvedDefault}
-
-						// Leaving off: get all these to handle VarValueType
-
 						{...commonProps}
 					/>
 				);
@@ -2560,9 +2609,8 @@ const FieldInput = ({ name, label, fieldInfo, fieldState, onChange, onFocus, onB
 				return (
 					<textarea
 						className={`text-input ${fieldState.hasError ? 'has-error' : ''}`}
-						value={fieldState.value?.toString() || ''}
+						value={toHumanReadable(fieldState.value)}
 						onChange={(e) => onChange(e.target.value)}
-						placeholder={fieldState.resolvedDefault}
 						{...commonProps}
 					/>
 				);
@@ -2572,12 +2620,11 @@ const FieldInput = ({ name, label, fieldInfo, fieldState, onChange, onFocus, onB
 					<input
 						type="number"
 						className={`number-input ${fieldState.hasError ? 'has-error' : ''}`}
-						value={fieldState.value?.toString() || ''}
+						value={toHumanReadable(fieldState.value)}
 						onChange={(e) => {
 							const num = Number(e.target.value);
 							onChange(isNaN(num) ? undefined : num);
 						}}
-						placeholder={fieldState.resolvedDefault}
 						{...commonProps}
 					/>
 				);
@@ -2587,10 +2634,7 @@ const FieldInput = ({ name, label, fieldInfo, fieldState, onChange, onFocus, onB
 					<input
 						type="date"
 						className={`date-input ${fieldState.hasError ? 'has-error' : ''}`}
-						value={
-							moment.isMoment(fieldState.value) && fieldState.value.isValid()
-								? fieldState.value.format("YYYY-MM-DD") : ''
-						}
+						value={toHumanReadable(fieldState.value)}
 						onChange={(e) => {
 							const m = moment(e.target.value, "YYYY-MM-DD", true);
 							onChange(m.isValid() ? m : undefined);
@@ -2604,10 +2648,7 @@ const FieldInput = ({ name, label, fieldInfo, fieldState, onChange, onFocus, onB
 					<input
 						type="datetime-local"
 						className={`date-input ${fieldState.hasError ? 'has-error' : ''}`}
-						value={
-							moment.isMoment(fieldState.value) && fieldState.value.isValid()
-								? fieldState.value.format("YYYY-MM-DD HH:mm:ss") : ''
-						}
+						value={toHumanReadable(fieldState.value)}
 						onChange={(e) => {
 							const m = moment(e.target.value, "YYYY-MM-DD HH:mm:ss", true);
 							onChange(m.isValid() ? m : undefined);
@@ -2622,7 +2663,7 @@ const FieldInput = ({ name, label, fieldInfo, fieldState, onChange, onFocus, onB
 						<input
 							type="checkbox"
 							className={`boolean-input ${fieldState.hasError ? 'has-error' : ''}`}
-							checked={!!fieldState.value}
+							checked={Boolean(fieldState.value)}
 							onChange={(e) => onChange(e.target.checked)}
 							{...commonProps}
 						/>
@@ -2631,17 +2672,18 @@ const FieldInput = ({ name, label, fieldInfo, fieldState, onChange, onFocus, onB
 				);
 
 			case 'singleSelect':
+				let opts = fieldInfo.opts?.map(option => encodeValue(option)) || [];
 				return (
 					<select
 						className={`select-input ${fieldState.hasError ? 'has-error' : ''}`}
-						value={fieldState.value?.toString() || ''}
+						value={encodeValue(fieldState.value)}
 						onChange={(e) => onChange(e.target.value)}
 						{...commonProps}
 					>
 						<option value="">Select an option</option>
-						{fieldInfo.typeOptions?.map((option) => (
-							<option key={option} value={option}>
-								{option}
+						{fieldInfo.opts?.map((option, index) => (
+							<option key={index} value={encodeValue(option)}>
+								{option?.toString() || ''}
 							</option>
 						))}
 					</select>
@@ -2652,11 +2694,11 @@ const FieldInput = ({ name, label, fieldInfo, fieldState, onChange, onFocus, onB
 				const selectedValues = Array.isArray(fieldState.value) ? fieldState.value : [];
 				return (
 					<div className={`multi-select-container ${fieldState.hasError ? 'has-error' : ''}`}>
-						{fieldInfo.typeOptions?.map((option) => (
-							<div key={option} className="multi-select-option">
+						{fieldInfo.opts?.map((option, index) => (
+							<div key={index} className="multi-select-option">
 								<input
 									type="checkbox"
-									id={`${inputId}-${option}`}
+									id={`${inputId}-${index}`}
 									checked={selectedValues.includes(option)}
 									onChange={(e) => {
 										const newValues = e.target.checked
@@ -2665,7 +2707,7 @@ const FieldInput = ({ name, label, fieldInfo, fieldState, onChange, onFocus, onB
 										onChange(newValues);
 									}}
 								/>
-								<label htmlFor={`${inputId}-${option}`}>{option}</label>
+								<label htmlFor={`${inputId}-${index}`}>{option?.toString() || ''}</label>
 							</div>
 						))}
 					</div>
@@ -2686,7 +2728,7 @@ const FieldInput = ({ name, label, fieldInfo, fieldState, onChange, onFocus, onB
 		if (fieldState.resolvedMiss && !fieldState.touched) {
 			return (
 				<div className="miss-text-preview">
-					Default if left untouched:<br/><span>{fieldState.resolvedMiss}</span>
+					Value if left untouched:<br/><span>{fieldState.resolvedMiss}</span>
 				</div>
 			);
 		}
