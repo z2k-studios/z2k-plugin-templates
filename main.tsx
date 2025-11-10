@@ -779,8 +779,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				bodyOut += `\n\n${opts.fieldOverrides.sourceText}\n`;
 			}
 			let contentOut = Z2KYamlDoc.joinFrontmatter(fmOut, bodyOut);
-			let title = state.resolvedValues["title"] as string || "Untitled";
-			title = Z2KTemplateEngine.reducedRenderContent(title, state.resolvedValues);
+			let title = String(state.resolvedValues["title"]) || "Untitled";
+			title = Z2KTemplateEngine.reducedRenderContent(title, state.resolvedValues) as string;
 			let newFile = await this.createFile(opts.destDir, title, contentOut);
 			if (opts.fromSelection) {
 				const editor = this.getEditorOrThrow();
@@ -813,8 +813,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 
 			let { fm, body } = Z2KTemplateEngine.renderTemplate(state, opts.finalize ?? false);
 			let contentOut = Z2KYamlDoc.joinFrontmatter(fm, body);
-			let title = state.resolvedValues["title"] as string || "Untitled";
-			title = Z2KTemplateEngine.reducedRenderContent(title, state.resolvedValues);
+			let title = String(state.resolvedValues["title"]) || "Untitled";
+			title = Z2KTemplateEngine.reducedRenderContent(title, state.resolvedValues) as string;
 			await this.updateTitleAndContent(opts.existingFile, title, contentOut);
 		} catch (error) { this.handleErrors(error); }
 	}
@@ -2125,17 +2125,38 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel }: FieldColle
 
 		// Initialize field states with metadata
 		for (const [fieldName, fieldInfo] of Object.entries(templateState.fieldInfos)) {
-			// Get dependencies from prompt text, default value, and miss text
+			// Get dependencies from prompt text, default value, miss text, and opts
 			const dependencies = [
 				...fieldInfo.prompt ? Z2KTemplateEngine.reducedGetDependencies(fieldInfo.prompt) : [],
 				...fieldInfo.default ? Z2KTemplateEngine.reducedGetDependencies(fieldInfo.default) : [],
 				...fieldInfo.miss ? Z2KTemplateEngine.reducedGetDependencies(fieldInfo.miss) : [],
+				// Extract dependencies from each option in opts array
+				...fieldInfo.opts ? fieldInfo.opts.flatMap(opt =>
+					opt ? Z2KTemplateEngine.reducedGetDependencies(opt) : []
+				) : [],
 			];
 
 
 			// Set initial field state
+			const currentValue = templateState.resolvedValues[fieldName] ?? fieldInfo.default ?? '';
+
+			// Initialize selectedIndices for select fields
+			let initialSelectedIndices: number[] | undefined = undefined;
+			if (fieldInfo.type === 'singleSelect' || fieldInfo.type === 'multiSelect') {
+				if (fieldInfo.type === 'singleSelect' && currentValue !== '' && currentValue !== undefined) {
+					// Find the index of the current value in opts
+					const index = fieldInfo.opts?.findIndex(opt => opt === currentValue) ?? -1;
+					initialSelectedIndices = index >= 0 ? [index] : [0];
+				} else if (fieldInfo.type === 'multiSelect' && Array.isArray(currentValue)) {
+					// Find indices of all current values in opts
+					initialSelectedIndices = currentValue
+						.map(val => fieldInfo.opts?.findIndex(opt => opt === val) ?? -1)
+						.filter(idx => idx >= 0);
+				}
+			}
+
 			initialFieldStates[fieldName] = {
-				value: templateState.resolvedValues[fieldName] ?? fieldInfo.default ?? '',
+				value: currentValue,
 				alreadyResolved: templateState.resolvedValues[fieldName] !== undefined,
 				omitFromForm: fieldInfo.directives?.contains('no-prompt') ?? false,
 				touched: false,
@@ -2145,8 +2166,10 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel }: FieldColle
 				dependentFields: [],
 				// these will be set properly in updateFieldStates, but we need initial values
 				resolvedPrompt: String(fieldInfo.prompt) ?? formatFieldName(fieldName),
-				resolvedDefault: String(fieldInfo.default) ?? "",
-				resolvedMiss: String(fieldInfo.miss) ?? ""
+				resolvedDefault: fieldInfo.default ?? "",
+				resolvedMiss: fieldInfo.miss ?? "",
+				resolvedOpts: fieldInfo.opts,
+				selectedIndices: initialSelectedIndices
 			};
 		}
 
@@ -2235,8 +2258,74 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel }: FieldColle
 			newFieldStates[fieldName].resolvedDefault = Z2KTemplateEngine.reducedRenderContent(fieldInfo.default || "", context);
 			newFieldStates[fieldName].resolvedMiss = Z2KTemplateEngine.reducedRenderContent(fieldInfo.miss || "", context);
 
+			// Update resolved options for select fields
+			if ((fieldInfo.type === 'singleSelect' || fieldInfo.type === 'multiSelect') && fieldInfo.opts) {
+				newFieldStates[fieldName].resolvedOpts = fieldInfo.opts.map(opt =>
+					Z2KTemplateEngine.reducedRenderContent(opt, context)
+				);
+
+				// Update values based on selectedIndices if they exist
+				const selectedIndices = newFieldStates[fieldName].selectedIndices;
+				const resolvedOpts = newFieldStates[fieldName].resolvedOpts!;
+				if (selectedIndices && selectedIndices.length > 0) {
+					if (fieldInfo.type === 'singleSelect') {
+						// For singleSelect, use the first (only) selected index
+						const idx = selectedIndices[0];
+						if (idx >= 0 && idx < resolvedOpts.length) {
+							newFieldStates[fieldName].value = resolvedOpts[idx];
+						}
+					} else if (fieldInfo.type === 'multiSelect') {
+						// For multiSelect, get all values at selected indices
+						newFieldStates[fieldName].value = selectedIndices
+							.filter(idx => idx >= 0 && idx < resolvedOpts.length)
+							.map(idx => resolvedOpts[idx]);
+					}
+				}
+			}
+
+			// DOCS: Right now, if a value or default is given for a single/multi-select field that is not in the options list, for single select it will select the first option, and for multi-select it will leave no option selected.
+			// DOCS: The value/default for multi-select fields should be an array of selected options.
+
 			if (!newFieldStates[fieldName].alreadyResolved && !newFieldStates[fieldName].touched) {
-				newFieldStates[fieldName].value = newFieldStates[fieldName].resolvedDefault;
+				// For select fields, validate that resolvedDefault exists in the options list
+				if (fieldInfo.type === 'singleSelect' || fieldInfo.type === 'multiSelect') {
+					const resolvedDefault = newFieldStates[fieldName].resolvedDefault;
+					const resolvedOpts = newFieldStates[fieldName].resolvedOpts || [];
+
+					if (fieldInfo.type === 'singleSelect') {
+						// Find the index of resolvedDefault in the options
+						const defaultIndex = resolvedOpts.findIndex(opt => opt === resolvedDefault);
+						if (defaultIndex >= 0) {
+							// Default exists in options, use it
+							newFieldStates[fieldName].value = resolvedDefault;
+							newFieldStates[fieldName].selectedIndices = [defaultIndex];
+						} else {
+							// Default not in options, set to "Select an option" state
+							newFieldStates[fieldName].value = undefined;
+							newFieldStates[fieldName].selectedIndices = [];
+						}
+					} else if (fieldInfo.type === 'multiSelect') {
+						// For multiSelect, resolvedDefault could be an array or single value
+						const defaultValues = Array.isArray(resolvedDefault) ? resolvedDefault : [resolvedDefault];
+						// Find indices of all default values that exist in options
+						const defaultIndices = defaultValues
+							.map(val => resolvedOpts.findIndex(opt => opt === val))
+							.filter(idx => idx >= 0);
+
+						if (defaultIndices.length > 0) {
+							// At least some defaults exist in options
+							newFieldStates[fieldName].value = defaultIndices.map(idx => resolvedOpts[idx]);
+							newFieldStates[fieldName].selectedIndices = defaultIndices;
+						} else {
+							// No defaults in options, set to empty
+							newFieldStates[fieldName].value = [];
+							newFieldStates[fieldName].selectedIndices = [];
+						}
+					}
+				} else {
+					// For non-select fields, use resolvedDefault directly
+					newFieldStates[fieldName].value = newFieldStates[fieldName].resolvedDefault;
+				}
 			}
 		}
 	}
@@ -2291,10 +2380,14 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel }: FieldColle
 		return isValid;
 	}
 
-	function handleFieldChange(fieldName: string, value: VarValueType) {
+	function handleFieldChange(fieldName: string, value: VarValueType, selectedIndices?: number[]) {
 		let newFieldStates = { ...fieldStates };
 		newFieldStates[fieldName].value = value;
 		newFieldStates[fieldName].touched = true;
+		// Update selectedIndices if provided (for singleSelect/multiSelect fields)
+		if (selectedIndices !== undefined) {
+			newFieldStates[fieldName].selectedIndices = selectedIndices;
+		}
 		updateFieldStates(newFieldStates);
 		validateAllFields(newFieldStates, false);
 		setFieldStates(newFieldStates);
@@ -2381,7 +2474,7 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel }: FieldColle
 					label={fieldState.resolvedPrompt || fieldName}
 					fieldInfo={fieldInfo}
 					fieldState={fieldState}
-					onChange={(value) => handleFieldChange(fieldName, value)}
+					onChange={(value, selectedIndices) => handleFieldChange(fieldName, value, selectedIndices)}
 					onFocus={() => handleFieldFocus(fieldName)}
 					onBlur={() => handleFieldBlur(fieldName)}
 					onReset={() => handleFieldReset(fieldName)}
@@ -2435,6 +2528,8 @@ interface FieldState {
 	resolvedPrompt?: string; // Prompt text with references resolved
 	resolvedDefault?: VarValueType; // Default value with references resolved
 	resolvedMiss?: VarValueType; // Miss text with references resolved
+	resolvedOpts?: VarValueType[]; // Options with references resolved (for singleSelect/multiSelect)
+	selectedIndices?: number[]; // Selected option indices (for singleSelect this is an array of size 1, for multiSelect it can be multiple)
 }
 
 /**
@@ -2518,7 +2613,7 @@ interface FieldInputProps {
 	label: string;
 	fieldInfo: FieldInfo;
 	fieldState: FieldState;
-	onChange: (value: any) => void;
+	onChange: (value: any, selectedIndices?: number[]) => void;
 	onFocus: () => void;
 	onBlur: () => void;
 	onReset: () => void;
@@ -2561,35 +2656,6 @@ const FieldInput = ({ name, label, fieldInfo, fieldState, onChange, onFocus, onB
 		return String(value);
 	};
 
-	const encodeValue = (value: VarValueType): string => {
-		if (moment.isMoment(value)) { return 'datetime:' + value.toISOString(); }
-		if (Array.isArray(value)) { throw new Error("Cannot encode array value to string"); }
-		if (value === null) { return 'null'; }
-		if (value === undefined) { return 'undefined'; }
-		if (typeof value === 'number') { return 'number:' + value.toString(); }
-		if (typeof value === 'boolean') { return 'boolean:' + value.toString(); }
-		return 'string:' + String(value);
-	}
-	const decodeValue = (str: string): VarValueType => {
-		if (str.startsWith('datetime:')) {
-			const isoStr = str.substring('datetime:'.length);
-			const m = moment(isoStr);
-			return m.isValid() ? m : undefined;
-		}
-		if (str.startsWith('number:')) {
-			const numStr = str.substring('number:'.length);
-			const num = Number(numStr);
-			return isNaN(num) ? undefined : num;
-		}
-		if (str.startsWith('boolean:')) {
-			const boolStr = str.substring('boolean:'.length);
-			return boolStr === 'true';
-		}
-		if (str.startsWith('string:')) { return str.substring('string:'.length); }
-		if (str === 'null') { return null; }
-		if (str === 'undefined') { return undefined; }
-		return str;
-	};
 
 	// Render the appropriate input based on data type
 	function renderInput() {
@@ -2672,18 +2738,23 @@ const FieldInput = ({ name, label, fieldInfo, fieldState, onChange, onFocus, onB
 				);
 
 			case 'singleSelect':
-				let opts = fieldInfo.opts?.map(option => encodeValue(option)) || [];
+				const resolvedOpts = fieldState.resolvedOpts || [];
+				const selectedIndex = fieldState.selectedIndices?.[0] ?? -1;
 				return (
 					<select
 						className={`select-input ${fieldState.hasError ? 'has-error' : ''}`}
-						value={encodeValue(fieldState.value)}
-						onChange={(e) => onChange(e.target.value)}
+						value={selectedIndex >= 0 ? String(selectedIndex) : ""}
+						onChange={(e) => {
+							const newIndex = Number(e.target.value);
+							const newValue = !isNaN(newIndex) && newIndex >= 0 ? resolvedOpts[newIndex] : undefined;
+							onChange(newValue, isNaN(newIndex) ? [] : [newIndex]);
+						}}
 						{...commonProps}
 					>
 						<option value="">Select an option</option>
-						{fieldInfo.opts?.map((option, index) => (
-							<option key={index} value={encodeValue(option)}>
-								{option?.toString() || ''}
+						{resolvedOpts.map((option, index) => (
+							<option key={index} value={String(index)}>
+								{toHumanReadable(option)}
 							</option>
 						))}
 					</select>
@@ -2691,25 +2762,35 @@ const FieldInput = ({ name, label, fieldInfo, fieldState, onChange, onFocus, onB
 
 			case 'multiSelect':
 				// For multiSelect, we need to handle an array of values
-				const selectedValues = Array.isArray(fieldState.value) ? fieldState.value : [];
+				const resolvedOptsMulti = fieldState.resolvedOpts || [];
+				const selectedIndicesMulti = fieldState.selectedIndices || [];
 				return (
 					<div className={`multi-select-container ${fieldState.hasError ? 'has-error' : ''}`}>
-						{fieldInfo.opts?.map((option, index) => (
+						{resolvedOptsMulti.map((option, index) => {
+							const checkboxProps = {
+								...commonProps,
+								id: `${inputId}-${index}`,
+								name: `${name}[${index}]`
+							};
+							return (
 							<div key={index} className="multi-select-option">
 								<input
 									type="checkbox"
-									id={`${inputId}-${index}`}
-									checked={selectedValues.includes(option)}
+									checked={selectedIndicesMulti.includes(index)}
 									onChange={(e) => {
-										const newValues = e.target.checked
-											? [...selectedValues, option] // Add the option
-											: selectedValues.filter(val => val !== option); // Remove the option
-										onChange(newValues);
+										const newIndices = e.target.checked
+											? [...selectedIndicesMulti, index] // Add the index
+											: selectedIndicesMulti.filter(idx => idx !== index); // Remove the index
+										// Get values for all selected indices
+										const newValues = newIndices.map(idx => resolvedOptsMulti[idx]);
+										onChange(newValues, newIndices);
 									}}
+										{...checkboxProps}
 								/>
-								<label htmlFor={`${inputId}-${index}`}>{option?.toString() || ''}</label>
+								<label htmlFor={`${inputId}-${index}`}>{toHumanReadable(option)}</label>
 							</div>
-						))}
+							);
+						})}
 					</div>
 				);
 		}
@@ -2728,24 +2809,13 @@ const FieldInput = ({ name, label, fieldInfo, fieldState, onChange, onFocus, onB
 		if (fieldState.resolvedMiss && !fieldState.touched) {
 			return (
 				<div className="miss-text-preview">
-					Value if left untouched:<br/><span>{fieldState.resolvedMiss}</span>
+					Value if left untouched:<br/><span>{toHumanReadable(fieldState.resolvedMiss)}</span>
 				</div>
 			);
 		}
 		return null;
 	};
 
-	// return (
-	// 	<div className="field-input">
-	// 		{/* Don't show label twice for checkboxes */}
-	// 		{varInfo.dataType !== 'boolean' && <label htmlFor={inputId} title={generateHoverText()}>{label}</label>}
-	// 		{renderInput()}
-	// 		{renderMissTextPreview()}
-	// 		{fieldState.hasError && fieldState.errorMessage && (
-	// 			<div className="error-message">{fieldState.errorMessage}</div>
-	// 		)}
-	// 	</div>
-	// );
 	return (
 		<div className="field-input">
 			{fieldInfo.type !== 'boolean' && (
