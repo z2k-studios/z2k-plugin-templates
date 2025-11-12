@@ -7,16 +7,14 @@ aliases:
 - What about Templater?
 ---
 # How is Z2K Templates Different than Templater?
-Why a new templating plugin when the impressive [Templater plugin](https://silentvoid13.github.io/Templater/) already does so much? Templater is a fine option for users who prefer script-like control and advanced logic. Templater has a strong "coding" vibe - to use it, it helps to have a background as a programmer. 
+
+Why build a new templating plugin when the impressive [Templater plugin](https://silentvoid13.github.io/Templater/) already does so much? Templater is a great option for users who prefer script-like control and advanced logic. Templater has a strong "coding" vibe - to use it, it helps to have a background as a programmer. 
 
 **Z2K Templates** takes the [[How is it Different than other Template Plugins|opposite approach]]: less scripting, more static field names. Z2K Templates also focuses on building out a larger templating system beyond individual snippets (for example, [[Block Templates|block templates]] and [[Hierarchical Template Folders|hierarchical folders]]).
 
 
 > [!TIP] Use Them Both Together!
 > If you like both approaches, rest easy, you can keep both installed: Templater for logic where you need code, Z2K Templates for systems and easy data prompting. In fact, **they can work together fantastically**, for instance see this article on [[How to Wrap Templater Code Snippets into Fields|wrapping templater code into Z2K Templates Fields]].
-
-
----
 
 ## Feature Matrix (Z2K Templates vs. Templater)
 
@@ -39,9 +37,11 @@ Why a new templating plugin when the impressive [Templater plugin](https://silen
 > This matrix reflects native emphasis. Templater can often **script** comparable behaviors; Z2K Templates makes many behaviors **declarative** and built-in.
 
 
----
+## Side‑by‑Side Code Examples (Templater ↔ Z2K Templates)
 
-## Side‑by‑Side Code Examples (Templater ↔ Z2K)
+To get down into the nitty gritty, let's step through how to build templates using Templater versus the Z2k Templates plugins. We will show how the two different approaches work for the same functionality. 
+
+---
 
 ### Comparison: Date, Time, Conditionals
 
@@ -96,7 +96,7 @@ Date: {{date}}
 
 ---
 
-### Comparison: Field Fata Types, YAML, Multiple Entries
+### Comparison: Field Data Types, YAML, Multiple Entries
 
 **Goal:** Prompt the user for a category from a list and insert it in YAML and body.
 
@@ -133,7 +133,7 @@ Dinner:
 Weight: 
 Mood: 
 ```
-(You would manually edit later or script a custom command.)
+Here, you would then manually edit later or script a custom command.
 
 - **Z2K Templates**:
 ```md title="Example D - Z2K Templates.md"
@@ -144,10 +144,9 @@ Dinner: {{Dinner}}
 Weight: {{Weight}}
 Mood: {{Mood}}
 ```
-Use **Continue filling file** during the day; **Finalize** applies miss-handling for anything left unresolved.
+Use **Continue filling file** during the day; and then a **Finalize** step applies miss-handling for anything left unresolved at the end of the day.
 
 ---
-
 
 ### Comparison: Interactive Data Entry
 

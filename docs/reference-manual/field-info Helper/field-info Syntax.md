@@ -21,7 +21,7 @@ where:
 ## Specifying Parameters
 The optional parameters range from prompting information to details on how to handle missing data. These parameters can be specified [[#Positional Parameters|positionally identified]], identified [[#Named Parameters|by name]], or a [[#Hybrid Parameters|hybrid of the two]].
 
-### Named Parameters
+## Named Parameters
 Every parameter in `field-info` has a name that you use to specify which parameter is being set. The basic structure is `parameterName=value`.  The name of the parameters matches parameter names in the [[field-info Parameters#Overview|parameter list]] (`type`, `prompt`, `default`, `miss`, `directives`,`opts`, `value`). 
 
 **Example:**
@@ -39,7 +39,7 @@ Every parameter in `field-info` has a name that you use to specify which paramet
 > [!Tip] Named Parameters == Clarity over Brevity
 > Using Named Parameters makes your templates become more readable. There is no ambiguity what each parameter's value is. 
 
-### Positional Parameters
+## Positional Parameters
 The most commonly used parameters (`fieldName`, `prompt`, `default`, and `type`) can also be specified without a name prefix, and instead identified through their position in which they are listed after the field name. 
 
 Positional parameters are ordered in priority of importance and usage - thus allowing for shortened {{field-info}} entries. The order is as follows:
@@ -60,8 +60,7 @@ Positional parameters are ordered in priority of importance and usage - thus all
 > [!Tip] Positional Parameters == Brevity over Clarity
 > Using Positional Parameters allows you to tightly provide the basic prompting information in a compact way. You sacrifice some clarity in the meaning of each parameter for the sake of brevity. 
 
-
-### Hybrid Parameters
+## Hybrid Parameters
 You can use a hybrid approach that blends the two. You can start with positional parameters and then switch to named parameters (but just not back). In practice this is the easiest approach: let the `fieldName`, `prompt`, and `default` go unnamed, then name the more advanced parameters as needed. 
 
 **Examples:**

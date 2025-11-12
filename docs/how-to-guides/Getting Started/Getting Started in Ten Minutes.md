@@ -17,20 +17,32 @@ Book-Author: {{BookAuthor}}
 Book-Genre: {{BookGenre}}
 Card-Created: {{today}}
 ---
+{{! FIELD-INFO BLOCK -------------------------------------------------- }}
 {{field-info fileTitle default="{{BookTitle}} by {{BookAuthor}}"}}
+{{field-info BookTitle "Enter the Book Title (without subtitle)" directives="required"}}
+{{field-info BookAuthor "Enter the Author name. If multiple authors, separate with semicolons"}}  
+{{field-info BookGenre "What Genre is {{BookTitle}}?" type="multiselect" opts="#Genre/Fiction, #Genre/Biography, #Genre/Non-Fiction, #Genre/Reference"}}  
+{{field-info Summary "Give a brief summary of {{BookTitle}}" }}
+{{! ------------------------------------------------------------------- ~}}
+  
 My Book Review - {{BookTitle}} by {{BookAuthor}}
 
 # Citation
-- **Book Title**:: {{field-output BookTitle prompt="Enter the Book Title (without subtitle)" directives="required"}}
-- **Author**:: {{field-output BookAuthor prompt="Enter the Author name. If multiple authors, separate with semicolons"}}
-- **Genre**:: {{field-output BookGenre "multiselect:#Genre/Fiction,#Genre/Biography,#Genre/Non-Fiction,#Genre/Reference" prompt="What Genre is {{BookTitle}}?"}}
+- **Book Title**:: {{BookTitle}} 
+- **Author**:: {{BookAuthor}}  
+- **Genre**:: {{BookGenre}}
 
 # History
 - Month I Read the Book: {{yearMonth}}
 
 # Links
-- Author Card: {{wikilink BookAuthor}}
+- Author Card: {{wikilink (format-string-file-friendly BookAuthor)}}
+- Book on Wikipedia : {{wikipedia BookTitle}}
 - Amazon Link: [Amazon Search](https://amazon.com?s={{format-sluggify BookTitle}})
+
+# Book Discussion Prompts
+- {{chatGPT "Given all that you know about me, if you were to imagine me as a character in {{BookTitle}}, which one would most challenge my worldview, and why?" "Mirror Test"}}
+- {{chatGPT "How does {{BookAuthor}} use what is not said — by omission, ambiguity, or silence — to shape meaning in {{BookTitle}}?" "Voice and Silence"}}
 
 # Summary
 {{Summary}}
@@ -52,6 +64,8 @@ The new template file now includes a "`Built-in Field`", in this case `{{yearMon
 
 ### 2c. Field Formatting
 Next, notice the Amazon Link: entry. Here it is construct a link to an Amazon search using the entered title. Because the title will be embedded in a URL, it makes use of a [[Helper Functions|Helper Function]] called `format-sluggify` that converts the value of a field into a sluggified (i.e. URL friendly) text. 
+
+Similarly, the entry for "Author Card" will build a `[[`wikilink`]]` to an Author note.  Before doing so it will make sure that any characters in the Author's name that are not safe for filenames be removed.
 - Learn More: [[Built-In Helper Functions]]
 
 ### 2d. Prompting information
@@ -73,7 +87,9 @@ At the end of the file, notice that it has a `{{! comment }}` entry to remind th
 , these comments are removed from the final file when it is [[Miss Handling|finalized]].
 - Learn More: [[Template Comments]]
 
-
+### 2h. External Links
+Finally, take a look at the fields that use `{{chatGPT}}` and `{{wikipedia}}`. These are built-in helper functions for creating links to external websites using the provided fields. 
+- Learn More: [[Built-In Helper Functions]]
 
 ## 3. Create a Block Template
 Now that we have a well-featured book template in our vault, let's create what is called a [[Block Templates|Block Template]] to create a reusable section that contains a quotation from a book. Partials are templates for blocks of text, rather than whole files.
@@ -99,4 +115,4 @@ Now that we have a well-featured book template in our vault, let's create what i
 
 
 ## Where To Go From Here
-Done - you now know enough to make use of just 20% of the plugin's features. Wanting more? We suggest moving on to the [[how-to-guides|How To Guides]] to learn more advanced topics. 
+Done - you now know enough to make use of just 25% of the plugin's features. Wanting more? We suggest moving on to the [[how-to-guides|How To Guides]] to learn more advanced topics. 

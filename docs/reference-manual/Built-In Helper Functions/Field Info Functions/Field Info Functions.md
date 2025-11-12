@@ -4,6 +4,9 @@ sidebar_position: 1
 ---
 
 ## Overview
+The built-in `{{field-info}}` helper function, and its [[field-info Variations|variations]], are the primary means to control how a field is prompted for and how its default and miss handling is performed. 
+
+Because these set of helper functions have a number of options available, they are listed in their own [[field-info Helper|section]] in the reference manual. The links below redirect to that section in the reference manual. 
 
 | Helper Function Name                                                 | Purpose                                                                                                              | Parameters (beyond the field name) |
 | -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
@@ -12,7 +15,3 @@ sidebar_position: 1
 | [[fi Helper Variation\|fi]]                                          | Abbreviated version of [[reference-manual/field-info Helper/field-info Helper\|field-info]]                          | see [[field-info Parameters]]      |
 | [[fo Helper Variation\|fo]]                                          | Abbreviated version of [[field-output Helper Variation\|field-output]]                                               | see [[field-info Parameters]]      |
 
-
-
-==infinity-field helper==
-{{infinity-field expression="- {{CurrentMood}} at {{format-date today "HH:MM"}}}}"}}

@@ -15,7 +15,7 @@ If you wish to specify the [[field-info Parameters]] but want it to also emit th
 The `{{field-info}}` helper function will remove any whitespace after it up until the end of the line, and will remove the ending "new line" (return/enter) at the end of the line. This effectively makes a line
 
 
-> [!TIP] Multiple Lines
+> [!TIP] Multiple Lines of Whitespace
 > If you have multiple lines of text that you wish to remove around a `{{field-info}}`, consider using the Handlebars [[tilde]] command. For example:
 > ```md title="Template - Person.md"
 > 

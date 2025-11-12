@@ -8,19 +8,49 @@ sidebar_label: field-info Usage Tips
 # field-info Usage Tips
 The `{{field-info}}` built-in helper function (and its [[field-info Variations|Variations]]) is a powerful tool for making your templates more professional, systematic, and consistent. Because there are so many options for how to use these helper functions, here are some general guidelines and tips.
 
+==Todo: these could use more details==
+
 ## Field-Info Blocks
 If you have a number of prompting information for a number of fields, consider creating a "field-info Block" at the top or bottom of the file. Here, you have one `{{field-info}}` entry per line that specifies the prompting information for all of the primary fields in your template. 
 
-Tip: you can use the [[tilde]] command to remove whitespace above and below the field-info block. 
+### Example Field-Info Block
+For example, the following template uses a field-info block at the top of the file:
 
-==clean up==
+```md title="Book Template.md"
+{{! FIELD-INFO BLOCK -------------------------------------------------- }}
+{{field-info fileTitle default="{{BookTitle}} by {{BookAuthor}}"}}
+{{field-info BookTitle "Enter the Book Title (without subtitle)" directives="required"}}
+{{field-info BookAuthor "Enter the Author name. If multiple authors, separate with semicolons"}}  
+{{field-info BookGenre "What Genre is {{BookTitle}}?" type="multiselect" opts="#Genre/Fiction, #Genre/Biography, #Genre/Non-Fiction, #Genre/Reference"}}  
+{{field-info Summary "Give a brief summary of {{BookTitle}}" }}
+{{! ------------------------------------------------------------------- ~}}
+
+My Book Review - {{BookTitle}} by {{BookAuthor}}  
+  
+# Citation  
+- **Book Title**:: {{BookTitle}} 
+- **Author**:: {{BookAuthor}}  
+- **Genre**:: {{BookGenre}}
+  
+# Summary  
+{{Summary}}  
+  
+```
+
+
+> [!TIP] Use Tildes to clear out extra whitespace
+> You can use the [[tilde]] command to remove whitespace above and below the field-info block. ==Need to verify it works on `{{! Comments ~}}`==
+
+### Where to Place Field-Info Blocks?
 The best practice for placement of field-info blocks: 
-Best practices for field info: either at the beginning at the end or use field output to put it embedded in the template file avoid YAML.
-- General suggestion is i to try to be consistent in your template files. 
-- If you typically finalize your template files into actual files immediately, then putting the field info at the top of the file can be a useful reminder that the card has not yet been finalized in the event you leave it in an un finalized state. 
-- if, however, you frequently are leaving your notes in an un finalized state, then the a preamble of field sales will become annoying, and it is best to add them at the end of the file. 
-- And then obviously, if you are just just using a quick prompt specification, often times it is better to just place it embedded with a field output command. 
-- If you do the field info at the top or bottom, it's also useful to preface it with a comment to help visually separate them. Here is a sample field-info block
+- Field Info Blocks are best placed either at the beginning or end of the file, but there is not hard set rule. 
+- If you are just using a quick prompt specification, often times it is better to just place it embedded with a field output command. See the [[field-output Helper Variation]] for more information. 
+- If you do the field info at the top or bottom, it's also useful to preface it with a comment to help visually separate them. See the sample field-info block [[#Example Field-Info Block|above]].
+- We recommend that you **avoid putting field-info blocks inside the YAML frontmatter**, as it has strict rules for what is legal text in that section, and can easily be rewritten by other plugins. 
+- General suggestion is aim for consistent field-info block placements across all of your template files. 
+- Top versus bottom of the file?
+	- If you typically finalize your template files into actual files immediately, then putting the field info at the top of the file can be a useful reminder that the card has not yet been finalized in the event you leave it in an unfinalized state. 
+	- If, however, you frequently are leaving your notes in an unfinalized state, then a preamble of field-infos will become visually cluttered, and it is best to add them at the end of the file. 
 
 ## Readability
 To make your templates more readable, we encourage you to:

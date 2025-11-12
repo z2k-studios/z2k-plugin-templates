@@ -19,7 +19,6 @@ The `miss` parameter can be specified with the `miss` keyword for the [[field-in
 
 If you are using positional parameters, please see the [[field-info Syntax]] for more  [[field-info Syntax#Positional Parameters|information on its position]].
 
-
 ## Default miss Value
 If omitted, then the plugin uses the [[Miss Handling]] procedure to determine what to do with the field. By default, this will result in using an empty string as the miss value - that is, all referenced to the `{{fieldName}}` will just simply be removed. But there are other ways to modify the final output using with [[field-info directives]] or [[Miss Handling YAML fields]]. See [[Miss Handling]] for more details.
 

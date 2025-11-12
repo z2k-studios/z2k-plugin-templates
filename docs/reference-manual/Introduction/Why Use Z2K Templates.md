@@ -10,7 +10,6 @@ Obsidian is famous for diverse plugin marketplace. Z2K Templates is only one of 
 
 Note: we *love* our fellow plugin developers - many thanks go out to [@silentvoid13](https://github.com/SilentVoid13), [@oeN](https://github.com/oeN), [@chhouman](https://github.com/chhoumann) and others for their fine work in making templating solutions for Obsdian. 
 
----
 ## Alternative Plugins
 Let's step back and review the top alternatives to **Z2K Templates**:
 
@@ -24,7 +23,6 @@ Let's step back and review the top alternatives to **Z2K Templates**:
 
 > These are complementary tools. Many vaults successfully combine Core Templates + QuickAdd, or Templater + QuickAdd. Z2K Templates can also coexist with them.
 
----
 ## Top‑Line Compare & Contrast
 
 - **Core Templates** is the easiest entry point: insert prewritten text and a few built‑in variables. No logic, no language to learn. Ideal for lightweight snippets. Uses `{{fields}}` just like Z2K Templates does.
@@ -32,7 +30,6 @@ Let's step back and review the top alternatives to **Z2K Templates**:
 - **Liquid Templates** swaps in a **LiquidJS** syntax. It emphasizes template tags over code, landing between Core Templates and Templater in capability.
 - **Z2K Templates** takes a **declarative `{{fields}}` approach** backed by the [Handlebars.js](https://handlebarsjs.com/) language. It focuses on structured fields, interactive prompting, YAML integration, partials, and *context-aware* discovery (hierarchical templates). The intent is to standardize structure without requiring JavaScript in your notes.
 
----
 ## Design Approach Comparison
 
 | Aspect                            | **Z2K Templates**                                                                   | **Templater**                                                                                  | **Liquid Templates**                                          |
@@ -50,7 +47,6 @@ Let's step back and review the top alternatives to **Z2K Templates**:
 - **Templater:** Arbitrary **JavaScript execution**, Obsidian API access, file system operations (create/move/rename), shell/process execution via JS, complex programmatic control flow.
 - **Liquid Templates:** Liquid-specific filter ecosystem and tag syntax; useful if you prefer Liquid across multiple tools.
 
----
 ## Z2K Templates and Templater
 
 For a more detailed analysis of Z2K Templates in contrast to the popular Templater plugin, continue to the [[Z2K Templates vs. Templater|next page]].

@@ -8,13 +8,12 @@ sidebar_label: field-info Examples
 The `field-info` built-in helper makes templates come alive, so it is worth stepping through some sample usages of the helper function in the content of a larger template.
 
 Sample Templates include:
-- [[#Template for People Entries]] in a vault
-- [[#Work Out Log Template]]
+- [[#Example Template for People Entries]]
+- [[#Example Template for a Work Out Log]]
 
 For fully fleshed out complete template files, please see out [[template-library|Template Library]].
 
-
-## Template for People Entries
+## Example: Template for People Entries
 This simple example handles automatic naming of a file based on fields located in the template. Take for instance a template for people that you know:
 
 ```md title="Template - Person.md"
@@ -33,7 +32,7 @@ This simple example handles automatic naming of a file based on fields located i
 - ==Does the fileTitle built-in Field need an extension?==
 
 
-## Work Out Log Template
+## Example: Template for a Work Out Log
 This "Workout Log" example demonstrates the most basic example of using embedded `{{field-output}}` commands (in its abbreviated `{{fo}}` [[fo Helper Variation|form]]). It uses `{{fo}}` to directly embed the prompting information into the summary list. 
 
 ```md title="Template - Workout Log.md"
@@ -44,7 +43,7 @@ This "Workout Log" example demonstrates the most basic example of using embedded
 **Workout Type**:: {{fo WorkoutType "What types of workouts did you have today?" "Strength" "multiSelect" opts="Strength, Cardio, Mobility" miss="Unspecified"}}  
 **Duration**:: {{fo Duration "Duration in Minutes:" type="number"}}  
 **Intensity**:: {{fo Intensity type="singleSelect" opts="Low, Moderate, High"}}  
-**Location**:: {{fo Location "Where?" "Home Gym" "text"}}  
+**Location**:: {{fo Location "Where?" "Home Gym" "text" miss="Home Gym"}}  
 ```
 
 **Behavior Breakdown**:
@@ -54,4 +53,4 @@ This "Workout Log" example demonstrates the most basic example of using embedded
 		- ==Notice that the miss is not a valid entry for the multiselect. Is that ok?==
 	- Duration  - a numeric field
 	- Intensity - a single select dropdown field
-	- Location - the location of the exercise
+	- Location - the location of the exercise, defaulting to "Home Gym" (even if the user fails to [[Prompt Touching|touch]] the default answer)

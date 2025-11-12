@@ -2,8 +2,8 @@
 sidebar_folder_position: 30
 sidebar_position: 1
 ---
-
 # Linking Helper Functions
+These Helper Functions are useful for building wikilinks and internet links within your templates. 
 
 | Link          | Helper Function Name | Purpose                                  |
 | ------------- | -------------------- | ---------------------------------------- |

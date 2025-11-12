@@ -11,7 +11,6 @@ The **Z2K Templates Plugin** is a templating engine built for Obsidian that tran
 > [!INFO]
 > **Context:** Z2K Templates is part of the larger [Z2K System](https://www.z2ksystem.com), a framework for digitizing your mind through structured notes, metadata, and cognition tools. The plugin can also stand alone as a robust, user-friendly templating solution for anyone seeking structure and automation within Obsidian.
 
----
 ## What You’ll Learn in This Section
 The pages under this **Introduction** section provide a 50,000-foot overview of how Z2K Templates works and why it was designed this way. Each subpage focuses on a specific layer of understanding:
 
@@ -23,8 +22,6 @@ The pages under this **Introduction** section provide a 50,000-foot overview of 
 - [[Why Use Z2K Templates|Why Use Z2K Templates?]] — Compares Z2K Templates with alternative approaches
 - [[Comparison with Templater Plugin]] - A detailed comparison with the popular Templater Plugin.
 - [[The Z2K System]] — Shows how the plugin fits into the greater Z2K framework.  
-
----
 
 ## Quick Orientation
 If you’ve just installed Z2K Templates and want to dive right in rather than read documentation, here are two [[how-to-guides|How-To Guides]] to get you started:
