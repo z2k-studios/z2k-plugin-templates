@@ -13,7 +13,7 @@ The **Z2K Templates Plugin** is a templating engine built for Obsidian that tran
 
 ---
 ## What You’ll Learn in This Section
-The pages under **Introduction** provide a 50,000-foot overview of how Z2K Templates works and why it was designed this way. Each subpage focuses on a specific layer of understanding:
+The pages under this **Introduction** section provide a 50,000-foot overview of how Z2K Templates works and why it was designed this way. Each subpage focuses on a specific layer of understanding:
 
 - [[What is Z2K Templates|What is Z2K Templates?]] — A quick introduction to the Z2K Templates Plugin
 - [[Sample Template]] - Learn by example with a sample template file

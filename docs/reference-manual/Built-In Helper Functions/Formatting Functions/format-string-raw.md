@@ -1,8 +1,9 @@
 ---
-sidebar_position: 25
+sidebar_position: 26
+sidebar_class_name: z2k-code
+sidebar_label: "{{format-string-raw}}"
 ---
-
-## format-string-raw Helper
+# format-string-raw Helper
 The `format-string-raw` Helper function prevents Z2K from escaping any special characters inside the provided data, instead inserting the raw data directly into the template file. In addition, and character literals in the string (e.g. `\n`) will be replaced by their actual literal values (e.g. in this instance a newline character).
 
 ```
@@ -10,9 +11,10 @@ The `format-string-raw` Helper function prevents Z2K from escaping any special c
 ```
 
 where:
-	- `format-string-raw` is the predefined name of the helper function for inserting raw text
-	- `fieldname` is the name of the field that will receive the data to be capitalized
+- `format-string-raw` is the predefined name of the helper function for inserting raw text
+- `fieldname` is the name of the field that will receive the data to be capitalized
 
+## Example
 For example, if you had a field named `Description` with the value below
 ```json
 {

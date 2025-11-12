@@ -20,7 +20,7 @@ This key specifies the default method that is used for handling data misses (i.e
 | `z2k_template_default_miss_handling` | `default`  | If a miss occurs for a field, it will use the value of the `default` response as specified in a `{{field-info}}` for the field. If no `default` has been provided, then it will clear the field from the resultant file. |
 
 > [!TIP] Miss Handling is More Than This
-> Note that field-level [[field-info directives|directives]] and [[field-info miss|miss]] parameters in a [[field-info Helper|field-info]] statement can override these file-level requests. Please see [[Miss Handling]] for more details.
+> Note that field-level [[field-info directives|directives]] and [[field-info miss|miss]] parameters in a [[reference-manual/field-info Helper/field-info Helper|field-info]] statement can override these file-level requests. Please see [[Miss Handling]] for more details.
 
 
 

@@ -32,16 +32,16 @@ To understand how to use them in the syntax of the helper function, see the page
 ## Parameter Types and Defaults
 The following table shows the accepted data types and default values for each parameter type:
 
-| Parameter Name | Data Type                                   | Default Value                               |
-| -------------- | ------------------------------------------- | ------------------------------------------- |
-| `fieldName`    | Unquoted name of field                      | (required field, no default)                |
-| `prompt`       | String                                      | `"{{format-string-spacify fieldName}}"`     |
-| `default`      | String, number, boolean, list               | `""`                                        |
-| `type`         | String                                      | `"text"`                                    |
-| `opts`         | `[` List of Strings, Numbers or Booleans`]` | `[]`                                        |
-| `miss`         | String, number, boolean, list               | (determined by [[Miss Handling]] procedure) |
-| `directives`   | `[` List of Strings `]`                     | `[]`                                        |
-| `value`        | String, Number, Boolean, list               | `""`                                        |
+| Parameter Name | Data Type                                                     | Default Value                               |
+| -------------- | ------------------------------------------------------------- | ------------------------------------------- |
+| `fieldName`    | Unquoted name of field                                        | (required field, no default)                |
+| `prompt`       | String                                                        | `"{{format-string-spacify fieldName}}"`     |
+| `default`      | String, number, boolean, list                                 | `""`                                        |
+| `type`         | String                                                        | `"text"`                                    |
+| `opts`         | String containing a comma separated list of Strings           | `""`                                        |
+| `miss`         | String, number, boolean, list                                 | (determined by [[Miss Handling]] procedure) |
+| `directives`   | String containing a comma separated list of directive strings | `""`                                        |
+| `value`        | String, Number, Boolean, list                                 | `""`                                        |
 
 ## Tips
 

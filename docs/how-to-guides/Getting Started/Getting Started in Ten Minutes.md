@@ -58,7 +58,7 @@ Next, notice the Amazon Link: entry. Here it is construct a link to an Amazon se
 Finally, notice how the template includes more information inside the `{{BookAuthor}}` and `{{BookTitle}}` fields. In this instance, they are using a [[Built-In Helper Functions|Built-In Helper Function]] called `field-output` that can, among other things, allow you to control how a field is prompted to the user. Note that the `{{BookTitle}}` was also flagged as required - meaning that you will have to type a value into the book title entry in order to create the file. 
 
 Notice further that the prompt for the `{{BookGenre}}` variable actually references other fields. Yes, you can use `{{fields}}` inside the prompting interface!
-- Learn More: [[Prompting]], [[field-output Helper]]
+- Learn More: [[Prompting]], [[field-output Helper Variation]]
 
 ### 2e. Default File Naming
 The template uses "silent helper function" called `{{field-info}}` that references a built-in field called `{{fileTitle}}` that represents the filename of the card. Using `{{field-info}}` we are able to specify that the default title of the card should be "*Book Name* by *Author Name*". With this, we have just reduced yet another duplication effort by making the file name for a card also use `{{fields}}` in them. 

@@ -6,7 +6,7 @@ sidebar_label: field-info Syntax
 ---
 # field-info Syntax
 
-The [[field-info Helper]] function has a number of parameters (aka options) that allow a user to control the prompting interface. Parameters are all "named", meaning that you can specify a parameter with a `parameterName=` prefix. In addition the most commonly used parameters can be specified via their position. In the end, a [[#Hybrid Parameters|hybrid]] approach between [[#Named Parameters]] and [[#Positional Parameters]] is usually the best approach. 
+The [[reference-manual/field-info Helper/field-info Helper]] function has a number of parameters (aka options) that allow a user to control the prompting interface. Parameters are all "named", meaning that you can specify a parameter with a `parameterName=` prefix. In addition the most commonly used parameters can be specified via their position. In the end, a [[#Hybrid Parameters|hybrid]] approach between [[#Named Parameters]] and [[#Positional Parameters]] is usually the best approach. 
 
 ## Overall structure
 

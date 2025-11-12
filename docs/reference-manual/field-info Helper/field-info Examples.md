@@ -23,7 +23,7 @@ This simple example handles automatic naming of a file based on fields located i
 # Person: {{FullName}}
 - First Name :: {{LastName}}
 - Last Name  :: {{FirstName}}
-- Relationship :: {{fo Relationship type="multiselect" opts=['#Friend','#Family','#Acquaintance','#Colleague'] }}
+- Relationship :: {{fo Relationship type="multiselect" opts="#Friend, #Family, #Acquaintance, #Colleague"}}
 ```
 
 **Behavior Breakdown**:
@@ -34,16 +34,16 @@ This simple example handles automatic naming of a file based on fields located i
 
 
 ## Work Out Log Template
-This "Workout Log" example demonstrates the most basic example of using embedded `{{field-output}}` commands (in its abbreviated `{{fo}}` [[fo Helper|form]]). It uses `{{fo}}` to directly embed the prompting information into the summary list. 
+This "Workout Log" example demonstrates the most basic example of using embedded `{{field-output}}` commands (in its abbreviated `{{fo}}` [[fo Helper Variation|form]]). It uses `{{fo}}` to directly embed the prompting information into the summary list. 
 
 ```md title="Template - Workout Log.md"
 {{field-info fileTitle default="{{today}} - {{Duration}} min workout - {{WorkoutType}}" directives="finalize-default" ~}}
 
 ## Summary
 **Date**:: {{fo WorkoutDate default="{{today}}" directives="finalize-default"}}
-**Workout Type**:: {{fo WorkoutType "What types of workouts did you have today?" "Strength" "multiSelect" opts=["Strength","Cardio","Mobility"] miss="Unspecified"}}  
+**Workout Type**:: {{fo WorkoutType "What types of workouts did you have today?" "Strength" "multiSelect" opts="Strength, Cardio, Mobility" miss="Unspecified"}}  
 **Duration**:: {{fo Duration "Duration in Minutes:" type="number"}}  
-**Intensity**:: {{fo Intensity type="singleSelect" opts=["Low","Moderate","High"]}}  
+**Intensity**:: {{fo Intensity type="singleSelect" opts="Low, Moderate, High"}}  
 **Location**:: {{fo Location "Where?" "Home Gym" "text"}}  
 ```
 

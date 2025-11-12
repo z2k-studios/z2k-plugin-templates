@@ -11,10 +11,10 @@ aliases:
 - Card Data Built-Ins
 ---
 ## Overview
-Within this section, you can discover [[Built-In Fields|Built-In Fields]] associated with the source template file and the destination file.
+The plugin has a number of [[Built-In Fields|Built-In Fields]] associated with the source template file and the destination file.
 
 1. [[Built-In Fields - File Title Variants|Destination File Fields]]  - information about the file being created
-	- `{{fileTitle}}` 
+	- `{{fileTitle}}`
 	- `{{noteTitle}}`
 	- `{{cardTitle}}`
 2. [[Built-In Fields - Template File Data|Template File Fields]] - information about the template that was used to create the destination file

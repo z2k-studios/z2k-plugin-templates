@@ -110,7 +110,7 @@ aliases:
         - `chatGPT`
         - `z2k-preserve-raw`  
 
-11. [[field-info Helper]]
+11. [[reference-manual/field-info Helper/field-info Helper]]
 	- [[field-info Cheat Sheet|Cheat Sheet]] - a brief one page summary of the `{{field-info}}` helper function
 	- [[field-info Syntax|Syntax]] - syntax of the underlying helper function
 	- [[field-info Output|Output]] - what does the `{{field-info}}` helper output?
@@ -124,9 +124,9 @@ aliases:
 	- [[field-info Usage Tips|Usage Tips]] - tips to understanding how to use `{{field-info}}`
 	- [[field-info Examples|Examples]] - presents a variety of `{{field-info}}` related examples
 	- [[field-info Variations]] - similar functions within the same family of helper functions
-		- [[field-output Helper]] - sister function that outputs the field value 
-		- [[fi Helper]] - abbreviated version of `{{field-info}}`
-		- [[fo Helper]] - abbreviated version of `{{field-output}}`
+		- [[field-output Helper Variation]] - sister function that outputs the field value 
+		- [[fi Helper Variation]] - abbreviated version of `{{field-info}}`
+		- [[fo Helper Variation]] - abbreviated version of `{{field-output}}`
 		
 12. [[Handlebars Support]] - How Z2K's field language is similar to and differs from the Handlebars.js library  
     - [[Template Comments]] (`{{! comment }}`)  

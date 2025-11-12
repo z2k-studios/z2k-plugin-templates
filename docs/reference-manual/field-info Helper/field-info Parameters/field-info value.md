@@ -10,7 +10,7 @@ aliases:
 
 
 # field-info value
-The optional `value` parameter in the [[field-info Helper]] allows you to set a value to a field within the template code. This essentially bypasses the prompting of the user for this field. 
+The optional `value` parameter in the [[reference-manual/field-info Helper/field-info Helper]] allows you to set a value to a field within the template code. This essentially bypasses the prompting of the user for this field. 
 
 This is an advanced feature that is particularly useful for `{{fields}}` in [[Hierarchical Template Folders]] or with [[Custom Helper Functions]].
 
@@ -18,12 +18,12 @@ This is an advanced feature that is particularly useful for `{{fields}}` in [[Hi
 The `value` parameter must be prefaced with the `value=` keyword assignment, i.e. it is a [[field-info Syntax#Named Parameters|Named Parameter]]. For example:
 
 ```md title="Sample value parameter"
-{{field-info TOE type="number" value=42 directives=['no-prompt']}}
+{{field-info TOE type="number" value=42 directives="no-prompt"}}
 {{field-info TOE_Author type="text" value="Douglas Adams"}}
 ```
 
 ## Accepted Values
-The `value` value accepts quoted strings, unquoted numbers, and boolean keywords (`true` and `false`).  They will not accept `[` list`]` arrays or date/datetimes (which should be provided has just strings). 
+The `value` value accepts quoted strings, unquoted numbers, and boolean keywords (`true` and `false`).  They will not accept `arr` arrays or date/datetimes (which should be provided has just strings). 
 
 ## Default value Value
 If omitted, the default `value` (ahem) value is an empty string.
@@ -35,6 +35,20 @@ Please note that the `value` parameter could allow `{{fields}}` in it - but this
 At first glance, it seems pretty ridiculous to be able to specify a value for a field inside a template field. If you know the value, then why not just use it instead of making it a field?
 
 Most of the scenarios are fairly advanced templates work, but they do lead to some interesting applications. Here are some class of examples:
+
+# Example: Formatting a Field with Additional Text
+You can use the `value` parameter to make alternative versions of the field with additional text. 
+
+For example:
+```md title="Book Template.md"
+{{fieldInfo ISBN-URL value="https://isbnsearch.org/isbn/{{ISBN}}"}}
+
+# Links to More Information
+- Book URL :: {{url BookURL}}
+- Author URL :: {{url AuthorURL "{{Author}}"}}
+- ISBN URL :: {{url ISBN-URL "{{ISBN}}"}}
+```
+
 
 ### Example: Controlling Output Based on Another Field
 Consider this template

@@ -1,9 +1,12 @@
 ---
-sidebar_position: 24
+sidebar_position: 23
 sidebar_class_name: z2k-code
-sidebar_label: "{{format-string-spacify}}"
+sidebar_label: "{{format-string-slugify}}"
 ---
-# format-string-spacify Helper
+# format-string-slugify Helper
+
+==needs updating==
+
 If you want to convert a collapsed string of words back into an expression with spaces, use this helper function. For instance, this will convert an expression `ThisIsACollapsedSentence` back into `This is a Collapsed Sentence`.
 
 ```

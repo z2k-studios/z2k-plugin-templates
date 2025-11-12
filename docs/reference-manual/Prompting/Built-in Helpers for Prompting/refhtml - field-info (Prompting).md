@@ -5,4 +5,4 @@ sidebar_label: field-info
 placeholder_type: refhtml
 placeholder_ref_id: 'reference-manual/field-info-helper/field-info-helper'
 ---
-Please see the documentation page for [[field-info Helper]] for more details.
+Please see the documentation page for [[reference-manual/field-info Helper/field-info Helper]] for more details.

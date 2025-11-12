@@ -25,7 +25,7 @@ The following built-in date and time template fields can be used in templates:
 | `{{yearMonthName}}` | The date with the format `YYYY-MM MMMM`                      | `2025-09 September`                      |
 | `{{yearQuarter}}`   | The current year and quarter with the format `YYYY-[Q]Q`     | `2025-Q1`                                |
 
-(\*1) The `{{date}}` and `{{time}}` built-in fields perform identically to Obsidian's predefinited template variables with the same name. 
+(\*1) The `{{date}}` and `{{time}}` built-in fields perform identically to Obsidian's predefined template variables with the same name. 
 
 ## Time and Date Formatting
 - In keeping with Obsidian formatting, a optional time format string can be added with a `:` followed by a string of [Moment.js format tokens](https://momentjs.com/docs/#/displaying/format/). This formatting ability applies only to date and time fields.
@@ -34,4 +34,33 @@ The following built-in date and time template fields can be used in templates:
 	- `{{date:YYYY-MM}}` would result in `2026-01`
 	- `{{dayOfWeek:ddd}}` would result in `Fri`
 - For more details and more advanced formatting, see [[Custom Field Formatting|Date and String Formatting]]
+
+
+## Field Specific Details
+
+### {{date}}
+
+### {{time}}
+
+### {{today}}
+
+### {{yesterday}}
+
+### {{tomorrow}}
+
+### {{timestamp}}
+
+### {{dayOfWeek}}
+
+### {{weekNum}}
+
+### {{year}}
+
+### {{yearMonth}}
+
+### {{yeathMonthName}}
+
+### {{yearQuarter}}
+
+
 

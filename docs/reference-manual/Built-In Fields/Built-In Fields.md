@@ -17,10 +17,10 @@ The following types of built-in fields are available:
 - [[Built-In Fields - sourceText|sourceText]] - a special built-in field for applying templates to an existing file
 
 Additional Information:
-- [[Built-In Fields and Field-Info]] - using [[field-info Helper|field-info]] to modify how built-in fields behave
+- [[Built-In Fields and Field-Info]] - using `{{`[[reference-manual/field-info Helper/field-info Helper|field-info]]`}}` to modify how built-in fields behave
 
 
-# Field Naming Conventions
+# Built-In Field Naming Conventions
 
 > [!TIP] Field Naming Conventions
 > Note: In general, the naming convention used to distinguish built-in fields from user specified fields is via initial capitalization: Built-in template fields all begin with a lower case letter, while we encourage you to denote user specified fields by beginning them with an uppercase letter.

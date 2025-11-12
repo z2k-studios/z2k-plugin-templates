@@ -1,9 +1,11 @@
 ---
 sidebar_position: 10
-sidebar_label: "{{templateName}}, {{templateVersion}}"
+sidebar_label: "{{templateName}}, {{templateVersion}}, {{templateAuthor}}"
+sidebar_class_name: z2k-code
 aliases:
 - templateName
 - templateVersion
+- templateAuthor
 ---
 ## Template File Fields
 The following [[Built-In Fields|Built-In Fields]] are for accessing information about the template that was used to create a file:
@@ -19,7 +21,7 @@ For example, use this field to store away the template name for later use. It is
 
 
 > [!TIP] Use wikilink Helper for templateName
-> If you would like to have the name of the Template file be hotlinked back to the actual template file, use the 
+> If you would like to have the name of the Template file be hotlinked back to the actual template file, use the wikilink helper function `{{wikilink}}`. For instance, `{{wikilink templateName}}`
 
 
 ## templateVersion

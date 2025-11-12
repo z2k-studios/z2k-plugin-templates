@@ -5,9 +5,10 @@ doc_state: initial_ai_draft
 title: field-info Helper Function
 sidebar_label: field-info Helper
 aliases:
-- Field Info Helper Function
 - field-info
 - field-info helper function
+- field-info Helper
+- Field Info Helper Function
 ---
 # field-info Helper Function - Introduction
 
@@ -37,8 +38,8 @@ Because `{{field-info}}` is so powerful, its documentation is spread out over se
 - [[field-info Usage Tips|Usage Tips]] - tips to understanding how to use `{{field-info}}` & best practices
 - [[field-info Examples|Examples]] - presents a number of example templates that make use of `{{field-info}}`
 - [[field-info Variations]] - similar functions within the same family of helper functions
-	- [[field-output Helper]] - sister function that outputs the field value 
-	- [[fi Helper]] - abbreviated version of `{{field-info}}`
-	- [[fo Helper]] - abbreviated version of `{{field-output}}`
+	- [[field-output Helper Variation]] - sister function that outputs the field value 
+	- [[fi Helper Variation]] - abbreviated version of `{{field-info}}`
+	- [[fo Helper Variation]] - abbreviated version of `{{field-output}}`
 - [[Built-In Fields and Field-Info|field-info and Built-In Fields]] - how `{{field-info}}` works with [[Built-In Fields]]
 - [[field-info and Block Templates]] - steps through how to use `{{field-info}}` with block templates

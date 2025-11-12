@@ -8,7 +8,7 @@ aliases:
 - field-info miss Parameter
 ---
 # field-info miss
-The optional `miss` parameter in the [[field-info Helper]] allows you to specifies a string that will be assigned to a field if the user has failed to specify a value for it. This occurs at [[Finalizing a File|Finalization]] - before that point, the `miss` parameter is ignored.
+The optional `miss` parameter in the [[reference-manual/field-info Helper/field-info Helper]] allows you to specifies a string that will be assigned to a field if the user has failed to specify a value for it. This occurs at [[Finalizing a File|Finalization]] - before that point, the `miss` parameter is ignored.
 
 ## Syntax
 The `miss` parameter can be specified with the `miss` keyword for the [[field-info Syntax#Named Parameters|Named Parameter]]. For example:
@@ -30,7 +30,7 @@ The `miss` parameter allows for the use of embedded fields and helper functions 
 Take for example a daily health log template that tracks, say, heart palpitations:
 ```md title="Template - Daily Health Log.md"
 # Heart
-- Number of Heart Palpitations :: {{fo NumPalpitations "number" prompt="How many heart palpitations did you have today? Leave blank if none." directives="clear"}}
+- Number of Heart Palpitations :: {{fo NumPalpitations "number" prompt="How many heart palpitations did you have today? Leave blank if none." directives="finalize-clear"}}
 - Possible Causes :: {{fo PossibleCauses prompt="Possible causes?" miss="{{if NumPalpitations}}N/A{{else}}Unknown Causes{{/if}}"}}
 ```
 In this instance, the `miss` value for "Possible Causes" will either be "N/A" or "Unknown Causes" based on whether or not the user has entered in a number (or also the number 0) for the number of headaches. 
@@ -63,7 +63,7 @@ You can use the `miss` value as a pre-filled quick response to a field prompt. W
 ![[field-info default#default vs. miss]]
 
 ## Finalize Directives and YAML Configuration Fields
-The [[field-info Helper|field-info]] related helper functions also support the `directives` parameter (see [[field-info directives|directives]]). There are several "finalize" directives that also influence the processing of a missed field. Also, a template or block template can specify a default miss handling for all fields in a file - see [[YAML Configuration Fields]]. 
+The [[reference-manual/field-info Helper/field-info Helper|field-info]] related helper functions also support the `directives` parameter (see [[field-info directives|directives]]). There are several "finalize" directives that also influence the processing of a missed field. Also, a template or block template can specify a default miss handling for all fields in a file - see [[YAML Configuration Fields]]. 
 
 For the most complete and consolidated understanding of how to miss handling is performed, please see the documentation page [[Miss Handling]].
 

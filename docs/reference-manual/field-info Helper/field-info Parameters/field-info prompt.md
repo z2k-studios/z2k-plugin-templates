@@ -9,7 +9,7 @@ aliases:
 ---
 
 # field-info prompt parameter
-The frequently used, but optional, `prompt` parameter in the [[field-info Helper]] informs the Z2K Templates Plugin what message to display inside the [[Prompting Interface]]. 
+The frequently used, but optional, `prompt` parameter in the [[reference-manual/field-info Helper/field-info Helper]] informs the Z2K Templates Plugin what message to display inside the [[Prompting Interface]]. 
 
 ## Syntax
 The `prompt` parameter is the first parameter after that `fieldName` and as such, when used, it typically specified [[field-info Syntax#Positional Parameters|positionally]] (i.e. directly after the `fieldName` and without a named parameter format). For instance:

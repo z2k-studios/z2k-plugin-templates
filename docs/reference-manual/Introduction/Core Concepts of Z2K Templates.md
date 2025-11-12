@@ -38,7 +38,7 @@ Title: {{ProjectName}}
 Date: {{date}}
 Status: {{Status}}
 –––
-{{field-info Status type="singleSelect" opts=['Planned','In Progress', 'Complete']}}
+{{field-info Status type="singleSelect" opts="Planned, In Progress, Complete"}}
 
 # Project: {{ProjectName}}
 
@@ -83,7 +83,7 @@ When a field’s value can’t be resolved (for example, it isn’t provided via
 
 ```md title="Template - Prompting.md"
 My Location :: {{field-output Location "Where were you today?" "NYC, NY"}}
-My Mood     :: {{field-output Mood type="singleSelect" opts=['Happy', 'Neutral', 'Stressed']}}
+My Mood     :: {{field-output Mood type="singleSelect" opts="Happy, Neutral, Stressed"}}
 ```
 
 If a field remains blank, Z2K Templates follows its [[Prompting#Miss Handling|miss handling rules]] — such as clearing it, keeping the placeholder, or applying a default value.

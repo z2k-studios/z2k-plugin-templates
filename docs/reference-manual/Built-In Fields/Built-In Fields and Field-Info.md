@@ -5,17 +5,18 @@ aliases:
 - Field-Info for Built-In Fields
 ---
 
-There are some amazingly cool things you can do with Built-In Fields, like using the [[field-info Helper]] to modify how they operate.
+There are some amazingly cool things you can do with Built-In Fields, like using the [[reference-manual/field-info Helper/field-info Helper]] to modify how they operate.
 
 Let's step through some examples - get ready to blow your mind on what's possible.
 
 # Field-Info Modifications
 
 ## fileTitle and field-info
-By using the [[field-info Helper]] on the `{{fileTitle}}` (and other [[Built-In Fields - File Data#Destination File Fields|title variants]]), you can specify how any resulting file created from the template is to be named.
+By using the [[reference-manual/field-info Helper/field-info Helper]] on the `{{fileTitle}}` (and other [[Built-In Fields - File Data#Destination File Fields|title variants]]), you can specify how any resulting file created from the template is to be named.
 
 ==todo - flesh in what is possible. Is it just prompt and default? miss? value?==
-==will overriding on `{{fileTitle}}` also override on `{{cardTitle}}`?
+
+
 
 ## what else
 

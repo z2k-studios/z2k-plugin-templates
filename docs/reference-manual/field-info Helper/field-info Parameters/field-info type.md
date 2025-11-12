@@ -8,7 +8,7 @@ aliases:
 - field-info type Parameter
 ---
 # field-info type
-The optional `type` parameter in the [[field-info Helper]] specifies what type of value should be associated with the field. The value can be one of a number of [[#Accepted Values]].
+The optional `type` parameter in the [[reference-manual/field-info Helper/field-info Helper]] specifies what type of value should be associated with the field. The value can be one of a number of [[#Accepted Values]].
 
 ## Syntax
 The `type` parameter can be specified with the `type` keyword for the [[field-info Syntax#Named Parameters|Named Parameter]]. For example:
@@ -44,4 +44,4 @@ If omitted, the default `type` value is a string.
 - In general, it is **safe to assume all fields are simply strings** (that's ultimately how they are inserted into the final file, after all). 
 - **Using other data types is largely a user-interface feature**. For instance, using a `date` type will present the user with a date picker interface rather than text box. 
 - Assigning the correct type will prevent things like data entry errors (for instance, typo letters in numeric values)
-- It is best to assume that `singleSelect` and `multiSelect` typed fields are `[`list`]` of strings. They can be others, but we have not tested that fully. 
+- ==It is best to assume that `singleSelect` and `multiSelect` typed fields are lists of strings. They can be others with the `arr` built-in helper , but we have not tested that fully. ==

@@ -9,7 +9,7 @@ aliases:
 ---
 
 # field-info default
-The optional `default` parameter in the [[field-info Helper]] specifies a string that represents the "default" value inside the [[Prompting Interface]].
+The optional `default` parameter in the [[reference-manual/field-info Helper/field-info Helper]] specifies a string that represents the "default" value inside the [[Prompting Interface]].
 ## Syntax
 The `default` parameter can be specified with the `default` keyword for the [[field-info Syntax#Named Parameters|Named Parameter]]. For example:
 
@@ -31,8 +31,8 @@ The `default` value can accept either a string, number, boolean or list - depend
 {{field-info WorkoutDescription type="text" default="Exhausting"}}
 {{field-info WorkoutDuration type="number" default=60}}
 {{field-info HitPeakHR type="boolean" default=false}}
-{{field-info TimeInPeak type="singleSelect" opts=[15,30,45] default=15}}
-{{field-info WorkoutType type="multiSelect" opts=['cardio','aerobic'] default=['cardio']}}
+{{field-info TimeInPeak type="singleSelect" opts="15,30,45" default=15}}
+{{field-info WorkoutType type="multiSelect" opts="cardio, aerobic" default="cardio"}}
 {{field-info WorkoutDate type="date" default="{{today}}"}}
 {{field-info WorkoutTime type="datetime" default="12:15 PM"}}
 ```
@@ -76,14 +76,14 @@ You can use the `default` value as a pre-filled quick response to a field prompt
 > 
 > For example:
 > ```md
-> {{field-info TypeOfDay prompt="What type of day was it?" default="Normal" directives=['finalize-default']}}
+> {{field-info TypeOfDay prompt="What type of day was it?" default="Normal" directives="finalize-default"}}
 > ```
 
 
 > [!TIP] Default Filenames
 > In this way, the default response is very useful for the `{{fileTitle}}` [[Built-In Fields - File Data#Destination File Fields|built-in destination filename field]]. For instance, if you prefer to have your book reviews filenames be formatted as "*Title - Author*", you can provide that as a default and miss value:
 > ```md
-> {{field-info fileTitle default="{{BookTitle}} - {{BookAuthor}}" directives=['finalize-default']}}
+> {{field-info fileTitle default="{{BookTitle}} - {{BookAuthor}}" directives="finalize-default"}}
 > ```
 
 
