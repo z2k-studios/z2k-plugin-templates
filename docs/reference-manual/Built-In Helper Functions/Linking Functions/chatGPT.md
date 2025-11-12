@@ -22,10 +22,10 @@ where:
 Here is an example of adding ChatGPT discussion prompts directly into a book's note.
 ```
 # Book Discussion Prompts
+- {{chatGPT "Given all that you know about me, if you were to imagine me as a character in {{BookTitle}}, which one would most challenge my worldview, and why?" "Mirror Test"}}
 - {{chatGPT "In {{BookTitle}} by {{BookAuthor}}, what central paradox or tension drives the book’s philosophical or emotional core?" "Paradox Lens"}}
 - {{chatGPT "How does {{BookAuthor}} use what is _not said_—omission, ambiguity, or silence—to shape meaning in {{BookTitle}}?" "Voice and Silence"}}
 - {{chatGPT "What kind of moral or existential climate does {{BookTitle}} create, and how do its characters adapt or perish within it?" "Moral Weather"}}
-- {{chatGPT "If you were a character in {{BookTitle}}, which one would most challenge your own worldview, and why?" "Mirror Test"}}
 - {{chatGPT "How does {{BookTitle}} by {{BookAuthor}} treat time—linear, cyclical, fractured, or irrelevant—and what does that say about its understanding of human experience?" "Temporal Drift"}}
 
 ```

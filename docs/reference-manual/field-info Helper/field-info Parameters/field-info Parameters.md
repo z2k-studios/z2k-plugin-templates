@@ -17,7 +17,7 @@ There are a number of [[field-info Parameters|parameters]] that can be used with
 - **[[field-info type|type]]** :: Type of field ("text", "number", "date", "datetime", "boolean", "singleSelect", "multiSelect", "titleText";)
 
 **Named Only Parameters:**
-- [[field-info opts|opts]] :: A \[ list \] of available options for singleSelect and multiSelect types
+- [[field-info opts|opts]] :: A comma separated string list of available options for singleSelect and multiSelect types
 - **[[field-info miss|miss]]** :: The field result that will be used if the use never attempts to answer the prompt
 - **[[field-info directives|directives]]** :: A comma separated list of directives for advanced usage
 - **[[field-info value|value]]** :: An advanced use case where you pre-fill a value into a field, skipping prompting

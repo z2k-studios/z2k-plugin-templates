@@ -10,8 +10,8 @@ aliases:
 ---
 # field-info directives Parameter
 
+%% This next section is included in the [[field-info Cheat Sheet]] through a direct include %%
 ## Overview
-%% This section is included in the [[field-info Cheat Sheet]] through a direct include %%
 The [[field-info directives|directives]] parameter is a list of strings, with each string being one of the following directives:
 
 - **Miss Handling Special Cases**:
