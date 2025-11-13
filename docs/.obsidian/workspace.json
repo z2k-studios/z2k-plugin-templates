@@ -4,11 +4,31 @@
     "type": "split",
     "children": [
       {
-        "id": "8c070656de90ed8e",
+        "id": "4649b082ec5b9e61",
         "type": "tabs",
         "children": [
           {
-            "id": "b4bf014515710039",
+            "id": "97cd1e8521681247",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "reference-manual/Built-In Fields/Built-In Fields - Date and Time/yearQuarter.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "yearQuarter"
+            }
+          }
+        ]
+      },
+      {
+        "id": "9b2663fb10b3887e",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "eeff57550d37dc4a",
             "type": "leaf",
             "state": {
               "type": "markdown",
@@ -19,34 +39,6 @@
               },
               "icon": "lucide-file",
               "title": "Built-In Fields - Date and Time"
-            }
-          },
-          {
-            "id": "7487dc477dc5a01b",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "how-to-guides/Getting Started/Getting Started in Ten Minutes.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "Getting Started in Ten Minutes"
-            }
-          },
-          {
-            "id": "62ca2837f2250a00",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "reference-manual/Built-In Helper Functions/Linking Functions/chatGPT.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "chatGPT"
             }
           }
         ]
@@ -197,34 +189,34 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "b4bf014515710039",
+  "active": "97cd1e8521681247",
   "lastOpenFiles": [
-    "reference-manual/field-info Helper/field-info Cheat Sheet.md",
-    "reference-manual/field-info Helper/field-info and Block Templates.md",
-    "reference-manual/field-info Helper/field-info Variations/field-output Helper Variation.md",
-    "reference-manual/field-info Helper/field-info Variations/field-info Variations.md",
-    "reference-manual/field-info Helper/field-info Variations/field-info Helper Variation.md",
-    "reference-manual/field-info Helper/field-info Variations/fi Helper Variation.md",
-    "reference-manual/field-info Helper/field-info Parameters/field-info value.md",
-    "reference-manual/field-info Helper/field-info Parameters/field-info type.md",
-    "reference-manual/field-info Helper/field-info Parameters/field-info prompt.md",
-    "reference-manual/field-info Helper/field-info Parameters/field-info Parameters.md",
-    "reference-manual/field-info Helper/field-info Parameters/field-info opts.md",
-    "reference-manual/field-info Helper/field-info Parameters/field-info miss.md",
-    "reference-manual/field-info Helper/field-info Parameters/field-info fieldName.md",
-    "reference-manual/field-info Helper/field-info Parameters/field-info directives.md",
-    "reference-manual/field-info Helper/field-info Parameters/field-info default.md",
-    "reference-manual/field-info Helper/field-info Usage Tips.md",
-    "reference-manual/field-info Helper/refheader - field-info and Built-In Fields.md",
-    "reference-manual/field-info Helper/field-info Examples.md",
-    "reference-manual/field-info Helper/field-info Helper.md",
-    "reference-manual/field-info Helper/field-info Output.md",
-    "reference-manual/field-info Helper/field-info Syntax.md",
-    "how-to-guides/Getting Started/Getting Started in Ten Minutes.md",
-    "how-to-guides/Getting Started/Getting Started in Two Minutes.md",
     "reference-manual/Built-In Fields/Built-In Fields - Date and Time/Built-In Fields - Date and Time.md",
+    "reference-manual/Built-In Fields/Built-In Fields - Date and Time/yearQuarter.md",
+    "reference-manual/Built-In Fields/Built-In Fields - Date and Time/yearMonth.md",
+    "reference-manual/Built-In Fields/Built-In Fields - Date and Time/yearMonthName.md",
+    "reference-manual/Built-In Fields/Built-In Fields - Date and Time/year.md",
+    "reference-manual/Built-In Fields/Built-In Fields - Date and Time/weekNum.md",
+    "reference-manual/Built-In Fields/Built-In Fields - Date and Time/date.md",
+    "reference-manual/Data Formatting/Custom Field Formatting.md",
+    "reference-manual/Built-In Fields/Built-In Fields - Date and Time/dayOfWeek.md",
+    "reference-manual/Built-In Fields/Built-In Fields - Date and Time/timestamp.md",
+    "reference-manual/Built-In Fields/Built-In Fields - Date and Time/yesterday.md",
+    "reference-manual/Built-In Fields/Built-In Fields - Date and Time/utcTime.md",
+    "reference-manual/Built-In Fields/Built-In Fields - Date and Time/tomorrow.md",
+    "reference-manual/Built-In Fields/Built-In Fields - Date and Time/today.md",
+    "reference-manual/Built-In Fields/Built-In Fields - Date and Time/time.md",
+    "reference-manual/Built-In Fields/Built-In Fields and Field-Info.md",
+    "reference-manual/Built-In Fields/Built-In Fields - File Data/Built-In Fields - File Title Variants.md",
+    "best-practices/best-practices.md",
+    "how-to-guides/Intermediate/Intermediate.md",
+    "reference-manual/field-info Helper/field-info Parameters/field-info Parameters.md",
+    "reference-manual/field-info Helper/field-info Parameters/field-info directives.md",
+    "reference-manual/Built-In Helper Functions/Formatting Functions/format-date.md",
+    "reference-manual/Built-In Helper Functions/Formatting Functions/format-number.md",
+    "reference-manual/Built-In Helper Functions/Formatting Functions/format-number-to-fixed.md",
+    "reference-manual/Built-In Fields/Built-In Fields - sourceText/Built-In Fields - sourceText.md",
     "reference-manual/Built-In Helper Functions/Linking Functions/chatGPT.md",
-    "reference-manual/Template Fields/Deferred Field Resolution.md",
     "reference-manual/System Block Templates",
     "reference-manual/Built-In Fields/Built-In Fields - Z2K System",
     "reference-manual/Built-In Fields/Built-In Fields - sourceText",

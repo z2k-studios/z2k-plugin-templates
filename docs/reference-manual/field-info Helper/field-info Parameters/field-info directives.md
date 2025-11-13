@@ -15,7 +15,7 @@ aliases:
 The [[field-info directives|directives]] parameter is a list of strings, with each string being one of the following directives:
 
 - **Miss Handling Special Cases**:
-	- '[[#finalize-default|finalize-default]]' :: Instructs the plugin to use the value of the [[field-info default|default]] string as the resultant value of the field if the user has not provided an answer
+	- '**[[#finalize-default|finalize-default]]**' :: Instructs the plugin to use the value of the [[field-info default|default]] string as the resultant value of the field if the user has not provided an answer
 	- '**[[field-info directives#finalize-preserve|finalize-preserve]]**' :: Instructs the plugin to preserve the `{{field}}` entry in the final generated file if the user does not specify a value
 	- '**[[field-info directives#finalize-clear|finalize-clear]]**' :: Directs the plugin to clear out the value of this field if no value is provided
 - **Required**: 
