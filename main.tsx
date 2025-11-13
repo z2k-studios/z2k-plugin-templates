@@ -3009,25 +3009,25 @@ const FieldInput = ({ name, label, fieldInfo, fieldState, onChange, onFocus, onB
 	};
 
 	const toHumanReadable = (value: VarValueType): string => {
-		if (moment.isMoment(value)) {
-			if (!value.isValid()) {
-				return '[invalid date]';
-			}
-			if (dataType === 'date') {
-				return value.format("YYYY-MM-DD");
-			} else if (dataType === 'datetime') {
-				return value.format("YYYY-MM-DDTHH:mm:ss");
-			}
-			// inside a single/multi-select
-			if (value.hour() === 0 && value.minute() === 0 && value.second() === 0) {
-				return value.format("YYYY-MM-DD");
-			} else {
-				return value.format("YYYY-MM-DD HH:mm:ss");
-			}
-		}
 		if (Array.isArray(value)) { return value.map(v => String(v)).join(', '); }
 		if (value === null) { return '[null]'; }
 		if (value === undefined) { return '[undefined]'; }
+		return String(value);
+	};
+
+	const toInputValue = (value: VarValueType): string => {
+		if (value === null || value === undefined) { return ''; }
+		if (Array.isArray(value)) { return value.map(v => String(v)).join(', '); }
+		if (dataType === 'date') {
+			if (typeof value !== 'string') { return ''; }
+			const m = moment(value);
+			return m.isValid() ? m.format("YYYY-MM-DD") : '';
+		}
+		if (dataType === 'datetime') {
+			if (typeof value !== 'string') { return ''; }
+			const m = moment(value);
+			return m.isValid() ? m.format("YYYY-MM-DDTHH:mm:ss") : '';
+		}
 		return String(value);
 	};
 
@@ -3075,10 +3075,10 @@ const FieldInput = ({ name, label, fieldInfo, fieldState, onChange, onFocus, onB
 					<input
 						type="date"
 						className={`date-input ${fieldState.hasError ? 'has-error' : ''}`}
-						value={toHumanReadable(fieldState.value)}
+						value={toInputValue(fieldState.value)}
 						onChange={(e) => {
 							const m = moment(e.target.value, "YYYY-MM-DD", true);
-							onChange(m.isValid() ? m : undefined);
+							onChange(m.isValid() ? m.format("YYYY-MM-DD") : undefined);
 						}}
 						{...commonProps}
 					/>
@@ -3089,10 +3089,20 @@ const FieldInput = ({ name, label, fieldInfo, fieldState, onChange, onFocus, onB
 					<input
 						type="datetime-local"
 						className={`date-input ${fieldState.hasError ? 'has-error' : ''}`}
-						value={toHumanReadable(fieldState.value)}
+						value={toInputValue(fieldState.value)}
 						onChange={(e) => {
-							const m = moment(e.target.value, "YYYY-MM-DDTHH:mm:ss", true);
-							onChange(m.isValid() ? m : undefined);
+							let m = moment(e.target.value, "YYYY-MM-DDTHH:mm:ss", true);
+							if (!m.isValid()) {
+								m = moment(e.target.value, "YYYY-MM-DDTHH:mm", true);
+							}
+							if (m.isValid()) {
+								const formatted = m.second() === 0
+									? m.format("YYYY-MM-DD HH:mm")
+									: m.format("YYYY-MM-DD HH:mm:ss");
+								onChange(formatted);
+							} else {
+								onChange(undefined);
+							}
 						}}
 						{...commonProps}
 					/>
