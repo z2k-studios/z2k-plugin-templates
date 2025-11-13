@@ -11,7 +11,6 @@ import { EditorView, ViewPlugin, ViewUpdate, Decoration, DecorationSet } from "@
 import { RangeSetBuilder, type Extension } from "@codemirror/state";
 import { handlebarsLanguage } from "@xiechao/codemirror-lang-handlebars"; // npm i @xiechao/codemirror-lang-handlebars
 import { highlightTree, classHighlighter } from "@lezer/highlight"; // npm i @lezer/highlight
-import { title } from 'process';
 
 interface Z2KTemplatesPluginSettings {
 	templatesRootFolder: string;
@@ -37,6 +36,29 @@ const DEFAULT_SETTINGS: Z2KTemplatesPluginSettings = {
 	offlineCommandQueuePath: 'z2k_template_commands.jsonl',
 	// templateEditingEnabled: true,
 };
+
+// Command parameter interface for processCommand()
+// Note: Types are permissive to handle parsing from various sources (URI strings, JSON, etc.)
+// processCommand validates and ensures correctness
+interface CommandParams {
+	cmd?: string;  // Required but might be missing or empty
+	// Template & file paths (keys might need normalization)
+	templatePath?: string;
+	blockPath?: string;  // Alias for templatePath
+	existingFilePath?: string;
+	destDir?: string;
+	destHeader?: string;
+	// Behavior flags (might be invalid values from URI parsing)
+	prompt?: "none" | "remaining" | "all" | string;  // Allow any string for validation
+	finalize?: boolean | string;  // Can be boolean (from JSON) or string "true"/"false" (from URI)
+	location?: "file-top" | "file-bottom" | "header-top" | "header-bottom" | number | string;  // Allow any string/number
+	// Additional field data - can be string (JSON) or already parsed object
+	templateJsonData?: string | Record<string, VarValueType>;
+	// For json command
+	json?: string;
+	// Index signature to allow _prefixed field params and other unknown keys
+	[key: string]: any;
+}
 
 class Z2KTemplatesSettingTab extends PluginSettingTab {
 	plugin: Z2KTemplatesPlugin;
@@ -650,133 +672,231 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	}
 
 	registerURIHandler() {
-		this.registerObsidianProtocolHandler("z2k-templates", async (params) => {
+		this.registerObsidianProtocolHandler("z2k-templates", async (rawParams) => {
 			try {
-				await this.handleZ2KUri(params);
+				// URL-decode all parameters and pass to processCommand
+				const cmdParams: CommandParams = {};
+				for (const key in rawParams) {
+					cmdParams[key] = decodeURIComponent(rawParams[key]);
+				}
+				await this.processCommand(cmdParams);
 			} catch (e) { this.handleErrors(e); }
 		});
 	}
-	// DOCS: all field parameters start with _ so they don't clash with uri params
-	// Non-field parameters can be templatePath, TemplatePath, template-path, template_path, etc. for robustness
+
+	// Main command processor - accepts typed parameters and routes to appropriate handlers
+	// Called by: registerURIHandler (from URI), processQueueFile (from offline queue)
+	// DOCS: All field parameters start with _ so they don't clash with command params
+	// DOCS: Non-field parameters can be templatePath, TemplatePath, template-path, template_path, etc. for robustness
 	// DOCS: but we should just say templatePath in the docs for simplicity
-	private async handleZ2KUri(rawParams: Record<string,string>) {
-		const params: Record<string,string> = {};
-		const fieldParams: Record<string,string> = {};
+	private async processCommand(rawParams: CommandParams): Promise<void> {
+		// Normalize keys (remove special chars, lowercase) and extract field params (_prefix)
+		const cmdParams: Record<string, any> = {};
+		const fieldParams: Record<string, VarValueType> = {};
+
 		for (const k in rawParams) {
 			if (k.startsWith("_")) {
+				// Field parameter - strip underscore prefix
 				const fieldKey = k.substring(1);
-				fieldParams[fieldKey] = decodeURIComponent(rawParams[k]);
+				if (!fieldKey) {
+					throw new TemplatePluginError("Command: Field parameter name cannot be empty (just '_')");
+				}
+				fieldParams[fieldKey] = rawParams[k];
 			} else {
-				const key = k.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-				params[key] = decodeURIComponent(rawParams[k]);
+				// Command parameter - normalize key (remove special chars, lowercase)
+				const normalizedKey = k.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+				cmdParams[normalizedKey] = rawParams[k];
 			}
 		}
-		function getParam(key: string): string | undefined {
-			return params[key.replace(/[^a-zA-Z0-9]/g, '').toLowerCase()];
+
+		// Handle templateJsonData (can be string or object, but not array/null)
+		let additionalFields: Record<string, VarValueType> = {};
+		if (cmdParams.templatejsondata) {
+			let data = cmdParams.templatejsondata;
+			// Parse if string
+			if (typeof data === 'string') {
+				try {
+					data = JSON.parse(data);
+				} catch {
+					throw new TemplatePluginError("Command: Invalid templateJsonData (must be valid JSON)");
+				}
+			}
+			// Validate is plain object (not array/null)
+			if (!data || typeof data !== "object" || Array.isArray(data)) {
+				throw new TemplatePluginError("Command: templateJsonData must be an object (not array or null)");
+			}
+			additionalFields = data;
 		}
 
-		const cmd = getParam("cmd")?.trim().toLowerCase();
-		if (!cmd) { throw new TemplatePluginError("URI: Missing 'cmd'"); }
+		// Merge field data
+		// DOCS: Field params in the command override field values in templateJsonData
+		const fieldOverrides: Record<string, VarValueType> = { ...additionalFields, ...fieldParams };
 
-		// Get template file
-		let templateFile: TFile | undefined;
-		const templatePathParam = (getParam("templatePath") || getParam("blockPath") || "").trim();
-		if (templatePathParam) {
-			templateFile = this.getFile(templatePathParam) || undefined;
-			if (!templateFile) { throw new TemplatePluginError(`URI: Template not found:\n${templatePathParam}`); }
+		// Validate cmd parameter
+		if (!cmdParams.cmd || typeof cmdParams.cmd !== 'string') {
+			throw new TemplatePluginError("Command: Missing 'cmd' parameter");
+		}
+		const cmd = cmdParams.cmd.trim().toLowerCase();
+		if (!cmd) {
+			throw new TemplatePluginError("Command: 'cmd' parameter cannot be empty");
 		}
 
-		// Gather field overrides, field params override templateJsonData
-		// DOCS: field params in the URI override field values in templateJsonData
-		let fieldOverrides: Record<string,string> = { ...fieldParams };
-		const templateJsonDataParam = getParam("templateJsonData");
-		if (templateJsonDataParam) {
+		// Handle 'json' command - parse JSON and recursively call processCommand
+		if (cmd === "json") {
+			if (!cmdParams.json) {
+				throw new TemplatePluginError("Command: 'json' cmd requires 'json' parameter");
+			}
 			try {
-				const parsed = JSON.parse(templateJsonDataParam);
-				if (parsed && typeof parsed === "object") { fieldOverrides = { ...parsed, ...fieldParams }; }
-			} catch { throw new TemplatePluginError("URI: Invalid templateJsonData (must be URL-encoded JSON)"); }
-		}
-
-		// Determine prompt mode
-		let promptMode: "none"|"remaining"|"all" = "remaining";
-		const promptParam = getParam("prompt");
-		if (promptParam) {
-			promptMode = promptParam.toLowerCase() as ("none"|"remaining"|"all");
-			if (!["none","remaining","all"].includes(promptMode)) {
-				throw new TemplatePluginError(`URI: Invalid prompt mode '${promptParam}' (must be 'none', 'remaining', or 'all')`);
+				const parsedParams = JSON.parse(cmdParams.json);
+				if (!parsedParams || typeof parsedParams !== "object" || Array.isArray(parsedParams)) {
+					throw new TemplatePluginError("Command: 'json' parameter must be a valid JSON object (not array or null)");
+				}
+				// Recursive call with parsed JSON
+				return await this.processCommand(parsedParams as CommandParams);
+			} catch (e) {
+				if (e instanceof TemplatePluginError) throw e;
+				throw new TemplatePluginError("Command: Invalid json parameter (must be valid JSON)");
 			}
 		}
 
-		// Determine finalization
-		const finalizeParam = getParam("finalize");
+		// Validate and convert prompt mode
+		let promptMode: "none"|"remaining"|"all"|undefined = undefined;
+		if (cmdParams.prompt) {
+			const promptStr = String(cmdParams.prompt).toLowerCase();
+			if (!["none", "remaining", "all"].includes(promptStr)) {
+				throw new TemplatePluginError(`Command: Invalid prompt mode '${cmdParams.prompt}' (must be 'none', 'remaining', or 'all')`);
+			}
+			promptMode = promptStr as "none"|"remaining"|"all";
+		}
+
+		// Validate and convert finalize (can be boolean or string "true"/"false")
 		let finalize: boolean | undefined = undefined;
-		if (finalizeParam) {
-			if (["true","1","yes"].includes(finalizeParam.toLowerCase())) { finalize = true; }
-			else if (["false","0","no"].includes(finalizeParam.toLowerCase())) { finalize = false; }
-			else {
-				throw new TemplatePluginError(`URI: Invalid finalize value '${finalizeParam}' (must be 'true' or 'false')`);
+		if (cmdParams.finalize !== undefined) {
+			if (typeof cmdParams.finalize === 'boolean') {
+				finalize = cmdParams.finalize;
+			} else if (typeof cmdParams.finalize === 'string') {
+				const finalizeStr = cmdParams.finalize.toLowerCase();
+				if (["true", "1", "yes"].includes(finalizeStr)) {
+					finalize = true;
+				} else if (["false", "0", "no"].includes(finalizeStr)) {
+					finalize = false;
+				} else {
+					throw new TemplatePluginError(`Command: Invalid finalize value '${cmdParams.finalize}' (must be boolean or 'true'/'false')`);
+				}
+			} else {
+				throw new TemplatePluginError(`Command: Invalid finalize type (must be boolean or string)`);
 			}
 		}
 
-		// Determine destination folder
-		let destDir: TFolder | undefined = templateFile ? (this.getTemplateCardType(templateFile) ?? templateFile.parent as TFolder) : undefined;
-		const destDirParam = getParam("destDir");
-		if (destDirParam) {
-			const f = this.getFolder(destDirParam);
-			if (f) { destDir = f; }
-			else { new Notice(`URI: Destination folder not found:\n${destDirParam}\nUsing template's folder instead.`); }
-		}
-
-		// Existing file
-		let existingFile: TFile | undefined = undefined;
-		const existingPathParam = getParam("existingFilePath");
-		if (existingPathParam) {
-			existingFile = this.getFile(existingPathParam) || undefined;
-			if (!existingFile) { throw new TemplatePluginError(`URI: File not found:\n${existingPathParam}`); }
-		}
-
-		// Handle commands
-		if (cmd === "new") {
-			if (!templateFile) { throw new TemplatePluginError("URI: 'new' cmd requires 'templatePath'"); }
-			const cardTypeFolder = this.getTemplateCardType(templateFile) ?? templateFile.parent as TFolder;
-			await this.createCard({ cardTypeFolder, templateFile, fieldOverrides, promptMode, destDir, finalize });
-			return;
-		}
-		if (cmd === "continue") {
-			if (!existingFile) { throw new TemplatePluginError("URI: 'continue' cmd requires 'existingFilePath'"); }
-			await this.continueCard({ existingFile, fieldOverrides, promptMode, finalize });
-			return;
-		}
-		if (cmd === "insertblock") {
-			let destHeader = getParam("destHeader");
-			const locationParam = getParam("location");
-			let location: "file-top"|"file-bottom"|"header-top"|"header-bottom"|number|undefined;
-
-			if (locationParam) {
-				const locationLower = locationParam.toLowerCase();
-				if (["file-top", "file-bottom", "header-top", "header-bottom"].includes(locationLower)) {
+		// Validate and convert location (can be string or number)
+		let location: "file-top"|"file-bottom"|"header-top"|"header-bottom"|number|undefined = undefined;
+		if (cmdParams.location !== undefined) {
+			const validStrings = ["file-top", "file-bottom", "header-top", "header-bottom"];
+			if (typeof cmdParams.location === 'string') {
+				const locationLower = cmdParams.location.toLowerCase();
+				if (validStrings.includes(locationLower)) {
 					location = locationLower as "file-top"|"file-bottom"|"header-top"|"header-bottom";
 				} else {
-					// Try to parse as a number (line number)
-					const lineNum = parseInt(locationParam, 10);
+					// Try to parse as number
+					const lineNum = parseInt(cmdParams.location, 10);
 					if (isNaN(lineNum)) {
-						throw new TemplatePluginError(`URI: Invalid location '${locationParam}' (must be 'file-top', 'file-bottom', 'header-top', 'header-bottom', or a line number)`);
+						throw new TemplatePluginError(`Command: Invalid location '${cmdParams.location}' (must be 'file-top', 'file-bottom', 'header-top', 'header-bottom', or a line number)`);
 					}
 					location = lineNum;
 				}
+			} else if (typeof cmdParams.location === 'number') {
+				if (isNaN(cmdParams.location) || !Number.isInteger(cmdParams.location)) {
+					throw new TemplatePluginError(`Command: Invalid location '${cmdParams.location}' (must be a valid integer line number)`);
+				}
+				location = cmdParams.location;
+			} else {
+				throw new TemplatePluginError(`Command: Invalid location type (must be string or number)`);
 			}
+		}
 
-			// Validate that destHeader is provided when required
+		// Resolve template file (support both templatePath and blockPath)
+		let templateFile: TFile | undefined;
+		const templatePath = cmdParams.templatepath || cmdParams.blockpath;
+		if (templatePath) {
+			templateFile = this.getFile(templatePath) || undefined;
+			if (!templateFile) {
+				throw new TemplatePluginError(`Command: Template not found:\n${templatePath}`);
+			}
+		}
+
+		// Resolve existing file
+		let existingFile: TFile | undefined;
+		if (cmdParams.existingfilepath) {
+			existingFile = this.getFile(cmdParams.existingfilepath) || undefined;
+			if (!existingFile) {
+				throw new TemplatePluginError(`Command: File not found:\n${cmdParams.existingfilepath}`);
+			}
+		}
+
+		// Resolve destination folder
+		let destDir: TFolder | undefined = templateFile
+			? (this.getTemplateCardType(templateFile) ?? templateFile.parent as TFolder)
+			: undefined;
+		if (cmdParams.destdir) {
+			const f = this.getFolder(cmdParams.destdir);
+			if (f) {
+				destDir = f;
+			} else {
+				new Notice(`Command: Destination folder not found:\n${cmdParams.destdir}\nUsing template's folder instead.`);
+			}
+		}
+
+		// Route commands
+		if (cmd === "new") {
+			if (!templateFile) {
+				throw new TemplatePluginError("Command: 'new' cmd requires 'templatePath'");
+			}
+			const cardTypeFolder = this.getTemplateCardType(templateFile) ?? templateFile.parent as TFolder;
+			await this.createCard({
+				cardTypeFolder,
+				templateFile,
+				fieldOverrides,
+				promptMode,
+				destDir,
+				finalize
+			});
+			return;
+		}
+
+		if (cmd === "continue") {
+			if (!existingFile) {
+				throw new TemplatePluginError("Command: 'continue' cmd requires 'existingFilePath'");
+			}
+			await this.continueCard({
+				existingFile,
+				fieldOverrides,
+				promptMode,
+				finalize
+			});
+			return;
+		}
+
+		if (cmd === "insertblock") {
+			// Validate location and destHeader
 			if (location === "header-top" || location === "header-bottom") {
-				if (!destHeader) {
-					throw new TemplatePluginError(`URI: destHeader is required when location is '${location}'`);
+				if (!cmdParams.destheader) {
+					throw new TemplatePluginError(`Command: destHeader is required when location is '${location}'`);
 				}
 			}
 
-			await this.insertPartial({ templateFile, existingFile, destHeader, location, fieldOverrides, promptMode, finalize });
+			await this.insertPartial({
+				templateFile,
+				existingFile,
+				destHeader: cmdParams.destheader,
+				location,
+				fieldOverrides,
+				promptMode,
+				finalize
+			});
 			return;
 		}
-		throw new TemplatePluginError(`URI: Unknown cmd '${cmd}'`);
+
+		throw new TemplatePluginError(`Command: Unknown cmd '${cmd}'`);
 	}
 
 	//// Offline Command Queue
@@ -892,8 +1012,10 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			}
 
 			try {
-				const params = JSON.parse(line);
-				await this.handleZ2KUri(params);
+				// Parse JSON and call processCommand directly
+				// JSON preserves types (numbers, booleans, arrays, etc.)
+				const cmdParams = JSON.parse(line) as CommandParams;
+				await this.processCommand(cmdParams);
 			} catch (e) {
 				// Log error but continue processing
 				this.handleErrors(e);
@@ -915,7 +1037,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	async createCard(opts?: {
 		cardTypeFolder?: TFolder,
 		templateFile?: TFile,
-		fieldOverrides?: Record<string,string>,
+		fieldOverrides?: Record<string,VarValueType>,
 		promptMode?: "none"|"remaining"|"all",
 		destDir?: TFolder,
 		sourceFile?: TFile,
@@ -952,7 +1074,9 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			let hadSourceTextField = !!state.fieldInfos["sourceText"];
 			// DOCS: field overrides override the values specified in fieldinfos
 			this.handleOverrides(state, opts.fieldOverrides, opts.promptMode || "all");
-			await this.addBuiltIns(state, { sourceText: opts.fieldOverrides.sourceText, templateName: opts.templateFile.basename });
+			// Convert sourceText to string for addBuiltIns (handles all VarValueType cases)
+			const sourceTextStr = opts.fieldOverrides.sourceText != null ? String(opts.fieldOverrides.sourceText) : undefined;
+			await this.addBuiltIns(state, { sourceText: sourceTextStr, templateName: opts.templateFile.basename });
 			this.setDefaultTitleFromYaml(state);
 
 			if (this.hasFillableFields(state.fieldInfos) && opts.promptMode !== "none") {
@@ -960,8 +1084,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			}
 
 			let { fm: fmOut, body: bodyOut } = Z2KTemplateEngine.renderTemplate(state, opts.finalize ?? false);
-			if (!hadSourceTextField && opts.fieldOverrides.sourceText) {
-				bodyOut += `\n\n${opts.fieldOverrides.sourceText}\n`;
+			if (!hadSourceTextField && opts.fieldOverrides.sourceText != null) {
+				bodyOut += `\n\n${String(opts.fieldOverrides.sourceText)}\n`;
 			}
 			let contentOut = Z2KYamlDoc.joinFrontmatter(fmOut, bodyOut);
 			let title = String(state.resolvedValues["fileTitle"]) || "Untitled";
@@ -977,7 +1101,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	}
 	async continueCard(opts: {
 		existingFile: TFile,
-		fieldOverrides?: Record<string,string>,
+		fieldOverrides?: Record<string,VarValueType>,
 		promptMode?: "none"|"remaining"|"all",
 		finalize?: boolean,
 	}) {
@@ -1008,7 +1132,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		existingFile?: TFile,
 		destHeader?: string,
 		location?: "file-top"|"file-bottom"|"header-top"|"header-bottom"|number,
-		fieldOverrides?: Record<string,string>,
+		fieldOverrides?: Record<string,VarValueType>,
 		promptMode?: "none"|"remaining"|"all",
 		fromSelection?: boolean,
 		finalize?: boolean,
@@ -1034,7 +1158,9 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			let state = await this.parseTemplate(content, "", opts.templateFile.parent as TFolder);
 			let hadSourceTextField = !!state.fieldInfos["sourceText"];
 			this.handleOverrides(state, opts.fieldOverrides, opts.promptMode || "all");
-			await this.addBuiltIns(state, { sourceText: opts.fieldOverrides.sourceText, existingTitle: opts.existingFile.basename });
+			// Convert sourceText to string for addBuiltIns (handles all VarValueType cases)
+			const sourceTextStr = opts.fieldOverrides.sourceText != null ? String(opts.fieldOverrides.sourceText) : undefined;
+			await this.addBuiltIns(state, { sourceText: sourceTextStr, existingTitle: opts.existingFile.basename });
 
 			// if (this.hasFillableFields(state.fieldInfos) && opts.promptMode !== "none") {
 			if (opts.promptMode !== "none") {
@@ -1043,8 +1169,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 
 			let { fm: partialFm, body: partialBody } = Z2KTemplateEngine.renderTemplate(state, opts.finalize ?? false);
 			partialFm = this.updatePartialYamlOnInsert(partialFm);
-			if (!hadSourceTextField && opts.fieldOverrides.sourceText) {
-				partialBody += `\n\n${opts.fieldOverrides.sourceText}\n`;
+			if (!hadSourceTextField && opts.fieldOverrides.sourceText != null) {
+				partialBody += `\n\n${String(opts.fieldOverrides.sourceText)}\n`;
 			}
 
 			// Insert into body: file position, header position, line number, or editor mode
@@ -1138,7 +1264,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		// 	rethrowWithMessage(error, "Error occurred while updating the existing file");
 		// }
 	}
-	handleOverrides(state: TemplateState, fieldOverrides: Record<string,string> | undefined, promptMode: "none"|"remaining"|"all") {
+	handleOverrides(state: TemplateState, fieldOverrides: Record<string,VarValueType> | undefined, promptMode: "none"|"remaining"|"all") {
 		if (!fieldOverrides) { return; }
 		state.resolvedValues = {...state.resolvedValues, ...fieldOverrides};
 		for (const k in fieldOverrides) {
@@ -1291,6 +1417,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		const totalLines = rows.length;
 		let insertIndex: number;
 
+		// DOCS: See line number usage below
 		if (lineNumber >= 0) {
 			// Positive numbers (0 to N): 0 = before first line, N = after last line
 			if (lineNumber > totalLines) {
@@ -2594,21 +2721,28 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel }: FieldColle
 				hasFinalizeError = true;
 				errorMessage = 'This field is required to finalize';
 			}
-			const val = (value as string).trim();
-			if (!val && fieldName === 'title') {
-				hasError = true;
-				errorMessage = 'A title is required';
-			}
-			if (fieldInfo.type === "titleText") {
-				if (/^[.]+$/.test(val)) {
+			if (fieldName === 'fileTitle' || fieldInfo.type === "titleText") {
+				if (typeof value !== 'string') {
 					hasError = true;
-					errorMessage = 'Cannot be just dots';
-				} else if (/[<>:"/\\|?*\u0000-\u001F]/.test(val)) {
-					hasError = true;
-					errorMessage = 'Contains invalid characters (\\ / : * ? " < > |)';
-				} else if (/[. ]+$/.test(val)) {
-					hasError = true;
-					errorMessage = 'Cannot end with a space or dot';
+					errorMessage = 'Invalid value';
+				} else {
+					const valueTrimmed = value.trim();
+					if (!valueTrimmed && fieldName === 'fileTitle') {
+						hasError = true;
+						errorMessage = 'A title is required';
+					}
+					if (fieldInfo.type === "titleText") {
+						if (/^[.]+$/.test(valueTrimmed)) {
+							hasError = true;
+							errorMessage = 'Cannot be just dots';
+						} else if (/[<>:"/\\|?*\u0000-\u001F]/.test(valueTrimmed)) {
+							hasError = true;
+							errorMessage = 'Contains invalid characters (\\ / : * ? " < > |)';
+						} else if (/[. ]+$/.test(value)) { // not trimmed
+							hasError = true;
+							errorMessage = 'Cannot end with a space or dot';
+						}
+					}
 				}
 			}
 			newFieldStates[fieldName].hasError = hasError || hasFinalizeError;
@@ -2674,7 +2808,7 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel }: FieldColle
 		for (const fieldName of dependencyOrderedFieldNames) {
 			const propmtInfo = templateState.fieldInfos[fieldName];
 			if (!propmtInfo) { continue; }
-			if (fieldStates[fieldName].alreadyResolved || fieldStates[fieldName].touched || fieldName === 'title') {
+			if (fieldStates[fieldName].alreadyResolved || fieldStates[fieldName].touched || fieldName === 'fileTitle') {
 				templateState.resolvedValues[fieldName] = fieldStates[fieldName].value;
 			} else {
 				// Left untouched, use miss value if finalizing
@@ -2726,16 +2860,16 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel }: FieldColle
 
 	return (
 		<form onSubmit={handleSubmit} className="field-collection-form">
-			{templateState.fieldInfos['title'] && fieldStates['title']?.omitFromForm !== true && (
-				<div className="field-title-container">{getFieldContainer('title')}</div>
+			{templateState.fieldInfos['fileTitle'] && fieldStates['fileTitle']?.omitFromForm !== true && (
+				<div className="field-title-container">{getFieldContainer('fileTitle')}</div>
 			)}
 			<div className="field-list">
-				{renderOrderFieldNames.filter(fieldName => fieldName !== 'title').length > 0 ? (
+				{renderOrderFieldNames.filter(fieldName => fieldName !== 'fileTitle').length > 0 ? (
 					renderOrderFieldNames
-						.filter(fieldName => fieldName !== 'title')
+						.filter(fieldName => fieldName !== 'fileTitle')
 						.map(fieldName => getFieldContainer(fieldName))
 				) : (
-					<div className="no-fields-message">No{renderOrderFieldNames.filter(fieldName => fieldName === 'title').length > 0 ? ' other ' : ' '}fields to fill.</div>
+					<div className="no-fields-message">No{renderOrderFieldNames.filter(fieldName => fieldName === 'fileTitle').length > 0 ? ' other ' : ' '}fields to fill.</div>
 				)}
 			</div>
 
@@ -2882,7 +3016,7 @@ const FieldInput = ({ name, label, fieldInfo, fieldState, onChange, onFocus, onB
 			if (dataType === 'date') {
 				return value.format("YYYY-MM-DD");
 			} else if (dataType === 'datetime') {
-				return value.format("YYYY-MM-DD HH:mm:ss");
+				return value.format("YYYY-MM-DDTHH:mm:ss");
 			}
 			// inside a single/multi-select
 			if (value.hour() === 0 && value.minute() === 0 && value.second() === 0) {
@@ -2957,7 +3091,7 @@ const FieldInput = ({ name, label, fieldInfo, fieldState, onChange, onFocus, onB
 						className={`date-input ${fieldState.hasError ? 'has-error' : ''}`}
 						value={toHumanReadable(fieldState.value)}
 						onChange={(e) => {
-							const m = moment(e.target.value, "YYYY-MM-DD HH:mm:ss", true);
+							const m = moment(e.target.value, "YYYY-MM-DDTHH:mm:ss", true);
 							onChange(m.isValid() ? m : undefined);
 						}}
 						{...commonProps}
