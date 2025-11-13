@@ -23,6 +23,7 @@ interface Z2KTemplatesPluginSettings {
 		name: string; // display name
 		targetFolder: string; // vault-relative path to folder
 	}>;
+	offlineCommandQueuePath: string; // Path to JSONL file for offline command queue
 	// templateEditingEnabled: boolean;
 }
 
@@ -33,6 +34,7 @@ const DEFAULT_SETTINGS: Z2KTemplatesPluginSettings = {
 	templatesFolderName: 'Templates',
 	cardReferenceName: 'note',
 	dynamicCardCommands: [],
+	offlineCommandQueuePath: 'z2k_template_commands.jsonl',
 	// templateEditingEnabled: true,
 };
 
@@ -180,6 +182,25 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 		// 			}
 		// 		}));
 
+		new Setting(containerEl)
+			.setName('Offline command queue file')
+			.setDesc('Path to JSONL file for offline command queue (vault-relative or absolute). Commands will be processed automatically.')
+			.addText(text => {
+				const input = text
+					.setPlaceholder(DEFAULT_SETTINGS.offlineCommandQueuePath)
+					.setValue(this.plugin.settings.offlineCommandQueuePath)
+					.inputEl;
+
+				this.validateTextInput(input,
+					(value) => {
+						if (value && /[*?"<>|]/.test(value)) { return "Invalid characters in file path"; }
+						return null;
+					},
+					async (validValue) => {
+						await this.plugin.updateQueueFilePath(validValue);
+					});
+			});
+
 		containerEl.createEl('h3', {text: 'Quick Create Commands'});
 		const quickCreateDesc = containerEl.createDiv({cls: 'setting-item'});
 		this.refs.quickCreateDesc = quickCreateDesc.createDiv({cls: 'setting-item-description'});
@@ -322,6 +343,9 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	templateEngine: Z2KTemplateEngine;
 	settings: Z2KTemplatesPluginSettings;
 	private _refreshTimer: number | null = null;
+	private _queueCheckInterval: number | null = null;
+	private _processingQueue: boolean = false;
+	private _statusBarItem: HTMLElement | null = null;
 
 	async onload() {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
@@ -332,8 +356,18 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		this.addSettingTab(new Z2KTemplatesSettingTab(this.app, this));
 		this.registerEditorExtension(handlebarsOverlay());
 		this.registerURIHandler();
+		this._statusBarItem = this.addStatusBarItem();
+
+		// Initialize offline command queue
+		await this.recoverFromCrash();
+		this.startQueueProcessor();
 	}
-	onunload() {}
+	onunload() {
+		if (this._queueCheckInterval !== null) {
+			window.clearInterval(this._queueCheckInterval);
+			this._queueCheckInterval = null;
+		}
+	}
 
 	refreshMainCommands(deleteExisting: boolean = true) {
 		let mainCommands: Command[] = [
@@ -716,14 +750,165 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		if (cmd === "insertblock") {
 			let destHeader = getParam("destHeader");
 			const locationParam = getParam("location");
-			let location = (locationParam || "top").toLowerCase() as ("top"|"bottom");
-			if (!["top","bottom"].includes(location)) {
-				throw new TemplatePluginError(`URI: Invalid location '${locationParam}' (must be 'top' or 'bottom')`);
+			let location: "file-top"|"file-bottom"|"header-top"|"header-bottom"|number|undefined;
+
+			if (locationParam) {
+				const locationLower = locationParam.toLowerCase();
+				if (["file-top", "file-bottom", "header-top", "header-bottom"].includes(locationLower)) {
+					location = locationLower as "file-top"|"file-bottom"|"header-top"|"header-bottom";
+				} else {
+					// Try to parse as a number (line number)
+					const lineNum = parseInt(locationParam, 10);
+					if (isNaN(lineNum)) {
+						throw new TemplatePluginError(`URI: Invalid location '${locationParam}' (must be 'file-top', 'file-bottom', 'header-top', 'header-bottom', or a line number)`);
+					}
+					location = lineNum;
+				}
 			}
+
+			// Validate that destHeader is provided when required
+			if (location === "header-top" || location === "header-bottom") {
+				if (!destHeader) {
+					throw new TemplatePluginError(`URI: destHeader is required when location is '${location}'`);
+				}
+			}
+
 			await this.insertPartial({ templateFile, existingFile, destHeader, location, fieldOverrides, promptMode, finalize });
 			return;
 		}
 		throw new TemplatePluginError(`URI: Unknown cmd '${cmd}'`);
+	}
+
+	//// Offline Command Queue
+	private resolveQueueFilePath(path: string): string | null {
+		if (!path) return null;
+		// Check if absolute path (Windows: C:\ or /, Unix: /)
+		if (path.startsWith('/') || /^[A-Za-z]:/.test(path)) {
+			return path;  // Absolute path - use as-is (desktop only)
+		}
+		// Vault-relative path
+		return path;
+	}
+
+	async updateQueueFilePath(newPath: string) {
+		const oldPath = this.settings.offlineCommandQueuePath;
+		this.settings.offlineCommandQueuePath = newPath;
+		await this.saveData(this.settings);
+
+		const adapter = this.app.vault.adapter;
+
+		// Rename old file to new location if both paths exist
+		if (oldPath && oldPath !== newPath && newPath) {
+			const oldFilePath = this.resolveQueueFilePath(oldPath);
+			const newFilePath = this.resolveQueueFilePath(newPath);
+			if (oldFilePath && newFilePath && await adapter.exists(oldFilePath)) {
+				await adapter.rename(oldFilePath, newFilePath);
+				return; // File was renamed, we're done
+			}
+		}
+
+		// Ensure new file exists
+		if (newPath) {
+			const filePath = this.resolveQueueFilePath(newPath);
+			if (filePath && !(await adapter.exists(filePath))) {
+				await adapter.write(filePath, '');
+			}
+		}
+	}
+
+	private startQueueProcessor() {
+		if (!this.settings.offlineCommandQueuePath) return;
+
+		// Check queue every 5 seconds
+		this._queueCheckInterval = window.setInterval(() => {
+			this.checkAndProcessQueue();
+		}, 5000);
+	}
+
+	private async recoverFromCrash() {
+		if (!this.settings.offlineCommandQueuePath) return;
+
+		const basePath = this.resolveQueueFilePath(this.settings.offlineCommandQueuePath);
+		if (!basePath) return;
+
+		const processingPath = basePath + '.processing';
+		if (await this.app.vault.adapter.exists(processingPath)) {
+			// Found leftover .processing file - resume processing
+			await this.processQueueFile(processingPath);
+		}
+	}
+
+	private async checkAndProcessQueue() {
+		if (this._processingQueue || !this.settings.offlineCommandQueuePath) return;
+
+		const filePath = this.resolveQueueFilePath(this.settings.offlineCommandQueuePath);
+		if (!filePath) return;
+
+		const adapter = this.app.vault.adapter;
+		if (!(await adapter.exists(filePath))) return;
+
+		const content = await adapter.read(filePath);
+		if (!content.trim()) return; // File is empty
+
+		// Atomically move file to .processing
+		this._processingQueue = true;
+		const processingPath = filePath + '.processing';
+
+		try {
+			await adapter.rename(filePath, processingPath);
+			await adapter.write(filePath, ''); // Create new empty file
+			await this.processQueueFile(processingPath);
+		} catch (e) {
+			this._processingQueue = false;
+			throw e;
+		}
+	}
+
+	private async processQueueFile(filePath: string) {
+		const adapter = this.app.vault.adapter;
+		const content = await adapter.read(filePath);
+		const lines = content.split('\n').filter(line => line.trim());
+
+		if (lines.length === 0) {
+			// Empty file, just delete it
+			await adapter.remove(filePath);
+			this._processingQueue = false;
+			return;
+		}
+
+		// Update status bar
+		if (this._statusBarItem) {
+			this._statusBarItem.setText(`Processing ${lines.length} command${lines.length > 1 ? 's' : ''}...`);
+		}
+
+		// Process commands one by one
+		for (let i = 0; i < lines.length; i++) {
+			const line = lines[i].trim();
+			if (!line) continue;
+
+			// Update progress
+			if (this._statusBarItem) {
+				this._statusBarItem.setText(`Processing command ${i + 1}/${lines.length}...`);
+			}
+
+			try {
+				const params = JSON.parse(line);
+				await this.handleZ2KUri(params);
+			} catch (e) {
+				// Log error but continue processing
+				this.handleErrors(e);
+				// Line is deleted regardless of success/failure
+			}
+		}
+
+		// Clear status bar
+		if (this._statusBarItem) {
+			this._statusBarItem.setText('');
+		}
+
+		// Delete processing file
+		await adapter.remove(filePath);
+		this._processingQueue = false;
 	}
 
 	//// Functions called from [commands/context menu/uris/etc]
@@ -767,7 +952,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			let hadSourceTextField = !!state.fieldInfos["sourceText"];
 			// DOCS: field overrides override the values specified in fieldinfos
 			this.handleOverrides(state, opts.fieldOverrides, opts.promptMode || "all");
-			this.addBuiltIns(state, { sourceText: opts.fieldOverrides.sourceText, templateName: opts.templateFile.basename });
+			await this.addBuiltIns(state, { sourceText: opts.fieldOverrides.sourceText, templateName: opts.templateFile.basename });
 			this.setDefaultTitleFromYaml(state);
 
 			if (this.hasFillableFields(state.fieldInfos) && opts.promptMode !== "none") {
@@ -779,7 +964,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				bodyOut += `\n\n${opts.fieldOverrides.sourceText}\n`;
 			}
 			let contentOut = Z2KYamlDoc.joinFrontmatter(fmOut, bodyOut);
-			let title = String(state.resolvedValues["title"]) || "Untitled";
+			let title = String(state.resolvedValues["fileTitle"]) || "Untitled";
 			title = Z2KTemplateEngine.reducedRenderContent(title, state.resolvedValues) as string;
 			let newFile = await this.createFile(opts.destDir, title, contentOut);
 			if (opts.fromSelection) {
@@ -800,7 +985,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			let content = await this.app.vault.read(opts.existingFile);
 			let state = await this.parseTemplate(content, "", opts.existingFile.parent as TFolder);
 			this.handleOverrides(state, opts.fieldOverrides, opts.promptMode || "all");
-			this.addBuiltIns(state, { existingTitle: opts.existingFile.basename });
+			await this.addBuiltIns(state, { existingTitle: opts.existingFile.basename });
 			let hasFillableFields = this.hasFillableFields(state.fieldInfos);
 			// TODO: handle the case where fieldOverrides fills all fields and promptMode is "remaining"
 			if (!hasFillableFields && !opts.fieldOverrides) {
@@ -813,7 +998,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 
 			let { fm, body } = Z2KTemplateEngine.renderTemplate(state, opts.finalize ?? false);
 			let contentOut = Z2KYamlDoc.joinFrontmatter(fm, body);
-			let title = String(state.resolvedValues["title"]) || "Untitled";
+			let title = String(state.resolvedValues["fileTitle"]) || "Untitled";
 			title = Z2KTemplateEngine.reducedRenderContent(title, state.resolvedValues) as string;
 			await this.updateTitleAndContent(opts.existingFile, title, contentOut);
 		} catch (error) { this.handleErrors(error); }
@@ -822,7 +1007,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		templateFile?: TFile,
 		existingFile?: TFile,
 		destHeader?: string,
-		location?: "top"|"bottom",
+		location?: "file-top"|"file-bottom"|"header-top"|"header-bottom"|number,
 		fieldOverrides?: Record<string,string>,
 		promptMode?: "none"|"remaining"|"all",
 		fromSelection?: boolean,
@@ -849,7 +1034,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			let state = await this.parseTemplate(content, "", opts.templateFile.parent as TFolder);
 			let hadSourceTextField = !!state.fieldInfos["sourceText"];
 			this.handleOverrides(state, opts.fieldOverrides, opts.promptMode || "all");
-			this.addBuiltIns(state, { sourceText: opts.fieldOverrides.sourceText, existingTitle: opts.existingFile.basename });
+			await this.addBuiltIns(state, { sourceText: opts.fieldOverrides.sourceText, existingTitle: opts.existingFile.basename });
 
 			// if (this.hasFillableFields(state.fieldInfos) && opts.promptMode !== "none") {
 			if (opts.promptMode !== "none") {
@@ -862,15 +1047,33 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				partialBody += `\n\n${opts.fieldOverrides.sourceText}\n`;
 			}
 
-			// Insert into body: header mode OR editor mode
+			// Insert into body: file position, header position, line number, or editor mode
 			let newFileContent: string;
-			if (opts.destHeader) {
-				const fileContent = await this.app.vault.read(opts.existingFile);
-				const { fm: fileFm, body: fileBody } = Z2KYamlDoc.splitFrontmatter(fileContent);
-				const mergedFm = Z2KYamlDoc.mergeLastWins([fileFm, partialFm]);
-				const newBody = this.insertIntoHeaderSection(fileBody, opts.destHeader, partialBody, opts.location);
-				newFileContent = Z2KYamlDoc.joinFrontmatter(mergedFm, newBody);
+			const fileContent = await this.app.vault.read(opts.existingFile);
+			const { fm: fileFm, body: fileBody } = Z2KYamlDoc.splitFrontmatter(fileContent);
+			const mergedFm = Z2KYamlDoc.mergeLastWins([fileFm, partialFm]);
+
+			let newBody: string;
+			if (opts.location === "file-top") {
+				// Insert at top of file (first line of content after frontmatter)
+				newBody = partialBody + "\n" + fileBody;
+			} else if (opts.location === "file-bottom") {
+				// Insert at bottom of file
+				newBody = fileBody + "\n" + partialBody;
+			} else if (opts.location === "header-top" || opts.location === "header-bottom") {
+				// Insert at header position
+				if (!opts.destHeader) {
+					throw new TemplatePluginError("destHeader is required when location is 'header-top' or 'header-bottom'");
+				}
+				newBody = this.insertIntoHeaderSection(fileBody, opts.destHeader, partialBody, opts.location);
+			} else if (typeof opts.location === "number") {
+				// Insert at specific line number
+				newBody = this.insertAtLineNumber(fileBody, opts.location, partialBody);
+			} else if (opts.destHeader) {
+				// Backward compatibility: if destHeader is specified without location, use header-top
+				newBody = this.insertIntoHeaderSection(fileBody, opts.destHeader, partialBody, "header-top");
 			} else {
+				// Editor mode: insert at cursor or replace selection
 				const editor = this.getEditorOrThrow();
 				if (opts.fromSelection) {
 					editor.replaceSelection(partialBody);
@@ -878,11 +1081,14 @@ export default class Z2KTemplatesPlugin extends Plugin {
 					editor.replaceRange(partialBody, editor.getCursor());
 				}
 				const full = editor.getValue();
-				const { fm: fileFm, body: newBody } = Z2KYamlDoc.splitFrontmatter(full);
-				const mergedFm = Z2KYamlDoc.mergeLastWins([fileFm, partialFm]);
-				newFileContent = Z2KYamlDoc.joinFrontmatter(mergedFm, newBody);
+				const { fm: fileFm2, body: newBody2 } = Z2KYamlDoc.splitFrontmatter(full);
+				const mergedFm2 = Z2KYamlDoc.mergeLastWins([fileFm2, partialFm]);
+				newFileContent = Z2KYamlDoc.joinFrontmatter(mergedFm2, newBody2);
+				await this.app.vault.modify(opts.existingFile, newFileContent);
+				return;
 			}
 
+			newFileContent = Z2KYamlDoc.joinFrontmatter(mergedFm, newBody);
 			await this.app.vault.modify(opts.existingFile, newFileContent);
 		} catch (error) { this.handleErrors(error); }
 	}
@@ -1050,18 +1256,20 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	}
 
 	// Helpers
-	insertIntoHeaderSection(body: string, header: string, insertText: string, location: "top"|"bottom" = "top"): string {
+	insertIntoHeaderSection(body: string, header: string, insertText: string, location: "header-top"|"header-bottom" = "header-top"): string {
 		if (!insertText || insertText.trim() === "") { return body; }
 
-		// Find header section
+		// Find header section (case-insensitive, without # symbols)
 		const escapedHeader = escapeRegExp(header);
-		const headerMatch = new RegExp(`^#+\\s+${escapedHeader}[\\s\\S]*?(?=^#|\\Z)`, "m");
+		const headerMatch = new RegExp(`^#+\\s+${escapedHeader}[\\s\\S]*?(?=\\n#|$(?![\\s\\S]))`, "mi");
 		const match = body.match(headerMatch);
-		if (!match) { return body; }
+		if (!match) {
+			throw new TemplatePluginError(`Header not found: ${header}`);
+		}
 
 		// Insert into matched header section
 		const rows = match[0].split("\n");
-		if (location === "top") {
+		if (location === "header-top") {
 			rows.splice(1, 0, insertText);
 		} else {
 			const emptyLine = /^\s*$/;
@@ -1074,6 +1282,31 @@ export default class Z2KTemplatesPlugin extends Plugin {
 
 		const updated = rows.join("\n");
 		return body.replace(match[0], updated);
+	}
+
+	insertAtLineNumber(body: string, lineNumber: number, insertText: string): string {
+		if (!insertText || insertText.trim() === "") { return body; }
+
+		const rows = body.split("\n");
+		const totalLines = rows.length;
+		let insertIndex: number;
+
+		if (lineNumber >= 0) {
+			// Positive numbers (0 to N): 0 = before first line, N = after last line
+			if (lineNumber > totalLines) {
+				throw new TemplatePluginError(`Line number ${lineNumber} is out of range (file has ${totalLines} lines, valid range: 0 to ${totalLines})`);
+			}
+			insertIndex = lineNumber;
+		} else {
+			// Negative numbers: -1 = before last line, -2 = before second-to-last, etc.
+			insertIndex = totalLines + lineNumber;
+			if (insertIndex < 0) {
+				throw new TemplatePluginError(`Line number ${lineNumber} is out of range (file has ${totalLines} lines, valid range: -${totalLines} to -1)`);
+			}
+		}
+
+		rows.splice(insertIndex, 0, insertText);
+		return rows.join("\n");
 	}
 
 	getFileTemplateType(file: TFile): "normal" | "named" | "partial" {
@@ -1316,11 +1549,11 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			if (typeof defaultTitle !== "string") {
 				throw new TemplatePluginError(`z2k_template_default_title must be a string (got a ${typeof defaultTitle})`);
 			}
-			state.fieldInfos["title"].default = defaultTitle;
+			state.fieldInfos["fileTitle"].default = defaultTitle;
 			break; // take the first one we find
 		}
 	}
-	addBuiltIns(state: TemplateState, opts: { sourceText?: string, existingTitle?: string, templateName?: string } = {}) {
+	async addBuiltIns(state: TemplateState, opts: { sourceText?: string, existingTitle?: string, templateName?: string } = {}) {
 		// sourceText
 		state.fieldInfos["sourceText"] = {
 			fieldName: "sourceText",
@@ -1359,13 +1592,13 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		}
 		state.resolvedValues["templateName"] = opts.templateName || "";
 
-		// title
-		let tfi = state.fieldInfos["title"]; // tfi = titleFieldInfo
-		if (!tfi) { tfi = { fieldName: "title" }; }
+		// fileTitle (aliased as noteTitle and cardTitle)
+		let tfi = state.fieldInfos["fileTitle"]; // tfi = titleFieldInfo
+		if (!tfi) { tfi = { fieldName: "fileTitle" }; }
 		tfi.type = "titleText"; // Always make it titleText
-		if (!state.resolvedValues["title"]) {
+		if (!state.resolvedValues["fileTitle"]) {
 			if (opts.existingTitle) {
-				state.resolvedValues["title"] = opts.existingTitle;
+				state.resolvedValues["fileTitle"] = opts.existingTitle;
 			}
 			tfi.default = "Untitled";
 		}
@@ -1375,7 +1608,15 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				tfi.directives.push("no-prompt");
 			}
 		}
-		state.fieldInfos["title"] = tfi;
+		state.fieldInfos["fileTitle"] = tfi;
+
+		// clipboard
+		state.fieldInfos["clipboard"] = {
+			fieldName: "clipboard",
+			type: "text",
+			directives: ['no-prompt'],
+		};
+		state.resolvedValues["clipboard"] = await navigator.clipboard.readText();
 	}
 	updateYamlOnCreate(fm: string, templateName: string): string {
 		const doc = Z2KYamlDoc.fromString(fm);
@@ -2494,7 +2735,7 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel }: FieldColle
 						.filter(fieldName => fieldName !== 'title')
 						.map(fieldName => getFieldContainer(fieldName))
 				) : (
-					<div className="no-fields-message">No fields to fill.</div>
+					<div className="no-fields-message">No{renderOrderFieldNames.filter(fieldName => fieldName === 'title').length > 0 ? ' other ' : ' '}fields to fill.</div>
 				)}
 			</div>
 
