@@ -7,7 +7,7 @@ sidebar_label: "{{yearMonthName}}"
 The `{{yearMonthName}}` built-in field returns the current year and month in the format "`YYYY-MM MMMM`". 
 
 ## Default Format
-The default format for the `{{yearMonthName}}` built-in field is "`YYYY-MM MMMM`". That is, if it is January 9th, 2026, then `{{yearMonth}}` will output "`2026-01 January`". You can override this formatting using Obsidian style date formatting or with the [[format-date]] Built-In Helper Function. 
+The default format for the `{{yearMonthName}}` built-in field is "`YYYY-MM MMMM`". That is, if it is January 9th, 2026, then `{{yearMonthName}}` will output "`2026-01 January`". You can override this formatting using Obsidian style date formatting or with the [[format-date]] Built-In Helper Function. 
 
 ## Example Output 
 Given a template snippet of:

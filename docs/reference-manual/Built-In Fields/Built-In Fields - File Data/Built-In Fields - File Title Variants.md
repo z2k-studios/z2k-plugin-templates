@@ -7,7 +7,7 @@ aliases:
 - noteTitle
 - cardTitle
 ---
-## Destination File Fields
+## File Title Field Variations
 
 | Field           | Value to be inserted   | Example                          |
 | --------------- | ---------------------- | -------------------------------- |

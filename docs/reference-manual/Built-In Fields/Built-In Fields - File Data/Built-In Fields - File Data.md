@@ -13,14 +13,11 @@ aliases:
 ## Overview
 The plugin has a number of [[Built-In Fields|Built-In Fields]] associated with the source template file and the destination file.
 
-1. [[Built-In Fields - File Title Variants|Destination File Fields]]  - information about the file being created
+1. [[Built-In Fields - File Title Variants|File Title Field Variations]]  - the name of the file being created
 	- `{{fileTitle}}`
 	- `{{noteTitle}}`
 	- `{{cardTitle}}`
-2. [[Built-In Fields - Template File Data|Template File Fields]] - information about the template that was used to create the destination file
-	- `{{templateName}}`
-	- `{{templateVersion}}`
-	- `{{templateAuthor}}`
-3. [[Built-In Fields - Creator|Creator Fields]] - information about the owner of the vault, template files and/destination files
+
+2. [[Built-In Fields - Creator|Creator Field]] - information about the owner of the vault, template files and/destination files
 	- `{{creator}}`
 
