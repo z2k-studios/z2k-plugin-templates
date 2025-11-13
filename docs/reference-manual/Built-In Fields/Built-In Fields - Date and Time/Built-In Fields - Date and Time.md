@@ -10,7 +10,7 @@ aliases:
 # Date and Time
 The following built-in date and time template fields can be used in templates:
 
-| Field               | Link              | Value to be inserted                                         | Example *(assuming today is 2026-01-09)* |
+| Field               | Doc Link          | Value to be inserted                                         | Example *(assuming today is 2026-01-09)* |
 | ------------------- | ----------------- | ------------------------------------------------------------ | ---------------------------------------- |
 | `{{date}}`          | [[date]]          | Today's date (\*1)                                           | `2026-01-09`                             |
 | `{{time}}`          | [[time]]          | Current time in the format `HH:mm` (\*1)                     | `15:23`                                  |
