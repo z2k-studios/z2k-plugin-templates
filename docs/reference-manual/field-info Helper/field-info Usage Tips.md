@@ -10,7 +10,11 @@ The `{{field-info}}` built-in helper function (and its [[field-info Variations|V
 
 ==Todo: these could use more details==
 
-## Field-Info Blocks
+## field-info as decl / let
+If you are a developer, one way to mentally think of the `{{field-info}}` command is as a field declaration operator (like `decl` or `let`). This is the built-in helper that you use to define what a field is and how it behaves. You do not strictly need to declare a new field with `{{field-info}}`, but conceptually it is useful to think of `{{field-info}}` performing a declaration. 
+
+
+## field-info Blocks
 If you have a number of prompting information for a number of fields, consider creating a "field-info Block" at the top or bottom of the file. Here, you have one `{{field-info}}` entry per line that specifies the prompting information for all of the primary fields in your template. 
 
 ### Example Field-Info Block

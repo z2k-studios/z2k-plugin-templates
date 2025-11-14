@@ -5,20 +5,16 @@ aliases:
 - Template Field
 ---
 
+==Move to an Overview page and make this just be a TOC page==
+
 # Overview
-Template Fields are used inside [[Template Files]] as embedded placeholders for information that is to be added into the template. Template fields are denoted using curly braces, e.g. `{{field}}` where `field` is the name of some unit of information to be filled either by a user or some external program.
+Template Fields (or just "fields") are used inside [[Template Files]] as embedded placeholders for information that is to be added into the template. Template fields are denoted using curly braces, e.g. `{{field}}` where `field` is the name of some unit of information to be filled either by a user or some external program.
 
 
-> [!NOTE] Note: Template Variables
+> [!NOTE] Note: Nomenclature
 > Obsidian uses the term "*[template variables](https://help.obsidian.md/Plugins/Templates)*" for what the Z2K Templates plugin calls "*Template Fields*". Beyond the expanded set of features provided by this plugin, they are conceptually the same.
-
-
-# Why use Templates and Template Fields
-The use of templates and template fields will result in a far more uniform and consistent documentation for the cards in your vault. Making your cards be more consistent in formatting serves several purposes:
-1. They quicken your ability to consume the content of a card because you will not visually need to re-learn how a card is organized with every card.
-2. They improve the ability for AI engines, if you use them, to pull content out of the card to help generate an AI agent.
-3. Consistency also enables search and replace scripts to find and update formatting and details as your digital self evolves.
-4. Consistency also enables advanced data tools such as the Obsidian Dataview plugin to access well-formed data across multiple cards.
+> 
+> Handlebars uses the term "*[expressions](https://handlebarsjs.com/guide/expressions.html)*" for what we call Template Fields. 
 
 # Basic Structure of a Template Field
 These placeholders are designated through the use of curly braces (aka handlebars), such as `{{fieldname}}`. The fieldname will specify the name of the field (i.e. a word description of the the type of information to be provided). 
@@ -32,7 +28,6 @@ For instance, consider an information card template to be used to collect quotes
 
 With these fields specified, Z2K will prompt the user for these fields when creating a new card with this template. These will then be filled in the new card with the data provided by the user, replacing the field name (e.g. `{{BookTitle}}`) with the actual Book Title provided by the user. 
 
-
 ### Dot Notation
 You can also nest fields using dot notation for structured data:
 
@@ -45,4 +40,4 @@ This allows referencing subfields in JSON or YAML inputs — useful when working
 # Further Details
 1. [[Template Field Types]] -- Types of fields (automated, user specified)
 2. [[Naming Conventions]] - Describes how to name a field and the special symbols used for advanced expressions
-3. [[Field Info]] -  how to control how fields work through the built-in `{{field-info}}` helper function
+3. [[field-info Helper]] -  how to control how fields work through the built-in `{{field-info}}` helper function

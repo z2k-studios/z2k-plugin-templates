@@ -84,7 +84,7 @@ aliases:
 ### Intermediate
 
 9. [[Helper Functions]] - Introduction to using helper functions inside templates  
-    - [[Helper Functions Usage]]  
+    - [[Helper Functions Overview]]  
     - [[Silent Helper Functions]]
     - [[Custom Helper Functions]]  
     - [[Handlebars Built-In Functions]]  

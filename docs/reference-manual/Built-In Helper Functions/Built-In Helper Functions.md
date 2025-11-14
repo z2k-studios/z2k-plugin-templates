@@ -13,5 +13,6 @@ The Z2K Templates plugin supports Handlebars idea of "[[Helper Functions]]" and 
 - [[Field Info Functions]] - Helpers for specifying information about fields
 - [[Formatting Functions]] - Helpers for formatting output
 - [[Linking Functions]] - Helpers for building links
+- [[Math Functions]] - Helpers for doing basic math or manipulations of fields
 - [[Misc Functions]] - Assortment of misc helpers
 

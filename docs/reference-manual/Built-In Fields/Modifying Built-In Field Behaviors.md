@@ -3,6 +3,7 @@ sidebar_position: 60
 sidebar_label: Built-In & Field-Info
 aliases:
 - Field-Info for Built-In Fields
+- Built-In Fields and Field-Info
 ---
 
 There are some amazingly cool things you can do with Built-In Fields, like using the [[reference-manual/field-info Helper/field-info Helper]] to modify how they operate.
@@ -27,5 +28,28 @@ e.g. can someone put that field-info entry into system yaml at the root and then
 
 
 
+
+
+
+## Dates
+
+Chat: 2025-11-13
+`{{field-info today value=(format-date now "M/D/YY")}}`
+Just can't self reference
+
+> I tried  
+> `{{field-info today default=(format-date today "M/D/YY") directives="finalize-default"}}`  
+> and it aborted because of a circular dependency
+> 
+> I tried  
+> `{{field-info today default=(format-date date "M/D/YY") directives="finalize-default"}}`  
+> and it took it fine, but didn't work as expected - I think it's because the today field already is given a value, so when it created the card it already filled out the today field so the finalize-default never triggered
+> 
+> I tried doing  
+> `{{field-info today value=(format-date date "M/D/YY")}}`  
+> and instead of putting the current date where `{{today}}` was, it put `{{format-date date "M/D/YY"}}`  
+> I think this is wrong though, I think it should have put `11/13/25`
+> 
+> 
 
 

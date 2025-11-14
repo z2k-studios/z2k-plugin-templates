@@ -70,7 +70,7 @@ For instance, say you have a `Podcasts` folder in your vault. You can create a n
 
 Because field names, YAML keys, and formatting are all consistent when you use templates, the end result is that templates make your vault machine‑readable. Tools like Dataview, Bases, and external analytics/AI can query structured data reliably. 
 
-Even just for Obsidian's default search tool, templates allows you to have a consistency in how data is entered in your forms. You'll find yourself able to navigate much fast the results of search queries, as the snippets of text from files will have a consistent formatting. 
+Even just for Obsidian's default search tool, templates allows you to have a consistency in how data is entered in your forms. You'll find yourself able to navigate much fast the results of search queries, as the snippets of text from files will have a consistent formatting. And even better, if you need to make a system wide change, a consistent text format will allow search and replaces to catch every instance.
 
 ## 7. Modular Design and Reuse
 

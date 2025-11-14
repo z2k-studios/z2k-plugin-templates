@@ -42,5 +42,5 @@ Even though `{{fileTitle}}` is a [[Built-In Fields|Built-In Field]], you can sti
 > [!TIP] Naming your Resultant Files with User Entered Fields
 > The most common use of the `{{fileTitle}}` built-in field is to use it within a [[field-info Helper|field-info helper function]]. With `{{field-info}}`, you can specify the prompting and naming of any resultant file created from the template. 
 > 
-> Using these two built-ins together is extremely useful, and as such there is a dedicated page just for discussing what you can do with them: see [[Built-In Fields and Field-Info#fileTitle and field-info|fileTitle and field-info]].
+> Using these two built-ins together is extremely useful, and as such there is a dedicated page just for discussing what you can do with them: see [[Modifying Built-In Field Behaviors#fileTitle and field-info|fileTitle and field-info]].
 

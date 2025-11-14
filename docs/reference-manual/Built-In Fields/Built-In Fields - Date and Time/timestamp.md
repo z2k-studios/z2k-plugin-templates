@@ -27,4 +27,4 @@ If today was 2026-07-04, at 12:34:56.789 AM this would yield the following resul
 ```
 
 ## Using Timestamps in Your Note Filenames
-Notice that in the example above, the template snippet assigns a timestamp to the filename of the resultant note using [[Built-In Fields and Field-Info#fileTitle and field-info|field-info]]. This is one easy way to adapt Obsidian into a traditional zettelkasten naming scheme. See the [[Intermediate]] How To Guides for a step through on how to set up timestamp file naming across the entire vault automatically. 
+Notice that in the example above, the template snippet assigns a timestamp to the filename of the resultant note using [[Modifying Built-In Field Behaviors#fileTitle and field-info|field-info]]. This is one easy way to adapt Obsidian into a traditional zettelkasten naming scheme. See the [[Intermediate]] How To Guides for a step through on how to set up timestamp file naming across the entire vault automatically. 

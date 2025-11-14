@@ -14,6 +14,7 @@ The following built-in date and time template fields can be used in templates:
 | ------------------- | ----------------- | ------------------------------------------------------------ | ---------------------------------------- |
 | `{{date}}`          | [[date]]          | Today's date (\*1)                                           | `2026-01-09`                             |
 | `{{time}}`          | [[time]]          | Current time in the format `HH:mm` (\*1)                     | `15:23`                                  |
+| `{{now}}`           | [[now]]           | Today's date and time                                        | `Friday, January 9, 2026 11:23 PM`       |
 | `{{utcTime}}`       | [[utcTime]]       | Current time expressed in UTC time                           | `23:23:00 UTC`                           |
 | `{{today}}`         | [[today]]         | Today's date (same as `{{date}}`)                            | `2026-01-09`                             |
 | `{{yesterday}}`     | [[yesterday]]     | Yesterday's date                                             | `2026-01-08`                             |

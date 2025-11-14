@@ -10,7 +10,9 @@ sidebar_position: 1
 | [[format-string]]               | Formats a string with additional text                                                                                                                              |
 | [[format-string-to-upper]]      | Formats a string into all caps                                                                                                                                     |
 | [[format-string-to-lower]]      | Formats a string into all lowercase                                                                                                                                |
-| [[format-string-slugify]]      | Formats a string into URL friendly text string                                                                                                                     |
+| [[format-string-slugify]]       | Formats a string into URL friendly text string for slugs                                                                                                           |
+| [[format-string-encode-URI]]    | Formats a string into a URI friendly text string                                                                                                                   |
+| [[format-string-encode-base64]] | Formats a string into Base 64 encoding                                                                                                                             |
 | [[format-string-spacify]]       | Converts a string collapsed of Spaces into a name with spaces.                                                                                                     |
 | [[format-string-commafy]]       | Takes a multiselect list and renders the active elements into a string with the elements separated by commas (is this the default rendering, and thus not needed?) |
 | [[format-string-trim]]          | Removes all preceding and trailing whitespace from a field                                                                                                         |

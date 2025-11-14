@@ -84,3 +84,10 @@ When using Embedded Templates:
 	/z2k/folderC/Templates/partial
 
 Relative paths like ../partial are not supported at this time. Please submit a feature request if you would like this functionality.
+
+
+
+==question==
+Can you make a partial that is based on a field (eg use a multiselect to allow the user to choose a partial to import)
+
+`{{< (random "Foo.md" "Bar.md")}}`

@@ -36,12 +36,12 @@ You can also specify references to other well known cards in a Z2K Vault.
 
 ## Card Details
 
-| Field                   | Value to be inserted                             | Example *(assuming today is 2026-01-09)* |
-| ----------------------- | ------------------------------------------------ | ---------------------------------------- |
-| `{{cardTitle}}`         | The title of this card (same as `{{fileTitle}}`) | `Leaves of Grass - Walt Whitman`         |
-| `{{cardInitialDomain}}` | The initial domain of this card                  | `Thoughts`                               |
-| `{{cardType}}`          | The Z2K Card Type                                | `Ontology`                               |
-| `{{cardSourceType}}`    | The Z2K Card Source Type                         | `InternalThought`                        |
+| Field                   | Value to be inserted                             | Example                          |
+| ----------------------- | ------------------------------------------------ | -------------------------------- |
+| `{{cardTitle}}`         | The title of this card (same as `{{fileTitle}}`) | `Leaves of Grass - Walt Whitman` |
+| `{{cardInitialDomain}}` | The initial domain of this card                  | `Thoughts`                       |
+| `{{cardType}}`          | The Z2K Card Type                                | `Ontology`                       |
+| `{{cardSourceType}}`    | The Z2K Card Source Type                         | `InternalThought`                |
 
 
 ## Wikilinking Card References

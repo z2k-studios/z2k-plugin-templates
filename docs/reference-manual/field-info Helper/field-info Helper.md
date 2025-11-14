@@ -42,6 +42,6 @@ Because `{{field-info}}` is so powerful, its documentation is spread out over se
 	- [[field-output Helper Variation]] - sister function that outputs the field value 
 	- [[fi Helper Variation]] - abbreviated version of `{{field-info}}`
 	- [[fo Helper Variation]] - abbreviated version of `{{field-output}}`
-- [[Built-In Fields and Field-Info|field-info and Built-In Fields]] - how `{{field-info}}` works with [[Built-In Fields]]
+- [[Modifying Built-In Field Behaviors|field-info and Built-In Fields]] - how `{{field-info}}` works with [[Built-In Fields]]
 - [[field-info and Block Templates]] - steps through how to use `{{field-info}}` with block templates
 
