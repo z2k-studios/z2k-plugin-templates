@@ -15,7 +15,6 @@ where:
 - `fieldname` is the name of the field that will receive the data to be formatted
 - `quoted-format-string` is a hard coded string of how the date or time should be formatted
 
-
 ## Format String Specification
 Just like the [[Custom Field Formatting#Obsidian Date-Time Formatting|Obsidian Date-Time Formatting]] format, the `{{format-date}}` Helper function uses [moment.js](https://momentjs.com/docs/#/displaying/format/) syntax for formatting dates. Tip: here is a [second source for moment.js](https://momentjscom.readthedocs.io/en/latest/moment/04-displaying/01-format/) format strings that may be more useful. 
 
@@ -23,3 +22,5 @@ Just like the [[Custom Field Formatting#Obsidian Date-Time Formatting|Obsidian D
 - `{{format-date yesterday "YYYY-MM-DD"}}` -- This would output `2025-01-08`
 - `{{format-date yearQuarter "YYYY-[Q]QQ"}}` -- This would output `2025-Q01`
 
+## Obsidian Style Data Formatting
+Please note that it is also possible to format dates using the Obsidian Date Formatting syntax. See [[Custom Field Formatting#Obsidian Date-Time Formatting|Obsidian Date-Time Formatting]] for more details. 

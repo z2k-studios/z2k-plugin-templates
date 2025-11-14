@@ -1,8 +1,8 @@
 ---
-sidebar_position: 24
+sidebar_position: 40
 ---
 
-==Move this to a separate section (or at least part of it) so that all naming conventions are stored together==
+==Move(??) this to a separate section (or at least part of it) so that all naming conventions are stored together==
 
 # Template Field Naming Conventions
 When using Z2K Template Fields, there are some important considerations for how to name a field

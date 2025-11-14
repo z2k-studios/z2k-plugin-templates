@@ -7,4 +7,5 @@ When Template Fields are replaced with their corresponding data, a small amount 
 
 1. [[Default Data Formatting|Default Field Formatting Rules]]
 2. [[Custom Field Formatting|Custom Field Formatting Rules]]
-3. [[Prompting|Template Fields and Prompting Commands]]
+3. [[Date Formatting Rules]]
+4. [[Prompting|Template Fields and Prompting Commands]]
