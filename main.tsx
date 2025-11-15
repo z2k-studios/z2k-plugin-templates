@@ -1,6 +1,4 @@
 
-// TODO: Add error handling for errors within react components by using React Error Boundaries
-
 import { App, Plugin, Modal, Notice, TAbstractFile, TFolder, TFile, PluginSettingTab, Setting, MarkdownView, Editor, Command } from 'obsidian';
 import { Z2KTemplateEngine, Z2KYamlDoc, TemplateState, VarValueType, FieldInfo, TemplateError } from 'z2k-template-engine';
 import React, { useState, useEffect, useRef } from 'react';
@@ -23,6 +21,8 @@ interface Z2KTemplatesPluginSettings {
 		targetFolder: string; // vault-relative path to folder
 	}>;
 	offlineCommandQueuePath: string; // Path to JSONL file for offline command queue
+	errorLogPath: string; // Path to error log file (relative to vault or absolute)
+	errorLogLevel: "none" | "error" | "warn" | "info" | "debug"; // Minimum severity level to log
 	// templateEditingEnabled: boolean;
 }
 
@@ -34,6 +34,8 @@ const DEFAULT_SETTINGS: Z2KTemplatesPluginSettings = {
 	cardReferenceName: 'note',
 	dynamicCardCommands: [],
 	offlineCommandQueuePath: 'z2k_template_commands.jsonl',
+	errorLogPath: '.obsidian/plugins/z2k-plugin-templates/error-log.md',
+	errorLogLevel: 'warn',
 	// templateEditingEnabled: true,
 };
 
@@ -223,6 +225,43 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 					});
 			});
 
+		containerEl.createEl('h3', {text: 'Error Logging'});
+
+		new Setting(containerEl)
+			.setName('Error log file')
+			.setDesc('Path to error log file (vault-relative or absolute).')
+			.addText(text => {
+				const input = text
+					.setPlaceholder(DEFAULT_SETTINGS.errorLogPath)
+					.setValue(this.plugin.settings.errorLogPath)
+					.inputEl;
+
+				this.validateTextInput(input,
+					(value) => {
+						if (value && /[*?"<>|]/.test(value)) { return "Invalid characters in file path"; }
+						return null;
+					},
+					async (validValue) => {
+						this.plugin.settings.errorLogPath = validValue;
+						await this.plugin.saveData(this.plugin.settings);
+					});
+			});
+
+		new Setting(containerEl)
+			.setName('Error log level')
+			.setDesc('Minimum severity level to log. "none" disables logging, "error" logs only errors, "warn" includes warnings, "info" includes informational messages, "debug" logs everything.')
+			.addDropdown(dropdown => dropdown
+				.addOption('none', 'None')
+				.addOption('error', 'Error')
+				.addOption('warn', 'Warning')
+				.addOption('info', 'Info')
+				.addOption('debug', 'Debug')
+				.setValue(this.plugin.settings.errorLogLevel)
+				.onChange(async (value) => {
+					this.plugin.settings.errorLogLevel = value as "none" | "error" | "warn" | "info" | "debug";
+					await this.plugin.saveData(this.plugin.settings);
+				}));
+
 		containerEl.createEl('h3', {text: 'Quick Create Commands'});
 		const quickCreateDesc = containerEl.createDiv({cls: 'setting-item'});
 		this.refs.quickCreateDesc = quickCreateDesc.createDiv({cls: 'setting-item-description'});
@@ -361,9 +400,82 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 	}
 }
 
+// Error logging types
+type ErrorSeverity = "error" | "warn" | "info" | "debug";
+
+interface LogContext {
+	severity: ErrorSeverity;
+	error?: Error;
+	message: string;
+	additionalContext?: Record<string, any>;
+}
+
+class ErrorLogger {
+	constructor(
+		private app: App,
+		private settings: Z2KTemplatesPluginSettings
+	) {}
+
+	async log(context: LogContext): Promise<void> {
+		if (!this.shouldLog(context.severity)) { return; }
+		await this.writeToLog(context);
+	}
+
+	private shouldLog(severity: ErrorSeverity): boolean {
+		const levels = ["none", "error", "warn", "info", "debug"];
+		const currentLevel = this.settings.errorLogLevel;
+		if (currentLevel === "none") { return false; }
+		return levels.indexOf(severity) <= levels.indexOf(currentLevel);
+	}
+
+	private async writeToLog(context: LogContext): Promise<void> {
+		const entry = this.formatLogEntry(context);
+		const logPath = this.settings.errorLogPath;
+
+		try {
+			const fileExists = await this.app.vault.adapter.exists(logPath);
+			if (!fileExists) {
+				await this.app.vault.adapter.write(logPath, "# Z2K Templates Error Log\n\n");
+			}
+			const existingContent = await this.app.vault.adapter.read(logPath);
+			await this.app.vault.adapter.write(logPath, existingContent + entry);
+		} catch (error) {
+			console.error("Failed to write to error log:", error);
+		}
+	}
+
+	private formatLogEntry(context: LogContext): string {
+		const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
+
+		// Compact format for error/warn/info
+		if (this.settings.errorLogLevel !== "debug") {
+			return `## [${context.severity.toUpperCase()}] ${timestamp}\n${context.message}\n\n---\n\n`;
+		}
+
+		// Verbose format for debug
+		let entry = `## [${context.severity.toUpperCase()}] ${timestamp}\n`;
+		entry += `**Message:** ${context.message}\n`;
+
+		if (context.error) {
+			entry += `**Stack Trace:**\n\`\`\`\n${context.error.stack}\n\`\`\`\n`;
+		}
+
+		if (context.additionalContext) {
+			entry += `**Context:**\n`;
+			for (const [key, value] of Object.entries(context.additionalContext)) {
+				entry += `- ${key}: ${value}\n`;
+			}
+		}
+
+		entry += `\n---\n\n`;
+		return entry;
+	}
+}
+
 export default class Z2KTemplatesPlugin extends Plugin {
 	templateEngine: Z2KTemplateEngine;
 	settings: Z2KTemplatesPluginSettings;
+	errorLogger: ErrorLogger;
 	private _refreshTimer: number | null = null;
 	private _queueCheckInterval: number | null = null;
 	private _processingQueue: boolean = false;
@@ -372,6 +484,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	async onload() {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
 		this.templateEngine = new Z2KTemplateEngine();
+		this.errorLogger = new ErrorLogger(this.app, this.settings);
 		this.refreshMainCommands(false); // Don't delete existing, since none exist yet
 		this.refreshDynamicCommands(false);
 		this.registerEvents();
@@ -520,7 +633,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				callback: async () => {
 					const folder = this.getFolder(cmd.targetFolder);
 					if (!folder) {
-						new Notice(`Target folder not found: ${cmd.targetFolder}`);
+						await this.logWarn(`Target folder not found: ${cmd.targetFolder}`);
 						return;
 					}
 					await this.createCard({ cardTypeFolder: folder });
@@ -679,7 +792,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				for (const key in rawParams) {
 					cmdParams[key] = decodeURIComponent(rawParams[key]);
 				}
-				await this.processCommand(cmdParams);
+				await this.processCommand(cmdParams, 'user');
 			} catch (e) { this.handleErrors(e); }
 		});
 	}
@@ -689,7 +802,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	// DOCS: All field parameters start with _ so they don't clash with command params
 	// DOCS: Non-field parameters can be templatePath, TemplatePath, template-path, template_path, etc. for robustness
 	// DOCS: but we should just say templatePath in the docs for simplicity
-	private async processCommand(rawParams: CommandParams): Promise<void> {
+	private async processCommand(rawParams: CommandParams, context: "user" | "batch"): Promise<void> {
 		// Normalize keys (remove special chars, lowercase) and extract field params (_prefix)
 		const cmdParams: Record<string, any> = {};
 		const fieldParams: Record<string, VarValueType> = {};
@@ -751,8 +864,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				if (!parsedParams || typeof parsedParams !== "object" || Array.isArray(parsedParams)) {
 					throw new TemplatePluginError("Command: 'json' parameter must be a valid JSON object (not array or null)");
 				}
-				// Recursive call with parsed JSON
-				return await this.processCommand(parsedParams as CommandParams);
+				// Recursive call with parsed JSON (inherit context)
+				return await this.processCommand(parsedParams as CommandParams, context);
 			} catch (e) {
 				if (e instanceof TemplatePluginError) throw e;
 				throw new TemplatePluginError("Command: Invalid json parameter (must be valid JSON)");
@@ -842,7 +955,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			if (f) {
 				destDir = f;
 			} else {
-				new Notice(`Command: Destination folder not found:\n${cmdParams.destdir}\nUsing template's folder instead.`);
+				await this.logWarn(`Command: Destination folder not found:\n${cmdParams.destdir}\nUsing template's folder instead.`, context);
 			}
 		}
 
@@ -1001,6 +1114,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			this._statusBarItem.setText(`Processing ${lines.length} command${lines.length > 1 ? 's' : ''}...`);
 		}
 
+		let errorCount = 0;
+
 		// Process commands one by one
 		for (let i = 0; i < lines.length; i++) {
 			const line = lines[i].trim();
@@ -1015,10 +1130,11 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				// Parse JSON and call processCommand directly
 				// JSON preserves types (numbers, booleans, arrays, etc.)
 				const cmdParams = JSON.parse(line) as CommandParams;
-				await this.processCommand(cmdParams);
+				await this.processCommand(cmdParams, 'batch');
 			} catch (e) {
 				// Log error but continue processing
-				this.handleErrors(e);
+				errorCount++;
+				await this.handleErrors(e, 'batch');
 				// Line is deleted regardless of success/failure
 			}
 		}
@@ -1026,6 +1142,11 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		// Clear status bar
 		if (this._statusBarItem) {
 			this._statusBarItem.setText('');
+		}
+
+		// Show single notice if there were errors
+		if (errorCount > 0) {
+			new Notice(`${errorCount} error(s) occurred while processing commands. Check error log for details.`);
 		}
 
 		// Delete processing file
@@ -1113,7 +1234,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			let hasFillableFields = this.hasFillableFields(state.fieldInfos);
 			// TODO: handle the case where fieldOverrides fills all fields and promptMode is "remaining"
 			if (!hasFillableFields && !opts.fieldOverrides) {
-				new Notice("No fillable fields found in the template.");
+				await this.logInfo("No fillable fields found in the template.");
 				return;
 			}
 			if (hasFillableFields && opts.promptMode !== "none") {
@@ -1288,7 +1409,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	async convertFileTemplateType(file: TFile, type: "normal" | "named" | "partial") {
 		try {
 			if (type === "normal" && this.isInsideTemplatesFolder(file)) {
-				new Notice("You will need to manually move the file outside of your templates folder (" + this.settings.templatesFolderName + ").");
+				await this.logInfo("You will need to manually move the file outside of your templates folder (" + this.settings.templatesFolderName + ").");
 			}
 			let content = await this.app.vault.read(file);
 			let { fm, body } = Z2KYamlDoc.splitFrontmatter(content);
@@ -1364,9 +1485,18 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		});
 	}
 	async promptForFieldCollection(templateState: TemplateState): Promise<boolean> {
-		return await new Promise<boolean>((resolve, reject) => {
-			new FieldCollectionModal(this.app, `Field Collection for ${cardRefNameUpper(this.settings)}`, templateState, resolve, reject).open();
-		});
+		try {
+			return await new Promise<boolean>((resolve, reject) => {
+				new FieldCollectionModal(this.app, `Field Collection for ${cardRefNameUpper(this.settings)}`, templateState, resolve, reject).open();
+			});
+		} catch (e) {
+			// Handle errors from the modal (including circular dependency errors)
+			// Don't re-handle UserCancelError - just let it propagate
+			if (!(e instanceof UserCancelError)) {
+				await this.handleErrors(e);
+			}
+			throw e; // Re-throw so caller knows it failed
+		}
 	}
 	async promptAndDeleteFile(file: TFile) {
 		const shouldDelete = await new Promise<boolean>(resolve => {
@@ -1794,19 +1924,60 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		return Z2KYamlDoc.joinFrontmatter(mergedFm, combinedBody);
 	}
 
-	private handleErrors(error: unknown) {
-		// Display error messages to the user
+	async logWarn(message: string, context: "user" | "batch" = 'user') {
+		await this.log("warn", context, message);
+	}
+
+	async logInfo(message: string, context: "user" | "batch" = 'user') {
+		await this.log("info", context, message);
+	}
+
+	async logDebug(message: string, context: "user" | "batch" = 'user') {
+		await this.log("debug", context, message);
+	}
+
+	async log(severity: ErrorSeverity, context: "user" | "batch", message: string, error?: Error) {
+		// Don't log UserCancelError (user intentionally cancelled)
+		if (error instanceof UserCancelError) {
+			return;
+		}
+
+		// Always log to file
+		await this.errorLogger.log({
+			severity,
+			message,
+			error
+		});
+
+		// Handle user notifications (only for user-initiated commands)
+		if (context === 'batch') {
+			return; // Batch mode - no notifications
+		}
+
+		// Show modal for errors
+		if (severity === 'error' && error) {
+			new ErrorModal(this.app, error).open();
+		}
+		// Show notice for warnings/info
+		else if (severity === 'warn' || severity === 'info') {
+			new Notice(message);
+		}
+	}
+
+	private async handleErrors(error: unknown, context: "user" | "batch" = 'user') {
+		// Display error messages to the user and log them
 		if (error instanceof TemplatePluginError) {
 			console.error("TemplatePluginError: ", error.message);
-			new ErrorModal(this.app, error).open();
+			await this.log("error", context, error.userMessage || error.message, error);
 		} else if (error instanceof UserCancelError) {
-			// Just exit, no need to show a message
+			// Just exit, no need to show a message or log
 		} else if (error instanceof TemplateError) {
 			console.error("Template error: ", error.message);
-			new ErrorModal(this.app, error).open();
+			await this.log("error", context, error.message, error);
 		} else {
 			console.error("Unexpected error: ", error);
-			new ErrorModal(this.app, new TemplatePluginError("An unexpected error occurred", error)).open();
+			const wrappedError = new TemplatePluginError("An unexpected error occurred", error);
+			await this.log("error", context, "An unexpected error occurred", wrappedError);
 		}
 	}
 
@@ -2461,6 +2632,10 @@ export class FieldCollectionModal extends Modal {
 					this.reject(new UserCancelError("User cancelled field collection"));
 					this.close();
 				}}
+				onError={(error) => {
+					this.reject(error);
+					this.close();
+				}}
 			/>
 		);
 	}
@@ -2479,8 +2654,9 @@ interface FieldCollectionFormProps {
 	templateState: TemplateState;
 	onComplete: (finalize: boolean) => void;
 	onCancel: () => void;
+	onError: (error: Error) => void;
 }
-const FieldCollectionForm = ({ templateState, onComplete, onCancel }: FieldCollectionFormProps) => {
+const FieldCollectionForm = ({ templateState, onComplete, onCancel, onError }: FieldCollectionFormProps) => {
 	function formatFieldName(str: string): string {
 		str = str.charAt(0).toUpperCase() + str.slice(1);
 		return str
@@ -2556,8 +2732,11 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel }: FieldColle
 		// Check for circular dependencies
 		const circularDependency = detectCircularDependencies(initialFieldStates);
 		if (circularDependency.length > 0) {
-			new Notice(`Aborting! Circular dependency: ${circularDependency.join(' -> ')}`);
-			setTimeout(() => { onCancel(); }, 0); // defer unmounting until after the render finishes
+			const error = new TemplatePluginError(
+				`Circular dependency detected in template fields: ${circularDependency.join(' -> ')}`
+			);
+			error.userMessage = `Circular dependency detected in template fields: ${circularDependency.join(' -> ')}`;
+			setTimeout(() => { onError(error); }, 0); // defer unmounting until after the render finishes
 			return {}; // Return empty state to prevent further processing
 		}
 
