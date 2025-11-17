@@ -828,10 +828,26 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			let data = cmdParams.templatejsondata;
 			// Parse if string
 			if (typeof data === 'string') {
-				try {
-					data = JSON.parse(data);
-				} catch {
-					throw new TemplatePluginError("Command: Invalid templateJsonData (must be valid JSON)");
+				// Check if it's a file path (doesn't start with '{')
+				if (!data.trim().startsWith('{')) {
+					// Try to load as vault-relative file path
+					const jsonFile = this.getFile(data);
+					if (!jsonFile) {
+						throw new TemplatePluginError(`Command: templateJsonData file not found: ${data}`);
+					}
+					try {
+						const fileContents = await this.app.vault.read(jsonFile);
+						data = JSON.parse(fileContents);
+					} catch (e) {
+						throw new TemplatePluginError(`Command: Failed to read or parse JSON from file: ${data}`);
+					}
+				} else {
+					// It's inline JSON, parse it
+					try {
+						data = JSON.parse(data);
+					} catch {
+						throw new TemplatePluginError("Command: Invalid templateJsonData (must be valid JSON or vault-relative file path)");
+					}
 				}
 			}
 			// Validate is plain object (not array/null)
@@ -951,12 +967,13 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			? (this.getTemplateCardType(templateFile) ?? templateFile.parent as TFolder)
 			: undefined;
 		if (cmdParams.destdir) {
-			const f = this.getFolder(cmdParams.destdir);
-			if (f) {
-				destDir = f;
-			} else {
-				await this.logWarn(`Command: Destination folder not found:\n${cmdParams.destdir}\nUsing template's folder instead.`, context);
-			}
+			destDir = await this.createFolder(cmdParams.destdir);
+			// const f = this.getFolder(cmdParams.destdir);
+			// if (f) {
+			// 	destDir = f;
+			// } else {
+			// 	await this.logWarn(`Command: Destination folder not found:\n${cmdParams.destdir}\nUsing template's folder instead.`, context);
+			// }
 		}
 
 		// Route commands
@@ -1209,8 +1226,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				bodyOut += `\n\n${String(opts.fieldOverrides.sourceText)}\n`;
 			}
 			let contentOut = Z2KYamlDoc.joinFrontmatter(fmOut, bodyOut);
-			let title = String(state.resolvedValues["fileTitle"]) || "Untitled";
-			title = Z2KTemplateEngine.reducedRenderContent(title, state.resolvedValues) as string;
+			let title = this.getTitle(state.resolvedValues);
 			let newFile = await this.createFile(opts.destDir, title, contentOut);
 			if (opts.fromSelection) {
 				const editor = this.getEditorOrThrow();
@@ -1243,8 +1259,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 
 			let { fm, body } = Z2KTemplateEngine.renderTemplate(state, opts.finalize ?? false);
 			let contentOut = Z2KYamlDoc.joinFrontmatter(fm, body);
-			let title = String(state.resolvedValues["fileTitle"]) || "Untitled";
-			title = Z2KTemplateEngine.reducedRenderContent(title, state.resolvedValues) as string;
+			let title = this.getTitle(state.resolvedValues);
 			await this.updateTitleAndContent(opts.existingFile, title, contentOut);
 		} catch (error) { this.handleErrors(error); }
 	}
@@ -1348,15 +1363,10 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			rethrowWithMessage(error, "Error occurred while parsing the template");
 		}
 	}
-	async createFile(folder: TFolder, title: string, content: string): Promise<TFile> {
-		try {
-			const filename = this.getValidFilename(title);
-			const newPath = this.generateUniqueFilePath(folder.path, filename);
-			const file = await this.app.vault.create(newPath, content);
-			return file;
-		} catch (error) {
-			rethrowWithMessage(error, "Error occurred while creating the file");
-		}
+	getTitle(resolvedValues: Record<string, VarValueType>): string {
+		let fileTitle = resolvedValues["fileTitle"];
+		let title = fileTitle == null || fileTitle === "" ? "Untitled" : String(fileTitle);
+		return Z2KTemplateEngine.reducedRenderContent(title, resolvedValues) as string;
 	}
 	async updateTitleAndContent(file: TFile, title: string, content: string) {
 		try {
@@ -1924,18 +1934,16 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		return Z2KYamlDoc.joinFrontmatter(mergedFm, combinedBody);
 	}
 
+	// Logging and error handling
 	async logWarn(message: string, context: "user" | "batch" = 'user') {
 		await this.log("warn", context, message);
 	}
-
 	async logInfo(message: string, context: "user" | "batch" = 'user') {
 		await this.log("info", context, message);
 	}
-
 	async logDebug(message: string, context: "user" | "batch" = 'user') {
 		await this.log("debug", context, message);
 	}
-
 	async log(severity: ErrorSeverity, context: "user" | "batch", message: string, error?: Error) {
 		// Don't log UserCancelError (user intentionally cancelled)
 		if (error instanceof UserCancelError) {
@@ -1963,7 +1971,6 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			new Notice(message);
 		}
 	}
-
 	private async handleErrors(error: unknown, context: "user" | "batch" = 'user') {
 		// Display error messages to the user and log them
 		if (error instanceof TemplatePluginError) {
@@ -1987,11 +1994,31 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		const file = this.app.vault.getAbstractFileByPath(normalized);
 		return file instanceof TFile ? file : null;
 	}
+	async createFile(folder: TFolder, title: string, content: string): Promise<TFile> {
+		try {
+			const filename = this.getValidFilename(title);
+			const newPath = this.generateUniqueFilePath(folder.path, filename);
+			const file = await this.app.vault.create(newPath, content);
+			return file;
+		} catch (error) {
+			rethrowWithMessage(error, "Error occurred while creating the file");
+		}
+	}
 	private getFolder(path: string): TFolder | null {
 		const normalized = normalizeFullPath(path);
 		if (normalized === '') { return this.app.vault.getRoot(); } // Special case for root folder
 		const file = this.app.vault.getAbstractFileByPath(normalized);
 		return file instanceof TFolder ? file : null;
+	}
+	async createFolder(path: string): Promise<TFolder> {
+		try {
+			const normalized = normalizeFullPath(path);
+			let folder = this.getFolder(normalized);
+			if (!folder) { folder = await this.app.vault.createFolder(normalized); }
+			return folder;
+		} catch (error) {
+			rethrowWithMessage(error, `Error occurred while creating the folder at path '${path}'`);
+		}
 	}
 	private isSubPathOf(child: string, parent: string): boolean {
 		const normParent = normalizeFullPath(parent);
