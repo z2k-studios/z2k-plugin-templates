@@ -28,4 +28,4 @@ Additional Information:
 > - `{{fileTitle}}` -- a built-in field for the name of the file
 > - `{{BookTitle}}` -- a template field for data to be used in the template.
 > 
-> See [[Naming Conventions]] for more info. 
+> See [[Naming Fields]] for more info. 

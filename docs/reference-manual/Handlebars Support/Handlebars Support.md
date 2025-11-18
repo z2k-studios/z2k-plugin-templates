@@ -29,13 +29,11 @@ There are a few subtle differences:
 
 # Z2K Advanced Expressions not in Handlebars
 For quick reference, the following are augmentations to the Handlebars language that are only used in Z2K's implementation:
-1. Support for Obsidian date formatting 
-	- See [[Custom Field Formatting#Obsidian Date-Time Formatting]]
-2. Support for Z2K specific Built-In Helpers
+1. Support for Z2K specific Built-In Helpers
 	- See [[Built-In Helper Functions]]
-3. Support for User Prompting
+2. Support for User Prompting
 	- See [[Prompting]]
-4. Support for automated fields
+3. Support for automated fields
 	- See [[Built-In Fields]]
-5. Support for required fields
+4. Support for required fields
 	- See ==TBD==

@@ -60,21 +60,23 @@ aliases:
         - Boolean  
         - Single Select (with options)  
         - Multi Select (with options)  
-    - [[Naming Conventions]]  
+    - [[Naming Fields]]  
     - [[Path Expressions]] (`{{person.lastname}}`)  
     - [[Raw vs HTML Escaping]]  
 
-6. [[Built-In Fields]] - Built-in fields supported by the Z2K Templates plugin  
+6. [[Built-In Fields]] - Built-in fields supported by the Z2K Templates
     - [[Built-In Fields - Date and Time|Date and Time Built-Ins]]
     - [[Built-In Fields - File Data|File Data Built-Ins]]
     - [[Built-In Fields - Z2K System|Z2K Card References Built-Ins]]
 
-7. [[Data Formatting]] - How data is formatted during insertion into template fields  
+7. [[reference-manual/Naming Conventions/Naming Conventions]] - Conventions used by Z2K Templates 
+
+8. [[Data Formatting]] - How data is formatted during insertion into template fields  
     - [[Default Data Formatting]]  
     - [[Custom Field Formatting]]  
     - [[Obsidian Style Date Formatting]]  
 
-8. [[Prompting]] - How to customize the prompting for data for a field  
+9. [[Prompting]] - How to customize the prompting for data for a field  
     - [[General Prompting Format]]  
     - [[Prompting Data Types]]  
     - [[Built-in Helpers for Prompting]]  
@@ -83,14 +85,14 @@ aliases:
 
 ### Intermediate
 
-9. [[Helper Functions]] - Introduction to using helper functions inside templates  
+10. [[Helper Functions]] - Introduction to using helper functions inside templates  
     - [[Helper Functions Overview]]  
     - [[Silent Helper Functions]]
     - [[Custom Helper Functions]]  
     - [[Handlebars Built-In Functions]]  
         - [[Lookup Function]] (`{{lookup }}`)  
 
-10. [[Built-In Helper Functions]] - A list of built-in Helper Functions and how to use them  
+11. [[Built-In Helper Functions]] - A list of built-in Helper Functions and how to use them  
     - [[Formatting Functions]]  
         - String Helpers  
         - `format-string`  
@@ -110,7 +112,7 @@ aliases:
         - `chatGPT`
         - `z2k-preserve-raw`  
 
-11. [[reference-manual/field-info Helper/field-info Helper]]
+12. [[reference-manual/field-info Helper/field-info Helper]]
 	- [[field-info Cheat Sheet|Cheat Sheet]] - a brief one page summary of the `{{field-info}}` helper function
 	- [[field-info Syntax|Syntax]] - syntax of the underlying helper function
 	- [[field-info Output|Output]] - what does the `{{field-info}}` helper output?
@@ -128,7 +130,7 @@ aliases:
 		- [[fi Helper Variation]] - abbreviated version of `{{field-info}}`
 		- [[fo Helper Variation]] - abbreviated version of `{{field-output}}`
 		
-12. [[Handlebars Support]] - How Z2K's field language is similar to and differs from the Handlebars.js library  
+13. [[Handlebars Support]] - How Z2K's field language is similar to and differs from the Handlebars.js library  
     - [[Template Comments]] (`{{! comment }}`)  
     - [[Unescaped Expressions]] (`{{{var}}}`)  
     - [[Whitespace Control]] (`{{~tilde}}`)  
@@ -145,22 +147,22 @@ aliases:
         - [[Partial Parameters]]  
         - [[Inline Partials]]  
 
-13. [[Block Templates]] - Details the use of hierarchical and block level templates through partial templates  
+14. [[Block Templates]] - Details the use of hierarchical and block level templates through partial templates  
     - [[Block Template Basics]]  
     - [[Block Template Parameters]]  
 
-14. [[System Block Templates]]
+15. [[System Block Templates]]
 	- Intro to System Block Templates
 	- Using System Block Templates and field-info
 
-15. [[Settings Page]] - Details on the Settings Page for the Z2K Templates Plugin  
+16. [[Settings Page]] - Details on the Settings Page for the Z2K Templates Plugin  
     - TBD  
 
 
 
 ### Advanced 
 
-16. [[Z2K Templates and YAML|YAML Integration]] 
+17. [[Z2K Templates and YAML|YAML Integration]] 
     - [[Using Fields inside YAML Text]]  
         - How To Guide: [[How to Use Z2K Fields Inside YAML Metadata]]  
     - [[Using YAML fields inside Templates]]  
@@ -175,14 +177,14 @@ aliases:
 	    - author?
 	    - Version?
 
-17. [[URI, JSON, Command Lists]] - Triggering template fields externally through URI and/or passing JSON packages 
+18. [[URI, JSON, Command Lists]] - Triggering template fields externally through URI and/or passing JSON packages 
 	- [[URI Actions]]
 	- [[JSON Packages]]
 	- [[Command Lists]]
 	
-18. [[Z2K System Features|Z2K System Features]] - Additional features specific to the larger Z2K System  
+19. [[Z2K System Features|Z2K System Features]] - Additional features specific to the larger Z2K System  
 
-19. [[Error Handling]]  
+20. [[Error Handling]]  
 
 
 ### Misc

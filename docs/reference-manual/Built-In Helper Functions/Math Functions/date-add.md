@@ -18,7 +18,7 @@ Where:
 - `unitsInDays` -- the numeric number of days to forward adjust a day by (where 1 = 1 Day). Can be negative to go backwards in time. 
 
 ## Controlling Format
-When you use a `{{date-add}}` Helper, it creates a new date that represents the adjusted date. If you want to control the formatting of the date, you will still need to use either [[Custom Field Formatting#Obsidian Date-Time Formatting|Obsidian Date-Time Formatting]] or the `{{format-date}}` Helper to control the format of the date.
+When you use a `{{date-add}}` Helper, it creates a new date that represents the adjusted date. If you want to control the formatting of the date, you will still need to use the `{{format-date}}` Helper to control the [[format-date|format of the date]].
 
 ## Examples
 

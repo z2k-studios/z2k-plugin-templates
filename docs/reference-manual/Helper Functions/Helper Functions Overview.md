@@ -23,7 +23,7 @@ Where:
 ## Distinguishing Helpers from Fields
 Distinguishing between a `{{field}}` (which is data) and a `{{helper-function}}` (which is an action) can take a little getting use to it. In general, Helpers take parameters that are separated by spaces. Thus, if you see a `{{field with spaces}}`, then that is a clear sign it is a Helper Function. 
 
-In Z2K Templates will also using the naming conventions to help distinguish between helper functions and fields. Helpers use a dash (`-`) to separate words in the name of the helper (e.g. `format-string`) where fields simply collapse the spaces (e.g. `yearMonth`). See [[Naming Conventions]] for more details. 
+In Z2K Templates will also using the naming conventions to help distinguish between helper functions and fields. Helpers use a dash (`-`) to separate words in the name of the helper (e.g. `format-string`) where fields simply collapse the spaces (e.g. `yearMonth`). See [[Naming Fields]] for more details. 
 
 ## Example Helper Function
 Here is a quick barebones but real Helper Function: 

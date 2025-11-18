@@ -27,10 +27,12 @@ The following built-in date and time template fields can be used in templates:
 | `{{yearMonthName}}` | [[yearMonthName]] | The date with the format `YYYY-MM MMMM`                      | `2025-09 September`                      |
 | `{{yearQuarter}}`   | [[yearQuarter]]   | The current year and quarter with the format `YYYY-[Q]Q`     | `2025-Q1`                                |
 
-## Time and Date Formatting
-There are two ways to adjust the format of these built-in date and time fields:
-1. **Obsidian Style**: You can use Obsidian style formatting with the "`:`" qualifier followed by a string of [Moment.js format tokens](https://momentjs.com/docs/#/displaying/format/). 
-2. **Handlebars Style**: You can also use the [[format-date]] built-in Helper function to specify a format string for the date. This is more consistent with the general Handlebars.js approach. 
 
-Note: Both styles use  [moment.js](https://momentjs.com/docs/#/displaying/format/) syntax to specify their format strings. Tip: see this [alternative source for moment.js tokens](https://momentjscom.readthedocs.io/en/latest/moment/04-displaying/01-format/) . For more details, see [[Custom Field Formatting#Obsidian Date-Time Formatting|Obsidian Date-Time Formatting]]
+## Date Formatting
+If one of the premade date + formats above is insufficient for your needs, you can use the [[format-date]] built-in Helper function to specify an alternative format string for the date. This is more consistent with the general Handlebars.js approach. When you use `{{format-date}}` we recommend passing the `{{now}}` built-in field to the Helper function. 
+
+`{{format-date}}` uses [moment.js](https://momentjs.com/docs/#/displaying/format/) syntax to specify their format strings. Tip: see this [alternative source for moment.js tokens](https://momentjscom.readthedocs.io/en/latest/moment/04-displaying/01-format/) . 
+
+## Obsidian Style Date Formatting
+Please note that Obsidian introduced a formatting style in which a date was followed by a colon and then an unquoted string of [Moment.js format tokens](https://momentjs.com/docs/#/displaying/format/). We have elected to NOT support this format style inside Z2K Templates, as it is not valid [[Handlebars Support|Handlebars]] syntax.
 

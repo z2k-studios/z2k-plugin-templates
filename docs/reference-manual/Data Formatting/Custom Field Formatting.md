@@ -19,9 +19,9 @@ Note that this modifies the text outside/around the `{{field}}` tag in the templ
 
 %%This next section is frequently linked to - will need to adjust if it is moved to a different file - ==which is probably a good idea==%%
 ## Obsidian Date-Time Formatting
-In keeping with [Obsidian's date and time formatting rules](https://help.obsidian.md/plugins/templates#Template+variables), any field that contains date and time information can be formatted by postfixing a colon ( `:`) to the field name, followed by a string of [Moment.js format tokens](https://momentjs.com/docs/#/displaying/format/), for example `{{date:YYYY-MM-DD}}`.
+Please note that the Z2K Templates Plugin does not support [Obsidian's date and time formatting rules](https://help.obsidian.md/plugins/templates#Template+variables), where a date field can be formatted by postfixing a colon ( `:`) and a string of [Moment.js format tokens](https://momentjs.com/docs/#/displaying/format/), for example `{{date:YYYY-MM-DD}}`. 
 
-*Note:* This method of formatting date-time fields is included simply to be compatible with Obsdian's existing method for formatting dates. To be more consistent with the general Z2K Templates formatting, you make want to consider using the [[format-date]] Helper function instead.
+This method of formatting date-time fields is NOT supported by Z2K Templates because it is not valid Handlebars.js syntax. Please use the [[format-date]] Helper function instead.
 
 ## Z2K Predefined Helpers for Formatting
 The preferred and more general method for formatting information being passed into a Template Field is to use one of the predefined helper functions for formatting. For more details, please see [[Built-In Helper Functions#Formatting Helper Functions|Predefined Helper Formatting Functions]].

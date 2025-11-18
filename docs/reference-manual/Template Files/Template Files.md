@@ -8,6 +8,6 @@ At the very core of Z2K Templates is the Template File. In short, a template fil
 ## Overview
 - [[What is a Template File]]
 - [[Lifecycle of a Template]]
-- [[Naming Conventions]]
+- [[Naming Fields]]
 
 ---

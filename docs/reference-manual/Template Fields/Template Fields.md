@@ -9,7 +9,7 @@ Template Fields are the workhorses of Z2K Templates. They are placeholders, writ
 1. [[Template Fields Overview]] -- An overview of fields inside Z2K Templates
 2. [[Template Field Flavors]] -- Types of fields (automated, user specified)
 3. [[Field Data Sources]] -- Reviews all the ways data can be provided to fill in a template field
-4. [[Naming Conventions]] -- Describes how to name a field and the special symbols used for advanced expressions
+4. [[Naming Fields]] -- Describes how to name a field and the special symbols used for advanced expressions
 5. [[Restricted Functionality Mode]] -- For advanced users, this page describes the limitations of using fields in complex expressions
 
 ## Additional Information
