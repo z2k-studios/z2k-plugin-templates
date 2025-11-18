@@ -1214,6 +1214,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			this.handleOverrides(state, opts.fieldOverrides, opts.promptMode || "all");
 			// Convert sourceText to string for addBuiltIns (handles all VarValueType cases)
 			const sourceTextStr = opts.fieldOverrides.sourceText != null ? String(opts.fieldOverrides.sourceText) : undefined;
+			await this.addYamlFieldValues(state); // System blocks already in state from parseTemplate
 			await this.addBuiltIns(state, { sourceText: sourceTextStr, templateName: opts.templateFile.basename });
 			this.setDefaultTitleFromYaml(state);
 
@@ -1246,6 +1247,10 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			let content = await this.app.vault.read(opts.existingFile);
 			let state = await this.parseTemplate(content, "", opts.existingFile.parent as TFolder);
 			this.handleOverrides(state, opts.fieldOverrides, opts.promptMode || "all");
+			// Add system blocks YAML for field values
+			let systemBlocksContent = await this.GetSystemBlocksContent(opts.existingFile.parent as TFolder);
+			let systemBlocksYaml = Z2KYamlDoc.splitFrontmatter(systemBlocksContent).fm;
+			await this.addYamlFieldValues(state, [systemBlocksYaml]);
 			await this.addBuiltIns(state, { existingTitle: opts.existingFile.basename });
 			let hasFillableFields = this.hasFillableFields(state.fieldInfos);
 			// TODO: handle the case where fieldOverrides fills all fields and promptMode is "remaining"
@@ -1294,6 +1299,12 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			let state = await this.parseTemplate(content, "", opts.templateFile.parent as TFolder);
 			let hadSourceTextField = !!state.fieldInfos["sourceText"];
 			this.handleOverrides(state, opts.fieldOverrides, opts.promptMode || "all");
+			// Add system blocks and existing file YAML for field values
+			let systemBlocksContent = await this.GetSystemBlocksContent(opts.templateFile.parent as TFolder);
+			let systemBlocksYaml = Z2KYamlDoc.splitFrontmatter(systemBlocksContent).fm;
+			let existingFileContent = await this.app.vault.read(opts.existingFile);
+			let existingFileYaml = Z2KYamlDoc.splitFrontmatter(existingFileContent).fm;
+			await this.addYamlFieldValues(state, [systemBlocksYaml, existingFileYaml]);
 			// Convert sourceText to string for addBuiltIns (handles all VarValueType cases)
 			const sourceTextStr = opts.fieldOverrides.sourceText != null ? String(opts.fieldOverrides.sourceText) : undefined;
 			await this.addBuiltIns(state, { sourceText: sourceTextStr, existingTitle: opts.existingFile.basename });
@@ -1885,6 +1896,48 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		};
 		state.resolvedValues["clipboard"] = await navigator.clipboard.readText();
 	}
+
+	async addYamlFieldValues(state: TemplateState, additionalYamlSources?: string[]): Promise<void> {
+		// DOCS: YAML frontmatter fields are automatically added as field values.
+		// DOCS: This allows templates to reference metadata from template files, system blocks, and existing files.
+		// DOCS: YAML fields are added with 'no-prompt' directive to avoid re-prompting for existing data.
+		// DOCS: Priority order: Built-ins < YAML fields < field-info.value < Plugin built-ins < Overrides
+		// DOCS: All frontmatter fields are included except Obsidian internal fields (currently only 'position').
+		// DOCS: User-facing fields like 'tags', 'aliases', and 'cssclasses' are included as they represent user data.
+		// DOCS: Values are passed through with their native YAML types (string, number, array, etc.)
+		// TODO: Refactor to use valuesBySource pattern for explicit priority ordering instead of relying on call order
+
+		// Merge all YAML sources (from template state + additional sources like system blocks or existing files)
+		const allYamlSources = [...state.templatesYaml, ...(additionalYamlSources || [])];
+		if (allYamlSources.length === 0) return;
+
+		const mergedYaml = Z2KYamlDoc.mergeLastWins(allYamlSources);
+		if (!mergedYaml || mergedYaml.trim() === "") return;
+
+		const doc = Z2KYamlDoc.fromString(mergedYaml);
+		const yamlData = doc.doc.toJSON();
+		if (!yamlData || typeof yamlData !== 'object') return;
+
+		for (const [key, value] of Object.entries(yamlData)) {
+			// Skip Obsidian internal fields
+			if (key === 'position') continue;
+
+			// Skip if field-info already has a value property (higher priority)
+			if (state.fieldInfos[key]?.value !== undefined) continue;
+
+			// Create field info if doesn't exist (and add no-prompt directive)
+			if (!state.fieldInfos[key]) { state.fieldInfos[key] = { fieldName: key }; }
+			if (!state.fieldInfos[key].directives) { state.fieldInfos[key].directives = []; }
+			if (!state.fieldInfos[key].directives.includes('no-prompt')) {
+				state.fieldInfos[key].directives.push('no-prompt');
+			}
+
+			// Set resolved value (will be overridden by plugin built-ins or explicit overrides later)
+			// YAML values are compatible with VarValueType (string | number | boolean | array | null | undefined)
+			state.resolvedValues[key] = value as VarValueType;
+		}
+	}
+
 	updateYamlOnCreate(fm: string, templateName: string): string {
 		const doc = Z2KYamlDoc.fromString(fm);
 		doc.set("z2k_template_name", templateName);
