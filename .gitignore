@@ -27,6 +27,10 @@ data.json
 # Output Logs
 *.log
 
+# VS Code Workspace Settings
+*.code-workspace
+workspace.json
+docs/.obsidian/workspace.json
 
 # Testing vault
 testing-vault/.obsidian
