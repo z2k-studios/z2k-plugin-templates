@@ -1,6 +1,6 @@
 ---
-sidebar_position: 70
-folder_position: 70
+sidebar_position: 1
+sidebar_folder_position: 130
 ---
 
 Z2K Templates uses [Handlebars](https://handlebarsjs.com/guide/)  to control how fields are parsed and implemented. While not all Handlebar features are supported, the description below captures the core features that are used by Z2K. In addition, Z2K has implemented several extensions of the field specification to suit its own implementation.
@@ -25,17 +25,15 @@ Z2K supports the following features in Handlebars:
 There are a few subtle differences:
 1. Z2K has several additional advanced expressions (see [[#Z2K Advanced Expressions not in Handlebars]] below)
 2. Z2K does not assume the output is HTML, but rather Markdown. Therefore the default escaping handling is implemented differently. Similarly, Raw output is handled differently
-3. Z2K assumes that if a field is not specified with data, then the field remains in the resultant template file. See [[Finalizing and Miss Handling for Z2K Templates]] for more details. 
+3. Z2K assumes that if a field is not specified with data, then the field remains in the resultant template file. See [[Miss Handling]] for more details. 
 
 # Z2K Advanced Expressions not in Handlebars
 For quick reference, the following are augmentations to the Handlebars language that are only used in Z2K's implementation:
-1. Support for Obsidian date formatting 
-	- See [[Custom Field Formatting#Obsidian Date-Time Formatting]]
-2. Support for Z2K specific Built-In Helpers
+1. Support for Z2K specific Built-In Helpers
 	- See [[Built-In Helper Functions]]
-3. Support for User Prompting
+2. Support for User Prompting
 	- See [[Prompting]]
-4. Support for automated fields
-	- See [[Built-In Template Fields]]
-5. Support for required fields
+3. Support for automated fields
+	- See [[Built-In Fields]]
+4. Support for required fields
 	- See ==TBD==

@@ -36,6 +36,6 @@ And multilined. AfterRaw
 ```
 
 # Date and Time Fields: Default Format
-By default, all automated date fields will use the format "YYYY-MM-DD" for formatting, and automated time fields will use the format "HH:mm". You can change these formats using [[Custom Field Formatting#Obsidian Date-Time Formatting|Obsidian style formatting]] or through [[Built-In Helper Functions#format-date Helper|Z2K format-date Helper functions]].
+By default, all automated date fields will use the format "YYYY-MM-DD" for formatting, and automated time fields will use the format "HH:mm". You can change these formats through [[Built-In Helper Functions#format-date Helper|Z2K Templates' format-date Helper function]].
 
-Note: For date and time template fields being populated by the user's data (i.e. not one of the [[Built-In Template Fields|Automated Template Fields]]), it will simply use the format provided in the source material. 
+Note: For date and time template fields being populated by the user's data (i.e. not one of the [[Built-In Fields|Automated Template Fields]]), it will simply use the format provided in the source material. 

@@ -1,6 +1,6 @@
 ---
 sidebar_position: 20
-folder_position: 20
+sidebar_folder_position: 20
 title: Beginner Guides
 hide_title: true
 ---

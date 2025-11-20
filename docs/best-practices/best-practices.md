@@ -1,7 +1,9 @@
 ---
 sidebar_position: 1
-folder_position: 20
+sidebar_folder_position: 20
 title: Overview
+aliases:
+- Best Practices
 ---
 # Best Practices for Z2K Templates
 
@@ -13,6 +15,7 @@ Welcome to the **Best Practices** section for [[README|Z2K Templates]]. Included
 - How to Make Use of Hierarchical YAML text
 - How and When to Use Partials
 - Case sensitivity and field names
+- How to organize your field-infos in your template files
 - A Guide to Making Your Templates Modular
 	- Steps through how to use partials for creating common sections, discusses the benefits
 	- Also, step through how the modular sections can be stored at different hierarchical levels.

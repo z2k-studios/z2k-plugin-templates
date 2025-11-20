@@ -1,6 +1,13 @@
 ---
-sidebar_position: 32
+sidebar_position: 20
 ---
+
+# External Template Folders
+
+## Overview
+
+
+## Configuration Details
 When you have configured the plugin to use External Template Folders, you have requested the plugin to search for templates inside a dedicate separate folder within your vault. By default, an External Template Folder uses the root folder `/Templates`.
 
 For instance, here is how a vault might look for an external template folder configuration:
@@ -36,7 +43,7 @@ To alleviate this issue, External Template Folders allows you to use subfolders 
 
 
 > [!NOTE] Tree Traversal
-> When constructing a list of available Templates that a user can use, the plugin will use the matching folder tree location in the External Templates folder. *It will also traverse all parent folders, offering any files found in parent folders as well*. This allows you to create more complex context sensitive templates and [[Partial Templates]] in your vault. 
+> When constructing a list of available Templates that a user can use, the plugin will use the matching folder tree location in the External Templates folder. *It will also traverse all parent folders, offering any files found in parent folders as well*. This allows you to create more complex context sensitive templates and [[Block Templates]] in your vault. 
 
 ### Example External Template Hierarchy
 To demonstrate how External Template Hierarchies work, take our previous example vault folder structure:

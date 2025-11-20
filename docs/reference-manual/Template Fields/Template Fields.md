@@ -1,36 +1,24 @@
 ---
-folder_position: 20
-sidebar_position: 20
+sidebar_folder_position: 50
+sidebar_position: 1
+aliases:
+- Template Field
 ---
+# Template Fields
+Template Fields are the workhorses of Z2K Templates. They are placeholders, written with `{{curlybraces}}`, that are then filled in with additional data when the template file is instantiated into a working file in your vault. 
+## Contents
+1. [[Template Fields Overview]] -- An overview of fields inside Z2K Templates
+2. [[Template Field Flavors]] -- Types of fields (automated, user specified)
+3. [[Field Syntax]] - (`{{varName}}`, `::varName::`, `varName`, `var.Name`)
+4. [[Syntax Highlighting]]
+5. [[Field Types]]
+6. [[Naming Fields]] -- Describes how to name a field and the special symbols used for advanced expressions
+7. [[Field Data Sources]] -- Reviews all the ways data can be provided to fill in a template field
+8. [[Raw Vs. HTML Escaping]]
+9. [[Restricted Functionality Mode]] -- For advanced users, this page describes the limitations of using fields in complex expressions
 
-# Overview
-Template Fields are used inside [[Template Files]] as embedded placeholders for information that is to be added into the template. Template fields are denoted using curly braces, e.g. `{{field}}` where `field` is the name of some unit of information to be filled either by a user or some external program.
-
-
-> [!NOTE] Note: Template Variables
-> Obsidian uses the term "*[template variables](https://help.obsidian.md/Plugins/Templates)*" for what the Z2K Templates plugin calls "*Template Fields*". Beyond the expanded set of features provided by this plugin, they are conceptually the same.
-
-
-# Why use Templates and Template Fields
-The use of templates and template fields will result in a far more uniform and consistent documentation for the cards in your vault. Making your cards be more consistent in formatting serves several purposes:
-1. They quicken your ability to consume the content of a card because you will not visually need to re-learn how a card is organized with every card.
-2. They improve the ability for AI engines, if you use them, to pull content out of the card to help generate an AI agent.
-3. Consistency also enables search and replace scripts to find and update formatting and details as your digital self evolves.
-4. Consistency also enables advanced data tools such as the Obsidian Dataview plugin to access well-formed data across multiple cards.
-
-# Basic Structure of a Template Field
-These placeholders are designated through the use of curly braces (aka handlebars), such as `{{fieldname}}`. The fieldname will specify the name of the field (i.e. a word description of the the type of information to be provided). 
-
-For instance, consider an information card template to be used to collect quotes and ideas from a book. In the Overview section of the card template, you can imagine a section that includes:
-
-```
-- Title:: {{BookTitle}}
-- Author:: {{Author}}
-```
-
-With these fields specified, Z2K will prompt the user for these fields when creating a new card with this template. These will then be filled in the new card with the data provided by the user, replacing the field name (e.g. `{{BookTitle}}`) with the actual Book Title provided by the user. 
-
-# Further Details
-1. [[Template Field Types]] -- Types of fields (automated, user specified)
-2. [[Template Field Naming Conventions]] - Describes how to name a field and the special symbols used for advanced expressions
-
+## Additional Information
+The following pages are also relevant to understanding the use of [[Template Fields Overview|Template Fields]]:
+- [[Built-In Fields]] -- a list of Built-In Fields supported by the Z2K Templates plugin
+- [[field-info Helper]] --  how to control how fields work through the built-in `{{field-info}}` helper function
+- [[Lifecycle of a Template]] and [[Deferred Field Resolution]] -- discusses how fields are resolved into their resultant values

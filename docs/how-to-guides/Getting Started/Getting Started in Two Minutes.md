@@ -35,4 +35,6 @@ After that, Z2K Templates will then prompt you for the fields found in the templ
 When you are done entering the different fields, click the `Finalize` button which will then create a new card with all of the fields filled in with the provided data. 
 
 ## Where To Go From Here
-Done - you are up and running in two minutes. If you want to learn the next level of detail, continue on to [[Getting Started in Ten Minutes]]. After that, we suggest moving on to the [[how-to-guides|How To Guides]] to learn more advanced topics. 
+Done - you are up and running in two minutes. If you want to learn the next level of detail, continue on to [[Getting Started in Ten Minutes]]. 
+
+After that, we suggest moving on to the [[how-to-guides|How To Guides]] to learn more advanced topics. 
