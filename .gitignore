@@ -21,6 +21,11 @@ main.js
 # obsidian
 data.json
 
+# VS Code Workspace Settings
+*.code-workspace
+workspace.json
+docs/.obsidian/workspace.json
+
 # Exclude macOS Finder (System Explorer) View States
 .DS_Store
 
