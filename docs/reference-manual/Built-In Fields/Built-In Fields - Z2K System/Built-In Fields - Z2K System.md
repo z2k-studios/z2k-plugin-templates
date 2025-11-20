@@ -9,6 +9,8 @@ aliases:
 ---
 # Z2K System Built-In Fields
 
+==These will be moved to the Z2K Core plugin and then registered==
+
 You can also specify references to other well known cards in a Z2K Vault. 
 
 *Note: these cards have particular meaning within the [[Z2K System]], but may have some value when used outside of an installed Z2K System.*

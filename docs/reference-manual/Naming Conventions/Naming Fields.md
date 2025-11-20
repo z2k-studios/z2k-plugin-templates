@@ -3,6 +3,8 @@ sidebar_position: 40
 ---
 # Field Naming Conventions
 
+==Resolve this document with [[Naming Conventions]]==
+
 ## Requirements 
 When using Z2K [[Template Fields Overview|Template Fields]], there are some important considerations for how to name a field
 - **A Field Name must not contain any spaces**. Thus, `{{Book Title}}` will be interpreted as a field name `Title` with a [[Helper Functions Overview|Helper Function]] named `Book`, which will likely result in an error. Instead, the field should be `{{BookTitle}}`

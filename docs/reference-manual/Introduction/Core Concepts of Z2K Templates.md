@@ -61,7 +61,7 @@ Z2K Templates uses [[Handlebars Support|Handlebars.js]] as it's underlying synta
 - Read More: [[Built-In Fields]], [[Built-In Helper Functions]]
 - Example:
 ```md title="Partial Template - Status Update.md"
-Date::{{format-date date 'MMMM D, YYYY'}}
+Date::{{format-date 'MMMM D, YYYY' now}}
 Status:: {{#if Completed}}✅{{else}}❌{{/if}}
 ```
 

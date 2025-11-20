@@ -9,6 +9,11 @@ The `{{weekNum}}` built-in field returns the current year and week number, in th
 ## Default Format
 The default format for the `{{weekNum}}` built-in field is "`YYYY-[w]ww`". That is, if it is January 9th, 2026, then `{{weekNum}}` will output "`2026-w02`". You can override this formatting using Obsidian style date formatting or with the [[format-date]] Built-In Helper Function. 
 
+
+> [!TIP] Best to use the now built-in field for format-date
+> When using `format-date` to alter the appearance of `{{weekNum}}`, we recommend using the `{{now}}` built-in field instead. Please see the [[format-date#Using format-date with sourceTimes other than Now|comment in the format-date]] reference page.
+
+
 ## Example Output 
 Given a template snippet of:
 ```md title="weekNum Example Template.md"

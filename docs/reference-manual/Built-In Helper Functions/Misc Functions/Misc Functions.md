@@ -2,13 +2,20 @@
 sidebar_folder_position: 50
 ---
 
-Z2K Template Fields use predefined "built-in" helper functions to format the data being entered into a field.  The current list of predefined helper functions are:
+# Misc Helper Functions
 
-| Helper Function Name | Purpose                  | Parameters (beyond the field name) |
-| -------------------- | ------------------------ | ---------------------------------- |
-| `geocontext-basic`   | Formats a [[GeoContext]] | *(tbd)*                            |
-| `infinity-field`     |                          |                                    |
-|                      |                          |                                    |
+## Overview
+A handful of unclassifiable helper functions included with Z2K Templates. 
+
+==Todo: flesh out!==
+
+
+
+| Link    | Helper Function Name | Purpose                  |
+| ------- | -------------------- | ------------------------ |
+| *(tbd)* | `geocontext-basic`   | Formats a [[GeoContext]] |
+|         | `infinity-field`     |                          |
+|         |                      |                          |
 
 
 ## geocontext-basic Helper
@@ -18,5 +25,5 @@ Z2K Template Fields use predefined "built-in" helper functions to format the dat
 
 
 ==infinity-field helper==
-`{{infinity-field expression="- {{CurrentMood}} at {{format-date today "HH:MM"}}}}"}}`
+`{{infinity-field expression="- {{CurrentMood}} at {{format-date "HH:MM"}}}}"}}`
 

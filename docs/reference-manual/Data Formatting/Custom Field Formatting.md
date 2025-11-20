@@ -19,7 +19,7 @@ Note that this modifies the text outside/around the `{{field}}` tag in the templ
 
 %%This next section is frequently linked to - will need to adjust if it is moved to a different file - ==which is probably a good idea==%%
 ## Obsidian Date-Time Formatting
-Please note that the Z2K Templates Plugin does not support [Obsidian's date and time formatting rules](https://help.obsidian.md/plugins/templates#Template+variables), where a date field can be formatted by postfixing a colon ( `:`) and a string of [Moment.js format tokens](https://momentjs.com/docs/#/displaying/format/), for example `{{date:YYYY-MM-DD}}`. 
+Please note that the Z2K Templates Plugin does *not* support [Obsidian's date and time formatting rules](https://help.obsidian.md/plugins/templates#Template+variables), where a date field can be formatted by postfixing a colon ( `:`) and a string of [Moment.js format tokens](https://momentjs.com/docs/#/displaying/format/), for example `{{date:YYYY-MM-DD}}`. 
 
 This method of formatting date-time fields is NOT supported by Z2K Templates because it is not valid Handlebars.js syntax. Please use the [[format-date]] Helper function instead.
 

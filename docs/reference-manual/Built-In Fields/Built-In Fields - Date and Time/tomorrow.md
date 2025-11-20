@@ -7,24 +7,28 @@ sidebar_label: "{{tomorrow}}"
 The `{{tomorrow}}` built-in field returns the date for tomorrow.
 
 ## Default Format
-The default format for the `{{tomorrow}}` built-in field is `YYYY-MM-DD`. You can override that using Obsidian style date formatting or with the [[format-date]] Built-In Helper Function. 
+The default format for the `{{tomorrow}}` built-in field is `YYYY-MM-DD`. 
 
 ## Customizing the Format of tomorrow
-![[date#Customizing the Format of date]]
+To adjust the format of the built-in `{{tomorrow}}` field, please use the [[format-date]] built-in Helper function. 
+
+> [!TIP] Best to use the now built-in field for format-date
+> When using `format-date` to alter the appearance of `{{tomorrow}}`, we recommend using the `{{now}}` built-in field instead. Please see the [[format-date#Using format-date with sourceTimes other than Now|comment in the format-date]] reference page.
+
 
 ## Example Output 
 Given a template snippet of:
-```md title="Today Example Template.md"
+```md title="Tomorrow Example Template.md"
 - Tomorrow's Date: {{tomorrow}}   {{~! This uses the default formatting. }}
-- Tomorrow's Month: {{tomorrow:YYYY-MM}}  {{~! Obsidian Style formatting. }}
-- Tomorrow's Year: {{format-date tomorrow "YYYY"}} {{~! Handlebars style. }}
+- Tomorrow's Month: {{format-date "MMMM" tomorrow}}  {{~! Works, but with truncation for other format strings }}
+- Tomorrow's Month - Preferred: {{format-date "MMMM" (date-add 1 now)}} {{~! Unambigious method}} 
 - Link to Tomorrow's Daily Note: {{wikilink tomorrow "tomorrow"}}
 ```
 
 If today was 2026-07-04, this would yield the following result:
-```md title="Today Example Instantiated File.md"
+```md title="Tomorrow Example Instantiated File.md"
 - Tomorrow's Date: 2026-07-05
-- Tomorrow's Month: 2026-07
-- Tomorrow's Year: 2026
+- Tomorrow's Month: July
+- Tomorrow's Month - Preferred: July
 - Link to Tomorrow's Daily Note: [[2026-07-05|tomorrow]]
 ```
