@@ -1,6 +1,13 @@
 ---
-sidebar_position: 32
+sidebar_position: 20
 ---
+
+# External Template Folders
+
+## Overview
+
+
+## Configuration Details
 When you have configured the plugin to use External Template Folders, you have requested the plugin to search for templates inside a dedicate separate folder within your vault. By default, an External Template Folder uses the root folder `/Templates`.
 
 For instance, here is how a vault might look for an external template folder configuration:

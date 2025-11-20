@@ -1,6 +1,6 @@
 ---
 sidebar_position: 1
-sidebar_folder_position: 130
+sidebar_folder_position: 140
 aliases:
 - Partials
 - Partial Templates

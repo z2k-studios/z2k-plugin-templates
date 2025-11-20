@@ -12,7 +12,7 @@ aliases:
 # field-info value
 The optional `value` parameter in the [[reference-manual/field-info Helper/field-info Helper]] allows you to set a value to a field within the template code. This essentially bypasses the prompting of the user for this field. 
 
-This is an advanced feature that is particularly useful for `{{fields}}` in [[Hierarchical Template Folders]] or with [[Custom Helper Functions]].
+This is an advanced feature that is particularly useful for `{{fields}}` in [[Template Folder Hierarchies]] or with [[Custom Helper Functions]].
 
 ## Syntax
 The `value` parameter must be prefaced with the `value=` keyword assignment, i.e. it is a [[field-info Syntax#Named Parameters|Named Parameter]]. For example:

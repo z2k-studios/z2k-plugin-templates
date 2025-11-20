@@ -1,6 +1,11 @@
 ---
-sidebar_position: 112
+sidebar_position: 10
 ---
+# Using Fields Inside YAML Metadata
+
+## Overview
+A powerful feature of the Z2K Templates plugin is the use of Z2K Template fields directly inside your YAML text to control metadata associated with your Obsidian Notes.
+
 Z2K Fields can not only be used to enter data into a card's body text, they can also be used to fill out YAML fields. 
 
 # Examples

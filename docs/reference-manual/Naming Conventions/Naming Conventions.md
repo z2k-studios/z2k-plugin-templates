@@ -1,8 +1,9 @@
 ---
 sidebar_position: 1
-sidebar_folder_position: 65
+sidebar_folder_position: 70
 ---
 
+# Naming Conventions
 This [[reference-manual]] section introduces how the Z2K Templates plugin approaches the naming of fields, helpers and files. 
 
 ## Contents

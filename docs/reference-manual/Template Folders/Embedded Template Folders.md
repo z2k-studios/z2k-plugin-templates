@@ -1,6 +1,13 @@
 ---
-sidebar_position: 34
+sidebar_position: 30
 ---
+
+# Embedded Template Folders
+
+## Overview
+
+
+## Configuration Details
 If you elect to use Embedded Template Folders, then the plugin will search for Templates to use by looking inside the current folder for a Templates subfolder. This method of storing Template Files is called "embedded" because the template folders are store throughout your system on a folder by folder basis. 
 
 For instance, here is how a vault might look for an embedded template folder configuration:

@@ -18,13 +18,13 @@ aliases:
 ### Getting Started
 
 1. [[reference-manual/Introduction/Introduction]] - An overview of the Z2K Templates Plugin  
-	- [[What is Z2K Templates|What is Z2K Templates?]] — A quick introduction using an actual template file 
+	- [[What is Z2K Templates|What is Z2K Templates?]] — A quick introduction to the Z2K Templates Plugin
 	- [[Sample Template]] - Learn by example with a sample template file
-	- [[Core Features of Z2K Templates]] - A brief list of the core features of the plugin
-	- [[Core Concepts of Z2K Templates]] — Introduces the core concepts to know when using the plugin
-	- [[Why Use Templates|Why Use Templates?]] — Steps through why we should use Templates in the first place
+	- [[Core Features of Z2K Templates|Core Features]] - A brief list of the core features of the plugin
+	- [[Core Concepts of Z2K Templates|Core Concepts]] — Introduces the core concepts to know when using the plugin
+	- [[Why Use Templates|Ten Reasons to Use Templates]] — Steps through why we should use Templates in the first place
 	- [[Why Use Z2K Templates|Why Use Z2K Templates?]] — Compares Z2K Templates with alternative approaches
-	- [[Comparison with Templater Plugin|What about Templater?]] - A detailed comparison with the popular Templater Plugin.
+	- [[Comparison with Templater Plugin]] - A detailed comparison with the popular Templater Plugin.
 	- [[The Z2K System]] — Shows how the plugin fits into the greater Z2K framework.  
 
 
@@ -36,99 +36,104 @@ aliases:
 ### Basics
 
 3. [[Template Files]] - The anatomy and lifecycle of a template file  
-    - [[Template File Structure]] - YAML Frontmatter, Body Content  
-    - [[Minimum Requirements]] 
-    - [[Lifecycle of a Template]]  
-        - Parse Phase  
-        - Resolve Variables (from JSON, built-ins, defaults, user input)  
-        - Render Phase (YAML + Body + Title)
+	- [[What is a Template File]]
+	- [[Template File Structure]] - YAML Frontmatter, Body Content
+	- [[Minimum Requirements]]
+	- [[Lifecycle of a Template]]
+		- Parse Phase  
+		- Resolve Variables (from JSON, built-ins, defaults, user input)  
+		- Render Phase (YAML + Body + Title)
+	- [[Deferred Field Resolution]]
 	- [[Finalizing a File]]
-	- [[Miss Handling]]
-    - [[Obsidian Commands]]  
+	- [[Obsidian Commands]]
 
 4. [[Template Folders]] - Where template files are stored in your vault  
-    - [[Hierarchical Template Folders]]  
+	- [[Template Folders Configurations]]
+		- [[Embedded Template Folders]]
+		- [[External Template Folders]]
+	- [[Template Folder Hierarchies]]
+	- [[Hiding your Templates and Template Folders from Obsidian]]
 
 5. [[Template Fields]] - How to use template fields  
-    - [[Fields Overview]]  
-    - [[Field Syntax]] (`{{varName}}`, `::varName::`, pipes, directives, functions)  
-    - [[Syntax Highlighting]]
-    - [[Field Types]]  
-        - Text & TitleText  
-        - Number  
-        - Date (with formats)  
-        - Boolean  
-        - Single Select (with options)  
-        - Multi Select (with options)  
-    - [[Naming Fields]]  
-    - [[Path Expressions]] (`{{person.lastname}}`)  
-    - [[Raw vs HTML Escaping]]  
+	- [[Template Fields Overview]] -- An overview of fields inside Z2K Templates
+	- [[Template Field Flavors]] -- Types of fields (automated, user specified)
+	- [[Field Syntax]] - (`{{varName}}`, `::varName::`, `varName`, `var.Name`)
+	- [[Syntax Highlighting]]
+	- [[Field Types]]
+	- [[Naming Fields]] -- Describes how to name a field and the special symbols used for advanced expressions
+	- [[Field Data Sources]] -- Reviews all the ways data can be provided to fill in a template field
+	- [[Raw Vs. HTML Escaping]]
+	- [[Restricted Functionality Mode]] -- For advanced users, this page describes the limitations of using fields in complex expressions
 
 6. [[Built-In Fields]] - Built-in fields supported by the Z2K Templates
-    - [[Built-In Fields - Date and Time|Date and Time Built-Ins]]
-    - [[Built-In Fields - File Data|File Data Built-Ins]]
-    - [[Built-In Fields - Z2K System|Z2K Card References Built-Ins]]
+	- [[Built-In Fields - Date and Time|Date and Time]] - built-in date and time fields
+	- [[Built-In Fields - File Data|File Data]] - built-in fields associated with a card
+	- [[Built-In Fields - Template Data|Template Data]] - built-in fields about the template used to create files
+	- [[Built-In Fields - Misc|Misc Built-In Fields]] - misc built-in fields
+	- [[Built-In Fields - Z2K System|Z2K System]] - built-in links to other cards in the Z2K System compliant vault.
+	- [[Modifying Built-In Field Behaviors]] - using `{{`[[reference-manual/field-info Helper/field-info Helper|field-info]]`}}` to modify how built-in fields behave
 
 7. [[reference-manual/Naming Conventions/Naming Conventions]] - Conventions used by Z2K Templates 
+	- [[Naming Overview]] - an overview of the naming conventions
+	- [[Naming Fields]] - naming conventions for built-in and user-defined Fields
+	- [[Naming Helpers]] - naming conventions for built-in and user-defined Helper Functions
+	- [[Naming Templates]] - naming conventions for template files
+	- [[Naming Template Folders]] - naming conventions for template folders
 
 8. [[Data Formatting]] - How data is formatted during insertion into template fields  
-    - [[Default Data Formatting]]  
-    - [[Custom Field Formatting]]  
-    - [[Obsidian Style Date Formatting]]  
+	- [[Default Data Formatting|Default Field Formatting Rules]]
+	- [[Custom Field Formatting|Custom Field Formatting Rules]]
+	- [[Date Formatting Rules]]
+	- [[String Formatting Rules]]
+	- [[Prompting|Template Fields and Prompting Commands]]
+
 
 9. [[Prompting]] - How to customize the prompting for data for a field  
-    - [[General Prompting Format]]  
-    - [[Prompting Data Types]]  
-    - [[Built-in Helpers for Prompting]]  
-    - [[Miss Handling]] (`clear` vs `preserve`)  
-    - [[Miss Handling]]  
+	- [[Prompting Interface]]
+	- [[Prompting Interface per Type]]
+	- [[Prompting Defaults]]
+	- [[Prompt Touching]]
+	- [[Miss Handling]]
+	- [[Built-in Helpers for Prompting]]
 
 ### Intermediate
 
 10. [[Helper Functions]] - Introduction to using helper functions inside templates  
-    - [[Helper Functions Overview]]  
-    - [[Silent Helper Functions]]
-    - [[Custom Helper Functions]]  
-    - [[Handlebars Built-In Functions]]  
-        - [[Lookup Function]] (`{{lookup }}`)  
-
+	- [[Helper Functions Overview]] - General guideline to Helper Functions
+	- [[Using Fields in Parameters]] - How to use `{{fields}}` inside Helper Functions
+	- [[Using Nested Helper Functions]] - How to nest Helper Functions inside other Helper Functions
+	- [[Silent Helper Functions]] - A special class of Helper Functions that are silent
+	- [[User Defined Helper Functions]] - How to build your own Helper functions
+	- [[Built-In Helper Functions]] - predefined Helper functions to help with common tasks
+	
 11. [[Built-In Helper Functions]] - A list of built-in Helper Functions and how to use them  
-    - [[Formatting Functions]]  
-        - String Helpers  
-        - `format-string`  
-        - `format-string-to-upper`  
-        - `format-string-to-lower`  
-        - `format-string-spacify`  
-        - `format-string-trim`  
-        - `format-string-raw`  
-        - Date Helpers  
-        - `format-date`  
-    - [[Linking Functions]]  
-        - `wikilink`  
-        - `wikilink-named`  
-        - `url`  
-        - `url-named`
-        - `google`
-        - `chatGPT`
-        - `z2k-preserve-raw`  
-
+	- [[Field Info Functions]] - Helpers for specifying information about fields
+	- [[Formatting Functions]] - Helpers for formatting output
+	- [[Linking Functions]] - Helpers for building links
+	- [[Math Functions]] - Helpers for doing basic math or manipulations of fields
+	- [[Misc Functions]] - Assortment of misc helpers
+	- [[Handlebars Built-In Functions]] - Helpers that are provided by the underlying Handlebars.js library
+	
 12. [[reference-manual/field-info Helper/field-info Helper]]
 	- [[field-info Cheat Sheet|Cheat Sheet]] - a brief one page summary of the `{{field-info}}` helper function
 	- [[field-info Syntax|Syntax]] - syntax of the underlying helper function
 	- [[field-info Output|Output]] - what does the `{{field-info}}` helper output?
 	- [[field-info Parameters|Parameters]] - steps through `{{field-info}}` (and `{{field-output}}`) parameters
-		- [[field-info type|type]] Parameter
-		- [[field-info prompt|prompt]] Parameter
-		- [[field-info default|default]] Parameter
-		- [[field-info miss|miss]] Parameter
-		- [[field-info value|value]] Parameter
-		- [[field-info directives|directives]] Parameter
-	- [[field-info Usage Tips|Usage Tips]] - tips to understanding how to use `{{field-info}}`
-	- [[field-info Examples|Examples]] - presents a variety of `{{field-info}}` related examples
+		- [[field-info prompt|prompt]] Parameter - the prompt message displayed to the user
+		- [[field-info default|default]] Parameter - the default value of the field
+		- [[field-info type|type]] Parameter - the type of data associated with the field
+		- [[field-info miss|miss]] Parameter - the value assigned if the user never provides a value to a field
+		- [[field-info directives|directives]] Parameter - advanced control of prompting
+		- [[field-info opts|opts]] Parameter - possible field values for singleSelect and multiSelect fields
+		- [[field-info value|value]] Parameter - manually assign values to a field
+	- [[field-info Usage Tips|Usage Tips]] - tips to understanding how to use `{{field-info}}` & best practices
+	- [[field-info Examples|Examples]] - presents a number of example templates that make use of `{{field-info}}`
 	- [[field-info Variations]] - similar functions within the same family of helper functions
 		- [[field-output Helper Variation]] - sister function that outputs the field value 
 		- [[fi Helper Variation]] - abbreviated version of `{{field-info}}`
 		- [[fo Helper Variation]] - abbreviated version of `{{field-output}}`
+	- [[Modifying Built-In Field Behaviors|field-info and Built-In Fields]] - how `{{field-info}}` works with [[Built-In Fields]]
+	- [[field-info and Block Templates]] - steps through how to use `{{field-info}}` with block templates
 		
 13. [[Handlebars Support]] - How Z2K's field language is similar to and differs from the Handlebars.js library  
     - [[Template Comments]] (`{{! comment }}`)  
@@ -151,24 +156,29 @@ aliases:
     - [[Block Template Basics]]  
     - [[Block Template Parameters]]  
 
-15. [[System Block Templates]]
-	- Intro to System Block Templates
-	- Using System Block Templates and field-info
-
-16. [[Settings Page]] - Details on the Settings Page for the Z2K Templates Plugin  
-    - TBD  
-
-
-
+15. [[Settings Page]] - Details on the Settings Page for the Z2K Templates Plugin  
+	- [[General Settings]]
+	- [[Quick Command Settings]]
+	- [[Code Block Settings]]
+	- [[Global Block Settings]]
+	
 ### Advanced 
 
+16. [[System Block Templates]]
+	- [[Intro to System Blocks]]
+	- [[Using System Blocks and YAML]]
+	- [[Using System Blocks and field-info]]
+	-  [[Using System Blocks and Markdown]]
+
+
 17. [[Z2K Templates and YAML|YAML Integration]] 
-    - [[Using Fields inside YAML Text]]  
-        - How To Guide: [[How to Use Z2K Fields Inside YAML Metadata]]  
-    - [[Using YAML fields inside Templates]]  
-    - [[YAML and Block Templates]]  
-    - [[Merging Multiple YAML Sources]]  
-    - [[YAML Configuration Fields|YAML Fields the Z2K Template Plugin Uses]]  
+	- [[Using Fields Inside YAML Metadata]] 
+		- How To Guide: [[How to Use Z2K Fields Inside YAML Metadata]]
+	- [[Using YAML Metadata as Fields]]
+	- [[YAML and Block Templates]]
+	- [[Merging Multiple YAML Sources]]
+	- [[Using System Blocks for Scoped YAML Fields]]
+	- [[YAML Configuration Fields|YAML Fields the Z2K Template Plugin Uses]]
 	    - z2k_template_type
 	    - z2k_template_name
 	    - z2k_template_title: (still used?)
@@ -184,12 +194,12 @@ aliases:
 	
 19. [[Z2K System Features|Z2K System Features]] - Additional features specific to the larger Z2K System  
 
-20. [[Error Handling]]  
+20. [[Debug and Error Handling]]  
 
 
 ### Misc
 
-20. [[Appendix]]  
+21. [[Appendix]]  
     - Full Variable & Helper Reference (alphabetical)  
     - [[Glossary]]
     - [[Roadmap and Extensibility]]  

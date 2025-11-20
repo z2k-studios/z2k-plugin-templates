@@ -1,6 +1,6 @@
 ---
 sidebar_position: 1
-sidebar_folder_position: 110
+sidebar_folder_position: 120
 doc_state: initial_ai_draft
 title: field-info Helper Function
 sidebar_label: field-info Helper

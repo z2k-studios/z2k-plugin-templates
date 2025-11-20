@@ -18,4 +18,5 @@ The following classes of Helper Functions are included with the Z2K Templates pl
 - [[Linking Functions]] - Helpers for building links
 - [[Math Functions]] - Helpers for doing basic math or manipulations of fields
 - [[Misc Functions]] - Assortment of misc helpers
+- [[Handlebars Built-In Functions]] - Helpers that are provided by the underlying Handlebars.js library
 

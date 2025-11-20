@@ -160,7 +160,7 @@ The list of templates you can choose from can be context-sensitive by determinin
 
 Additionally, by using the [[Intro to System Blocks|System YAML feature]], you can attach YAML entries at each folder level in your vault. When a new file is created in that path, these YAML entries automatically merge into the file — providing inherited context and consistent metadata throughout your hierarchy.
 
-- Read More: [[Hierarchical Template Folders]], [[Intro to System Blocks]]
+- Read More: [[Template Folder Hierarchies]], [[Intro to System Blocks]]
 
 ---
 

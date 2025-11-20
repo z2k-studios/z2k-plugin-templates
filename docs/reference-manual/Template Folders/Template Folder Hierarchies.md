@@ -1,8 +1,8 @@
 ---
-sidebar_position: 36
+sidebar_position: 40
 ---
 
-Describe how Hierarchical Template Folders work. 
+==Describe how Hierarchical Template Folders work. ==
 
 explain flat template organization first. Everything is globally known. 
 

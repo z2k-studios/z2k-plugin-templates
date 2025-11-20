@@ -32,7 +32,7 @@ The command component for a Quick Command presents the following options in a dr
 
 ##### Create File from Template
 The "Create from Template" command will create a new file from a specific template file. The [[#Context]] specifies the path to the source template file to use. The location of the new file created from that template depends:
-- If you are using [[Hierarchical Template Folders]], then the plugin will intelligently create the new file inside the folder at the equivalent hierarchical depth as the template. 
+- If you are using [[Template Folder Hierarchies]], then the plugin will intelligently create the new file inside the folder at the equivalent hierarchical depth as the template. 
 - If you are not using hierarchical template folders, the new file will be created in the [[General Settings#Templates Root Folder|Templates Root Folder]]. 
 - If the command is issued by right clicking on a folder in the file list, then it will override the destination folder to be the one specified. 
 
@@ -40,13 +40,13 @@ The "Create from Template" command will create a new file from a specific templa
 > Note: the implementation should always assume hierarchical, and if it is flat, then it will automatically insert into the root folder visible to templates ([[General Settings#Templates Root Folder|Templates Root Folder]].)
 
 #####  Create File at Folder
-The "Create File at Folder" command will create a new file inside a specified folder (specified in the Context field). It then will prompt which template to use given that specific location. If you are using [[Hierarchical Template Folders]], then the list of available templates will be context sensitive to that specific folder. The new file will be created in that specific folder. 
+The "Create File at Folder" command will create a new file inside a specified folder (specified in the Context field). It then will prompt which template to use given that specific location. If you are using [[Template Folder Hierarchies]], then the list of available templates will be context sensitive to that specific folder. The new file will be created in that specific folder. 
 
 #####  Insert Partial
 The "Insert Partial" command will insert a specific [[Block Templates|Partial Template]] into the current document at the cursor location. The Context field specifies the partial template to use.
 
 #####  Insert Partial From Folder
-The "Insert Partial From Folder" command will allow you to chose a partial template from a template folder (specified in the Context field). This is of particular use with [[Hierarchical Template Folders]], in which case you would like to group a number of partials together and have the user choose from a subset of them.
+The "Insert Partial From Folder" command will allow you to chose a partial template from a template folder (specified in the Context field). This is of particular use with [[Template Folder Hierarchies]], in which case you would like to group a number of partials together and have the user choose from a subset of them.
 
 ---
 #### Context

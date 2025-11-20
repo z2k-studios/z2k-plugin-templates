@@ -102,7 +102,7 @@ The `"no-prompt"` directive instructs the [[Prompting Interface]] to skip presen
 
 **When this is useful**: Suppressing prompting can be useful in these types of situations:
 - When fields are being filled in through some other means, like through separate automated [[URI Calls]] or [[Command Lists]].
-- Sometimes it is helpful to use [[System Blocks]] to define a field and its value, so that any templates lower in the [[Hierarchical Template Folders]] can use the values as if they were user-entered fields. In this case, you will want to suppress prompting for them.
+- Sometimes it is helpful to use [[System Blocks]] to define a field and its value, so that any templates lower in the [[Template Folder Hierarchies]] can use the values as if they were user-entered fields. In this case, you will want to suppress prompting for them.
 
 ## yes-prompt
 The `"yes-prompt"` directive instructs the [[Prompting Interface]] to present the field in the user interface. This is the default mode, and as such, this directive is rarely used. 
