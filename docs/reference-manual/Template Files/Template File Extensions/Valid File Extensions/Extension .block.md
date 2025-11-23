@@ -1,6 +1,5 @@
 ---
-sidebar_folder_position: 10
-sidebar_position: 1
+sidebar_position: 30
 sidebar_class_name: z2k-code
 doc_state: initial_ai_draft
 aliases:
@@ -9,7 +8,7 @@ aliases:
 # The .block File Extension
 
 ## Overview
-[[Types of Template Files#Block Templates|Block Templates]] can be stored with the `.template` extension. 
+[[Types of Template Files#Block Templates|Block Templates]] can be stored with the `.block` extension. 
 
 Conceptually:
 - `.block` files correspond to `z2k_template_type: block-template`.

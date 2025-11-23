@@ -74,8 +74,6 @@ A template with no YAML and no fields is valid but not useful.
 ### Minimal Template
 
 ```md
----
----
 Hello world
 ```
 

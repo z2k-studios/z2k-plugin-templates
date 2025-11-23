@@ -1,6 +1,5 @@
 ---
-sidebar_folder_position: 10
-sidebar_position: 1
+sidebar_position: 20
 sidebar_class_name: z2k-code
 doc_state: initial_ai_draft
 aliases:

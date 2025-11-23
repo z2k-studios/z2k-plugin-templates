@@ -106,3 +106,5 @@ You adopt a new structure for your person cards and need to update all related t
 > - Confirm whether the UI exposes this as a single toggle command or as two separate commands (“visible” and “hidden”) and align the wording of this page with the actual command names.
 > - The exact mechanism used to hide/show `.template` and `.block` files (e.g., view registration, filter hooks) should be verified against Obsidian’s current API; changes there may affect what “hidden” truly means.
 > - If future versions add support for additional template-specific extensions, this page will need to be updated to describe their visibility behavior as well.
+> - If you later decide to register `.template` and `.block` as markdown views again (via `viewRegistry.registerExtensions`), revisit the “How Obsidian Treats Template Extensions” section – the hiding behavior will change significantly once those extensions are treated as full markdown notes again.
+
