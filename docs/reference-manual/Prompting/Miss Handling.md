@@ -17,7 +17,7 @@ If a field specifies a [[Prompting#^DefaultAnswer|Default Answer]], then that is
 
 # Override - Default Miss Handling 
 
-See [[YAML Configuration Fields]]
+See [[YAML Configuration Properties]]
 
 If a template file contains in its YAML code includes the key `z2k_template_default_miss_handling`, it will use the method specified in the key's value:
 
@@ -25,7 +25,7 @@ If a template file contains in its YAML code includes the key `z2k_template_defa
 | ------------------------------------ | ---------- | ------------------------------------------------------------------------------------------------ |
 | `z2k_template_default_miss_handling` | `preserve` | (default) If a miss occurs for a field, the field will be preserved as is in the resultant file. |
 | `z2k_template_default_miss_handling` | `clear`    | If a miss occurs for a field, it will clear the field from the resultant file.                   |
-See [[YAML Configuration Fields]] for more details.
+See [[YAML Configuration Properties]] for more details.
 
 # Override - clear and preserve Helper functions
 If a field uses the [[Built-In Helper Functions|built-in helper functions]] `clear` or `preserve`, it will override the default handling for that particular field, allowing for fine grain control of miss handling. 

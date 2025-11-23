@@ -62,7 +62,7 @@ You can use the `miss` value as a pre-filled quick response to a field prompt. W
 ![[field-info default#default vs. miss]]
 
 ## Finalize Directives and YAML Configuration Fields
-The [[reference-manual/field-info Helper/field-info Helper|field-info]] related helper functions also support the `directives` parameter (see [[field-info directives|directives]]). There are several "finalize" directives that also influence the processing of a missed field. Also, a template or block template can specify a default miss handling for all fields in a file - see [[YAML Configuration Fields]]. 
+The [[reference-manual/field-info Helper/field-info Helper|field-info]] related helper functions also support the `directives` parameter (see [[field-info directives|directives]]). There are several "finalize" directives that also influence the processing of a missed field. Also, a template or block template can specify a default miss handling for all fields in a file - see [[YAML Configuration Properties]]. 
 
 For the most complete and consolidated understanding of how to miss handling is performed, please see the documentation page [[Miss Handling]].
 

@@ -2,8 +2,6 @@
 sidebar_position: 10
 sidebar_folder_position: 40
 aliases:
-- Template Folders
-- Template Folder
 ---
 # Template Folders Configurations
 Template Folders are the folders within your vault that hold your Z2K Templates. 

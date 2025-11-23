@@ -11,6 +11,98 @@ The Z2K Template Plugin supports the concept of "*Partial Templates*", or also j
 
 Partials are extremely useful for enforcing consistent naming and formatting of text blocks across multiple files.
 
+
+
+---
+# Block Templates (Partials)
+
+## What Is a Block Template?
+
+A **Block Template** is a reusable fragment of markdown. It is not used to create a new file. Instead it is:
+
+- Inserted into an existing document
+- Turned into body content during Named Template rendering
+- Used to build modular, composable templates
+
+Block Templates are typically small, structured units such as:
+
+- A checklist block
+- A project metadata block
+- A quote or highlight block
+- A standard header/footer snippet
+
+### Example Block Template
+
+```md
+## Task
+- [ ] {{taskName}}
+- Priority: {{priority}}
+```
+
+Inserted via:
+
+- *Insert block template*
+- *Insert block template using selection*
+- Or inside another template:
+
+```
+{{> tasks/task-block }}
+```
+
+---
+
+## How the Plugin Identifies a Block Template
+
+Z2K determines a block template using:
+
+### 1. **YAML override**
+
+```yaml
+z2k_template_type: partial
+```
+
+This is the highest-precedence signal.
+
+### 2. **Convert-to-block command**
+
+When you run:
+
+- *Convert file to block template*
+
+…the plugin writes the appropriate YAML override.
+
+### 3. **Folder placement (experimental but supported)**
+
+A file located in a card type's `/Partials` or `/Blocks` subfolder can optionally be treated as a partial depending on naming conventions. This behavior is less strict than named template resolution and may evolve further.
+
+### 4. **Everything else is not a block template**
+
+If none of the above apply, it’s a normal file (or possibly a Named Template if other rules match).
+
+---
+
+# System Block Templates
+
+**System Block Templates** are injected globally into templates before rendering.
+
+Examples include:
+
+- Vault-wide header/footer blocks
+- Global metadata such as creator info or timestamps
+- Standard tags
+- Required fields
+
+They behave like invisible partials:
+
+- They merge **before** template YAML
+- Their `field-info` definitions can be overridden by template-level fields
+- Their content is prepended to template bodies
+
+This allows an entire vault to maintain consistent structure without repeating boilerplate.
+
+---
+
+
 # Block Template Naming Conventions
 Block Templates' filenames must be prefixed with the text "`Partial - `". 
 Note: this prefix can be changed inside the plugin's setting page.
@@ -91,3 +183,40 @@ Relative paths like ../partial are not supported at this time. Please submit a f
 Can you make a partial that is based on a field (eg use a multiselect to allow the user to choose a partial to import)
 
 `{{< (random "Foo.md" "Bar.md")}}`
+
+
+
+# Inserting Block Templates
+Peek under the covers:
+  
+
+So when you run **Insert block template** inside Some/CardType/Note.md:
+
+1. The plugin takes the note’s folder Some/CardType as the **starting card type folder**.
+    
+2. It gathers **all partials** under the Templates Root Folder.
+    
+3. It filters them to **partials associated with**:
+    
+    - Some/CardType (directly or its Templates subfolder),
+        
+    - then Some/ (directly or its Templates),
+        
+    - then the Templates Root itself (and its Templates), stopping there.
+        
+    
+4. It sorts that combined list alphabetically by full path.
+    
+5. It hands that sorted list to the **TemplateSelectionModal**, which is the picker you see.
+    
+
+  
+
+Result:
+
+- You see **all block templates relevant to the current note’s “card type”** and its ancestor card types.
+    
+- You do **not** see every partial in the vault – only ones under the templates root and structurally associated with your current folder via direct membership or its Templates subfolder.
+    
+
+  

@@ -101,7 +101,7 @@ The two parameters `default` and `miss` are similar, but logically separate:
 Separating the `default` value from the `miss` value allows you to make much more useful and streamlined prompting scenarios, including special handling for "unspecified" data. For more information, please see [[Miss Handling]].
 
 > [!TIP] Still think `default` and `miss` are the same?
-> If you still think that these two values should be in fact the same, then you are likely envisioning the [[#Use 1 Prefilled Response]] use case. If this is the way in which the majority of your templates are written in your vault, then you may wish to consider placing a default finalize [[YAML Configuration Fields]] in your [[Intro to System Blocks|System Blocks]] and setting it to be `finalize-default`. 
+> If you still think that these two values should be in fact the same, then you are likely envisioning the [[#Use 1 Prefilled Response]] use case. If this is the way in which the majority of your templates are written in your vault, then you may wish to consider placing a default finalize [[YAML Configuration Properties]] in your [[Intro to System Blocks|System Blocks]] and setting it to be `finalize-default`. 
 > 
 > I.e. in your root level `Templates` folder, create/modify your `.system-block.md` file and insert into the YAML Frontmatter:
 > ```yaml title=".system-block.md"

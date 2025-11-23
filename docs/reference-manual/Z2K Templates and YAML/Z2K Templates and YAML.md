@@ -18,5 +18,5 @@ Please see the following for more details:
 - [[YAML and Block Templates]]
 - [[Merging Multiple YAML Sources]]
 - [[Using System Blocks for Scoped YAML Fields]]
-- [[YAML Configuration Fields|YAML Fields the Z2K Template Plugin Uses]]
+- [[YAML Configuration Properties|YAML Fields the Z2K Template Plugin Uses]]
 

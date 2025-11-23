@@ -28,7 +28,7 @@ This simple example handles automatic naming of a file based on fields located i
 **Behavior Breakdown**:
 - The template has fields for the person First and Last Names. These will just use default prompting interfaces.
 - The template creates a Header that inserts a Full Name. By default this will combine the First and Last Names, but can be override
-- Then lastly, the template sets the default name for the resultant file to be the Full Name (which in turn is built on the First and Last Names unless otherwise overriden). This uses `{{field-info}}` on a [[Built-In Fields|Built-In Field]] named [[Built-In Fields - File Title Variants|fileTitle]].
+- Then lastly, the template sets the default name for the resultant file to be the Full Name (which in turn is built on the First and Last Names unless otherwise overriden). This uses `{{field-info}}` on a [[Built-In Fields|Built-In Field]] named [[fileTitle and Variations|fileTitle]].
 - ==Does the fileTitle built-in Field need an extension?==
 
 

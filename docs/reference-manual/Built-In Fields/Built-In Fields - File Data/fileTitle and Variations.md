@@ -7,6 +7,10 @@ aliases:
 - noteTitle
 - cardTitle
 ---
+
+# fileTitle and its Variations
+The [[Built-In Fields|Built-In Field]] `{{fileTitle}}` and its [[#File Title Field Variations|variations]] are used to render the name of the file being created from a template.
+
 ## File Title Field Variations
 
 | Field           | Value to be inserted   | Example                          |
@@ -32,6 +36,7 @@ What about Obsidian's `{{title}}` field?
 
 ###  What is a Card?
 - The [[The Z2K System|Z2K System]] calls a file a "card" with the assumption that a file in the Z2K System can contain information that is not typically referred to as a "*note*". Z2K embraces the idea that each file in the system is merely a "container", and uses the word "*card*" - like the index card of an old school zettelkasten - to reflect that.
+- ==move this to a dedicated page - as we will have a discussion of the nomenclature also for menu commands==
 
 ### File Extension
 When you assign a value to the `{{fileTitle}}` built-in, you do not need to specify a file extension (e.g. "`.md`"). The plugin will automatically add an extension to the file for you. 
@@ -43,4 +48,10 @@ Even though `{{fileTitle}}` is a [[Built-In Fields|Built-In Field]], you can sti
 > The most common use of the `{{fileTitle}}` built-in field is to use it within a [[field-info Helper|field-info helper function]]. With `{{field-info}}`, you can specify the prompting and naming of any resultant file created from the template. 
 > 
 > Using these two built-ins together is extremely useful, and as such there is a dedicated page just for discussing what you can do with them: see [[Modifying Built-In Field Behaviors#fileTitle and field-info|fileTitle and field-info]].
+
+
+## See Also
+- [[z2k_template_default_title]]
+
+
 

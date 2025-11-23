@@ -57,7 +57,7 @@ For more details on each directive, see below:
 The `"finalize-default"` directive specifies that, if the user has not provide a value for the field upon [[Finalizing a File|finalization]], the plug-in will use the value of the [[field-info default|default]] parameter.  
 
 **Notes**:
-- Please see [[Miss Handling]] for more details. It works hand in hand with the [[YAML Configuration Fields]].
+- Please see [[Miss Handling]] for more details. It works hand in hand with the [[YAML Configuration Properties]].
 - This is likely the most commonly used directive. 
 - If no default is given then it will use the empty string. 
 

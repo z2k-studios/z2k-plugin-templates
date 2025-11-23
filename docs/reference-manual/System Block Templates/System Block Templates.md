@@ -14,5 +14,5 @@ aliases:
 - [[Intro to System Blocks]]
 - [[Using System Blocks and YAML]]
 - [[Using System Blocks and field-info]]
--  [[Using System Blocks and Markdown]]
+- [[Using System Blocks and Markdown]]
 

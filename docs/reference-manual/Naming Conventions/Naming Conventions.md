@@ -1,6 +1,6 @@
 ---
 sidebar_position: 1
-sidebar_folder_position: 70
+sidebar_folder_position: 80
 ---
 
 # Naming Conventions

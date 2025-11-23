@@ -13,13 +13,9 @@ aliases:
 # File Related Built-In Fields
 
 ## Overview
-The plugin has a number of [[Built-In Fields|Built-In Fields]] associated with the source template file and the destination file.
+The plugin has a number of [[Built-In Fields|Built-In Fields]] associated with the content file created from a template:
 
-1. [[Built-In Fields - File Title Variants|File Title Field Variations]]  - the name of the file being created
-	- `{{fileTitle}}`
-	- `{{noteTitle}}`
-	- `{{cardTitle}}`
-
-2. [[Built-In Fields - Creator|Creator Field]] - information about the owner of the vault, template files and/destination files
-	- `{{creator}}`
-
+| Field                                         | Doc Link                                | Purpose                                                     |
+| --------------------------------------------- | --------------------------------------- | ----------------------------------------------------------- |
+| `{{fileTitle}}, {{cardTitle}}, {{noteTitle}}` | [[fileTitle and Variations\|fileTitle]] | Represents the name of the content file being created       |
+| `{{creator}}`                                 | [[creator]]                             | Name of the card creator specified in the [[Settings Page]] |

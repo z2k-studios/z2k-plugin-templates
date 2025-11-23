@@ -27,6 +27,7 @@ Assuming today was 2025-01-09
 - `{{format-date "YYYY-MM-DD"}}` -- This would output `2025-01-09`
 - `{{format-date "YYYY-[Q]QQ" now}}` -- This would output `2025-Q01`
 - `{{format-date "YYYY" yesterday}}` -- This would output `2025` (see warning note [[#Using format-date with sourceTimes other than Now|below]])
+- `{{format-date "LLLL"}}` -- This would output `Friday, January 9th, 2025 8:30 AM`
 
 ## Obsidian Style Data Formatting
 Please note that this helper function is the only way to format dates with Z2K Templates. The template does *not* support the Obsidian Date Formatting syntax. See [[Custom Field Formatting#Obsidian Date-Time Formatting|Obsidian Date-Time Formatting]] for more details. 

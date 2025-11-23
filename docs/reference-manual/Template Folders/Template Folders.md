@@ -1,6 +1,8 @@
 ---
 sidebar_position: 1
-sidebar_folder_position: 40
+sidebar_folder_position: 50
+aliases:
+- Template Folder
 ---
 
 # Template Folders

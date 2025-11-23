@@ -1,7 +1,9 @@
 ---
-sidebar_position: 40
+sidebar_folder_position: 70
+sidebar_position: 1
 ---
-
+# Lifecycle of a Template
+==LOADS OF WORK TO DO HERE==
 
 Unlike other Templating solutions, Z2K Templates allows for an iterative process for filling out a Template. 
 Explain how a template goes from a template to a partially filled card to a finalized card.
