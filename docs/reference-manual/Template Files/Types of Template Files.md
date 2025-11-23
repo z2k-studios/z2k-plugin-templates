@@ -27,6 +27,11 @@ Z2K Templates supports two distinct kinds of template files: Document Templates 
 ### Content Files
 In contrast, if a file in your vault is *not* a template file at all, then we refer to these as "**Content Files**", as they contain actual content and not templated placeholders for content.
 
+
+> [!NOTE] Markdown Templates
+> You may see the occasional reference to a "Markdown Template" (e.g. in the command [[Convert to Markdown Template]]). This name describes a [[#Document Templates|Document Template]] or a [[#Block Templates|Block Template]] that is stored with a `.md` file extension. See [[Template File Extensions]] for more details.
+
+
 ## How is the Type of Template Determined?
 To determine which type of template a template file is, the Z2K Templates plugin looks at a number of successive indicators to make a decision. In order of precedence, they are:
 
