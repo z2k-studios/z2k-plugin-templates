@@ -20,7 +20,7 @@ interface Z2KTemplatesPluginSettings {
 		name: string; // display name
 		targetFolder: string; // vault-relative path to folder
 	}>;
-	offlineCommandQueuePath: string; // Path to JSONL file for offline command queue
+	offlineCommandQueueDir: string; // Directory for offline command queue (JSON/JSONL files)
 	errorLogPath: string; // Path to error log file (relative to vault or absolute)
 	errorLogLevel: "none" | "error" | "warn" | "info" | "debug"; // Minimum severity level to log
 	// templateEditingEnabled: boolean;
@@ -33,7 +33,7 @@ const DEFAULT_SETTINGS: Z2KTemplatesPluginSettings = {
 	templatesFolderName: 'Templates',
 	cardReferenceName: 'note',
 	dynamicCardCommands: [],
-	offlineCommandQueuePath: 'z2k_template_commands.jsonl',
+	offlineCommandQueueDir: '.obsidian/plugins/z2k-plugin-templates/queue',
 	errorLogPath: '.obsidian/plugins/z2k-plugin-templates/error-log.md',
 	errorLogLevel: 'warn',
 	// templateEditingEnabled: true,
@@ -56,10 +56,20 @@ interface CommandParams {
 	location?: "file-top" | "file-bottom" | "header-top" | "header-bottom" | number | string;  // Allow any string/number
 	// Additional field data - can be string (JSON) or already parsed object
 	templateJsonData?: string | Record<string, VarValueType>;
+	templateJsonData64?: string;
 	// For json command
 	json?: string;
-	// Index signature to allow _prefixed field params and other unknown keys
+	json64?: string;
+	// Retry configuration
+	maxRetries?: number;  // Default 0
+	retryDelayMs?: number;  // Default 0
+	// Index signature to allow other unknown keys (treated as template data)
 	[key: string]: any;
+}
+
+interface RetryMetadata {
+	attempts: number;
+	nextRetryAfter: number;  // Timestamp (ms since epoch)
 }
 
 class Z2KTemplatesSettingTab extends PluginSettingTab {
@@ -207,12 +217,12 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 		// 		}));
 
 		new Setting(containerEl)
-			.setName('Offline command queue file')
-			.setDesc('Path to JSONL file for offline command queue (vault-relative or absolute). Commands will be processed automatically.')
+			.setName('Offline command queue directory')
+			.setDesc('Directory for queued command files (JSON/JSONL) - vault-relative or absolute. Commands will be processed automatically.')
 			.addText(text => {
 				const input = text
-					.setPlaceholder(DEFAULT_SETTINGS.offlineCommandQueuePath)
-					.setValue(this.plugin.settings.offlineCommandQueuePath)
+					.setPlaceholder(DEFAULT_SETTINGS.offlineCommandQueueDir)
+					.setValue(this.plugin.settings.offlineCommandQueueDir)
 					.inputEl;
 
 				this.validateTextInput(input,
@@ -221,7 +231,7 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 						return null;
 					},
 					async (validValue) => {
-						await this.plugin.updateQueueFilePath(validValue);
+						await this.plugin.updateQueueDirPath(validValue);
 					});
 			});
 
@@ -799,33 +809,32 @@ export default class Z2KTemplatesPlugin extends Plugin {
 
 	// Main command processor - accepts typed parameters and routes to appropriate handlers
 	// Called by: registerURIHandler (from URI), processQueueFile (from offline queue)
-	// DOCS: All field parameters start with _ so they don't clash with command params
 	// DOCS: Non-field parameters can be templatePath, TemplatePath, template-path, template_path, etc. for robustness
 	// DOCS: but we should just say templatePath in the docs for simplicity
 	private async processCommand(rawParams: CommandParams, context: "user" | "batch"): Promise<void> {
-		// Normalize keys (remove special chars, lowercase) and extract field params (_prefix)
-		const cmdParams: Record<string, any> = {};
-		const fieldParams: Record<string, VarValueType> = {};
+		const cps: Record<string, any> = {};  // Command parameters
+		const templateData: Record<string, any> = {};  // Template field data (preserves original keys)
 
+		const knownKeys = ['cmd', 'templatePath', 'blockPath', 'existingFilePath',
+			'destDir', 'destHeader', 'prompt', 'finalize', 'location',
+			'templateJsonData', 'templateJsonData64', 'json', 'json64',
+			'maxRetries', 'retryDelayMs'];
+
+		// Separate command params from template data
 		for (const k in rawParams) {
-			if (k.startsWith("_")) {
-				// Field parameter - strip underscore prefix
-				const fieldKey = k.substring(1);
-				if (!fieldKey) {
-					throw new TemplatePluginError("Command: Field parameter name cannot be empty (just '_')");
-				}
-				fieldParams[fieldKey] = rawParams[k];
+			const normalized = k.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+			const matchedKey = knownKeys.find(key => key.toLowerCase() === normalized);
+			if (matchedKey) {
+				cps[matchedKey] = rawParams[k];
 			} else {
-				// Command parameter - normalize key (remove special chars, lowercase)
-				const normalizedKey = k.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-				cmdParams[normalizedKey] = rawParams[k];
+				templateData[k] = rawParams[k];  // Keep original key for template
 			}
 		}
 
 		// Handle templateJsonData (can be string or object, but not array/null)
 		let additionalFields: Record<string, VarValueType> = {};
-		if (cmdParams.templatejsondata) {
-			let data = cmdParams.templatejsondata;
+		if (cps.templateJsonData) {
+			let data = cps.templateJsonData;
 			// Parse if string
 			if (typeof data === 'string') {
 				// Check if it's a file path (doesn't start with '{')
@@ -858,25 +867,26 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		}
 
 		// Merge field data
-		// DOCS: Field params in the command override field values in templateJsonData
-		const fieldOverrides: Record<string, VarValueType> = { ...additionalFields, ...fieldParams };
+		// DOCS: All params (except recognized command params) are treated as template data
+		// DOCS: Direct params override values in templateJsonData
+		const fieldOverrides: Record<string, VarValueType> = { ...additionalFields, ...templateData };
 
 		// Validate cmd parameter
-		if (!cmdParams.cmd || typeof cmdParams.cmd !== 'string') {
+		if (!cps.cmd || typeof cps.cmd !== 'string') {
 			throw new TemplatePluginError("Command: Missing 'cmd' parameter");
 		}
-		const cmd = cmdParams.cmd.trim().toLowerCase();
+		const cmd = cps.cmd.trim().toLowerCase();
 		if (!cmd) {
 			throw new TemplatePluginError("Command: 'cmd' parameter cannot be empty");
 		}
 
 		// Handle 'json' command - parse JSON and recursively call processCommand
 		if (cmd === "json") {
-			if (!cmdParams.json) {
+			if (!cps.json) {
 				throw new TemplatePluginError("Command: 'json' cmd requires 'json' parameter");
 			}
 			try {
-				const parsedParams = JSON.parse(cmdParams.json);
+				const parsedParams = JSON.parse(cps.json);
 				if (!parsedParams || typeof parsedParams !== "object" || Array.isArray(parsedParams)) {
 					throw new TemplatePluginError("Command: 'json' parameter must be a valid JSON object (not array or null)");
 				}
@@ -890,27 +900,27 @@ export default class Z2KTemplatesPlugin extends Plugin {
 
 		// Validate and convert prompt mode
 		let promptMode: "none"|"remaining"|"all"|undefined = undefined;
-		if (cmdParams.prompt) {
-			const promptStr = String(cmdParams.prompt).toLowerCase();
+		if (cps.prompt) {
+			const promptStr = String(cps.prompt).toLowerCase();
 			if (!["none", "remaining", "all"].includes(promptStr)) {
-				throw new TemplatePluginError(`Command: Invalid prompt mode '${cmdParams.prompt}' (must be 'none', 'remaining', or 'all')`);
+				throw new TemplatePluginError(`Command: Invalid prompt mode '${cps.prompt}' (must be 'none', 'remaining', or 'all')`);
 			}
 			promptMode = promptStr as "none"|"remaining"|"all";
 		}
 
 		// Validate and convert finalize (can be boolean or string "true"/"false")
 		let finalize: boolean | undefined = undefined;
-		if (cmdParams.finalize !== undefined) {
-			if (typeof cmdParams.finalize === 'boolean') {
-				finalize = cmdParams.finalize;
-			} else if (typeof cmdParams.finalize === 'string') {
-				const finalizeStr = cmdParams.finalize.toLowerCase();
+		if (cps.finalize !== undefined) {
+			if (typeof cps.finalize === 'boolean') {
+				finalize = cps.finalize;
+			} else if (typeof cps.finalize === 'string') {
+				const finalizeStr = cps.finalize.toLowerCase();
 				if (["true", "1", "yes"].includes(finalizeStr)) {
 					finalize = true;
 				} else if (["false", "0", "no"].includes(finalizeStr)) {
 					finalize = false;
 				} else {
-					throw new TemplatePluginError(`Command: Invalid finalize value '${cmdParams.finalize}' (must be boolean or 'true'/'false')`);
+					throw new TemplatePluginError(`Command: Invalid finalize value '${cps.finalize}' (must be boolean or 'true'/'false')`);
 				}
 			} else {
 				throw new TemplatePluginError(`Command: Invalid finalize type (must be boolean or string)`);
@@ -919,25 +929,25 @@ export default class Z2KTemplatesPlugin extends Plugin {
 
 		// Validate and convert location (can be string or number)
 		let location: "file-top"|"file-bottom"|"header-top"|"header-bottom"|number|undefined = undefined;
-		if (cmdParams.location !== undefined) {
+		if (cps.location !== undefined) {
 			const validStrings = ["file-top", "file-bottom", "header-top", "header-bottom"];
-			if (typeof cmdParams.location === 'string') {
-				const locationLower = cmdParams.location.toLowerCase();
+			if (typeof cps.location === 'string') {
+				const locationLower = cps.location.toLowerCase();
 				if (validStrings.includes(locationLower)) {
 					location = locationLower as "file-top"|"file-bottom"|"header-top"|"header-bottom";
 				} else {
 					// Try to parse as number
-					const lineNum = parseInt(cmdParams.location, 10);
+					const lineNum = parseInt(cps.location, 10);
 					if (isNaN(lineNum)) {
-						throw new TemplatePluginError(`Command: Invalid location '${cmdParams.location}' (must be 'file-top', 'file-bottom', 'header-top', 'header-bottom', or a line number)`);
+						throw new TemplatePluginError(`Command: Invalid location '${cps.location}' (must be 'file-top', 'file-bottom', 'header-top', 'header-bottom', or a line number)`);
 					}
 					location = lineNum;
 				}
-			} else if (typeof cmdParams.location === 'number') {
-				if (isNaN(cmdParams.location) || !Number.isInteger(cmdParams.location)) {
-					throw new TemplatePluginError(`Command: Invalid location '${cmdParams.location}' (must be a valid integer line number)`);
+			} else if (typeof cps.location === 'number') {
+				if (isNaN(cps.location) || !Number.isInteger(cps.location)) {
+					throw new TemplatePluginError(`Command: Invalid location '${cps.location}' (must be a valid integer line number)`);
 				}
-				location = cmdParams.location;
+				location = cps.location;
 			} else {
 				throw new TemplatePluginError(`Command: Invalid location type (must be string or number)`);
 			}
@@ -945,7 +955,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 
 		// Resolve template file (support both templatePath and blockPath)
 		let templateFile: TFile | undefined;
-		const templatePath = cmdParams.templatepath || cmdParams.blockpath;
+		const templatePath = cps.templatePath || cps.blockPath;
 		if (templatePath) {
 			templateFile = this.getFile(templatePath) || undefined;
 			if (!templateFile) {
@@ -955,10 +965,10 @@ export default class Z2KTemplatesPlugin extends Plugin {
 
 		// Resolve existing file
 		let existingFile: TFile | undefined;
-		if (cmdParams.existingfilepath) {
-			existingFile = this.getFile(cmdParams.existingfilepath) || undefined;
+		if (cps.existingFilePath) {
+			existingFile = this.getFile(cps.existingFilePath) || undefined;
 			if (!existingFile) {
-				throw new TemplatePluginError(`Command: File not found:\n${cmdParams.existingfilepath}`);
+				throw new TemplatePluginError(`Command: File not found:\n${cps.existingFilePath}`);
 			}
 		}
 
@@ -966,14 +976,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		let destDir: TFolder | undefined = templateFile
 			? (this.getTemplateCardType(templateFile) ?? templateFile.parent as TFolder)
 			: undefined;
-		if (cmdParams.destdir) {
-			destDir = await this.createFolder(cmdParams.destdir);
-			// const f = this.getFolder(cmdParams.destdir);
-			// if (f) {
-			// 	destDir = f;
-			// } else {
-			// 	await this.logWarn(`Command: Destination folder not found:\n${cmdParams.destdir}\nUsing template's folder instead.`, context);
-			// }
+		if (cps.destDir) {
+			destDir = await this.createFolder(cps.destDir);
 		}
 
 		// Route commands
@@ -1009,7 +1013,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		if (cmd === "insertblock") {
 			// Validate location and destHeader
 			if (location === "header-top" || location === "header-bottom") {
-				if (!cmdParams.destheader) {
+				if (!cps.destHeader) {
 					throw new TemplatePluginError(`Command: destHeader is required when location is '${location}'`);
 				}
 			}
@@ -1017,7 +1021,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			await this.insertPartial({
 				templateFile,
 				existingFile,
-				destHeader: cmdParams.destheader,
+				destHeader: cps.destHeader,
 				location,
 				fieldOverrides,
 				promptMode,
@@ -1040,34 +1044,33 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		return path;
 	}
 
-	async updateQueueFilePath(newPath: string) {
-		const oldPath = this.settings.offlineCommandQueuePath;
-		this.settings.offlineCommandQueuePath = newPath;
+	async updateQueueDirPath(newPath: string) {
+		const oldPath = this.settings.offlineCommandQueueDir;
+		this.settings.offlineCommandQueueDir = newPath;
 		await this.saveData(this.settings);
 
 		const adapter = this.app.vault.adapter;
 
-		// Rename old file to new location if both paths exist
+		// Move files from old directory to new if both paths exist
 		if (oldPath && oldPath !== newPath && newPath) {
-			const oldFilePath = this.resolveQueueFilePath(oldPath);
-			const newFilePath = this.resolveQueueFilePath(newPath);
-			if (oldFilePath && newFilePath && await adapter.exists(oldFilePath)) {
-				await adapter.rename(oldFilePath, newFilePath);
-				return; // File was renamed, we're done
+			const oldDirPath = this.resolveQueueFilePath(oldPath);
+			const newDirPath = this.resolveQueueFilePath(newPath);
+			if (oldDirPath && newDirPath && await adapter.exists(oldDirPath)) {
+				// TODO: Move files from old to new directory
 			}
 		}
 
-		// Ensure new file exists
+		// Ensure new directory exists
 		if (newPath) {
-			const filePath = this.resolveQueueFilePath(newPath);
-			if (filePath && !(await adapter.exists(filePath))) {
-				await adapter.write(filePath, '');
+			const dirPath = this.resolveQueueFilePath(newPath);
+			if (dirPath && !(await adapter.exists(dirPath))) {
+				await adapter.mkdir(dirPath);
 			}
 		}
 	}
 
 	private startQueueProcessor() {
-		if (!this.settings.offlineCommandQueuePath) return;
+		if (!this.settings.offlineCommandQueueDir) return;
 
 		// Check queue every 5 seconds
 		this._queueCheckInterval = window.setInterval(() => {
@@ -1076,99 +1079,229 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	}
 
 	private async recoverFromCrash() {
-		if (!this.settings.offlineCommandQueuePath) return;
+		if (!this.settings.offlineCommandQueueDir) return;
 
-		const basePath = this.resolveQueueFilePath(this.settings.offlineCommandQueuePath);
-		if (!basePath) return;
+		const dirPath = this.resolveQueueFilePath(this.settings.offlineCommandQueueDir);
+		if (!dirPath) return;
 
-		const processingPath = basePath + '.processing';
-		if (await this.app.vault.adapter.exists(processingPath)) {
-			// Found leftover .processing file - resume processing
-			await this.processQueueFile(processingPath);
+		const adapter = this.app.vault.adapter;
+		if (!(await adapter.exists(dirPath))) return;
+
+		// Look for any .processing.jsonl files left from crash
+		const files = await adapter.list(dirPath);
+		for (const file of files.files) {
+			if (file.endsWith('.processing.jsonl')) {
+				await this.processJsonlFile(file);
+			}
 		}
 	}
 
 	private async checkAndProcessQueue() {
-		if (this._processingQueue || !this.settings.offlineCommandQueuePath) return;
+		if (this._processingQueue || !this.settings.offlineCommandQueueDir) return;
 
-		const filePath = this.resolveQueueFilePath(this.settings.offlineCommandQueuePath);
-		if (!filePath) return;
+		const dirPath = this.resolveQueueFilePath(this.settings.offlineCommandQueueDir);
+		if (!dirPath) return;
 
 		const adapter = this.app.vault.adapter;
-		if (!(await adapter.exists(filePath))) return;
+		if (!(await adapter.exists(dirPath))) return;
 
-		const content = await adapter.read(filePath);
-		if (!content.trim()) return; // File is empty
+		// Verify it's actually a directory
+		const stat = await adapter.stat(dirPath);
+		if (!stat || stat.type !== 'folder') {
+			await this.log('error', 'batch', `Queue path is not a directory: ${dirPath}`);
+			return;
+		}
 
-		// Atomically move file to .processing
 		this._processingQueue = true;
-		const processingPath = filePath + '.processing';
+		try {
+			// Get all files in queue directory
+			const listing = await adapter.list(dirPath);
+
+			// Filter for .json and .jsonl files (excluding .retry.json and .processing.jsonl)
+			const queueFiles = listing.files.filter(f =>
+				(f.endsWith('.json') || f.endsWith('.jsonl')) &&
+				!f.endsWith('.retry.json') &&
+				!f.endsWith('.processing.jsonl')
+			);
+
+			if (queueFiles.length === 0) {
+				this._processingQueue = false;
+				return;
+			}
+
+			// Get file stats and sort by birth time (creation time)
+			const fileStats = await Promise.all(
+				queueFiles.map(async (file) => ({
+					path: file,
+					stat: await adapter.stat(file)
+				}))
+			);
+
+			fileStats.sort((a, b) => (a.stat?.ctime || 0) - (b.stat?.ctime || 0));
+
+			// Process each file
+			for (const { path: filePath } of fileStats) {
+				// Check for retry sidecar - skip if not ready
+				const retryPath = filePath + '.retry.json';
+				if (await adapter.exists(retryPath)) {
+					const retryData = JSON.parse(await adapter.read(retryPath)) as RetryMetadata;
+					if (retryData.nextRetryAfter > Date.now()) {
+						continue; // Not ready to retry yet
+					}
+				}
+
+				// Process the file
+				if (filePath.endsWith('.jsonl')) {
+					await this.processJsonlFile(filePath);
+				} else if (filePath.endsWith('.json')) {
+					await this.processJsonFile(filePath);
+				}
+			}
+		} finally {
+			this._processingQueue = false;
+		}
+	}
+
+	private async processJsonFile(filePath: string) {
+		const adapter = this.app.vault.adapter;
+		const dirPath = this.resolveQueueFilePath(this.settings.offlineCommandQueueDir);
+		if (!dirPath) return;
+
+		let cmdParams: CommandParams;
+		try {
+			const content = await adapter.read(filePath);
+			cmdParams = JSON.parse(content) as CommandParams;
+		} catch (parseError) {
+			// Invalid JSON - log and delete file
+			await this.log('error', 'batch', `Invalid JSON in command file ${filePath}`);
+			await adapter.remove(filePath);
+			return;
+		}
 
 		try {
-			await adapter.rename(filePath, processingPath);
-			await adapter.write(filePath, ''); // Create new empty file
-			await this.processQueueFile(processingPath);
+			// Execute command
+			await this.processCommand(cmdParams, 'batch');
+
+			// Success - delete both .json and .retry.json if it exists
+			await adapter.remove(filePath);
+			const retryPath = filePath + '.retry.json';
+			if (await adapter.exists(retryPath)) {
+				await adapter.remove(retryPath);
+			}
 		} catch (e) {
-			this._processingQueue = false;
+			// Handle failure with retry logic
+			await this.handleCommandFailure(filePath, e, cmdParams);
+		}
+	}
+
+	private async processJsonlFile(filePath: string) {
+		const adapter = this.app.vault.adapter;
+		const dirPath = this.resolveQueueFilePath(this.settings.offlineCommandQueueDir);
+		if (!dirPath) return;
+
+		// Rename to .processing.jsonl
+		const processingPath = filePath.replace(/\.jsonl$/, '.processing.jsonl');
+		await adapter.rename(filePath, processingPath);
+
+		try {
+			const content = await adapter.read(processingPath);
+			const lines = content.split('\n').filter(line => line.trim());
+
+			// Process each line
+			for (const line of lines) {
+				let cmdParams: CommandParams;
+				try {
+					cmdParams = JSON.parse(line) as CommandParams;
+				} catch (parseError) {
+					// Invalid JSON - log and skip
+					await this.log('error', 'batch', `Invalid JSON in command queue: ${line}`);
+					continue;
+				}
+
+				try {
+					await this.processCommand(cmdParams, 'batch');
+				} catch (e) {
+					// Command execution failed - check if it has retry config
+					const maxRetries = cmdParams.maxRetries || 0;
+
+					if (maxRetries > 0) {
+						// Create individual .json file for retry
+						const retryFileName = `command-${moment().format('YYYY-MM-DD_HH-mm-ss-SSS')}.json`;
+						const retryFilePath = dirPath + '/' + retryFileName;
+						await adapter.write(retryFilePath, line);
+
+						// Handle as failed command (creates .retry.json)
+						await this.handleCommandFailure(retryFilePath, e, cmdParams);
+					} else {
+						// No retries - just log error
+						await this.handleErrors(e, 'batch');
+					}
+				}
+			}
+
+			// Done processing - delete .processing.jsonl
+			await adapter.remove(processingPath);
+		} catch (e) {
+			// Error reading/processing file - rename back
+			if (await adapter.exists(processingPath)) {
+				await adapter.rename(processingPath, filePath);
+			}
 			throw e;
 		}
 	}
 
-	private async processQueueFile(filePath: string) {
+	private async handleCommandFailure(filePath: string, error: any, cmdParams?: CommandParams) {
 		const adapter = this.app.vault.adapter;
-		const content = await adapter.read(filePath);
-		const lines = content.split('\n').filter(line => line.trim());
 
-		if (lines.length === 0) {
-			// Empty file, just delete it
+		// Log error
+		await this.handleErrors(error, 'batch');
+
+		// Read command to check retry config if not provided
+		if (!cmdParams) {
+			const content = await adapter.read(filePath);
+			cmdParams = JSON.parse(content) as CommandParams;
+		}
+
+		const maxRetries = cmdParams.maxRetries || 0;
+		const retryDelayMs = cmdParams.retryDelayMs || 0;
+
+		if (maxRetries === 0) {
+			// No retries configured - just delete
 			await adapter.remove(filePath);
-			this._processingQueue = false;
 			return;
 		}
 
-		// Update status bar
-		if (this._statusBarItem) {
-			this._statusBarItem.setText(`Processing ${lines.length} command${lines.length > 1 ? 's' : ''}...`);
+		// Check if retry metadata exists
+		const retryPath = filePath + '.retry.json';
+		let retryData: RetryMetadata;
+
+		if (await adapter.exists(retryPath)) {
+			// Existing retry - increment attempt
+			retryData = JSON.parse(await adapter.read(retryPath)) as RetryMetadata;
+			retryData.attempts++;
+		} else {
+			// First attempt
+			retryData = {
+				attempts: 1,
+				nextRetryAfter: 0
+			};
 		}
 
-		let errorCount = 0;
+		// Check if retries exhausted
+		if (retryData.attempts >= maxRetries) {
+			// Rename to .failed.json and delete retry metadata
+			const failedPath = filePath.replace(/\.json$/, '.failed.json');
+			await adapter.rename(filePath, failedPath);
+			await adapter.remove(retryPath);
 
-		// Process commands one by one
-		for (let i = 0; i < lines.length; i++) {
-			const line = lines[i].trim();
-			if (!line) continue;
+			await this.log('error', 'batch', `Command failed after ${retryData.attempts} attempts: ${filePath}`);
+		} else {
+			// Schedule next retry
+			retryData.nextRetryAfter = Date.now() + retryDelayMs;
 
-			// Update progress
-			if (this._statusBarItem) {
-				this._statusBarItem.setText(`Processing command ${i + 1}/${lines.length}...`);
-			}
-
-			try {
-				// Parse JSON and call processCommand directly
-				// JSON preserves types (numbers, booleans, arrays, etc.)
-				const cmdParams = JSON.parse(line) as CommandParams;
-				await this.processCommand(cmdParams, 'batch');
-			} catch (e) {
-				// Log error but continue processing
-				errorCount++;
-				await this.handleErrors(e, 'batch');
-				// Line is deleted regardless of success/failure
-			}
+			// Save retry metadata
+			await adapter.write(retryPath, JSON.stringify(retryData, null, 2));
 		}
-
-		// Clear status bar
-		if (this._statusBarItem) {
-			this._statusBarItem.setText('');
-		}
-
-		// Show single notice if there were errors
-		if (errorCount > 0) {
-			new Notice(`${errorCount} error(s) occurred while processing commands. Check error log for details.`);
-		}
-
-		// Delete processing file
-		await adapter.remove(filePath);
-		this._processingQueue = false;
 	}
 
 	//// Functions called from [commands/context menu/uris/etc]
