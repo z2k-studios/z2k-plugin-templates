@@ -10,15 +10,6 @@ The **Z2K Templates Plugin** automates the process of creating structured, reusa
 No matter how you use Obsidian -- whether you’re logging a meeting, keeping a daily journal, organizing fictional characters, or researching biomedical terms --  Z2K Templates will help you standardize the structure and formatting of your notes and automate the filling in of data for each of your notes. 
 
 ## Typical Workflow
-How do you put templates into use? Here are the steps:
-1. First, **Create** templates for the different types of notes in your vault.
-2. Then you can **Create New Notes from a Template** with a new Obsidian command. When you do, the plugin will:
-	1. **Prompt you** for any missing data and fills them into the template text
-	2. **Resolve** advanced features, like built-in fields and helper functions
-	3. **Create the new card** with the template boilerplate text
-3. You then can **Iterate** on any remaining fields until you issue the **Finalize** command, in which case any remaining fields are resolved.
-
-> [!DANGER] INTERNAL NOTE
-> - Consider adding a visual flow diagram later to illustrate parse → prompt → resolve → render steps.
-
+How do you put templates into use? Here are the steps (taken from the [[Typical Templates Workflow]] page later in this reference manual):
+![[Typical Templates Workflow#Typical Workflow]]
 

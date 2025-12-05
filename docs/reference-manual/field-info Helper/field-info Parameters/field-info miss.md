@@ -8,7 +8,7 @@ aliases:
 - field-info miss Parameter
 ---
 # field-info miss
-The optional `miss` parameter in the [[reference-manual/field-info Helper/field-info Helper]] allows you to specifies a string that will be assigned to a field if the user has failed to specify a value for it. This occurs at [[Finalizing a File|Finalization]] - before that point, the `miss` parameter is ignored.
+The optional `miss` parameter in the [[reference-manual/field-info Helper/field-info Helper]] allows you to specifies a string that will be assigned to a field if the user has failed to specify a value for it. This occurs at [[Finalization]] - before that point, the `miss` parameter is ignored.
 
 ## Syntax
 The `miss` parameter can be specified with the `miss` keyword for the [[field-info Syntax#Named Parameters|Named Parameter]]. For example:

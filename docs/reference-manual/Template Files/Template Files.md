@@ -14,11 +14,15 @@ At the very core of Z2K Templates is the Template File. In short, a template fil
 - [[Template File Structure]] - what is the structure of a template file?
 - [[Types of Template Files]] - what are the different types of Template Files?
 - [[Becoming a Template]] - how does a markdown file become a template?
+- [[Deferred Field Resolution]] - Reviews how an WIP content file iterates on fields
 - [[Lifecycle of a Template]]
-	- [[Lifecycle of a Template Overview]] - links to the contents below, reviews terms, 
-	- [[Initial Instantiation into a Content File]] - What happens during initial rendering 
-	- [[Deferred Field Resolution]] - Reviews how an instantiated content file iterates on fields
-	- [[Finalizing a File]] - Review what happens when an instantiated file is finalized
+	- [[Template Lifecycle Overview]] - Overview of the Template Lifecycle
+	- **Stage 1**: [[Template Stage]]  - Creating the Document Template
+		- ***Transition out of Stage 1:** [[Instantiation]] - Creating a Content File*
+	- **Stage 2**: [[WIP Stage]] - Working with a Work-in-Progress Content File
+		- ***Transition into Stage 3:** [[Finalization]] - Fully processing all template fields remaining in a content file*
+	- **Stage 3**: [[Finalized Stage]] - The end result - a completed content file in the vault.
+	- [[Typical Templates Workflow]] - Maps the Lifecycle into a Templates Workflow
 - [[Template File Extensions]] - describes the advanced feature for custom file extensions
 	- [[Template Pollution]] - what is the problem with storing templates as normal markdown files in your vault
 	- [[Valid File Extensions]] - a summary of valid file extensions

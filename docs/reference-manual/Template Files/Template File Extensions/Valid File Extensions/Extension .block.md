@@ -11,10 +11,10 @@ aliases:
 [[Types of Template Files#Block Templates|Block Templates]] can be stored with the `.block` extension. 
 
 Conceptually:
-- `.block` files correspond to `z2k_template_type: block-template`.
-- They are intended to represent template snippets that are then placed into other template or content files. For example, they can be header sections, checklists, YAML stubs, or small structural units.
+- Using `.block` as a file extension is another way to signal that a file is a block template, in addition to setting the [[z2k_template_type]] property to  `block-template`.
+- [[Block Templates]] are intended to represent template snippets that are then placed into other template or content files. For example, they can be header sections, checklists, YAML stubs, or small structural units.
 
-You will typically insert these into other templates via block-template specific commands and helpers documented under [[Block Templates]] rather than opening them directly every day.
+You will typically insert block templates into other templates and content files via block-template specific commands and helpers. Please see [[Block Templates]] for more details. 
 
 Once a block template is stable, you can convert it from `.md` to `.block` to hide it from normal workflows while still keeping it in the vault. 
 
@@ -32,7 +32,7 @@ Once a block template is stable, you can convert it from `.md` to `.block` to hi
     - Excluded from most search results, Dataview/Bases queries, tag/property dashboards, daily-work views.
     - Makes the vault’s “real content” much clearer.
 - Clear visual separation
-       - In file explorer, the `.block` file extension immediately signals: _this is machinery, not content_.
+	- In file explorer, the `.block` file extension immediately signals "This is a block template"
     - Helps avoid editing the wrong file when working quickly.      
 - Safer long-term as templates grow
     - As your vault scales to dozens of templates, the templates' content no longer pollute entity tables, person directories, project dashboards, etc.  

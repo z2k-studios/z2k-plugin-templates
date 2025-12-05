@@ -1,5 +1,5 @@
 ---
-sidebar_folder_position: 70
+sidebar_folder_position: 80
 sidebar_position: 1
 doc_state: initial_ai_draft
 aliases:

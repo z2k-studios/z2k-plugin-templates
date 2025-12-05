@@ -24,9 +24,9 @@ The core concepts are:
 
 ## Template Files
 
-A **[[Template Files|template file]]** is a Markdown document (just like any other Obsidian file) that may contain both YAML frontmatter and Markdown body content. Within either section, you can include placeholders called `{{fields}}`. Each field represents a data point — text, date, number, list — that gets resolved when you create a new file from the template, or later when you [[Lifecyle of a Template|finalize]] the file. 
+A **[[Template Files|template file]]** is a Markdown document (just like any other Obsidian file) that may contain both YAML frontmatter and Markdown body content. Within either section, you can include placeholders called `{{fields}}`. Each field represents a data point — text, date, number, list — that gets resolved when you create a new file from the template, or later when you [[Finalization|finalize]] the file. 
 
-- Read More at: [[Template Files]]
+- Read More at: [[Template Files]], [[Lifecycle of a Template]]
 - Example:
 
 ```md title="Template - Project.md"
@@ -82,7 +82,7 @@ If a field remains blank, Z2K Templates follows its [[Prompting#Miss Handling|mi
 
 Not all data is known when you create a new note in your vault. Z2K Templates also supports the idea of **[[Deferred Field Resolution]]**, allowing you to create files with fields that will be filled in over time. 
 
-In this state, unresolved `{{fields}}` remain visible in the note and remain being fully functional placeholders.  You can reopen the file later and use the command **[[Lifecycle of a Template|Continue filling file]]** to supply additional data when it becomes available.  
+In this state, unresolved `{{fields}}` remain visible in the note and remain being fully functional placeholders.  You can reopen the file later and use the command **[[Continue filling note]]** to supply additional data when it becomes available.  
 
 Then, when you eventually explicitly **[[Lifecycle of a Template#Finalize|finalize]]** the file, Z2K Templates will handle the remaining unresolved fields according to the configured [[Prompting#Miss Handling|miss handling rules]].
 
@@ -98,7 +98,7 @@ Meals  ::
 
 With deferred resolution of fields, you can start your note in the morning, update it throughout the day, and finalize it only when complete. This approach keeps your workflow flexible without breaking the template’s structure or losing metadata consistency.
 
-- Read More: [[Deferred Field Resolution]]
+- Read More: [[Deferred Field Resolution]], [[WIP Stage]]
 
 ## YAML Integration
 

@@ -10,6 +10,7 @@ These Helper Functions are useful for building wikilinks and internet links with
 | Link          | Helper Function Name | Purpose                                  |
 | ------------- | -------------------- | ---------------------------------------- |
 | [[wikilink]]  | `{{wikilink}}`       | Formats a field as if it were a wikilink |
+| [[hashtag]]   | `{{hashtag}}`        | Formats a string as a hashtag            |
 | [[url]]       | `{{url}}`            | Formats a field as if it were a URL      |
 | [[google]]    | `{{google}}`         | Generates a link to a google search      |
 | [[chatGPT]]   | `{{chatGPT}}`        | Generates a link to a chatGPT chat       |
