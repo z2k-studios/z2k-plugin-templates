@@ -1,6 +1,7 @@
 ---
-sidebar_folder_position: 80
+sidebar_folder_position: 160
 sidebar_position: 1
+sidebar_metacategory: Advanced
 doc_state: initial_ai_draft
 aliases:
   - Template File Extension
@@ -8,7 +9,7 @@ aliases:
   - File Extensions
 ---
 # Template File Extensions
-By default, every template file is just a normal Obsidian note with the `.md` extension, and for many users that is all you will ever need. Z2K Templates supports new file extension types for templates, but they only become important when you start to notice that your template content is showing up in places where you really only want real notes to appear.
+By default, every [[Template Files|Template File]] is just a normal Obsidian note with the `.md` extension, and for many users that is all you will ever need. Z2K Templates supports new file extension types for template files, but they should only be used by advanced users given their initial complexity in how Obsidian handles different file types. 
 
 This section explains the "[[Template Pollution|Pollution Problem]]" , how file extensions relate to [[Template Files]] and [[Types of Template Files]], and how to switch between them using the command palette.
 

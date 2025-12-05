@@ -59,23 +59,12 @@ aliases:
 	- [[Lifecycle of a Template]]
 		- [[Template Lifecycle Overview]] - Overview of the Template Lifecycle
 		- Stages and Transitions:
-			- **Stage 1**: [[Template Stage]]  - Creating the Document Template
-				- ***Transition out of Stage 1:** [[Instantiation]] - Creating a Content File*
-			- **Stage 2**: [[WIP Stage]] - Working with a Work-in-Progress Content File
-				- ***Transition into Stage 3:** [[Finalization]] - Fully processing all template fields remaining in a content file*
-			- **Stage 3**: [[Finalized Stage]] - The end result - a completed content file in the vault.
+			- Stage 1: [[Template Stage]]  - Creating the Document Template
+				- Transition out of Stage 1: [[Instantiation]] - Creating a Content File
+			- Stage 2: [[WIP Stage]] - Working with a Work-in-Progress Content File
+				- Transition into Stage 3: [[Finalization]] - Fully processing all template fields remaining in a content file
+			- Stage 3: [[Finalized Stage]] - The end result - a completed content file in the vault.
 		- [[Typical Templates Workflow]] - Maps the Lifecycle into a Templates Workflow
-
-	- [[Template File Extensions]] - describes the advanced feature for custom file extensions
-		- [[Template Pollution]] - what is the problem with storing templates as normal markdown files in your vault
-		- [[Valid File Extensions]] - a summary of valid file extensions
-			- [[Extension .md]] - the default normal markdown extension
-			- [[Extension .template]] - a custom file extension for holding [[Types of Template Files#Document Templates|Document Templates]]
-			- [[Extension .block]] - a custom file extension for holding [[Types of Template Files#Block Templates|Block Templates]]
-		- [[Obsidian and File Extensions]] - gives details on how Obsidian treats the `.template` and `.block` file extensions
-		- [[Changing File Extensions]] - steps through how to use the Z2K Plugin to change the file extensions
-		- [[Editing .template and .block Files]] - how to edit template files after they have been converted to custom file extensions
-		- [[File Extension Process Guide]] - Our recommendations for using these custom file extensions
 
 4. [[Template Folders]] - Where template files are stored in your vault  
 	- [[Template Folders Configurations]]
@@ -193,14 +182,25 @@ aliases:
 	
 ### Advanced 
 
-16. [[System Block Templates]]
+16. [[Template File Extensions]] - describes the advanced feature for custom file extensions
+	- [[Template Pollution]] - what is the problem with storing templates as normal markdown files in your vault
+	- [[Valid File Extensions]] - a summary of valid file extensions
+		- [[Extension .md]] - the default normal markdown extension
+		- [[Extension .template]] - a custom file extension for holding [[Types of Template Files#Document Templates|Document Templates]]
+		- [[Extension .block]] - a custom file extension for holding [[Types of Template Files#Block Templates|Block Templates]]
+	- [[Obsidian and File Extensions]] - gives details on how Obsidian treats the `.template` and `.block` file extensions
+	- [[Changing File Extensions]] - steps through how to use the Z2K Plugin to change the file extensions
+	- [[Editing .template and .block Files]] - how to edit template files after they have been converted to custom file extensions
+	- [[File Extension Process Guide]] - Our recommendations for using these custom file extensions
+
+17. [[System Block Templates]]
 	- [[Intro to System Blocks]]
 	- [[Using System Blocks and YAML]]
 	- [[Using System Blocks and field-info]]
 	-  [[Using System Blocks and Markdown]]
 
 
-17. [[Z2K Templates and YAML|YAML Integration]] 
+18. [[Z2K Templates and YAML|YAML Integration]] 
 	- [[Using Fields Inside YAML Metadata]] 
 		- How To Guide: [[How to Use Z2K Fields Inside YAML Metadata]]
 	- [[Using YAML Metadata as Fields]]
@@ -216,19 +216,19 @@ aliases:
 	    - author?
 	    - Version?
 
-18. [[URI, JSON, Command Lists]] - Triggering template fields externally through URI and/or passing JSON packages 
+19. [[URI, JSON, Command Lists]] - Triggering template fields externally through URI and/or passing JSON packages 
 	- [[URI Actions]]
 	- [[JSON Packages]]
 	- [[Command Lists]]
 	
-19. [[Z2K System Features|Z2K System Features]] - Additional features specific to the larger Z2K System  
+20. [[Z2K System Features|Z2K System Features]] - Additional features specific to the larger Z2K System  
 
-20. [[Debug and Error Handling]]  
+21. [[Debug and Error Handling]]  
 
 
 ### Misc
 
-21. [[Appendix]]  
+22. [[Appendix]]  
     - Full Variable & Helper Reference (alphabetical)  
     - [[Glossary]]
     - [[Roadmap and Extensibility]]  

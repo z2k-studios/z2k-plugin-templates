@@ -1,6 +1,7 @@
 ---
 sidebar_position: 70
 doc_state: revised_ai_draft_2
+sidebar_label: "Typical Workflow"
 aliases:
   - Templates Workflow
   - Workflow

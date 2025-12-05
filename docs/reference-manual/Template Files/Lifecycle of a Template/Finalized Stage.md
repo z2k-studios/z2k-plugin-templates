@@ -1,5 +1,6 @@
 ---
 sidebar_position: 60
+sidebar_label: "3 - Finalized Stage"
 doc_state: revised_ai_draft_2
 aliases:
   - Finalized Content Stage
@@ -17,5 +18,5 @@ There is nothing strictly prohibiting adding new `{{fields}}` into a finalized c
 
 Similarly, if you use a [[Insert block template]] into a finalized content file, you will effectively be resetting the file back into a [[WIP Stage]] if any of the fields are not specified. 
 
-## How to Map Lifecycle into a Workflow
+## How to Map the Lifecycle into a Workflow
 Knowing the [[Lifecycle of a Template]], now let's make it real and map it into a [[Typical Templates Workflow]]. 

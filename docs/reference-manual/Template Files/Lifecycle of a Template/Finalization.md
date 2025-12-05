@@ -1,5 +1,6 @@
 ---
 sidebar_position: 50
+sidebar_label: "--> Finalization -->"
 doc_state: revised_ai_draft_2
 aliases:
 - Finalize
@@ -16,7 +17,7 @@ Once a content file is ready to have all templating information removed, it is r
 
 ![[Lifecycle of a Template - Finalize Transition.jpeg]]
 
-After finalization, the resultant [[Finalized Content File]] is considered "complete" from a templates perspective, as there are no longer any templates related work to be done. 
+After finalization, the resultant [[Finalized Stage|Finalized Content File]] is considered "complete" from a templates perspective, as there are no longer any templates related work to be done.
 
 ## How to Finalize
 The simplest way to finalize a content file is through the Finalize button on the [[Prompting Interface]]. This appears:

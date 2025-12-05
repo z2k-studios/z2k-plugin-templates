@@ -1,5 +1,6 @@
 ---
 sidebar_position: 30
+sidebar_label: "--> Instantiation -->"
 doc_state: revised_ai_draft_2
 aliases:
 - instantiation

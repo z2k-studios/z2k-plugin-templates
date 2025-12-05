@@ -1,5 +1,6 @@
 ---
 sidebar_position: 40
+sidebar_label: "2 - WIP Stage"
 doc_state: revised_ai_draft_2
 aliases:
 - Work-in-Progress Stage
@@ -34,7 +35,7 @@ Technically, a content file can remain in a WIP state forever (I.e. persist with
 The biggest issue with never finalizing is the potential for some fields to inadvertently cause [[Template Pollution]] (see next section). 
 
 ## Avoid Template Pollution
-Because WIP content files exist inside the content area of the vault, it is important to minimize potential [[Template Pollution|pollution]] of data with {{Fields}}. Pollution is where content files continue to have placeholder fields in places that there larger vault system expects to see real data.  See the [[Template Pollution#How To Minimize Template Pollution|pollution guidelines]] for how to minimize template pollution. 
+Because WIP content files exist inside the content area of the vault, it is important to minimize potential [[Template Pollution|pollution]] of data with `{{fields}}`. Pollution is where content files continue to have placeholder fields in places that there larger vault system expects to see real data.  See the [[Template Pollution#How To Minimize Template Pollution|pollution guidelines]] for how to minimize template pollution. 
 
 ## Can Any Field Be Deferred?
 In short, no. For example:

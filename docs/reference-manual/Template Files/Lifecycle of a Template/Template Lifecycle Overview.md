@@ -1,11 +1,12 @@
 ---
 sidebar_position: 10
 doc_state: revised_ai_draft_2
+sidebar_label: "Lifecycle Overview"
 ---
 # Lifecycle Overview
 ![[Lifecycle of a Template - Large.gif]]
 ## Stages: From Template to Content File 
-The lifecycle of a [[Types of Template Files#Document Templates|Document Template]] is defined by **three file stages*:
+The lifecycle of a [[Types of Template Files#Document Templates|Document Template]] is defined by **three file stages**:
 - **Stage 1**: [[Template Stage]]  - Creating the Document Template Itself
 - **Stage 2**: [[WIP Stage]] - Iterating over a partially completed Work-in-Progress (WIP) content file
 - **Stage 3**: [[Finalized Stage]] - Finalizing the final content file

@@ -1,5 +1,6 @@
 ---
 sidebar_position: 20
+sidebar_label: "1 - Template Stage"
 doc_state: revised_ai_draft_2
 aliases:
 - Template Creation Stage
