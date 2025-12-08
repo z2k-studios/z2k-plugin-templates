@@ -1420,7 +1420,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				opts.templateFile = await this.promptForTemplateFile(currDir, "partial");
 			}
 			let editor: Editor | null = null;
-			if (!opts.destHeader) {
+			if (!opts.location && !opts.destHeader) {
 				editor = this.getEditorOrThrow();
 				if (opts.fromSelection) {
 					opts.fieldOverrides.sourceText = editor.getSelection();
@@ -1462,7 +1462,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			let newBody: string;
 			if (opts.location === "file-top") {
 				// Insert at top of file (first line of content after frontmatter)
-				newBody = partialBody + "\n" + fileBody;
+				newBody = partialBody + fileBody;
 			} else if (opts.location === "file-bottom") {
 				// Insert at bottom of file
 				newBody = fileBody + "\n" + partialBody;
@@ -1669,9 +1669,20 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	insertIntoHeaderSection(body: string, header: string, insertText: string, location: "header-top"|"header-bottom" = "header-top"): string {
 		if (!insertText || insertText.trim() === "") { return body; }
 
-		// Find header section (case-insensitive, without # symbols)
-		const escapedHeader = escapeRegExp(header);
-		const headerMatch = new RegExp(`^#+\\s+${escapedHeader}[\\s\\S]*?(?=\\n#|$(?![\\s\\S]))`, "mi");
+		// Check if header includes # symbols (e.g., "## Section" vs "Section")
+		const hashMatch = header.match(/^(#+)\s+(.+)$/);
+		let headerMatch: RegExp;
+		if (hashMatch) {
+			// Header includes specific level (e.g., "## Target Section")
+			const hashCount = hashMatch[1].length;
+			const headerText = hashMatch[2];
+			const escapedHeader = escapeRegExp(headerText);
+			headerMatch = new RegExp(`^#{${hashCount}}\\s+${escapedHeader}[\\s\\S]*?(?=\\n#|$(?![\\s\\S]))`, "mi");
+		} else {
+			// Header without # symbols - match any level (e.g., "Target Section")
+			const escapedHeader = escapeRegExp(header);
+			headerMatch = new RegExp(`^#+\\s+${escapedHeader}[\\s\\S]*?(?=\\n#|$(?![\\s\\S]))`, "mi");
+		}
 		const match = body.match(headerMatch);
 		if (!match) {
 			throw new TemplatePluginError(`Header not found: ${header}`);
@@ -1679,15 +1690,26 @@ export default class Z2KTemplatesPlugin extends Plugin {
 
 		// Insert into matched header section
 		const rows = match[0].split("\n");
+		// Remove trailing newline from insertText since join("\n") will add separators
+		const textToInsert = insertText.replace(/\n$/, '');
 		if (location === "header-top") {
-			rows.splice(1, 0, insertText);
+			// Find first non-empty line after header
+			const emptyLine = /^\s*$/;
+			let insertAt = 1;
+			for (let i = 1; i < rows.length; i++) {
+				if (!emptyLine.test(rows[i])) {
+					insertAt = i;
+					break;
+				}
+			}
+			rows.splice(insertAt, 0, textToInsert);
 		} else {
 			const emptyLine = /^\s*$/;
 			let insertAt = rows.length;
 			for (let i = rows.length - 1; i >= 0; i--) {
 				if (emptyLine.test(rows[i])) { insertAt = i; } else { break; }
 			}
-			rows.splice(insertAt, 0, insertText);
+			rows.splice(insertAt, 0, textToInsert);
 		}
 
 		const updated = rows.join("\n");
@@ -1701,22 +1723,28 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		const totalLines = rows.length;
 		let insertIndex: number;
 
-		// DOCS: See line number usage below
-		if (lineNumber >= 0) {
-			// Positive numbers (0 to N): 0 = before first line, N = after last line
-			if (lineNumber > totalLines) {
-				throw new TemplatePluginError(`Line number ${lineNumber} is out of range (file has ${totalLines} lines, valid range: 0 to ${totalLines})`);
+		// DOCS: Positive numbers (1 to N+1): 1 = before first line, N+1 = after last line
+		// DOCS: Negative numbers: -1 = before last line, -2 = before second-to-last, etc.
+		if (lineNumber > 0) {
+			// Positive numbers: convert to 0-indexed (line 1 = index 0)
+			if (lineNumber > totalLines + 1) {
+				throw new TemplatePluginError(`Line number ${lineNumber} is out of range (file has ${totalLines} lines, valid range: 1 to ${totalLines + 1})`);
 			}
-			insertIndex = lineNumber;
-		} else {
+			insertIndex = lineNumber - 1;
+		} else if (lineNumber < 0) {
 			// Negative numbers: -1 = before last line, -2 = before second-to-last, etc.
 			insertIndex = totalLines + lineNumber;
 			if (insertIndex < 0) {
 				throw new TemplatePluginError(`Line number ${lineNumber} is out of range (file has ${totalLines} lines, valid range: -${totalLines} to -1)`);
 			}
+		} else {
+			// lineNumber === 0 is invalid
+			throw new TemplatePluginError(`Line number 0 is not valid. Use positive numbers (1 to ${totalLines + 1}) or negative numbers (-1 to -${totalLines})`);
 		}
 
-		rows.splice(insertIndex, 0, insertText);
+		// Remove trailing newline from insertText since join("\n") will add separators
+		const textToInsert = insertText.replace(/\n$/, '');
+		rows.splice(insertIndex, 0, textToInsert);
 		return rows.join("\n");
 	}
 
@@ -2080,6 +2108,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		return doc.toString();
 	}
 	updatePartialYamlOnInsert(fm: string): string {
+		if (!fm || fm.trim() === "") { return fm; }
 		const doc = Z2KYamlDoc.fromString(fm);
 		doc.del("z2k_template_type");
 		doc.del("z2k_template_default_title");
@@ -2114,7 +2143,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		}
 		systemBlocks.reverse(); // So root is first
 		let yamls = systemBlocks.map(b => Z2KYamlDoc.splitFrontmatter(b).fm);
-		let bodies = systemBlocks.map(b => Z2KYamlDoc.splitFrontmatter(b).body);
+		let bodies = systemBlocks.map(b => Z2KYamlDoc.splitFrontmatter(b).body).filter(body => body.trim() !== '');
 		let mergedFm = Z2KYamlDoc.mergeLastWins(yamls);
 		let combinedBody = bodies.join('');
 		return Z2KYamlDoc.joinFrontmatter(mergedFm, combinedBody);
