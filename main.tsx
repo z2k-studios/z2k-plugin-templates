@@ -558,7 +558,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 						// Only enable if there's an active markdown file and no text is selected
 						return !!file && file.extension === 'md' && editor.getSelection().length === 0;
 					}
-					this.insertPartial();
+					this.insertBlock();
 				}
 			},
 			{
@@ -570,7 +570,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 						// Only enable if there's an active markdown file and text is selected
 						return !!file && file.extension === 'md' && editor.getSelection().length > 0;
 					}
-					this.insertPartial({ fromSelection: true });
+					this.insertBlock({ fromSelection: true });
 				}
 			},
 			// {
@@ -603,8 +603,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				name: "Convert file to block template",
 				checkCallback: (checking) => {
 					let file = this.app.workspace.getActiveFile();
-					if (checking) { return !!file && this.getFileTemplateType(file) !== "partial"; }
-					this.convertFileTemplateType(file as TFile, "partial");
+					if (checking) { return !!file && this.getFileTemplateType(file) !== "block"; }
+					this.convertFileTemplateType(file as TFile, "block");
 				},
 			},
 			{
@@ -697,7 +697,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				menu.addItem((item) => {
 					item.setTitle("Z2K: Insert block template...")
 						.onClick(() => {
-							this.insertPartial();
+							this.insertBlock();
 						});
 				});
 			})
@@ -713,7 +713,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				menu.addItem((item) => {
 					item.setTitle("Z2K: Insert block template using selection...")
 						.onClick(() => {
-							this.insertPartial({ fromSelection: true });
+							this.insertBlock({ fromSelection: true });
 						});
 				});
 			})
@@ -776,10 +776,10 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		);
 		this.registerEvent(
 			this.app.workspace.on("file-menu", (menu, file) => {
-				if (!(file instanceof TFile) || this.getFileTemplateType(file) === "partial") return;
+				if (!(file instanceof TFile) || this.getFileTemplateType(file) === "block") return;
 				menu.addItem((item) => {
 					item.setTitle("Z2K - Convert to block template")
-						.onClick(() => this.convertFileTemplateType(file as TFile, "partial"));
+						.onClick(() => this.convertFileTemplateType(file as TFile, "block"));
 				});
 			})
 		);
@@ -1018,7 +1018,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				}
 			}
 
-			await this.insertPartial({
+			await this.insertBlock({
 				templateFile,
 				existingFile,
 				destHeader: cps.destHeader,
@@ -1401,7 +1401,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			await this.updateTitleAndContent(opts.existingFile, title, contentOut);
 		} catch (error) { this.handleErrors(error); }
 	}
-	async insertPartial(opts?: {
+	async insertBlock(opts?: {
 		templateFile?: TFile,
 		existingFile?: TFile,
 		destHeader?: string,
@@ -1417,7 +1417,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			if (!opts.existingFile) { opts.existingFile = this.getOpenFileOrThrow(); }
 			if (!opts.templateFile) {
 				const currDir = this.getOpenFileOrThrow().parent as TFolder;
-				opts.templateFile = await this.promptForTemplateFile(currDir, "partial");
+				opts.templateFile = await this.promptForTemplateFile(currDir, "block");
 			}
 			let editor: Editor | null = null;
 			if (!opts.location && !opts.destHeader) {
@@ -1427,7 +1427,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				}
 			}
 
-			// Parse and resolve partial
+			// Parse and resolve block
 			let content = await this.app.vault.read(opts.templateFile);
 			let state = await this.parseTemplate(content, "", opts.templateFile.parent as TFolder);
 			let hadSourceTextField = !!state.fieldInfos["sourceText"];
@@ -1447,48 +1447,48 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				opts.finalize = await this.promptForFieldCollection(state);
 			}
 
-			let { fm: partialFm, body: partialBody } = Z2KTemplateEngine.renderTemplate(state, opts.finalize ?? false);
-			partialFm = this.updatePartialYamlOnInsert(partialFm);
+			let { fm: blockFm, body: blockBody } = Z2KTemplateEngine.renderTemplate(state, opts.finalize ?? false);
+			blockFm = this.updateBlockYamlOnInsert(blockFm);
 			if (!hadSourceTextField && opts.fieldOverrides.sourceText != null) {
-				partialBody += `\n\n${String(opts.fieldOverrides.sourceText)}\n`;
+				blockBody += `\n\n${String(opts.fieldOverrides.sourceText)}\n`;
 			}
 
 			// Insert into body: file position, header position, line number, or editor mode
 			let newFileContent: string;
 			const fileContent = await this.app.vault.read(opts.existingFile);
 			const { fm: fileFm, body: fileBody } = Z2KYamlDoc.splitFrontmatter(fileContent);
-			const mergedFm = Z2KYamlDoc.mergeLastWins([fileFm, partialFm]);
+			const mergedFm = Z2KYamlDoc.mergeLastWins([fileFm, blockFm]);
 
 			let newBody: string;
 			if (opts.location === "file-top") {
 				// Insert at top of file (first line of content after frontmatter)
-				newBody = partialBody + fileBody;
+				newBody = blockBody + fileBody;
 			} else if (opts.location === "file-bottom") {
 				// Insert at bottom of file
-				newBody = fileBody + "\n" + partialBody;
+				newBody = fileBody + "\n" + blockBody;
 			} else if (opts.location === "header-top" || opts.location === "header-bottom") {
 				// Insert at header position
 				if (!opts.destHeader) {
 					throw new TemplatePluginError("destHeader is required when location is 'header-top' or 'header-bottom'");
 				}
-				newBody = this.insertIntoHeaderSection(fileBody, opts.destHeader, partialBody, opts.location);
+				newBody = this.insertIntoHeaderSection(fileBody, opts.destHeader, blockBody, opts.location);
 			} else if (typeof opts.location === "number") {
 				// Insert at specific line number
-				newBody = this.insertAtLineNumber(fileBody, opts.location, partialBody);
+				newBody = this.insertAtLineNumber(fileBody, opts.location, blockBody);
 			} else if (opts.destHeader) {
 				// Backward compatibility: if destHeader is specified without location, use header-top
-				newBody = this.insertIntoHeaderSection(fileBody, opts.destHeader, partialBody, "header-top");
+				newBody = this.insertIntoHeaderSection(fileBody, opts.destHeader, blockBody, "header-top");
 			} else {
 				// Editor mode: insert at cursor or replace selection
 				const editor = this.getEditorOrThrow();
 				if (opts.fromSelection) {
-					editor.replaceSelection(partialBody);
+					editor.replaceSelection(blockBody);
 				} else {
-					editor.replaceRange(partialBody, editor.getCursor());
+					editor.replaceRange(blockBody, editor.getCursor());
 				}
 				const full = editor.getValue();
 				const { fm: fileFm2, body: newBody2 } = Z2KYamlDoc.splitFrontmatter(full);
-				const mergedFm2 = Z2KYamlDoc.mergeLastWins([fileFm2, partialFm]);
+				const mergedFm2 = Z2KYamlDoc.mergeLastWins([fileFm2, blockFm]);
 				newFileContent = Z2KYamlDoc.joinFrontmatter(mergedFm2, newBody2);
 				await this.app.vault.modify(opts.existingFile, newFileContent);
 				return;
@@ -1502,7 +1502,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	// de-duplication helper functions
 	async parseTemplate(content: string, systemBlocksContent: string, relativeFolder: TFolder): Promise<TemplateState> {
 		try {
-			return await Z2KTemplateEngine.parseTemplate(content, systemBlocksContent, relativeFolder.path, this.getPartialCallbackFunc());
+			return await Z2KTemplateEngine.parseTemplate(content, systemBlocksContent, relativeFolder.path, this.getBlockCallbackFunc());
 		} catch (error) {
 			rethrowWithMessage(error, "Error occurred while parsing the template");
 		}
@@ -1560,7 +1560,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 
 
 	// Template editing
-	async convertFileTemplateType(file: TFile, type: "normal" | "named" | "partial") {
+	async convertFileTemplateType(file: TFile, type: "normal" | "named" | "block") {
 		try {
 			if (type === "normal" && this.isInsideTemplatesFolder(file)) {
 				await this.logInfo("You will need to manually move the file outside of your templates folder (" + this.settings.templatesFolderName + ").");
@@ -1570,7 +1570,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			let doc = Z2KYamlDoc.fromString(fm);
 			if (type === "normal") {
 				doc.del("z2k_template_type");
-			} else if (type === "named" || type === "partial") {
+			} else if (type === "named" || type === "block") {
 				doc.set("z2k_template_type", type);
 			}
 			fm = doc.toString();
@@ -1629,7 +1629,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			new CardTypeSelectionModal(this.app, cardTypes, this.settings, resolve, reject).open();
 		});
 	}
-	async promptForTemplateFile(cardType: TFolder, type: "named" | "partial"): Promise<TFile> {
+	async promptForTemplateFile(cardType: TFolder, type: "named" | "block"): Promise<TFile> {
 		const templates = this.getAssociatedTemplates(type, cardType);
 		if (templates.length === 0) {
 			throw new Error(`No ${type === "named" ? "" : "block "}templates available in the selected ${cardRefNameLower(this.settings)} type folder.`);
@@ -1748,9 +1748,9 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		return rows.join("\n");
 	}
 
-	getFileTemplateType(file: TFile): "normal" | "named" | "partial" {
+	getFileTemplateType(file: TFile): "normal" | "named" | "block" {
 		const yamlTemplateType = this.app.metadataCache.getFileCache(file)?.frontmatter?.["z2k_template_type"];
-		if (yamlTemplateType === "named" || yamlTemplateType === "partial") {
+		if (yamlTemplateType === "named" || yamlTemplateType === "block") {
 			return yamlTemplateType;
 		} else if (this.isInsideTemplatesFolder(file)) {
 			return "named";
@@ -1802,7 +1802,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	// 	// @ts-expect-error: internal API
 	// 	this.app.viewRegistry.unregisterExtensions("template");
 	// }
-	getAllTemplates(): { file: TFile, type: "named" | "partial" }[] {
+	getAllTemplates(): { file: TFile, type: "named" | "block" }[] {
 		let list = [];
 		for (const f of this.getAllTemplatesRootFiles()) {
 			if (!(f instanceof TFile)) { continue; }
@@ -1812,7 +1812,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		}
 		return list;
 	}
-	getAllCardTypes(filter: "named" | "partial"): TFolder[] {
+	getAllCardTypes(filter: "named" | "block"): TFolder[] {
 		let folders: TFolder[] = [];
 		for (const t of this.getAllTemplates()) {
 			if (t.type !== filter) { continue; }
@@ -1827,7 +1827,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		folders.sort((a, b) => a.path.localeCompare(b.path));
 		return folders;
 	}
-	getAssociatedTemplates(filter: "named" | "partial", cardType: TFolder): TFile[] {
+	getAssociatedTemplates(filter: "named" | "block", cardType: TFolder): TFile[] {
 		const templatesRootFolder = this.getTemplatesRootFolder();
 		if (!this.isSubPathOf(cardType.path, templatesRootFolder.path)) {
 			throw new Error(`The selected ${cardRefNameLower(this.settings)} type folder is not inside your templates root folder.`);
@@ -1859,33 +1859,33 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		}
 		return folder || null;
 	}
-	getPartialCallbackFunc(): (name: string, path: string) => Promise<[found: boolean, content: string, path: string]> {
-		// Store [file, normalized path] pairs for all partials
-		let allPartials: [TFile, string][] = [];
+	getBlockCallbackFunc(): (name: string, path: string) => Promise<[found: boolean, content: string, path: string]> {
+		// Store [file, normalized path] pairs for all blocks
+		let allBlocks: [TFile, string][] = [];
 		for (const t of this.getAllTemplates()) {
-			if (t.type === "partial") {
-				allPartials.push([t.file, normalizeFullPath(t.file.path)]);
+			if (t.type === "block") {
+				allBlocks.push([t.file, normalizeFullPath(t.file.path)]);
 			}
 		}
 
 		return async (name: string, path: string): Promise<[found: boolean, content: string, path: string]> => {
-			// TODO: support more path formats, like relative paths, partial paths, etc; Maybe make relative paths required to start with './' or '../'?
-			// name can be just the title (partial.md) or an absolute path (/folder/partial.md).
-			// path is the folder of the template/partial where the partial was referenced (so it's relative to here).
+			// TODO: support more path formats, like relative paths, block paths, etc; Maybe make relative paths required to start with './' or '../'?
+			// name can be just the title (block.md) or an absolute path (/folder/block.md).
+			// path is the folder of the template/block where the block was referenced (so it's relative to here).
 			if (name.startsWith("/")) { // absolute path
 				const absolutePath = normalizeFullPath(this.joinPath(this.getTemplatesRootFolder().path, name.substring(1))); // DOCS: relative to templates root folder
 				const file = this.getFile(absolutePath);
 				if (!file) { return [false, "", ""]; }
 				const normPath = normalizeFullPath(file.path);
-				if (!allPartials.some(([f, p]) => p === normPath)) { return [false, "", ""]; }
+				if (!allBlocks.some(([f, p]) => p === normPath)) { return [false, "", ""]; }
 				return [true, await this.app.vault.read(file), normPath];
 			}
 			// if given just the name, search current dir first (including templates dir), then search parents, then the whole vault
 			if (!name.includes("/")) { // just the name
 				let matches: [TFile, string][] = [];
-				for (const partial of allPartials) {
-					if (partial[0].basename === name || partial[0].name === name) {
-						matches.push(partial);
+				for (const block of allBlocks) {
+					if (block[0].basename === name || block[0].name === name) {
+						matches.push(block);
 					}
 				}
 				if (matches.length === 0) { return [false, "", ""]; }
@@ -1978,7 +1978,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		return fullPath;
 	}
 	setDefaultTitleFromYaml(state: TemplateState) {
-		// look through all the yaml (including from partials) and find any z2k_template_default_title field
+		// look through all the yaml (including from blocks) and find any z2k_template_default_title field
 		for (const yamlStr of state.templatesYaml) {
 			let yaml = Z2KYamlDoc.fromString(yamlStr);
 
@@ -2107,7 +2107,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		doc.del("z2k_template_default_miss_handling");
 		return doc.toString();
 	}
-	updatePartialYamlOnInsert(fm: string): string {
+	updateBlockYamlOnInsert(fm: string): string {
 		if (!fm || fm.trim() === "") { return fm; }
 		const doc = Z2KYamlDoc.fromString(fm);
 		doc.del("z2k_template_type");
