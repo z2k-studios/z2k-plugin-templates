@@ -20,7 +20,7 @@ interface Z2KTemplatesPluginSettings {
 		name: string; // display name
 		targetFolder: string; // vault-relative path to folder
 	}>;
-	offlineCommandQueuePath: string; // Path to JSONL file for offline command queue
+	offlineCommandQueueDir: string; // Directory for offline command queue (JSON/JSONL files)
 	errorLogPath: string; // Path to error log file (relative to vault or absolute)
 	errorLogLevel: "none" | "error" | "warn" | "info" | "debug"; // Minimum severity level to log
 	// templateEditingEnabled: boolean;
@@ -33,7 +33,7 @@ const DEFAULT_SETTINGS: Z2KTemplatesPluginSettings = {
 	templatesFolderName: 'Templates',
 	cardReferenceName: 'note',
 	dynamicCardCommands: [],
-	offlineCommandQueuePath: 'z2k_template_commands.jsonl',
+	offlineCommandQueueDir: '.obsidian/plugins/z2k-plugin-templates/queue',
 	errorLogPath: '.obsidian/plugins/z2k-plugin-templates/error-log.md',
 	errorLogLevel: 'warn',
 	// templateEditingEnabled: true,
@@ -56,10 +56,20 @@ interface CommandParams {
 	location?: "file-top" | "file-bottom" | "header-top" | "header-bottom" | number | string;  // Allow any string/number
 	// Additional field data - can be string (JSON) or already parsed object
 	templateJsonData?: string | Record<string, VarValueType>;
+	templateJsonData64?: string;
 	// For json command
 	json?: string;
-	// Index signature to allow _prefixed field params and other unknown keys
+	json64?: string;
+	// Retry configuration
+	maxRetries?: number;  // Default 0
+	retryDelayMs?: number;  // Default 0
+	// Index signature to allow other unknown keys (treated as template data)
 	[key: string]: any;
+}
+
+interface RetryMetadata {
+	attempts: number;
+	nextRetryAfter: number;  // Timestamp (ms since epoch)
 }
 
 class Z2KTemplatesSettingTab extends PluginSettingTab {
@@ -207,12 +217,12 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 		// 		}));
 
 		new Setting(containerEl)
-			.setName('Offline command queue file')
-			.setDesc('Path to JSONL file for offline command queue (vault-relative or absolute). Commands will be processed automatically.')
+			.setName('Offline command queue directory')
+			.setDesc('Directory for queued command files (JSON/JSONL) - vault-relative or absolute. Commands will be processed automatically.')
 			.addText(text => {
 				const input = text
-					.setPlaceholder(DEFAULT_SETTINGS.offlineCommandQueuePath)
-					.setValue(this.plugin.settings.offlineCommandQueuePath)
+					.setPlaceholder(DEFAULT_SETTINGS.offlineCommandQueueDir)
+					.setValue(this.plugin.settings.offlineCommandQueueDir)
 					.inputEl;
 
 				this.validateTextInput(input,
@@ -221,7 +231,7 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 						return null;
 					},
 					async (validValue) => {
-						await this.plugin.updateQueueFilePath(validValue);
+						await this.plugin.updateQueueDirPath(validValue);
 					});
 			});
 
@@ -548,7 +558,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 						// Only enable if there's an active markdown file and no text is selected
 						return !!file && file.extension === 'md' && editor.getSelection().length === 0;
 					}
-					this.insertPartial();
+					this.insertBlock();
 				}
 			},
 			{
@@ -560,7 +570,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 						// Only enable if there's an active markdown file and text is selected
 						return !!file && file.extension === 'md' && editor.getSelection().length > 0;
 					}
-					this.insertPartial({ fromSelection: true });
+					this.insertBlock({ fromSelection: true });
 				}
 			},
 			// {
@@ -593,8 +603,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				name: "Convert file to block template",
 				checkCallback: (checking) => {
 					let file = this.app.workspace.getActiveFile();
-					if (checking) { return !!file && this.getFileTemplateType(file) !== "partial"; }
-					this.convertFileTemplateType(file as TFile, "partial");
+					if (checking) { return !!file && this.getFileTemplateType(file) !== "block"; }
+					this.convertFileTemplateType(file as TFile, "block");
 				},
 			},
 			{
@@ -687,7 +697,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				menu.addItem((item) => {
 					item.setTitle("Z2K: Insert block template...")
 						.onClick(() => {
-							this.insertPartial();
+							this.insertBlock();
 						});
 				});
 			})
@@ -703,7 +713,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				menu.addItem((item) => {
 					item.setTitle("Z2K: Insert block template using selection...")
 						.onClick(() => {
-							this.insertPartial({ fromSelection: true });
+							this.insertBlock({ fromSelection: true });
 						});
 				});
 			})
@@ -766,10 +776,10 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		);
 		this.registerEvent(
 			this.app.workspace.on("file-menu", (menu, file) => {
-				if (!(file instanceof TFile) || this.getFileTemplateType(file) === "partial") return;
+				if (!(file instanceof TFile) || this.getFileTemplateType(file) === "block") return;
 				menu.addItem((item) => {
 					item.setTitle("Z2K - Convert to block template")
-						.onClick(() => this.convertFileTemplateType(file as TFile, "partial"));
+						.onClick(() => this.convertFileTemplateType(file as TFile, "block"));
 				});
 			})
 		);
@@ -799,33 +809,32 @@ export default class Z2KTemplatesPlugin extends Plugin {
 
 	// Main command processor - accepts typed parameters and routes to appropriate handlers
 	// Called by: registerURIHandler (from URI), processQueueFile (from offline queue)
-	// DOCS: All field parameters start with _ so they don't clash with command params
 	// DOCS: Non-field parameters can be templatePath, TemplatePath, template-path, template_path, etc. for robustness
 	// DOCS: but we should just say templatePath in the docs for simplicity
 	private async processCommand(rawParams: CommandParams, context: "user" | "batch"): Promise<void> {
-		// Normalize keys (remove special chars, lowercase) and extract field params (_prefix)
-		const cmdParams: Record<string, any> = {};
-		const fieldParams: Record<string, VarValueType> = {};
+		const cps: Record<string, any> = {};  // Command parameters
+		const templateData: Record<string, any> = {};  // Template field data (preserves original keys)
 
+		const knownKeys = ['cmd', 'templatePath', 'blockPath', 'existingFilePath',
+			'destDir', 'destHeader', 'prompt', 'finalize', 'location',
+			'templateJsonData', 'templateJsonData64', 'json', 'json64',
+			'maxRetries', 'retryDelayMs'];
+
+		// Separate command params from template data
 		for (const k in rawParams) {
-			if (k.startsWith("_")) {
-				// Field parameter - strip underscore prefix
-				const fieldKey = k.substring(1);
-				if (!fieldKey) {
-					throw new TemplatePluginError("Command: Field parameter name cannot be empty (just '_')");
-				}
-				fieldParams[fieldKey] = rawParams[k];
+			const normalized = k.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+			const matchedKey = knownKeys.find(key => key.toLowerCase() === normalized);
+			if (matchedKey) {
+				cps[matchedKey] = rawParams[k];
 			} else {
-				// Command parameter - normalize key (remove special chars, lowercase)
-				const normalizedKey = k.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-				cmdParams[normalizedKey] = rawParams[k];
+				templateData[k] = rawParams[k];  // Keep original key for template
 			}
 		}
 
 		// Handle templateJsonData (can be string or object, but not array/null)
 		let additionalFields: Record<string, VarValueType> = {};
-		if (cmdParams.templatejsondata) {
-			let data = cmdParams.templatejsondata;
+		if (cps.templateJsonData) {
+			let data = cps.templateJsonData;
 			// Parse if string
 			if (typeof data === 'string') {
 				// Check if it's a file path (doesn't start with '{')
@@ -858,25 +867,26 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		}
 
 		// Merge field data
-		// DOCS: Field params in the command override field values in templateJsonData
-		const fieldOverrides: Record<string, VarValueType> = { ...additionalFields, ...fieldParams };
+		// DOCS: All params (except recognized command params) are treated as template data
+		// DOCS: Direct params override values in templateJsonData
+		const fieldOverrides: Record<string, VarValueType> = { ...additionalFields, ...templateData };
 
 		// Validate cmd parameter
-		if (!cmdParams.cmd || typeof cmdParams.cmd !== 'string') {
+		if (!cps.cmd || typeof cps.cmd !== 'string') {
 			throw new TemplatePluginError("Command: Missing 'cmd' parameter");
 		}
-		const cmd = cmdParams.cmd.trim().toLowerCase();
+		const cmd = cps.cmd.trim().toLowerCase();
 		if (!cmd) {
 			throw new TemplatePluginError("Command: 'cmd' parameter cannot be empty");
 		}
 
 		// Handle 'json' command - parse JSON and recursively call processCommand
 		if (cmd === "json") {
-			if (!cmdParams.json) {
+			if (!cps.json) {
 				throw new TemplatePluginError("Command: 'json' cmd requires 'json' parameter");
 			}
 			try {
-				const parsedParams = JSON.parse(cmdParams.json);
+				const parsedParams = JSON.parse(cps.json);
 				if (!parsedParams || typeof parsedParams !== "object" || Array.isArray(parsedParams)) {
 					throw new TemplatePluginError("Command: 'json' parameter must be a valid JSON object (not array or null)");
 				}
@@ -890,27 +900,27 @@ export default class Z2KTemplatesPlugin extends Plugin {
 
 		// Validate and convert prompt mode
 		let promptMode: "none"|"remaining"|"all"|undefined = undefined;
-		if (cmdParams.prompt) {
-			const promptStr = String(cmdParams.prompt).toLowerCase();
+		if (cps.prompt) {
+			const promptStr = String(cps.prompt).toLowerCase();
 			if (!["none", "remaining", "all"].includes(promptStr)) {
-				throw new TemplatePluginError(`Command: Invalid prompt mode '${cmdParams.prompt}' (must be 'none', 'remaining', or 'all')`);
+				throw new TemplatePluginError(`Command: Invalid prompt mode '${cps.prompt}' (must be 'none', 'remaining', or 'all')`);
 			}
 			promptMode = promptStr as "none"|"remaining"|"all";
 		}
 
 		// Validate and convert finalize (can be boolean or string "true"/"false")
 		let finalize: boolean | undefined = undefined;
-		if (cmdParams.finalize !== undefined) {
-			if (typeof cmdParams.finalize === 'boolean') {
-				finalize = cmdParams.finalize;
-			} else if (typeof cmdParams.finalize === 'string') {
-				const finalizeStr = cmdParams.finalize.toLowerCase();
+		if (cps.finalize !== undefined) {
+			if (typeof cps.finalize === 'boolean') {
+				finalize = cps.finalize;
+			} else if (typeof cps.finalize === 'string') {
+				const finalizeStr = cps.finalize.toLowerCase();
 				if (["true", "1", "yes"].includes(finalizeStr)) {
 					finalize = true;
 				} else if (["false", "0", "no"].includes(finalizeStr)) {
 					finalize = false;
 				} else {
-					throw new TemplatePluginError(`Command: Invalid finalize value '${cmdParams.finalize}' (must be boolean or 'true'/'false')`);
+					throw new TemplatePluginError(`Command: Invalid finalize value '${cps.finalize}' (must be boolean or 'true'/'false')`);
 				}
 			} else {
 				throw new TemplatePluginError(`Command: Invalid finalize type (must be boolean or string)`);
@@ -919,25 +929,25 @@ export default class Z2KTemplatesPlugin extends Plugin {
 
 		// Validate and convert location (can be string or number)
 		let location: "file-top"|"file-bottom"|"header-top"|"header-bottom"|number|undefined = undefined;
-		if (cmdParams.location !== undefined) {
+		if (cps.location !== undefined) {
 			const validStrings = ["file-top", "file-bottom", "header-top", "header-bottom"];
-			if (typeof cmdParams.location === 'string') {
-				const locationLower = cmdParams.location.toLowerCase();
+			if (typeof cps.location === 'string') {
+				const locationLower = cps.location.toLowerCase();
 				if (validStrings.includes(locationLower)) {
 					location = locationLower as "file-top"|"file-bottom"|"header-top"|"header-bottom";
 				} else {
 					// Try to parse as number
-					const lineNum = parseInt(cmdParams.location, 10);
+					const lineNum = parseInt(cps.location, 10);
 					if (isNaN(lineNum)) {
-						throw new TemplatePluginError(`Command: Invalid location '${cmdParams.location}' (must be 'file-top', 'file-bottom', 'header-top', 'header-bottom', or a line number)`);
+						throw new TemplatePluginError(`Command: Invalid location '${cps.location}' (must be 'file-top', 'file-bottom', 'header-top', 'header-bottom', or a line number)`);
 					}
 					location = lineNum;
 				}
-			} else if (typeof cmdParams.location === 'number') {
-				if (isNaN(cmdParams.location) || !Number.isInteger(cmdParams.location)) {
-					throw new TemplatePluginError(`Command: Invalid location '${cmdParams.location}' (must be a valid integer line number)`);
+			} else if (typeof cps.location === 'number') {
+				if (isNaN(cps.location) || !Number.isInteger(cps.location)) {
+					throw new TemplatePluginError(`Command: Invalid location '${cps.location}' (must be a valid integer line number)`);
 				}
-				location = cmdParams.location;
+				location = cps.location;
 			} else {
 				throw new TemplatePluginError(`Command: Invalid location type (must be string or number)`);
 			}
@@ -945,7 +955,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 
 		// Resolve template file (support both templatePath and blockPath)
 		let templateFile: TFile | undefined;
-		const templatePath = cmdParams.templatepath || cmdParams.blockpath;
+		const templatePath = cps.templatePath || cps.blockPath;
 		if (templatePath) {
 			templateFile = this.getFile(templatePath) || undefined;
 			if (!templateFile) {
@@ -955,10 +965,10 @@ export default class Z2KTemplatesPlugin extends Plugin {
 
 		// Resolve existing file
 		let existingFile: TFile | undefined;
-		if (cmdParams.existingfilepath) {
-			existingFile = this.getFile(cmdParams.existingfilepath) || undefined;
+		if (cps.existingFilePath) {
+			existingFile = this.getFile(cps.existingFilePath) || undefined;
 			if (!existingFile) {
-				throw new TemplatePluginError(`Command: File not found:\n${cmdParams.existingfilepath}`);
+				throw new TemplatePluginError(`Command: File not found:\n${cps.existingFilePath}`);
 			}
 		}
 
@@ -966,14 +976,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		let destDir: TFolder | undefined = templateFile
 			? (this.getTemplateCardType(templateFile) ?? templateFile.parent as TFolder)
 			: undefined;
-		if (cmdParams.destdir) {
-			destDir = await this.createFolder(cmdParams.destdir);
-			// const f = this.getFolder(cmdParams.destdir);
-			// if (f) {
-			// 	destDir = f;
-			// } else {
-			// 	await this.logWarn(`Command: Destination folder not found:\n${cmdParams.destdir}\nUsing template's folder instead.`, context);
-			// }
+		if (cps.destDir) {
+			destDir = await this.createFolder(cps.destDir);
 		}
 
 		// Route commands
@@ -1009,15 +1013,15 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		if (cmd === "insertblock") {
 			// Validate location and destHeader
 			if (location === "header-top" || location === "header-bottom") {
-				if (!cmdParams.destheader) {
+				if (!cps.destHeader) {
 					throw new TemplatePluginError(`Command: destHeader is required when location is '${location}'`);
 				}
 			}
 
-			await this.insertPartial({
+			await this.insertBlock({
 				templateFile,
 				existingFile,
-				destHeader: cmdParams.destheader,
+				destHeader: cps.destHeader,
 				location,
 				fieldOverrides,
 				promptMode,
@@ -1040,34 +1044,33 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		return path;
 	}
 
-	async updateQueueFilePath(newPath: string) {
-		const oldPath = this.settings.offlineCommandQueuePath;
-		this.settings.offlineCommandQueuePath = newPath;
+	async updateQueueDirPath(newPath: string) {
+		const oldPath = this.settings.offlineCommandQueueDir;
+		this.settings.offlineCommandQueueDir = newPath;
 		await this.saveData(this.settings);
 
 		const adapter = this.app.vault.adapter;
 
-		// Rename old file to new location if both paths exist
+		// Move files from old directory to new if both paths exist
 		if (oldPath && oldPath !== newPath && newPath) {
-			const oldFilePath = this.resolveQueueFilePath(oldPath);
-			const newFilePath = this.resolveQueueFilePath(newPath);
-			if (oldFilePath && newFilePath && await adapter.exists(oldFilePath)) {
-				await adapter.rename(oldFilePath, newFilePath);
-				return; // File was renamed, we're done
+			const oldDirPath = this.resolveQueueFilePath(oldPath);
+			const newDirPath = this.resolveQueueFilePath(newPath);
+			if (oldDirPath && newDirPath && await adapter.exists(oldDirPath)) {
+				// TODO: Move files from old to new directory
 			}
 		}
 
-		// Ensure new file exists
+		// Ensure new directory exists
 		if (newPath) {
-			const filePath = this.resolveQueueFilePath(newPath);
-			if (filePath && !(await adapter.exists(filePath))) {
-				await adapter.write(filePath, '');
+			const dirPath = this.resolveQueueFilePath(newPath);
+			if (dirPath && !(await adapter.exists(dirPath))) {
+				await adapter.mkdir(dirPath);
 			}
 		}
 	}
 
 	private startQueueProcessor() {
-		if (!this.settings.offlineCommandQueuePath) return;
+		if (!this.settings.offlineCommandQueueDir) return;
 
 		// Check queue every 5 seconds
 		this._queueCheckInterval = window.setInterval(() => {
@@ -1076,99 +1079,229 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	}
 
 	private async recoverFromCrash() {
-		if (!this.settings.offlineCommandQueuePath) return;
+		if (!this.settings.offlineCommandQueueDir) return;
 
-		const basePath = this.resolveQueueFilePath(this.settings.offlineCommandQueuePath);
-		if (!basePath) return;
+		const dirPath = this.resolveQueueFilePath(this.settings.offlineCommandQueueDir);
+		if (!dirPath) return;
 
-		const processingPath = basePath + '.processing';
-		if (await this.app.vault.adapter.exists(processingPath)) {
-			// Found leftover .processing file - resume processing
-			await this.processQueueFile(processingPath);
+		const adapter = this.app.vault.adapter;
+		if (!(await adapter.exists(dirPath))) return;
+
+		// Look for any .processing.jsonl files left from crash
+		const files = await adapter.list(dirPath);
+		for (const file of files.files) {
+			if (file.endsWith('.processing.jsonl')) {
+				await this.processJsonlFile(file);
+			}
 		}
 	}
 
 	private async checkAndProcessQueue() {
-		if (this._processingQueue || !this.settings.offlineCommandQueuePath) return;
+		if (this._processingQueue || !this.settings.offlineCommandQueueDir) return;
 
-		const filePath = this.resolveQueueFilePath(this.settings.offlineCommandQueuePath);
-		if (!filePath) return;
+		const dirPath = this.resolveQueueFilePath(this.settings.offlineCommandQueueDir);
+		if (!dirPath) return;
 
 		const adapter = this.app.vault.adapter;
-		if (!(await adapter.exists(filePath))) return;
+		if (!(await adapter.exists(dirPath))) return;
 
-		const content = await adapter.read(filePath);
-		if (!content.trim()) return; // File is empty
+		// Verify it's actually a directory
+		const stat = await adapter.stat(dirPath);
+		if (!stat || stat.type !== 'folder') {
+			await this.log('error', 'batch', `Queue path is not a directory: ${dirPath}`);
+			return;
+		}
 
-		// Atomically move file to .processing
 		this._processingQueue = true;
-		const processingPath = filePath + '.processing';
+		try {
+			// Get all files in queue directory
+			const listing = await adapter.list(dirPath);
+
+			// Filter for .json and .jsonl files (excluding .retry.json and .processing.jsonl)
+			const queueFiles = listing.files.filter(f =>
+				(f.endsWith('.json') || f.endsWith('.jsonl')) &&
+				!f.endsWith('.retry.json') &&
+				!f.endsWith('.processing.jsonl')
+			);
+
+			if (queueFiles.length === 0) {
+				this._processingQueue = false;
+				return;
+			}
+
+			// Get file stats and sort by birth time (creation time)
+			const fileStats = await Promise.all(
+				queueFiles.map(async (file) => ({
+					path: file,
+					stat: await adapter.stat(file)
+				}))
+			);
+
+			fileStats.sort((a, b) => (a.stat?.ctime || 0) - (b.stat?.ctime || 0));
+
+			// Process each file
+			for (const { path: filePath } of fileStats) {
+				// Check for retry sidecar - skip if not ready
+				const retryPath = filePath + '.retry.json';
+				if (await adapter.exists(retryPath)) {
+					const retryData = JSON.parse(await adapter.read(retryPath)) as RetryMetadata;
+					if (retryData.nextRetryAfter > Date.now()) {
+						continue; // Not ready to retry yet
+					}
+				}
+
+				// Process the file
+				if (filePath.endsWith('.jsonl')) {
+					await this.processJsonlFile(filePath);
+				} else if (filePath.endsWith('.json')) {
+					await this.processJsonFile(filePath);
+				}
+			}
+		} finally {
+			this._processingQueue = false;
+		}
+	}
+
+	private async processJsonFile(filePath: string) {
+		const adapter = this.app.vault.adapter;
+		const dirPath = this.resolveQueueFilePath(this.settings.offlineCommandQueueDir);
+		if (!dirPath) return;
+
+		let cmdParams: CommandParams;
+		try {
+			const content = await adapter.read(filePath);
+			cmdParams = JSON.parse(content) as CommandParams;
+		} catch (parseError) {
+			// Invalid JSON - log and delete file
+			await this.log('error', 'batch', `Invalid JSON in command file ${filePath}`);
+			await adapter.remove(filePath);
+			return;
+		}
 
 		try {
-			await adapter.rename(filePath, processingPath);
-			await adapter.write(filePath, ''); // Create new empty file
-			await this.processQueueFile(processingPath);
+			// Execute command
+			await this.processCommand(cmdParams, 'batch');
+
+			// Success - delete both .json and .retry.json if it exists
+			await adapter.remove(filePath);
+			const retryPath = filePath + '.retry.json';
+			if (await adapter.exists(retryPath)) {
+				await adapter.remove(retryPath);
+			}
 		} catch (e) {
-			this._processingQueue = false;
+			// Handle failure with retry logic
+			await this.handleCommandFailure(filePath, e, cmdParams);
+		}
+	}
+
+	private async processJsonlFile(filePath: string) {
+		const adapter = this.app.vault.adapter;
+		const dirPath = this.resolveQueueFilePath(this.settings.offlineCommandQueueDir);
+		if (!dirPath) return;
+
+		// Rename to .processing.jsonl
+		const processingPath = filePath.replace(/\.jsonl$/, '.processing.jsonl');
+		await adapter.rename(filePath, processingPath);
+
+		try {
+			const content = await adapter.read(processingPath);
+			const lines = content.split('\n').filter(line => line.trim());
+
+			// Process each line
+			for (const line of lines) {
+				let cmdParams: CommandParams;
+				try {
+					cmdParams = JSON.parse(line) as CommandParams;
+				} catch (parseError) {
+					// Invalid JSON - log and skip
+					await this.log('error', 'batch', `Invalid JSON in command queue: ${line}`);
+					continue;
+				}
+
+				try {
+					await this.processCommand(cmdParams, 'batch');
+				} catch (e) {
+					// Command execution failed - check if it has retry config
+					const maxRetries = cmdParams.maxRetries || 0;
+
+					if (maxRetries > 0) {
+						// Create individual .json file for retry
+						const retryFileName = `command-${moment().format('YYYY-MM-DD_HH-mm-ss-SSS')}.json`;
+						const retryFilePath = dirPath + '/' + retryFileName;
+						await adapter.write(retryFilePath, line);
+
+						// Handle as failed command (creates .retry.json)
+						await this.handleCommandFailure(retryFilePath, e, cmdParams);
+					} else {
+						// No retries - just log error
+						await this.handleErrors(e, 'batch');
+					}
+				}
+			}
+
+			// Done processing - delete .processing.jsonl
+			await adapter.remove(processingPath);
+		} catch (e) {
+			// Error reading/processing file - rename back
+			if (await adapter.exists(processingPath)) {
+				await adapter.rename(processingPath, filePath);
+			}
 			throw e;
 		}
 	}
 
-	private async processQueueFile(filePath: string) {
+	private async handleCommandFailure(filePath: string, error: any, cmdParams?: CommandParams) {
 		const adapter = this.app.vault.adapter;
-		const content = await adapter.read(filePath);
-		const lines = content.split('\n').filter(line => line.trim());
 
-		if (lines.length === 0) {
-			// Empty file, just delete it
+		// Log error
+		await this.handleErrors(error, 'batch');
+
+		// Read command to check retry config if not provided
+		if (!cmdParams) {
+			const content = await adapter.read(filePath);
+			cmdParams = JSON.parse(content) as CommandParams;
+		}
+
+		const maxRetries = cmdParams.maxRetries || 0;
+		const retryDelayMs = cmdParams.retryDelayMs || 0;
+
+		if (maxRetries === 0) {
+			// No retries configured - just delete
 			await adapter.remove(filePath);
-			this._processingQueue = false;
 			return;
 		}
 
-		// Update status bar
-		if (this._statusBarItem) {
-			this._statusBarItem.setText(`Processing ${lines.length} command${lines.length > 1 ? 's' : ''}...`);
+		// Check if retry metadata exists
+		const retryPath = filePath + '.retry.json';
+		let retryData: RetryMetadata;
+
+		if (await adapter.exists(retryPath)) {
+			// Existing retry - increment attempt
+			retryData = JSON.parse(await adapter.read(retryPath)) as RetryMetadata;
+			retryData.attempts++;
+		} else {
+			// First attempt
+			retryData = {
+				attempts: 1,
+				nextRetryAfter: 0
+			};
 		}
 
-		let errorCount = 0;
+		// Check if retries exhausted
+		if (retryData.attempts >= maxRetries) {
+			// Rename to .failed.json and delete retry metadata
+			const failedPath = filePath.replace(/\.json$/, '.failed.json');
+			await adapter.rename(filePath, failedPath);
+			await adapter.remove(retryPath);
 
-		// Process commands one by one
-		for (let i = 0; i < lines.length; i++) {
-			const line = lines[i].trim();
-			if (!line) continue;
+			await this.log('error', 'batch', `Command failed after ${retryData.attempts} attempts: ${filePath}`);
+		} else {
+			// Schedule next retry
+			retryData.nextRetryAfter = Date.now() + retryDelayMs;
 
-			// Update progress
-			if (this._statusBarItem) {
-				this._statusBarItem.setText(`Processing command ${i + 1}/${lines.length}...`);
-			}
-
-			try {
-				// Parse JSON and call processCommand directly
-				// JSON preserves types (numbers, booleans, arrays, etc.)
-				const cmdParams = JSON.parse(line) as CommandParams;
-				await this.processCommand(cmdParams, 'batch');
-			} catch (e) {
-				// Log error but continue processing
-				errorCount++;
-				await this.handleErrors(e, 'batch');
-				// Line is deleted regardless of success/failure
-			}
+			// Save retry metadata
+			await adapter.write(retryPath, JSON.stringify(retryData, null, 2));
 		}
-
-		// Clear status bar
-		if (this._statusBarItem) {
-			this._statusBarItem.setText('');
-		}
-
-		// Show single notice if there were errors
-		if (errorCount > 0) {
-			new Notice(`${errorCount} error(s) occurred while processing commands. Check error log for details.`);
-		}
-
-		// Delete processing file
-		await adapter.remove(filePath);
-		this._processingQueue = false;
 	}
 
 	//// Functions called from [commands/context menu/uris/etc]
@@ -1268,7 +1401,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			await this.updateTitleAndContent(opts.existingFile, title, contentOut);
 		} catch (error) { this.handleErrors(error); }
 	}
-	async insertPartial(opts?: {
+	async insertBlock(opts?: {
 		templateFile?: TFile,
 		existingFile?: TFile,
 		destHeader?: string,
@@ -1284,17 +1417,17 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			if (!opts.existingFile) { opts.existingFile = this.getOpenFileOrThrow(); }
 			if (!opts.templateFile) {
 				const currDir = this.getOpenFileOrThrow().parent as TFolder;
-				opts.templateFile = await this.promptForTemplateFile(currDir, "partial");
+				opts.templateFile = await this.promptForTemplateFile(currDir, "block");
 			}
 			let editor: Editor | null = null;
-			if (!opts.destHeader) {
+			if (!opts.location && !opts.destHeader) {
 				editor = this.getEditorOrThrow();
 				if (opts.fromSelection) {
 					opts.fieldOverrides.sourceText = editor.getSelection();
 				}
 			}
 
-			// Parse and resolve partial
+			// Parse and resolve block
 			let content = await this.app.vault.read(opts.templateFile);
 			let state = await this.parseTemplate(content, "", opts.templateFile.parent as TFolder);
 			let hadSourceTextField = !!state.fieldInfos["sourceText"];
@@ -1314,48 +1447,48 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				opts.finalize = await this.promptForFieldCollection(state);
 			}
 
-			let { fm: partialFm, body: partialBody } = Z2KTemplateEngine.renderTemplate(state, opts.finalize ?? false);
-			partialFm = this.updatePartialYamlOnInsert(partialFm);
+			let { fm: blockFm, body: blockBody } = Z2KTemplateEngine.renderTemplate(state, opts.finalize ?? false);
+			blockFm = this.updateBlockYamlOnInsert(blockFm);
 			if (!hadSourceTextField && opts.fieldOverrides.sourceText != null) {
-				partialBody += `\n\n${String(opts.fieldOverrides.sourceText)}\n`;
+				blockBody += `\n\n${String(opts.fieldOverrides.sourceText)}\n`;
 			}
 
 			// Insert into body: file position, header position, line number, or editor mode
 			let newFileContent: string;
 			const fileContent = await this.app.vault.read(opts.existingFile);
 			const { fm: fileFm, body: fileBody } = Z2KYamlDoc.splitFrontmatter(fileContent);
-			const mergedFm = Z2KYamlDoc.mergeLastWins([fileFm, partialFm]);
+			const mergedFm = Z2KYamlDoc.mergeLastWins([fileFm, blockFm]);
 
 			let newBody: string;
 			if (opts.location === "file-top") {
 				// Insert at top of file (first line of content after frontmatter)
-				newBody = partialBody + "\n" + fileBody;
+				newBody = blockBody + fileBody;
 			} else if (opts.location === "file-bottom") {
 				// Insert at bottom of file
-				newBody = fileBody + "\n" + partialBody;
+				newBody = fileBody + "\n" + blockBody;
 			} else if (opts.location === "header-top" || opts.location === "header-bottom") {
 				// Insert at header position
 				if (!opts.destHeader) {
 					throw new TemplatePluginError("destHeader is required when location is 'header-top' or 'header-bottom'");
 				}
-				newBody = this.insertIntoHeaderSection(fileBody, opts.destHeader, partialBody, opts.location);
+				newBody = this.insertIntoHeaderSection(fileBody, opts.destHeader, blockBody, opts.location);
 			} else if (typeof opts.location === "number") {
 				// Insert at specific line number
-				newBody = this.insertAtLineNumber(fileBody, opts.location, partialBody);
+				newBody = this.insertAtLineNumber(fileBody, opts.location, blockBody);
 			} else if (opts.destHeader) {
 				// Backward compatibility: if destHeader is specified without location, use header-top
-				newBody = this.insertIntoHeaderSection(fileBody, opts.destHeader, partialBody, "header-top");
+				newBody = this.insertIntoHeaderSection(fileBody, opts.destHeader, blockBody, "header-top");
 			} else {
 				// Editor mode: insert at cursor or replace selection
 				const editor = this.getEditorOrThrow();
 				if (opts.fromSelection) {
-					editor.replaceSelection(partialBody);
+					editor.replaceSelection(blockBody);
 				} else {
-					editor.replaceRange(partialBody, editor.getCursor());
+					editor.replaceRange(blockBody, editor.getCursor());
 				}
 				const full = editor.getValue();
 				const { fm: fileFm2, body: newBody2 } = Z2KYamlDoc.splitFrontmatter(full);
-				const mergedFm2 = Z2KYamlDoc.mergeLastWins([fileFm2, partialFm]);
+				const mergedFm2 = Z2KYamlDoc.mergeLastWins([fileFm2, blockFm]);
 				newFileContent = Z2KYamlDoc.joinFrontmatter(mergedFm2, newBody2);
 				await this.app.vault.modify(opts.existingFile, newFileContent);
 				return;
@@ -1369,7 +1502,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	// de-duplication helper functions
 	async parseTemplate(content: string, systemBlocksContent: string, relativeFolder: TFolder): Promise<TemplateState> {
 		try {
-			return await Z2KTemplateEngine.parseTemplate(content, systemBlocksContent, relativeFolder.path, this.getPartialCallbackFunc());
+			return await Z2KTemplateEngine.parseTemplate(content, systemBlocksContent, relativeFolder.path, this.getBlockCallbackFunc());
 		} catch (error) {
 			rethrowWithMessage(error, "Error occurred while parsing the template");
 		}
@@ -1427,7 +1560,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 
 
 	// Template editing
-	async convertFileTemplateType(file: TFile, type: "normal" | "named" | "partial") {
+	async convertFileTemplateType(file: TFile, type: "normal" | "named" | "block") {
 		try {
 			if (type === "normal" && this.isInsideTemplatesFolder(file)) {
 				await this.logInfo("You will need to manually move the file outside of your templates folder (" + this.settings.templatesFolderName + ").");
@@ -1437,7 +1570,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			let doc = Z2KYamlDoc.fromString(fm);
 			if (type === "normal") {
 				doc.del("z2k_template_type");
-			} else if (type === "named" || type === "partial") {
+			} else if (type === "named" || type === "block") {
 				doc.set("z2k_template_type", type);
 			}
 			fm = doc.toString();
@@ -1496,7 +1629,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			new CardTypeSelectionModal(this.app, cardTypes, this.settings, resolve, reject).open();
 		});
 	}
-	async promptForTemplateFile(cardType: TFolder, type: "named" | "partial"): Promise<TFile> {
+	async promptForTemplateFile(cardType: TFolder, type: "named" | "block"): Promise<TFile> {
 		const templates = this.getAssociatedTemplates(type, cardType);
 		if (templates.length === 0) {
 			throw new Error(`No ${type === "named" ? "" : "block "}templates available in the selected ${cardRefNameLower(this.settings)} type folder.`);
@@ -1536,9 +1669,20 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	insertIntoHeaderSection(body: string, header: string, insertText: string, location: "header-top"|"header-bottom" = "header-top"): string {
 		if (!insertText || insertText.trim() === "") { return body; }
 
-		// Find header section (case-insensitive, without # symbols)
-		const escapedHeader = escapeRegExp(header);
-		const headerMatch = new RegExp(`^#+\\s+${escapedHeader}[\\s\\S]*?(?=\\n#|$(?![\\s\\S]))`, "mi");
+		// Check if header includes # symbols (e.g., "## Section" vs "Section")
+		const hashMatch = header.match(/^(#+)\s+(.+)$/);
+		let headerMatch: RegExp;
+		if (hashMatch) {
+			// Header includes specific level (e.g., "## Target Section")
+			const hashCount = hashMatch[1].length;
+			const headerText = hashMatch[2];
+			const escapedHeader = escapeRegExp(headerText);
+			headerMatch = new RegExp(`^#{${hashCount}}\\s+${escapedHeader}[\\s\\S]*?(?=\\n#|$(?![\\s\\S]))`, "mi");
+		} else {
+			// Header without # symbols - match any level (e.g., "Target Section")
+			const escapedHeader = escapeRegExp(header);
+			headerMatch = new RegExp(`^#+\\s+${escapedHeader}[\\s\\S]*?(?=\\n#|$(?![\\s\\S]))`, "mi");
+		}
 		const match = body.match(headerMatch);
 		if (!match) {
 			throw new TemplatePluginError(`Header not found: ${header}`);
@@ -1546,15 +1690,26 @@ export default class Z2KTemplatesPlugin extends Plugin {
 
 		// Insert into matched header section
 		const rows = match[0].split("\n");
+		// Remove trailing newline from insertText since join("\n") will add separators
+		const textToInsert = insertText.replace(/\n$/, '');
 		if (location === "header-top") {
-			rows.splice(1, 0, insertText);
+			// Find first non-empty line after header
+			const emptyLine = /^\s*$/;
+			let insertAt = 1;
+			for (let i = 1; i < rows.length; i++) {
+				if (!emptyLine.test(rows[i])) {
+					insertAt = i;
+					break;
+				}
+			}
+			rows.splice(insertAt, 0, textToInsert);
 		} else {
 			const emptyLine = /^\s*$/;
 			let insertAt = rows.length;
 			for (let i = rows.length - 1; i >= 0; i--) {
 				if (emptyLine.test(rows[i])) { insertAt = i; } else { break; }
 			}
-			rows.splice(insertAt, 0, insertText);
+			rows.splice(insertAt, 0, textToInsert);
 		}
 
 		const updated = rows.join("\n");
@@ -1568,28 +1723,34 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		const totalLines = rows.length;
 		let insertIndex: number;
 
-		// DOCS: See line number usage below
-		if (lineNumber >= 0) {
-			// Positive numbers (0 to N): 0 = before first line, N = after last line
-			if (lineNumber > totalLines) {
-				throw new TemplatePluginError(`Line number ${lineNumber} is out of range (file has ${totalLines} lines, valid range: 0 to ${totalLines})`);
+		// DOCS: Positive numbers (1 to N+1): 1 = before first line, N+1 = after last line
+		// DOCS: Negative numbers: -1 = before last line, -2 = before second-to-last, etc.
+		if (lineNumber > 0) {
+			// Positive numbers: convert to 0-indexed (line 1 = index 0)
+			if (lineNumber > totalLines + 1) {
+				throw new TemplatePluginError(`Line number ${lineNumber} is out of range (file has ${totalLines} lines, valid range: 1 to ${totalLines + 1})`);
 			}
-			insertIndex = lineNumber;
-		} else {
+			insertIndex = lineNumber - 1;
+		} else if (lineNumber < 0) {
 			// Negative numbers: -1 = before last line, -2 = before second-to-last, etc.
 			insertIndex = totalLines + lineNumber;
 			if (insertIndex < 0) {
 				throw new TemplatePluginError(`Line number ${lineNumber} is out of range (file has ${totalLines} lines, valid range: -${totalLines} to -1)`);
 			}
+		} else {
+			// lineNumber === 0 is invalid
+			throw new TemplatePluginError(`Line number 0 is not valid. Use positive numbers (1 to ${totalLines + 1}) or negative numbers (-1 to -${totalLines})`);
 		}
 
-		rows.splice(insertIndex, 0, insertText);
+		// Remove trailing newline from insertText since join("\n") will add separators
+		const textToInsert = insertText.replace(/\n$/, '');
+		rows.splice(insertIndex, 0, textToInsert);
 		return rows.join("\n");
 	}
 
-	getFileTemplateType(file: TFile): "normal" | "named" | "partial" {
+	getFileTemplateType(file: TFile): "normal" | "named" | "block" {
 		const yamlTemplateType = this.app.metadataCache.getFileCache(file)?.frontmatter?.["z2k_template_type"];
-		if (yamlTemplateType === "named" || yamlTemplateType === "partial") {
+		if (yamlTemplateType === "named" || yamlTemplateType === "block") {
 			return yamlTemplateType;
 		} else if (this.isInsideTemplatesFolder(file)) {
 			return "named";
@@ -1641,7 +1802,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	// 	// @ts-expect-error: internal API
 	// 	this.app.viewRegistry.unregisterExtensions("template");
 	// }
-	getAllTemplates(): { file: TFile, type: "named" | "partial" }[] {
+	getAllTemplates(): { file: TFile, type: "named" | "block" }[] {
 		let list = [];
 		for (const f of this.getAllTemplatesRootFiles()) {
 			if (!(f instanceof TFile)) { continue; }
@@ -1651,7 +1812,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		}
 		return list;
 	}
-	getAllCardTypes(filter: "named" | "partial"): TFolder[] {
+	getAllCardTypes(filter: "named" | "block"): TFolder[] {
 		let folders: TFolder[] = [];
 		for (const t of this.getAllTemplates()) {
 			if (t.type !== filter) { continue; }
@@ -1666,7 +1827,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		folders.sort((a, b) => a.path.localeCompare(b.path));
 		return folders;
 	}
-	getAssociatedTemplates(filter: "named" | "partial", cardType: TFolder): TFile[] {
+	getAssociatedTemplates(filter: "named" | "block", cardType: TFolder): TFile[] {
 		const templatesRootFolder = this.getTemplatesRootFolder();
 		if (!this.isSubPathOf(cardType.path, templatesRootFolder.path)) {
 			throw new Error(`The selected ${cardRefNameLower(this.settings)} type folder is not inside your templates root folder.`);
@@ -1698,33 +1859,33 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		}
 		return folder || null;
 	}
-	getPartialCallbackFunc(): (name: string, path: string) => Promise<[found: boolean, content: string, path: string]> {
-		// Store [file, normalized path] pairs for all partials
-		let allPartials: [TFile, string][] = [];
+	getBlockCallbackFunc(): (name: string, path: string) => Promise<[found: boolean, content: string, path: string]> {
+		// Store [file, normalized path] pairs for all blocks
+		let allBlocks: [TFile, string][] = [];
 		for (const t of this.getAllTemplates()) {
-			if (t.type === "partial") {
-				allPartials.push([t.file, normalizeFullPath(t.file.path)]);
+			if (t.type === "block") {
+				allBlocks.push([t.file, normalizeFullPath(t.file.path)]);
 			}
 		}
 
 		return async (name: string, path: string): Promise<[found: boolean, content: string, path: string]> => {
-			// TODO: support more path formats, like relative paths, partial paths, etc; Maybe make relative paths required to start with './' or '../'?
-			// name can be just the title (partial.md) or an absolute path (/folder/partial.md).
-			// path is the folder of the template/partial where the partial was referenced (so it's relative to here).
+			// TODO: support more path formats, like relative paths, block paths, etc; Maybe make relative paths required to start with './' or '../'?
+			// name can be just the title (block.md) or an absolute path (/folder/block.md).
+			// path is the folder of the template/block where the block was referenced (so it's relative to here).
 			if (name.startsWith("/")) { // absolute path
 				const absolutePath = normalizeFullPath(this.joinPath(this.getTemplatesRootFolder().path, name.substring(1))); // DOCS: relative to templates root folder
 				const file = this.getFile(absolutePath);
 				if (!file) { return [false, "", ""]; }
 				const normPath = normalizeFullPath(file.path);
-				if (!allPartials.some(([f, p]) => p === normPath)) { return [false, "", ""]; }
+				if (!allBlocks.some(([f, p]) => p === normPath)) { return [false, "", ""]; }
 				return [true, await this.app.vault.read(file), normPath];
 			}
 			// if given just the name, search current dir first (including templates dir), then search parents, then the whole vault
 			if (!name.includes("/")) { // just the name
 				let matches: [TFile, string][] = [];
-				for (const partial of allPartials) {
-					if (partial[0].basename === name || partial[0].name === name) {
-						matches.push(partial);
+				for (const block of allBlocks) {
+					if (block[0].basename === name || block[0].name === name) {
+						matches.push(block);
 					}
 				}
 				if (matches.length === 0) { return [false, "", ""]; }
@@ -1817,7 +1978,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		return fullPath;
 	}
 	setDefaultTitleFromYaml(state: TemplateState) {
-		// look through all the yaml (including from partials) and find any z2k_template_default_title field
+		// look through all the yaml (including from blocks) and find any z2k_template_default_title field
 		for (const yamlStr of state.templatesYaml) {
 			let yaml = Z2KYamlDoc.fromString(yamlStr);
 
@@ -1946,7 +2107,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		doc.del("z2k_template_default_miss_handling");
 		return doc.toString();
 	}
-	updatePartialYamlOnInsert(fm: string): string {
+	updateBlockYamlOnInsert(fm: string): string {
+		if (!fm || fm.trim() === "") { return fm; }
 		const doc = Z2KYamlDoc.fromString(fm);
 		doc.del("z2k_template_type");
 		doc.del("z2k_template_default_title");
@@ -1981,7 +2143,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		}
 		systemBlocks.reverse(); // So root is first
 		let yamls = systemBlocks.map(b => Z2KYamlDoc.splitFrontmatter(b).fm);
-		let bodies = systemBlocks.map(b => Z2KYamlDoc.splitFrontmatter(b).body);
+		let bodies = systemBlocks.map(b => Z2KYamlDoc.splitFrontmatter(b).body).filter(body => body.trim() !== '');
 		let mergedFm = Z2KYamlDoc.mergeLastWins(yamls);
 		let combinedBody = bodies.join('');
 		return Z2KYamlDoc.joinFrontmatter(mergedFm, combinedBody);
