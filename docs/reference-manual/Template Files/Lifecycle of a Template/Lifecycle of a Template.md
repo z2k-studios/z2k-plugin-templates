@@ -14,11 +14,11 @@ sidebar_position: 1
 	- **Stage 3**: [[Finalized Stage]] - The end result - a completed content file in the vault.
 - [[Typical Templates Workflow]] - Maps the Lifecycle into a Templates Workflow
 
-## Related Concepts
-- [[Deferred Field Resolution]] - Reviews how an instantiated content file iterates on fields
-
 ## Lifecycle Diagram
 ![[Lifecycle of a Template - Large.gif]]
+
+## Related Concepts
+- [[Deferred Field Resolution]] - Reviews how an instantiated content file iterates on fields
 
 
 

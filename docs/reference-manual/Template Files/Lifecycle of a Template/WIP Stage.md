@@ -21,9 +21,12 @@ In a perfect world, one knows all the data that goes into a content file the mom
 That said, there is no requirement to use [[WIP Stage|WIP Content Files]] - simply always click the [[Finalization|Finalize]] button on the [[Prompting Interface|prompting interface]] to bypass the WIP Content File stage. 
 
 
-## WIP Iterating
+## How to Iterate on the WIP Content File?
 While a content file exists in a WIP state, you can continue to iterate on the file with new data. Simply issue the [[Continue Filling in Data]] command and then selecting the "Save for now" button in the [[Prompting Interface|prompting dialog box]] to close out the current iteration.
 
+
+## How are WIP Content Files Named?
+==Insert a description of how WIP Content files are named, whether it be with the YAML property, the prompting interface, or fileTitle fieldInfo. This may need to be its own docpage== 
 
 ## Can I Add New Fields?
 Definitely. For instance, it is common to insert new [[Block Templates]] into WIP Content files. With each insertion, a new set of fields will potentially be placed into the WIP file. 
@@ -34,7 +37,7 @@ Technically, a content file can remain in a WIP state forever (I.e. persist with
 
 The biggest issue with never finalizing is the potential for some fields to inadvertently cause [[Template Pollution]] (see next section). 
 
-## Avoid Template Pollution
+## How to Avoid Template Pollution?
 Because WIP content files exist inside the content area of the vault, it is important to minimize potential [[Template Pollution|pollution]] of data with `{{fields}}`. Pollution is where content files continue to have placeholder fields in places that there larger vault system expects to see real data.  See the [[Template Pollution#How To Minimize Template Pollution|pollution guidelines]] for how to minimize template pollution. 
 
 ## Can Any Field Be Deferred?

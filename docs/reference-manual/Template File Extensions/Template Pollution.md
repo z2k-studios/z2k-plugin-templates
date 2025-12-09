@@ -19,9 +19,9 @@ Here is a list of all the ways template pollution can occur, and possible fixes:
 
 | Pollution Type    | Description                           | Example                                      |
 | ----------------- | ------------------------------------- | -------------------------------------------- |
-| Wikilinks         | `{{handlebars}}` used in wikilinks    | `[[{{Book Author}}]]`                        |
+| Wikilinks         | `{{handlebars}}` used in wikilinks    | `[[{{BookAuthor}}]]`                         |
 | Hashtags          | `{{handlerbars}}` used in hashtags    | `#Book/Genre/{{ChosenGenre}}`                |
-| YAML Properties   | `{{handlebars}}` in frontmatter     | in yaml: `created :: {{today}}`              |
+| YAML Properties   | `{{handlebars}}` in frontmatter       | in yaml: `created :: {{today}}`              |
 | DataView Searches | `{{handlebars}}` in dataview fields   | `BookTitle :: {{BookTitle}}`                 |
 | Searches          | Searches for data will show templates | a search for "Daily Note" will show template |
 | Bases             | Template text will show up in Bases   | `Created By :: {{creator}}`                  |

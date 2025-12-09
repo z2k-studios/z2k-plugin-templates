@@ -12,7 +12,8 @@ The default format for the `{{timestamp}}` built-in field is `YYYYMMDDHHmmss`. Y
 ## Customizing the Format of timestamp
 To adjust the format of the built-in `{{timestamp}}` field, please use the [[format-date]] built-in Helper function.
 
-> [!WARNING] Passing the field `timestamp` to either [[date-add]] or [[format-date]] will fail because the timestamp string is not a valid date or time value. Therefore, if you need to use an alternative timestamp value, construct it with the [[format-date]] helper using [[now]] as the sourceTime. Please see the [[format-date#Using format-date with sourceTimes other than Now|comment in the format-date]] reference page.
+> [!WARNING] Do not use Date Helper Functions on timestamps!
+> Passing the field `timestamp` to either [[date-add]] or [[format-date]] will fail because the timestamp string is not a valid date or time value. Therefore, if you need to use an alternative timestamp value, construct it with the [[format-date]] helper using [[now]] as the sourceTime. Please see the [[format-date#Using format-date with sourceTimes other than Now|comment in the format-date]] reference page.
 
 
 ## Example Output 
