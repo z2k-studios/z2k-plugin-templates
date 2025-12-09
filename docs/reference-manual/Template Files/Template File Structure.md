@@ -27,7 +27,6 @@ Like most Markdown formats, the template can optionally support [[Z2K Templates 
 In addition, a template file can define several YAML keys (nodes) that are recognized by the plugin to control its behavior. See [[YAML Configuration Properties]] for more details. 
 
 You can also use [[Template Fields]] inside the frontmatter (see [[Using Fields Inside YAML Metadata]]) and YAML properties can be used as named fields in your content (see [[Using YAML Metadata as Fields]]). 
-
 For example:
 ```md
 ---
@@ -36,6 +35,12 @@ z2k_template_name: Sample Template
 custom_field: "{{myField}}"
 ---
 ```
+
+
+> [!WARNING] YAML Properties and Template Fields
+> Note: just be aware of [[Template Pollution]] when using template fields inside YAML properties - we suggest using one of the [[Template Pollution#How To Minimize Template Pollution|techniques to minimize]] pollution.
+
+
 
 ## Body Content
 The body contains Markdown mixed with template expressions. Everything written in the body is copied to the final file after fields have been resolved.

@@ -1,9 +1,9 @@
 ---
 sidebar_position: 1
-sidebar_folder_position: 170
+sidebar_folder_position: 180
 sidebar_label: YAML Integration
 aliases:
-- YAML Integration
+  - YAML Integration
 ---
 # Z2K Templates and YAML
 

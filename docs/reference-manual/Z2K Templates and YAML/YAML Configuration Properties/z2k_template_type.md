@@ -5,7 +5,7 @@ doc_state: revised_ai_draft_1
 ---
 
 # z2k_template_type
-The `z2k_template_type` field is a [[YAML Configuration Properties|Z2K Templates YAML Configuration Property]] that tells Z2K Templates how to treat a given file: as a normal content note, a full document template, or a reusable block template. These directly correspond to the different [[Types of Template Files|Template Types]]. 
+The `z2k_template_type` property is a [[YAML Configuration Properties|Z2K Templates YAML Configuration Property]] that tells Z2K Templates how to treat a given file: as a normal content note, a full document template, or a reusable block template. These directly correspond to the different [[Types of Template Files|Template Types]]. 
 
 This property works together with [[Template File Extensions]] but does not depend on it – you can use it even if you never change file extensions.
 
@@ -15,6 +15,8 @@ The following values are supported by `z2k_template_type`:
 | Key Value           | Meaning                                                              |
 | ------------------- | -------------------------------------------------------------------- |
 | `content-file`      | This file is not a template; treat it as a normal note               |
+| `wip-content-file`  | This file is a WIP Content file; treat it as a normal note           |
+| `finalized-content-file`  | This file is a Finalized Content file; treat it as a normal note           |
 | `document-template` | This file is a whole-file (document) template                        |
 | `block-template`    | This file is a block-level template (i.e. a "partial" in Handlebars) |
 
@@ -25,12 +27,14 @@ The property is the primary source to authoritatively declare the [[Types of Tem
 
 ## Notices
 
+> [!NOTE] This Property Is Not Required 
+> Please note that this property is *not* required in order for a template to work as a template, or a content-file to work as a content file. It is useful only for over-specifying to the Templates Plugin how exactly it should perceive of a file. 
+
 > [!WARNING] Let Z2K Templates Do The Work
 > We recommend that you use the [[Command Palette#Template Conversion Commands|Template Conversion Commands]] to facilitate updating this property instead of attempting to modify it yourself. 
 
 > [!NOTE] May Need to Move the File
 > If you change the `z2k_template_type` property, you will likely need to move the file in or out  of a [[Template Folders|Template Folder]] as a result.
-
 
 > [!NOTE] z2k_template_type rules
 > If you ever need to debug why a file is treated as a template or not, `z2k_template_type` is the first place to look.
@@ -45,6 +49,10 @@ Use `content-file` when:
 - You want the file to behave like a normal note in Obsidian and related tools.
 - The file previously was a template, but you have retired it and want to keep it as a record.
 - You use the [[Convert to Content File]] command on a template (it will set this property for you)
+
+
+> [!NOTE] Use content-file For Manually Setting Files as Content
+> If you wish to explicitly label a file as having content data, use this field. The other two variations of content files ([[#value -- wip-content-file|wip-content-file]] and [[#value -- finalized-content-file|finalized-content-file]]) are used by the Z2K Templates plugin directly.
 
 Example:
 
@@ -61,6 +69,17 @@ Summary of today’s meeting…
 ```
 
 In many cases you can omit `z2k_template_type` completely and let `content-file` be the implicit default. Use the explicit value when you want to be crystal-clear that a file is *not* part of the template layer.
+
+
+## value -- wip-content-file
+A `wip-content-file` is a content file that is currently in the [[WIP Stage]] of the [[Lifecycle of a Template]]. It may have remaining fields waiting to be specified, and Helper Functions waiting on data to be performed. 
+
+This value should not be set by end users directly (instead, use the [[#value -- content-file|content-file]] value shown above). The Z2K Templates Plugin sets this value during [[Instantiation]].
+
+## value -- finalized-content-file
+A `finalized-content-file` is a content file that was derived from a template and has been finalized.  
+
+This value should not be set by end users directly (instead, use the [[#value -- content-file|content-file]] value shown above). The Z2K Templates Plugin sets this value during [[Finalization]].
 
 ## value -- document-template
 A `document-template` is a whole-file [[Template Files|Template File]] used to create new notes. It typically contains fields such as `{{Name}}`, `{{Date}}`, or `{{Summary}}` and is often stored in a template folder.

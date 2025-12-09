@@ -54,7 +54,7 @@ If omitted, the default `directives` for a user defined field is:
 For more details on each directive, see below:
 
 ## finalize-default
-The `"finalize-default"` directive specifies that, if the user has not provide a value for the field upon [[Finalizing a File|finalization]], the plug-in will use the value of the [[field-info default|default]] parameter.  
+The `"finalize-default"` directive specifies that, if the user has not provide a value for the field upon [[Finalization|finalization]], the plug-in will use the value of the [[field-info default|default]] parameter.  
 
 **Notes**:
 - Please see [[Miss Handling]] for more details. It works hand in hand with the [[YAML Configuration Properties]].
@@ -65,7 +65,7 @@ The `"finalize-default"` directive specifies that, if the user has not provide a
 - If you have specified a field with a default response, you can use this directive to cause the default string to be the [[field-info miss|miss]] string as well. This saves data entry time and prevents errors.
 
 ## finalize-preserve
-The `"finalize-preserve"` specifies that, upon [[Finalizing a File|finalization]], if the user has not provide a value for the field, the plug-in will "preserve" this field in the final output. That is, it will keep the existing `{{fieldName}}` entry in the final output. Please see [[Miss Handling]] for more details.
+The `"finalize-preserve"` specifies that, upon [[Finalization|finalization]], if the user has not provide a value for the field, the plug-in will "preserve" this field in the final output. That is, it will keep the existing `{{fieldName}}` entry in the final output. Please see [[Miss Handling]] for more details.
 
 This is similar to setting the [[field-info miss|miss]] parameter to be that of its own field name - but this method is much preferred, as it is less ambiguous. 
 
@@ -73,7 +73,7 @@ This is similar to setting the [[field-info miss|miss]] parameter to be that of 
 - When you have fields that you want to persist long after finalization. 
 
 ## finalize-clear
-The `"finalize-clear"` specifies that, upon [[Finalizing a File|finalization]], if the user has not provide a value for the field, the plug-in will "clear" this field in the final output. All references to the `{{fieldName}}` will be cleared out with an empty string. Please see [[Miss Handling]] for more details.
+The `"finalize-clear"` specifies that, upon [[Finalization|finalization]], if the user has not provide a value for the field, the plug-in will "clear" this field in the final output. All references to the `{{fieldName}}` will be cleared out with an empty string. Please see [[Miss Handling]] for more details.
 
 **Notes**:
 - This is the default setting for user defined fields
@@ -83,14 +83,15 @@ The `"finalize-clear"` specifies that, upon [[Finalizing a File|finalization]], 
 - If you have specified a field with a different "finalize" directive, setting it back to `"finalize-clear"` resets it back to the default. 
 
 ## required
-The `"required"` directive is a useful tool for forcing a field to be filled in by a user in the [[Prompting Interface]] before the new file can be [[Finalizing a File|Finalized]].
+The `"required"` directive is a useful tool for forcing a field to be filled in by a user in the [[Prompting Interface]] before the new file can be [[Finalization|Finalized]].
 
-Important note: the `"required"` directive only makes a field required at the [[Finalizing a File|finalization]] step, and not the initial "submit" stages. See [[Deferred Field Resolution]] for more details. 
+Important note: the `"required"` directive only makes a field required at the [[Finalization|finalization]] step, and not the initial "submit" stages. See [[Deferred Field Resolution]] for more details. 
 
 **When this is useful**: Required fields are great for:
 - Ensuring that the minimal, most important fields for a template are filled out.
 - Notifying the user which fields are most important. 
 - If some fields are needed for others, then these fields can be marked as required to force the dependencies to be populated. 
+- It is extremely useful for minimizing [[Template Pollution]] by requiring potential polluting fields from ever existing past [[Instantiation]].
 
 ## not-required
 The `"not-required"` directive overrides a `"required"` directive and resets it back to the "not required" default. 

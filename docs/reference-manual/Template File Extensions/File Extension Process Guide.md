@@ -28,7 +28,7 @@ Why stay with `.md` template files:
 - No configuration required.
 
 Drawbacks:
-- Template content becomes indistinguishable from real notes in searches and property views. (i.e. [[Pollution]])
+- Template content becomes indistinguishable from real notes in searches and property views. (i.e. [[Template Pollution]])
 - More mature vaults often find this noisy.
 
 

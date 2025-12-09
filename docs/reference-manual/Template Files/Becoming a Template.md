@@ -15,4 +15,4 @@ While putting it into a template folder is the standard way a file is recognized
 
 - **URI or JSON Action**:  If a file has been explicitly passed as a template file within a URI or Command List action, then the plugin will treat it as a template file regardless of its location.
 - **File Extension**: If the file extension of the markdown file uses one of the [[Valid File Extensions]], the plugin will recognize it as a valid template file. That said, the file may not always be *discoverable*. 
-- **YAML Explicit Declaration**: If a file explicitly declares its [[Types of Template Files|Template Type]] with the [[z2k_template_type]] YAML configuration setting, the plugin will recognize it as a valid template file. But again, the file may not always be *discoverable*.
+- **YAML Explicit Declaration**: If a file explicitly declares its [[Types of Template Files|Template Type]] with the [[z2k_template_type]] YAML configuration setting, the plugin will recognize it as a valid template file. But again, the file may not always be *discoverable*. For this, place the template into a [[Template Folders|Template Folder]].

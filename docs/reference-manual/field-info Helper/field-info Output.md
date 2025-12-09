@@ -6,7 +6,7 @@ sidebar_label: field-info Output
 ---
 
 # field-info Output
-`{{field-info}}` is a [[Silent Helper Functions|Silent Helper Function]], meaning that it does not have any output when it is finalized. Instead it simply disappears when then resultant file is [[Finalizing a File|finalized]] or when the corresponding field is fully resolved. 
+`{{field-info}}` is a [[Silent Helper Functions|Silent Helper Function]], meaning that it does not have any output when it is finalized. Instead it simply disappears when then resultant file is [[Finalization|finalized]] or when the corresponding field is fully resolved. 
 
 ## Can I Output the Field Value?
 If you wish to specify the [[field-info Parameters]] but want it to also emit the field value once the user specifies it, then use the [[field-output Helper Variation]] instead.

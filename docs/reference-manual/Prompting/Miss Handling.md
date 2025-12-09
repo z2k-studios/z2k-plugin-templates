@@ -4,7 +4,7 @@ sidebar_position: 68
 
 A miss is when a Template Field exists in a template but does not have any data provided for it during an update action.
 
-Performed during the [[Finalizing a File|Finalize]] step of the [[Lifecycle of a Template]]
+Performed during the [[Finalization|Finalize]] step of the [[Lifecycle of a Template]]
 
 Miss Handling is different from Z2K than for classic Handlebars Field Replacement for a number of reasons:
 1. Some cards are repeatedly being operated on, with not all data known at once (e.g. Log Files that are updated throughout the day).

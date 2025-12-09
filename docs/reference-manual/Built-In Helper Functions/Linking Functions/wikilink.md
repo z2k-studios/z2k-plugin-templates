@@ -36,7 +36,9 @@ In general, it is best to ask for data from the user without the use of wikilink
 > ```md Book Template.md
 > - Link to [[{{BookAuthor}}]]
 > ```
-> You could do this, but if your template is stored as part of your vault, then you will be populating unresolved links with bogus document names. That is, in your list of known documents you will now see "`{{BookAuthor}}"` as a valid link inside your vault. By using the `{{wikilink}}` helper function, you prevent this bogus links in your template files from polluting your link list.
+> You could do this, but if your template is stored as part of your vault, then you will be populating unresolved links with bogus document names. That is, in your list of known documents you will now see "`{{BookAuthor}}"` as a valid link inside your vault. By using the `{{wikilink}}` helper function, you prevent this bogus links in your template files from [[Template Pollution|polluting]] your link list.
+> 
+> For more details, please see [[Template Pollution]]
 
 
 ## Tips
