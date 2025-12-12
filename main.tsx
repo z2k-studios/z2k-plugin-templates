@@ -1353,6 +1353,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 
 			if (this.hasFillableFields(state.fieldInfos) && opts.promptMode !== "none") {
 				opts.finalize = await this.promptForFieldCollection(state);
+			} else {
+				this.resolveComputedFieldValues(state, opts.finalize ?? false);
 			}
 
 			let { fm: fmOut, body: bodyOut } = Z2KTemplateEngine.renderTemplate(state, opts.finalize ?? false);
@@ -1393,6 +1395,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			}
 			if (hasFillableFields && opts.promptMode !== "none") {
 				opts.finalize = await this.promptForFieldCollection(state);
+			} else {
+				this.resolveComputedFieldValues(state, opts.finalize ?? false);
 			}
 
 			let { fm, body } = Z2KTemplateEngine.renderTemplate(state, opts.finalize ?? false);
@@ -1445,6 +1449,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			// if (this.hasFillableFields(state.fieldInfos) && opts.promptMode !== "none") {
 			if (opts.promptMode !== "none") {
 				opts.finalize = await this.promptForFieldCollection(state);
+			} else {
+				this.resolveComputedFieldValues(state, opts.finalize ?? false);
 			}
 
 			let { fm: blockFm, body: blockBody } = Z2KTemplateEngine.renderTemplate(state, opts.finalize ?? false);
@@ -1557,7 +1563,55 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		}
 	}
 
+	resolveComputedFieldValues(state: TemplateState, finalize: boolean): void {
+		const depsMap = buildDependencyMap(state.fieldInfos);
 
+		// Check for circular dependencies
+		const circular = detectCircularDependencies(depsMap);
+		if (circular.length > 0) {
+			throw new TemplatePluginError(`Circular dependency detected: ${circular.join(' -> ')}`);
+		}
+
+		const orderedFields = calculateFieldDependencyOrder(depsMap);
+
+		for (const fieldName of orderedFields) {
+			const fieldInfo = state.fieldInfos[fieldName];
+			if (!fieldInfo) { continue; }
+
+			// Build context from current resolvedValues (excluding undefined)
+			const context: Record<string, VarValueType> = {};
+			for (const [name, value] of Object.entries(state.resolvedValues)) {
+				if (value !== undefined) {
+					context[name] = value;
+				}
+			}
+
+			// Resolve value= if present (and not overridden by external data)
+			if (fieldInfo.value !== undefined && !(fieldName in state.resolvedValues)) {
+				const valueDeps = Z2KTemplateEngine.reducedGetDependencies(fieldInfo.value);
+				const allDepsExist = valueDeps.every(dep => dep in context);
+				if (allDepsExist) {
+					const resolved = Z2KTemplateEngine.reducedRenderContent(fieldInfo.value, context);
+					if (resolved === undefined) {
+						delete state.resolvedValues[fieldName];
+					} else {
+						state.resolvedValues[fieldName] = resolved;
+					}
+				}
+				// Else: deps missing, leave unspecified (don't set key)
+			}
+
+			// Apply miss value for unspecified fields when finalizing
+			if (finalize && !(fieldName in state.resolvedValues)) {
+				const resolvedMiss = Z2KTemplateEngine.reducedRenderContent(fieldInfo.miss || "", context);
+				if (resolvedMiss === undefined) {
+					delete state.resolvedValues[fieldName];
+				} else {
+					state.resolvedValues[fieldName] = resolvedMiss || '';
+				}
+			}
+		}
+	}
 
 	// Template editing
 	async convertFileTemplateType(file: TFile, type: "normal" | "named" | "block") {
@@ -2906,35 +2960,31 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel, onError }: F
 			.replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')   // XMLFile → XML File, HTTPServer → HTTP Server
 			.trim();
 	}
+
 	function computeInitialFieldStates(): Record<string, FieldState> {
 		const initialFieldStates: Record<string, FieldState> = {};
 
-		// Initialize field states with metadata
 		for (const [fieldName, fieldInfo] of Object.entries(templateState.fieldInfos)) {
-			// Get dependencies from prompt text, default value, miss text, and opts
-			const dependencies = [
-				...fieldInfo.prompt ? Z2KTemplateEngine.reducedGetDependencies(fieldInfo.prompt) : [],
-				...fieldInfo.default ? Z2KTemplateEngine.reducedGetDependencies(fieldInfo.default) : [],
-				...fieldInfo.miss ? Z2KTemplateEngine.reducedGetDependencies(fieldInfo.miss) : [],
-				// Extract dependencies from each option in opts array
-				...fieldInfo.opts ? fieldInfo.opts.flatMap(opt =>
-					opt ? Z2KTemplateEngine.reducedGetDependencies(opt) : []
-				) : [],
-			];
+			// Get dependencies using shared helper
+			const dependencies = getFieldDependencies(fieldInfo);
 
+			// Determine if field is already specified externally
+			const wasSpecified = fieldName in templateState.resolvedValues;
 
-			// Set initial field state
-			const currentValue = templateState.resolvedValues[fieldName] ?? fieldInfo.default ?? '';
+			// Initial value: use existing value, or default, or empty
+			// NOTE: This is a best-effort initial value. The real values will be
+			// calculated in updateFieldStates which runs immediately after first render.
+			const currentValue = wasSpecified
+				? templateState.resolvedValues[fieldName]
+				: (fieldInfo.default ?? '');
 
 			// Initialize selectedIndices for select fields
 			let initialSelectedIndices: number[] | undefined = undefined;
 			if (fieldInfo.type === 'singleSelect' || fieldInfo.type === 'multiSelect') {
 				if (fieldInfo.type === 'singleSelect' && currentValue !== '' && currentValue !== undefined) {
-					// Find the index of the current value in opts
 					const index = fieldInfo.opts?.findIndex(opt => opt === currentValue) ?? -1;
 					initialSelectedIndices = index >= 0 ? [index] : [0];
 				} else if (fieldInfo.type === 'multiSelect' && Array.isArray(currentValue)) {
-					// Find indices of all current values in opts
 					initialSelectedIndices = currentValue
 						.map(val => fieldInfo.opts?.findIndex(opt => opt === val) ?? -1)
 						.filter(idx => idx >= 0);
@@ -2943,14 +2993,12 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel, onError }: F
 
 			initialFieldStates[fieldName] = {
 				value: currentValue,
-				alreadyResolved: templateState.resolvedValues[fieldName] !== undefined,
-				omitFromForm: fieldInfo.directives?.contains('no-prompt') ?? false,
+				omitFromForm: fieldInfo.directives?.includes('no-prompt') ?? false,
 				touched: false,
 				focused: false,
 				hasError: false,
 				dependencies: [...new Set(dependencies)],
 				dependentFields: [],
-				// these will be set properly in updateFieldStates, but we need initial values
 				resolvedPrompt: String(fieldInfo.prompt) ?? formatFieldName(fieldName),
 				resolvedDefault: fieldInfo.default ?? "",
 				resolvedMiss: fieldInfo.miss ?? "",
@@ -2972,14 +3020,18 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel, onError }: F
 		}
 
 		// Check for circular dependencies
-		const circularDependency = detectCircularDependencies(initialFieldStates);
+		const depsMap: Record<string, string[]> = {};
+		for (const [name, state] of Object.entries(initialFieldStates)) {
+			depsMap[name] = state.dependencies;
+		}
+		const circularDependency = detectCircularDependencies(depsMap);
 		if (circularDependency.length > 0) {
 			const error = new TemplatePluginError(
 				`Circular dependency detected in template fields: ${circularDependency.join(' -> ')}`
 			);
 			error.userMessage = `Circular dependency detected in template fields: ${circularDependency.join(' -> ')}`;
-			setTimeout(() => { onError(error); }, 0); // defer unmounting until after the render finishes
-			return {}; // Return empty state to prevent further processing
+			setTimeout(() => { onError(error); }, 0);
+			return {};
 		}
 
 		return initialFieldStates;
@@ -3022,7 +3074,13 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel, onError }: F
 
 	// State variables (definition order is important here)
 	const [fieldStates, setFieldStates] = useState<Record<string, FieldState>>(computeInitialFieldStates());
-	const [dependencyOrderedFieldNames] = useState<string[]>(() => calculateFieldDependencyOrder(fieldStates));
+	const [dependencyOrderedFieldNames] = useState<string[]>(() => {
+		const depsMap: Record<string, string[]> = {};
+		for (const [name, state] of Object.entries(fieldStates)) {
+			depsMap[name] = state.dependencies;
+		}
+		return calculateFieldDependencyOrder(depsMap);
+	});
 	const [renderOrderFieldNames] = useState<string[]>(() => computeInitialRenderOrderFieldNames());
 	// Update fields after the first render to distribute and apply dependencies
 	useEffect(() => {
@@ -3033,16 +3091,30 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel, onError }: F
 	}, []);
 
 	function updateFieldStates(newFieldStates: Record<string, FieldState>) {
-		for (const fieldName of dependencyOrderedFieldNames) { // dependencyOrderedFieldNames ensures dependencies are resolved first
+		for (const fieldName of dependencyOrderedFieldNames) {
 			const fieldInfo = templateState.fieldInfos[fieldName];
-			if (!fieldInfo || newFieldStates[fieldName].omitFromForm) { continue; }
+			if (!fieldInfo) { continue; }
 
-			let context = {
-				...Object.fromEntries(Object.entries(newFieldStates).map(
-					([name, state]) => [name, state.value])),
-			};
+			// Build context from current field values (excluding undefined)
+			const context: Record<string, VarValueType> = {};
+			for (const [name, state] of Object.entries(newFieldStates)) {
+				if (state.value !== undefined) {
+					context[name] = state.value;
+				}
+			}
 
-			// Update all resolved text fields
+			// Resolve value= if present (and not overridden by external data)
+			if (fieldInfo.value !== undefined && !(fieldName in templateState.resolvedValues)) {
+				const valueDeps = Z2KTemplateEngine.reducedGetDependencies(fieldInfo.value);
+				const allDepsExist = valueDeps.every(dep => dep in context);
+				if (allDepsExist) {
+					newFieldStates[fieldName].value = Z2KTemplateEngine.reducedRenderContent(fieldInfo.value, context);
+				} else {
+					newFieldStates[fieldName].value = undefined;
+				}
+			}
+
+			// Resolve display fields
 			newFieldStates[fieldName].resolvedPrompt = String(Z2KTemplateEngine.reducedRenderContent(fieldInfo.prompt || formatFieldName(fieldName), context));
 			newFieldStates[fieldName].resolvedDefault = Z2KTemplateEngine.reducedRenderContent(fieldInfo.default || "", context);
 			newFieldStates[fieldName].resolvedMiss = Z2KTemplateEngine.reducedRenderContent(fieldInfo.miss || "", context);
@@ -3058,13 +3130,11 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel, onError }: F
 				const resolvedOpts = newFieldStates[fieldName].resolvedOpts!;
 				if (selectedIndices && selectedIndices.length > 0) {
 					if (fieldInfo.type === 'singleSelect') {
-						// For singleSelect, use the first (only) selected index
 						const idx = selectedIndices[0];
 						if (idx >= 0 && idx < resolvedOpts.length) {
 							newFieldStates[fieldName].value = resolvedOpts[idx];
 						}
 					} else if (fieldInfo.type === 'multiSelect') {
-						// For multiSelect, get all values at selected indices
 						newFieldStates[fieldName].value = selectedIndices
 							.filter(idx => idx >= 0 && idx < resolvedOpts.length)
 							.map(idx => resolvedOpts[idx]);
@@ -3072,47 +3142,38 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel, onError }: F
 				}
 			}
 
-			// DOCS: Right now, if a value or default is given for a single/multi-select field that is not in the options list, for single select it will select the first option, and for multi-select it will leave no option selected.
-			// DOCS: The value/default for multi-select fields should be an array of selected options.
-
-			if (!newFieldStates[fieldName].alreadyResolved && !newFieldStates[fieldName].touched) {
-				// For select fields, validate that resolvedDefault exists in the options list
+			// Auto-update value for untouched, unspecified, non-computed fields
+			if (fieldInfo.value === undefined
+				&& !(fieldName in templateState.resolvedValues)
+				&& !newFieldStates[fieldName].touched) {
 				if (fieldInfo.type === 'singleSelect' || fieldInfo.type === 'multiSelect') {
 					const resolvedDefault = newFieldStates[fieldName].resolvedDefault;
 					const resolvedOpts = newFieldStates[fieldName].resolvedOpts || [];
 
 					if (fieldInfo.type === 'singleSelect') {
-						// Find the index of resolvedDefault in the options
 						const defaultIndex = resolvedOpts.findIndex(opt => opt === resolvedDefault);
 						if (defaultIndex >= 0) {
-							// Default exists in options, use it
 							newFieldStates[fieldName].value = resolvedDefault;
 							newFieldStates[fieldName].selectedIndices = [defaultIndex];
 						} else {
-							// Default not in options, set to "Select an option" state
 							newFieldStates[fieldName].value = undefined;
 							newFieldStates[fieldName].selectedIndices = [];
 						}
 					} else if (fieldInfo.type === 'multiSelect') {
-						// For multiSelect, resolvedDefault could be an array or single value
 						const defaultValues = Array.isArray(resolvedDefault) ? resolvedDefault : [resolvedDefault];
-						// Find indices of all default values that exist in options
 						const defaultIndices = defaultValues
 							.map(val => resolvedOpts.findIndex(opt => opt === val))
 							.filter(idx => idx >= 0);
 
 						if (defaultIndices.length > 0) {
-							// At least some defaults exist in options
 							newFieldStates[fieldName].value = defaultIndices.map(idx => resolvedOpts[idx]);
 							newFieldStates[fieldName].selectedIndices = defaultIndices;
 						} else {
-							// No defaults in options, set to empty
 							newFieldStates[fieldName].value = [];
 							newFieldStates[fieldName].selectedIndices = [];
 						}
 					}
 				} else {
-					// For non-select fields, use resolvedDefault directly
 					newFieldStates[fieldName].value = newFieldStates[fieldName].resolvedDefault;
 				}
 			}
@@ -3227,20 +3288,40 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel, onError }: F
 
 		// Update template state with resolved values
 		for (const fieldName of dependencyOrderedFieldNames) {
-			const propmtInfo = templateState.fieldInfos[fieldName];
-			if (!propmtInfo) { continue; }
-			if (fieldStates[fieldName].alreadyResolved || fieldStates[fieldName].touched || fieldName === 'fileTitle') {
-				templateState.resolvedValues[fieldName] = fieldStates[fieldName].value;
-			} else {
-				// Left untouched, use miss value if finalizing
-				if (finalize) {
-					templateState.resolvedValues[fieldName] = fieldStates[fieldName].resolvedMiss || '';
+			const fieldInfo = templateState.fieldInfos[fieldName];
+			if (!fieldInfo) { continue; }
+			const fieldState = fieldStates[fieldName];
+			const value = fieldState.value;
+
+			// fileTitle is special - always write it (file needs a name)
+			if (fieldState.touched || fieldName === 'fileTitle') {
+				// User interacted with field (or it's fileTitle) - write the value
+				if (value === undefined) {
+					delete templateState.resolvedValues[fieldName];
+				} else {
+					templateState.resolvedValues[fieldName] = value;
+				}
+			} else if (fieldInfo.value !== undefined && !(fieldName in templateState.resolvedValues)) {
+				// Computed field (value=) not overridden by external data
+				if (value === undefined) {
+					delete templateState.resolvedValues[fieldName];
+				} else {
+					templateState.resolvedValues[fieldName] = value;
+				}
+			} else if (finalize && !(fieldName in templateState.resolvedValues)) {
+				// Unspecified field during finalization - use miss value
+				const missValue = fieldState.resolvedMiss;
+				if (missValue === undefined) {
+					delete templateState.resolvedValues[fieldName];
+				} else {
+					templateState.resolvedValues[fieldName] = missValue || '';
 				}
 			}
+			// Else: field already specified externally, leave it alone
 		}
 
 		onComplete(finalize);
-	};
+	}
 
 	function scrollToFirstError() {
 		for (const fieldName of dependencyOrderedFieldNames) {
@@ -3304,14 +3385,44 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel, onError }: F
 };
 
 /**
- * Tracks the state of each field including user interactions
+ * Tracks the state of a field during form interaction.
+ *
+ * ## Resolution System Overview
+ *
+ * The source of truth for whether a field is "specified" is KEY EXISTENCE in
+ * templateState.resolvedValues (not the value itself). This allows undefined
+ * as a valid value while still distinguishing "unspecified" fields.
+ *
+ * - Key exists in resolvedValues → field is specified → will be rendered
+ * - Key doesn't exist → field is unspecified → {{field}} preserved in output
+ *
+ * When setting values:
+ * - If value is undefined, delete the key: `delete resolvedValues[field]`
+ * - Otherwise set normally: `resolvedValues[field] = value`
+ *
+ * ## Field State Properties
+ *
+ * - `value`: Current value shown in UI and used in dependency context.
+ *   For computed fields (value=), this is calculated from dependencies.
+ *   Set to undefined if dependencies are missing.
+ *
+ * - `touched`: Whether user has interacted with this field in the current
+ *   form session. Used to determine if user input should override defaults,
+ *   and whether to write to resolvedValues at submit.
+ *
+ * - `omitFromForm`: Field is hidden from UI. Set when field has 'no-prompt'
+ *   directive or has a value= property.
+ *
+ * Note: We previously had `alreadyResolved` which tracked if a field had a
+ * value in resolvedValues at form init. This was removed because we can
+ * simply check `fieldName in templateState.resolvedValues` directly, since
+ * templateState.resolvedValues is not mutated during form operation.
  */
 interface FieldState {
 	// The current value of the field
 	// 	Should always be ready to be verified/submitted (except for miss text resolution, that can be applied upon being verified/submitted)
 	//    Should also always be what's shown in the field and be used for dependencies
 	value: VarValueType;
-	alreadyResolved?: boolean;
 	omitFromForm: boolean;
 	// Keeps track of whether the field has been interacted with
 	// 	(determines miss text behavior and default value behavior in the field itself)
@@ -3328,10 +3439,42 @@ interface FieldState {
 	selectedIndices?: number[]; // Selected option indices (for singleSelect this is an array of size 1, for multiSelect it can be multiple)
 }
 
+function getFieldDependencies(fieldInfo: FieldInfo): string[] {
+	const deps: string[] = [];
+	if (fieldInfo.prompt) {
+		deps.push(...Z2KTemplateEngine.reducedGetDependencies(fieldInfo.prompt));
+	}
+	if (fieldInfo.default) {
+		deps.push(...Z2KTemplateEngine.reducedGetDependencies(fieldInfo.default));
+	}
+	if (fieldInfo.miss) {
+		deps.push(...Z2KTemplateEngine.reducedGetDependencies(fieldInfo.miss));
+	}
+	if (fieldInfo.value) {
+		deps.push(...Z2KTemplateEngine.reducedGetDependencies(fieldInfo.value));
+	}
+	if (fieldInfo.opts) {
+		for (const opt of fieldInfo.opts) {
+			if (opt) {
+				deps.push(...Z2KTemplateEngine.reducedGetDependencies(opt));
+			}
+		}
+	}
+	return [...new Set(deps)];
+}
+
+function buildDependencyMap(fieldInfos: Record<string, FieldInfo>): Record<string, string[]> {
+	const deps: Record<string, string[]> = {};
+	for (const [fieldName, fieldInfo] of Object.entries(fieldInfos)) {
+		deps[fieldName] = getFieldDependencies(fieldInfo);
+	}
+	return deps;
+}
+
 /**
  * Returns an array of field names involved in circular dependencies, or an empty array if none are found
  */
-function detectCircularDependencies(fieldStates: Record<string, FieldState>): string[] {
+function detectCircularDependencies(dependencies: Record<string, string[]>): string[] {
 	const visited = new Set<string>();
 	const stack: string[] = [];
 	let circularPath: string[] = [];
@@ -3339,57 +3482,51 @@ function detectCircularDependencies(fieldStates: Record<string, FieldState>): st
 	function visit(fieldName: string) {
 		const cycleStartIndex = stack.indexOf(fieldName);
 		if (cycleStartIndex !== -1) {
-			// Found a cycle, capture the complete circular path
 			circularPath = [...stack.slice(cycleStartIndex), fieldName];
 			return;
 		}
-		if (visited.has(fieldName)) return;
+		if (visited.has(fieldName)) { return; }
 
 		visited.add(fieldName);
 		stack.push(fieldName);
 
-		const fieldState = fieldStates[fieldName];
-		if (!fieldState) {
-			stack.pop();
-			return;
-		}
-
-		for (const dependency of fieldState.dependencies) {
-			visit(dependency);
-			// If we found a cycle, stop traversing
-			if (circularPath.length > 0) return;
+		const deps = dependencies[fieldName];
+		if (deps) {
+			for (const dependency of deps) {
+				visit(dependency);
+				if (circularPath.length > 0) { return; }
+			}
 		}
 
 		stack.pop();
 	}
 
-	for (const fieldName of Object.keys(fieldStates)) {
+	for (const fieldName of Object.keys(dependencies)) {
 		visit(fieldName);
-		if (circularPath.length > 0) return circularPath;
+		if (circularPath.length > 0) { return circularPath; }
 	}
 
 	return [];
 }
 
-function calculateFieldDependencyOrder(fieldStates: Record<string, FieldState>): string[] {
-	const orderedFields: string[] = [...Object.keys(fieldStates)];
+function calculateFieldDependencyOrder(dependencies: Record<string, string[]>): string[] {
+	const orderedFields: string[] = [...Object.keys(dependencies)];
 
 	let madeChange = true;
 	while (madeChange) {
 		madeChange = false;
 		for (const fieldName of [...orderedFields]) {
-			const fieldState = fieldStates[fieldName];
-			if (!fieldState) continue;
+			const deps = dependencies[fieldName];
+			if (!deps) { continue; }
 			const fieldIndex = orderedFields.indexOf(fieldName);
 			let maxDepIndex = -1;
-			for (const dep of fieldState.dependencies) {
+			for (const dep of deps) {
 				const depIndex = orderedFields.indexOf(dep);
 				if (depIndex > maxDepIndex) {
 					maxDepIndex = depIndex;
 				}
 			}
 			if (maxDepIndex >= 0 && fieldIndex < maxDepIndex) {
-				// Move field after its farthest dependency
 				orderedFields.splice(fieldIndex, 1);
 				orderedFields.splice(maxDepIndex, 0, fieldName);
 				madeChange = true;
