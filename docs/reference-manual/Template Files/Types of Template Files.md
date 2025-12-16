@@ -24,7 +24,9 @@ Z2K Templates supports two distinct kinds of template files: Document Templates 
 **Document Templates** are files that are templates for an entire file (note) in the vault. This is the default type of template used by Z2K Templates. In most contexts and throughout the reference manual, Document Templates are just called "Templates".
 
 ### Block Templates
-**Block Templates** are files that a snippets of templated content to be inserted into the files (notes) in the vault. In addition to standard block templates stored in the vault, there are also a special kind of block template called [[Intro to System Blocks|System Blocks]]. See the reference manual section on [[Block Templates]] and [[System Block Templates|System Blocks]] for more details. 
+**Block Templates** are files that a snippets of templated content to be inserted into the files (notes) in the vault. These are typically stored in the Templates folder and are identified as block templates with the [[z2k_template_type]] yaml property. 
+
+In addition to standard block templates stored in the vault, there are also a special kind of block template called [[Intro to System Blocks|System Blocks]]. See the reference manual section on [[Block Templates]] and [[System Block Templates|System Blocks]] for more details. 
 
 ## What is NOT a Template?
 ### Content Files
@@ -44,7 +46,11 @@ To determine which type of template a template file is, the Z2K Templates plugin
 2. **File Extension Declaration**: Does the file explicitly declare its type with its [[Valid File Extensions|file extension]]? If so, then it will use that to decide on the type.
 3. **Folder Location**: If a file is stored in a [[Template Folders]] but without #1 or #2 clarified, then it is considered a Document Template .
 4. **URI or JSON Action**:  If a file has been explicitly passed as a template file within a URI or Command List action, then the plugin will treat it as a template file regardless of its location.
-5. **Otherwise**, the file is not considered to be a template at all, and is marked as a normal content file. 
+5. **Otherwise**, the file is not considered to be a template at all, and is marked as a normal content file.
+
+## How Does a Template Become Discoverable as a Valid Template?
+There is a dedicated page for this discussion, but in summary:
+![[Template Discovery#Summary]]
 
 ## How Does the Plugin Make Use of the Template Type?
 So why does it matter whether or not it is a document-level template or a block-level template? In reality, the distinction only appears a few times:
