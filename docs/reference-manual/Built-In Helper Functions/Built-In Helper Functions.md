@@ -1,9 +1,9 @@
 ---
 sidebar_position: 1
-sidebar_folder_position: 110
+sidebar_folder_position: 120
 aliases:
-- built-in helper functions
-- built-in helpers
+  - built-in helper functions
+  - built-in helpers
 ---
 # Built-In Helper Functions
 
