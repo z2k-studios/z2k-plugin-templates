@@ -1358,6 +1358,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			}
 
 			let { fm: fmOut, body: bodyOut } = Z2KTemplateEngine.renderTemplate(state, opts.finalize ?? false);
+			if (opts.finalize) { fmOut = this.cleanupYamlAfterFinalize(fmOut); }
 			if (!hadSourceTextField && opts.fieldOverrides.sourceText != null) {
 				bodyOut += `\n\n${String(opts.fieldOverrides.sourceText)}\n`;
 			}
@@ -1400,6 +1401,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			}
 
 			let { fm, body } = Z2KTemplateEngine.renderTemplate(state, opts.finalize ?? false);
+			if (opts.finalize) { fm = this.cleanupYamlAfterFinalize(fm); }
 			let contentOut = Z2KYamlDoc.joinFrontmatter(fm, body);
 			let title = this.getTitle(state.resolvedValues);
 			await this.updateTitleAndContent(opts.existingFile, title, contentOut);
@@ -1454,6 +1456,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			}
 
 			let { fm: blockFm, body: blockBody } = Z2KTemplateEngine.renderTemplate(state, opts.finalize ?? false);
+			if (opts.finalize) { blockFm = this.cleanupYamlAfterFinalize(blockFm); }
 			blockFm = this.updateBlockYamlOnInsert(blockFm);
 			if (!hadSourceTextField && opts.fieldOverrides.sourceText != null) {
 				blockBody += `\n\n${String(opts.fieldOverrides.sourceText)}\n`;
@@ -1547,7 +1550,16 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	}
 	handleOverrides(state: TemplateState, fieldOverrides: Record<string,VarValueType> | undefined, promptMode: "none"|"remaining"|"all") {
 		if (!fieldOverrides) { return; }
-		state.resolvedValues = {...state.resolvedValues, ...fieldOverrides};
+		// Process escape sequences on string values
+		const processedOverrides: Record<string, VarValueType> = {};
+		for (const [key, value] of Object.entries(fieldOverrides)) {
+			if (typeof value === 'string') {
+				processedOverrides[key] = Z2KTemplateEngine.reducedRenderContent(value, {});
+			} else {
+				processedOverrides[key] = value;
+			}
+		}
+		state.resolvedValues = {...state.resolvedValues, ...processedOverrides};
 		for (const k in fieldOverrides) {
 			if (!state.fieldInfos[k]) {
 				state.fieldInfos[k] = { fieldName: k };
@@ -2036,8 +2048,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		for (const yamlStr of state.templatesYaml) {
 			let yaml = Z2KYamlDoc.fromString(yamlStr);
 
-			let raw = yaml.get("z2k_template_default_title");
-			let defaultTitle = (raw && typeof raw === "object" && "toJSON" in raw) ? (raw as any).toJSON() : raw;
+			let defaultTitle = yaml.get("z2k_template_default_title");
 			if (defaultTitle === undefined) { continue; } // not found in this yaml
 			if (typeof defaultTitle !== "string") {
 				throw new TemplatePluginError(`z2k_template_default_title must be a string (got a ${typeof defaultTitle})`);
@@ -2073,8 +2084,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		if (!opts.templateName) {
 			for (const yamlStr of state.templatesYaml) {
 				let yaml = Z2KYamlDoc.fromString(yamlStr);
-				let raw = yaml.get("z2k_template_name");
-				let templateName = (raw && typeof raw === "object" && "toJSON" in raw) ? (raw as any).toJSON() : raw;
+				let templateName = yaml.get("z2k_template_name");
 				if (templateName === undefined) { continue; } // not found in this yaml
 				if (typeof templateName !== "string") {
 					throw new TemplatePluginError(`z2k_template_name must be a string (got a ${typeof templateName})`);
@@ -2158,6 +2168,13 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		doc.set("z2k_template_name", templateName);
 		doc.del("z2k_template_type");
 		doc.del("z2k_template_default_title");
+		// NOTE: Do NOT delete z2k_template_default_miss_handling here - the engine needs it for parsing
+		// It will be deleted later during finalization in cleanupYamlAfterFinalize
+		return doc.toString();
+	}
+	cleanupYamlAfterFinalize(fm: string): string {
+		// Remove template-only YAML properties that should not appear in finalized output
+		const doc = Z2KYamlDoc.fromString(fm);
 		doc.del("z2k_template_default_miss_handling");
 		return doc.toString();
 	}
