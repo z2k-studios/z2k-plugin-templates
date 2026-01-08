@@ -2048,7 +2048,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			break; // take the first one we find
 		}
 	}
-	async addPluginBuiltIns(state: TemplateState, opts: { sourceText?: string, existingTitle?: string, templateName?: string } = {}) {
+	async addPluginBuiltIns(state: TemplateState, opts: { sourceText?: string, existingTitle?: string, templateName?: string, templateVersion?: string, templateAuthor?: string } = {}) {
 		// sourceText
 		state.fieldInfos["sourceText"] = {
 			fieldName: "sourceText",
@@ -2084,6 +2084,46 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			type: "text",
 			directives: ['no-prompt'],
 			value: opts.templateName || "",
+		};
+
+		// templateVersion - get from yaml if not provided
+		if (!opts.templateVersion) {
+			for (const yamlStr of state.templatesYaml) {
+				let yaml = Z2KYamlDoc.fromString(yamlStr);
+				let templateVersion = yaml.get("z2k_template_version");
+				if (templateVersion === undefined) { continue; }
+				if (typeof templateVersion !== "string" && typeof templateVersion !== "number") {
+					throw new TemplatePluginError(`z2k_template_version must be a string or number (got a ${typeof templateVersion})`);
+				}
+				opts.templateVersion = String(templateVersion);
+				break;
+			}
+		}
+		state.fieldInfos["templateVersion"] = {
+			fieldName: "templateVersion",
+			type: "text",
+			directives: ['no-prompt'],
+			value: opts.templateVersion || "",
+		};
+
+		// templateAuthor - get from yaml if not provided
+		if (!opts.templateAuthor) {
+			for (const yamlStr of state.templatesYaml) {
+				let yaml = Z2KYamlDoc.fromString(yamlStr);
+				let templateAuthor = yaml.get("z2k_template_author");
+				if (templateAuthor === undefined) { continue; }
+				if (typeof templateAuthor !== "string") {
+					throw new TemplatePluginError(`z2k_template_author must be a string (got a ${typeof templateAuthor})`);
+				}
+				opts.templateAuthor = templateAuthor;
+				break;
+			}
+		}
+		state.fieldInfos["templateAuthor"] = {
+			fieldName: "templateAuthor",
+			type: "text",
+			directives: ['no-prompt'],
+			value: opts.templateAuthor || "",
 		};
 
 		// fileTitle (aliased as noteTitle and cardTitle)
@@ -2157,7 +2197,10 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	updateYamlOnCreate(fm: string, templateName: string): string {
 		const doc = Z2KYamlDoc.fromString(fm);
 		doc.set("z2k_template_name", templateName);
-		doc.del("z2k_template_type");
+		// Only update z2k_template_type if it already exists in the template
+		if (doc.get("z2k_template_type") !== undefined) {
+			doc.set("z2k_template_type", "wip-content-file");
+		}
 		doc.del("z2k_template_default_title");
 		// NOTE: Do NOT delete z2k_template_default_miss_handling here - the engine needs it for parsing
 		// It will be deleted later during finalization in cleanupYamlAfterFinalize
@@ -2167,6 +2210,10 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		// Remove template-only YAML properties that should not appear in finalized output
 		const doc = Z2KYamlDoc.fromString(fm);
 		doc.del("z2k_template_default_miss_handling");
+		// Only update z2k_template_type if it already exists
+		if (doc.get("z2k_template_type") !== undefined) {
+			doc.set("z2k_template_type", "finalized-content-file");
+		}
 		return doc.toString();
 	}
 	updateBlockYamlOnInsert(fm: string): string {
