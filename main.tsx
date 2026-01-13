@@ -23,7 +23,7 @@ interface Z2KTemplatesPluginSettings {
 	offlineCommandQueueDir: string; // Directory for offline command queue (JSON/JSONL files)
 	errorLogPath: string; // Path to error log file (relative to vault or absolute)
 	errorLogLevel: "none" | "error" | "warn" | "info" | "debug"; // Minimum severity level to log
-	// templateEditingEnabled: boolean;
+	useTemplateFileExtensions: boolean; // Whether to use .template and .block file extensions
 }
 
 const DEFAULT_SETTINGS: Z2KTemplatesPluginSettings = {
@@ -36,7 +36,7 @@ const DEFAULT_SETTINGS: Z2KTemplatesPluginSettings = {
 	offlineCommandQueueDir: '.obsidian/plugins/z2k-plugin-templates/queue',
 	errorLogPath: '.obsidian/plugins/z2k-plugin-templates/error-log.md',
 	errorLogLevel: 'warn',
-	// templateEditingEnabled: true,
+	useTemplateFileExtensions: false,
 };
 
 // Command parameter interface for processCommand()
@@ -201,20 +201,41 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 						this.plugin.queueRefreshCommands();
 					});
 			});
-		// new Setting(containerEl)
-		// 	.setName('Enable template editing')
-		// 	.setDesc('Enables editing of templates in the Templates folder')
-		// 	.addToggle(toggle => toggle
-		// 		.setValue(this.plugin.settings.templateEditingEnabled)
-		// 		.onChange(async (value) => {
-		// 			this.plugin.settings.templateEditingEnabled = value;
-		// 			await this.plugin.saveData(this.plugin.settings);
-		// 			if (value) {
-		// 				await this.plugin.enableTemplateEditing();
-		// 			} else {
-		// 				await this.plugin.disableTemplateEditing();
-		// 			}
-		// 		}));
+		new Setting(containerEl)
+			.setName('Use template file extensions')
+			.setDesc(createFragment(f => {
+				f.appendText('Use .template and .block file extensions to hide template files from Obsidian. ');
+				f.createEl('a', {
+					text: '(?)',
+					href: 'https://z2k-studios.github.io/z2k-plugin-templates-docs/docs/reference-manual/Template%20File%20Extensions',
+				});
+			}))
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.useTemplateFileExtensions)
+				.onChange(async (value) => {
+					if (!value && this.plugin.settings.useTemplateFileExtensions) {
+						// Turning OFF - show warning
+						const confirmed = await new Promise<boolean>((resolve) => {
+							new ConfirmationModal(this.app, {
+								title: 'Disable Template File Extensions?',
+								message: <>
+									<p>We recommend that you convert your existing .template and .block template files back to markdown before disabling Template File Extensions.</p>
+									<p>If you do not convert them to markdown, then these templates will not be easily accessible inside Obsidian for updates and changes.</p>
+									<p><a href="https://z2k-studios.github.io/z2k-plugin-templates-docs/docs/reference-manual/Template%20File%20Extensions" target="_blank">See docs for more details.</a></p>
+								</>,
+								confirmText: 'Disable Anyway',
+								cancelText: 'Cancel',
+							}, resolve).open();
+						});
+						if (!confirmed) {
+							toggle.setValue(true); // Revert toggle
+							return;
+						}
+					}
+					this.plugin.settings.useTemplateFileExtensions = value;
+					await this.plugin.saveData(this.plugin.settings);
+					this.plugin.queueRefreshCommands();
+				}));
 
 		new Setting(containerEl)
 			.setName('Offline command queue directory')
@@ -490,6 +511,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	private _queueCheckInterval: number | null = null;
 	private _processingQueue: boolean = false;
 	private _statusBarItem: HTMLElement | null = null;
+	private _templateExtensionsVisible: boolean = false;
 
 	async onload() {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
@@ -591,7 +613,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			// },
 			{
 				id: "z2k-convert-file-to-template",
-				name: "Convert file to document template",
+				name: "Convert to document template",
 				checkCallback: (checking) => {
 					let file = this.app.workspace.getActiveFile();
 					if (checking) { return !!file && this.getFileTemplateType(file) !== "document-template"; }
@@ -600,7 +622,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			},
 			{
 				id: "z2k-convert-file-to-block-template",
-				name: "Convert file to block template",
+				name: "Convert to block template",
 				checkCallback: (checking) => {
 					let file = this.app.workspace.getActiveFile();
 					if (checking) { return !!file && this.getFileTemplateType(file) !== "block-template"; }
@@ -608,12 +630,31 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				},
 			},
 			{
+				id: "z2k-convert-file-to-md-template",
+				name: "Convert to markdown template",
+				checkCallback: (checking) => {
+					let file = this.app.workspace.getActiveFile();
+					// Only show if file has .template or .block extension
+					if (checking) { return !!file && (file.extension === "template" || file.extension === "block"); }
+					this.convertToMarkdownTemplate(file as TFile);
+				},
+			},
+			{
 				id: "z2k-convert-file-to-md",
-				name: "Convert file to content file",
+				name: "Convert to content file",
 				checkCallback: (checking) => {
 					let file = this.app.workspace.getActiveFile();
 					if (checking) { return !!file && this.getFileTemplateType(file) !== "content-file"; }
 					this.convertFileTemplateType(file as TFile, "content-file");
+				},
+			},
+			{
+				id: "z2k-toggle-template-visibility",
+				name: this._templateExtensionsVisible ? "Make .template and .block templates hidden" : "Make .template and .block templates visible",
+				checkCallback: (checking) => {
+					// Only show if useTemplateFileExtensions is enabled
+					if (checking) { return this.settings.useTemplateFileExtensions; }
+					this.toggleTemplateExtensionsVisibility();
 				},
 			}
 
@@ -767,7 +808,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		// Template conversion context menu in file explorer
 		this.registerEvent(
 			this.app.workspace.on("file-menu", (menu, file) => {
-				if (!(file instanceof TFile) || this.getFileTemplateType(file) === "document-template") return;
+				if (!(file instanceof TFile) || this.getFileTemplateType(file) === "document-template") { return; }
 				menu.addItem((item) => {
 					item.setTitle("Z2K - Convert to document template")
 						.onClick(() => this.convertFileTemplateType(file as TFile, "document-template"));
@@ -776,7 +817,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		);
 		this.registerEvent(
 			this.app.workspace.on("file-menu", (menu, file) => {
-				if (!(file instanceof TFile) || this.getFileTemplateType(file) === "block-template") return;
+				if (!(file instanceof TFile) || this.getFileTemplateType(file) === "block-template") { return; }
 				menu.addItem((item) => {
 					item.setTitle("Z2K - Convert to block template")
 						.onClick(() => this.convertFileTemplateType(file as TFile, "block-template"));
@@ -785,7 +826,17 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		);
 		this.registerEvent(
 			this.app.workspace.on("file-menu", (menu, file) => {
-				if (!(file instanceof TFile) || this.getFileTemplateType(file) === "content-file") return;
+				// Only show for .template or .block files
+				if (!(file instanceof TFile) || (file.extension !== "template" && file.extension !== "block")) { return; }
+				menu.addItem((item) => {
+					item.setTitle("Z2K - Convert to markdown template")
+						.onClick(() => this.convertToMarkdownTemplate(file as TFile));
+				});
+			})
+		);
+		this.registerEvent(
+			this.app.workspace.on("file-menu", (menu, file) => {
+				if (!(file instanceof TFile) || this.getFileTemplateType(file) === "content-file") { return; }
 				menu.addItem((item) => {
 					item.setTitle("Z2K - Convert to content file")
 						.onClick(() => this.convertFileTemplateType(file as TFile, "content-file"));
@@ -1633,11 +1684,68 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			fm = doc.toString();
 			content = Z2KYamlDoc.joinFrontmatter(fm, body);
 			await this.app.vault.modify(file, content);
-			// // if editing is disabled, rename file to start with '.' (this shouldn't ever really happen though)
-			// if (!this.settings.templateEditingEnabled && type !== "content-file") {
-			// 	await this.hideTemplateFile(file);
-			// }
+			// Rename file extension if template file extensions are enabled
+			if (this.settings.useTemplateFileExtensions) {
+				let targetExt: string;
+				if (type === "document-template") {
+					targetExt = "template";
+				} else if (type === "block-template") {
+					targetExt = "block";
+				} else {
+					targetExt = "md";
+				}
+				await this.renameFileExtension(file, targetExt);
+			} else if (type === "content-file" && (file.extension === "template" || file.extension === "block")) {
+				// Always rename .template/.block to .md when converting to content-file
+				await this.renameFileExtension(file, "md");
+			}
 		} catch (error) { this.handleErrors(error); }
+	}
+	async convertToMarkdownTemplate(file: TFile) {
+		try {
+			// Determine the template type to preserve (or set based on current extension)
+			let currentType = this.getFileTemplateType(file);
+			if (currentType === "content-file") {
+				// If it's a content file, determine type from extension
+				if (file.extension === "template") {
+					currentType = "document-template";
+				} else if (file.extension === "block") {
+					currentType = "block-template";
+				} else {
+					// Default to document-template if converting a .md content file
+					currentType = "document-template";
+				}
+			}
+			// Update YAML to ensure type is set
+			let content = await this.app.vault.read(file);
+			let { fm, body } = Z2KYamlDoc.splitFrontmatter(content);
+			let doc = Z2KYamlDoc.fromString(fm);
+			doc.set("z2k_template_type", currentType);
+			fm = doc.toString();
+			content = Z2KYamlDoc.joinFrontmatter(fm, body);
+			await this.app.vault.modify(file, content);
+			// Rename to .md if currently .template or .block
+			if (file.extension === "template" || file.extension === "block") {
+				await this.renameFileExtension(file, "md");
+			}
+		} catch (error) { this.handleErrors(error); }
+	}
+	toggleTemplateExtensionsVisibility() {
+		if (this._templateExtensionsVisible) {
+			// Hide: unregister extensions
+			// @ts-expect-error: internal API
+			this.app.viewRegistry.unregisterExtensions(["template", "block"]);
+			this._templateExtensionsVisible = false;
+			new Notice("Template files are now hidden.");
+		} else {
+			// Show: register extensions as markdown
+			// @ts-expect-error: internal API
+			this.app.viewRegistry.registerExtensions(["template", "block"], "markdown");
+			this._templateExtensionsVisible = true;
+			new Notice("Template files are now visible.");
+		}
+		// Refresh commands so the command name updates
+		this.queueRefreshCommands(0);
 	}
 	// async enableTemplateEditing() {
 	// 	try {
@@ -1711,7 +1819,13 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	}
 	async promptAndDeleteFile(file: TFile) {
 		const shouldDelete = await new Promise<boolean>(resolve => {
-			new DeleteConfirmationModal(this.app, file as TFile, resolve).open();
+			new ConfirmationModal(this.app, {
+				title: "Delete Original File?",
+				message: `Would you like to now delete "${file.name}"?`,
+				confirmText: "Move to Trash",
+				cancelText: "Keep Original File",
+				confirmClass: "btn-warning"
+			}, resolve).open();
 		});
 		if (shouldDelete) {
 			try {
@@ -1813,9 +1927,22 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			return "document-template";
 		} else if (file.extension === "template") {
 			return "document-template";
+		} else if (file.extension === "block") {
+			return "block-template";
 		} else {
 			return "content-file";
 		}
+	}
+	async renameFileExtension(file: TFile, newExtension: string): Promise<TFile | null> {
+		const currentExt = file.extension;
+		if (currentExt === newExtension) { return file; }
+		const parentPath = file.parent?.path ?? "";
+		const baseName = file.basename; // filename without extension
+		const newFileName = `${baseName}.${newExtension}`;
+		const newPath = parentPath ? `${parentPath}/${newFileName}` : newFileName;
+		await this.app.vault.rename(file, newPath);
+		// Return the renamed file (vault.rename updates the TFile object in place, but we can also re-fetch)
+		return this.app.vault.getAbstractFileByPath(newPath) as TFile | null;
 	}
 	// async hideTemplateFile(file: TFile) {
 	// 	// hide a file by renaming it to start with '.' if it doesn't already start with '.' and it's not a '.template' file
@@ -3846,34 +3973,42 @@ const FieldInput = ({ name, label, fieldInfo, fieldState, onChange, onFocus, onB
 
 };
 
-
 // ------------------------------------------------------------------------------------------------
-// Delete Confirmation Modal
+// Confirmation Modal
 // ------------------------------------------------------------------------------------------------
-export class DeleteConfirmationModal extends Modal {
-	file: TFile;
-	onConfirm: (shouldDelete: boolean) => void;
-	root: any; // For React root
+interface ConfirmationModalOptions {
+	title: string;
+	message: React.ReactNode; // Can be string, JSX, or array of elements
+	confirmText: string;
+	cancelText: string;
+	confirmClass?: string; // CSS class for confirm button (default: btn-warning)
+	modalClass?: string; // Additional CSS class for modal
+}
 
-	constructor(app: App, file: TFile, onConfirm: (shouldDelete: boolean) => void) {
+export class ConfirmationModal extends Modal {
+	options: ConfirmationModalOptions;
+	onConfirm: (confirmed: boolean) => void;
+	root: any;
+
+	constructor(app: App, options: ConfirmationModalOptions, onConfirm: (confirmed: boolean) => void) {
 		super(app);
-		this.file = file;
+		this.options = options;
 		this.onConfirm = onConfirm;
 	}
 
 	onOpen() {
-		this.modalEl.addClass('z2k', 'delete-confirmation-modal');
-		this.titleEl.setText('Delete Original File?');
+		this.modalEl.addClass('z2k', 'confirmation-modal');
+		if (this.options.modalClass) {
+			this.modalEl.addClass(this.options.modalClass);
+		}
+		this.titleEl.setText(this.options.title);
 		this.contentEl.empty();
 		this.contentEl.addClass('modal-content');
 		this.root = createRoot(this.contentEl);
 		this.root.render(
 			<>
-				<p className="delete-confirmation-message">
-					Would you like to now delete "{this.file.name}"?
-				</p>
-
-				<div className="delete-confirmation-buttons">
+				<div className="confirmation-message">{this.options.message}</div>
+				<div className="confirmation-buttons">
 					<button
 						className="btn btn-secondary"
 						onClick={() => {
@@ -3881,17 +4016,16 @@ export class DeleteConfirmationModal extends Modal {
 							this.close();
 						}}
 					>
-						Keep Original File
+						{this.options.cancelText}
 					</button>
-
 					<button
-						className="btn btn-warning"
+						className={`btn ${this.options.confirmClass ?? 'btn-warning'}`}
 						onClick={() => {
 							this.onConfirm(true);
 							this.close();
 						}}
 					>
-						Move to Trash
+						{this.options.confirmText}
 					</button>
 				</div>
 			</>

@@ -482,24 +482,24 @@ textarea:focus {
 
 /*
 --------------------------------------------------------------------------------------------------------------------------------
-	Delete Confirmation Modal
+	Confirmation Modal
 --------------------------------------------------------------------------------------------------------------------------------
 */
-.z2k.delete-confirmation-modal {
+.z2k.confirmation-modal {
 	padding: 16px 20px;
 	display: flex;
 	flex-direction: column;
 	gap: 16px;
 }
 
-.z2k .delete-confirmation-message {
+.z2k .confirmation-message {
 	font-size: 14px;
 	line-height: 1.5;
 	margin: 0;
 	color: var(--text-normal);
 }
 
-.z2k .delete-confirmation-buttons {
+.z2k .confirmation-buttons {
 	padding: 12px 0 0 0;
 	display: flex;
 	justify-content: flex-end;
