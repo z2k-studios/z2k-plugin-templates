@@ -121,19 +121,15 @@ Z2K provides various built-in helper functions:
 
 - `format-number`: Format numbers using Numeral.js
 
-- `format-number-toFixed`: Format to fixed decimal places
+- `format-number-to-fixed`: Format to fixed decimal places
 
-  
+
 
 **Linking Helpers**:
 
-- `wikilink`: Create Obsidian wiki links
+- `wikilink`: Create Obsidian wiki links (accepts optional display text as second parameter)
 
-- `wikilink-named`: Create wiki links with custom display text
-
-- `url`: Format as URL
-
-- `url-named`: Create named URLs
+- `url`: Format as URL (accepts optional display text as second parameter)
 
   
 

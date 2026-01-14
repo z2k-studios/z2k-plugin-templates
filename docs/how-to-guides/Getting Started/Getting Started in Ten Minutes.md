@@ -38,7 +38,7 @@ My Book Review - {{BookTitle}} by {{BookAuthor}}
 # Links
 - Author Card: {{wikilink (format-string-file-friendly BookAuthor)}}
 - Book on Wikipedia : {{wikipedia BookTitle}}
-- Amazon Link: [Amazon Search](https://amazon.com?s={{format-sluggify BookTitle}})
+- Amazon Link: [Amazon Search](https://amazon.com?s={{format-string-slugify BookTitle}})
 
 # Book Discussion Prompts
 - {{chatGPT "Given all that you know about me, if you were to imagine me as a character in {{BookTitle}}, which one would most challenge my worldview, and why?" "Mirror Test"}}
@@ -63,7 +63,7 @@ The new template file now includes a "`Built-in Field`", in this case `{{yearMon
 - Learn More: [[Built-In Fields]]
 
 ### 2c. Field Formatting
-Next, notice the Amazon Link: entry. Here it is construct a link to an Amazon search using the entered title. Because the title will be embedded in a URL, it makes use of a [[Helper Functions|Helper Function]] called `format-sluggify` that converts the value of a field into a sluggified (i.e. URL friendly) text. 
+Next, notice the Amazon Link: entry. Here it is construct a link to an Amazon search using the entered title. Because the title will be embedded in a URL, it makes use of a [[Helper Functions|Helper Function]] called `format-string-slugify` that converts the value of a field into a sluggified (i.e. URL friendly) text. 
 
 Similarly, the entry for "Author Card" will build a `[[`wikilink`]]` to an Author note.  Before doing so it will make sure that any characters in the Author's name that are not safe for filenames be removed.
 - Learn More: [[Built-In Helper Functions]]
