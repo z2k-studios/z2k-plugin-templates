@@ -1,12 +1,17 @@
 
 import { App, Plugin, Modal, Notice, TAbstractFile, TFolder, TFile, PluginSettingTab, Setting, MarkdownView, Editor, Command } from 'obsidian';
-import { Z2KTemplateEngine, Z2KYamlDoc, TemplateState, VarValueType, FieldInfo, TemplateError } from 'z2k-template-engine';
-import React, { useState, useEffect, useRef } from 'react';
+import * as obsidian from 'obsidian';
+import { Z2KTemplateEngine, Z2KYamlDoc, TemplateState, VarValueType, FieldInfo, TemplateError, Handlebars } from 'z2k-template-engine';
+import React, { useState, useEffect, useRef, Component, ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import moment from 'moment';   // npm i moment
 
-import { EditorView, ViewPlugin, ViewUpdate, Decoration, DecorationSet } from "@codemirror/view";
-import { RangeSetBuilder, type Extension } from "@codemirror/state";
+import { EditorView, ViewPlugin, ViewUpdate, Decoration, DecorationSet, keymap, lineNumbers, highlightActiveLine, highlightActiveLineGutter } from "@codemirror/view";
+import { RangeSetBuilder, type Extension, EditorState, Compartment } from "@codemirror/state";
+import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
+import { syntaxHighlighting, bracketMatching, HighlightStyle } from "@codemirror/language";
+import { tags } from "@lezer/highlight";
+import { javascript } from "@codemirror/lang-javascript"; // npm i @codemirror/lang-javascript
 import { handlebarsLanguage } from "@xiechao/codemirror-lang-handlebars"; // npm i @xiechao/codemirror-lang-handlebars
 import { highlightTree, classHighlighter } from "@lezer/highlight"; // npm i @lezer/highlight
 
@@ -24,6 +29,9 @@ interface Z2KTemplatesPluginSettings {
 	errorLogPath: string; // Path to error log file (relative to vault or absolute)
 	errorLogLevel: "none" | "error" | "warn" | "info" | "debug"; // Minimum severity level to log
 	useTemplateFileExtensions: boolean; // Whether to use .template and .block file extensions
+	templateExtensionsVisible: boolean; // Whether .template and .block files are currently visible in Obsidian
+	globalBlock: string; // Global field-info declarations (applied to all templates)
+	userHelpers: string; // Custom JavaScript helper functions
 }
 
 const DEFAULT_SETTINGS: Z2KTemplatesPluginSettings = {
@@ -37,6 +45,12 @@ const DEFAULT_SETTINGS: Z2KTemplatesPluginSettings = {
 	errorLogPath: '.obsidian/plugins/z2k-plugin-templates/error-log.md',
 	errorLogLevel: 'warn',
 	useTemplateFileExtensions: false,
+	templateExtensionsVisible: false,
+	globalBlock: '',
+	userHelpers: `// Register custom Handlebars helpers here
+// Example:
+// registerHelper('shout', (value) => String(value).toUpperCase() + '!');
+`,
 };
 
 // Command parameter interface for processCommand()
@@ -293,6 +307,89 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 					await this.plugin.saveData(this.plugin.settings);
 				}));
 
+		containerEl.createEl('h3', {text: 'Advanced'});
+
+		new Setting(containerEl)
+			.setName('Global Block')
+			.setDesc('Template content that is prepended to all templates across all vaults.')
+			.addButton(button => button
+				.setButtonText('Edit Global Block')
+				.onClick(() => {
+					new EditorModal(this.app, {
+						title: 'Edit Global Block',
+						initialContent: this.plugin.settings.globalBlock,
+						language: 'handlebars',
+						helpText: `The global block works like a system block but applies to all templates
+across all vaults. Content here is prepended to every template before rendering.
+
+Use it for:
+- Field-info declarations that should be available everywhere
+- Common template snippets
+- Default values you want across all templates
+
+Priority: built-in < global < system < block < main
+(Global field-infos can be overridden by system blocks or the template itself.)
+
+Example:
+{{field-info author "Author name" default="Anonymous"}}
+{{field-info project "Project" type="text"}}`,
+						validate: (code) => this.plugin.validateGlobalBlock(code),
+						onSave: async (content) => {
+							this.plugin.settings.globalBlock = content;
+							await this.plugin.saveData(this.plugin.settings);
+						}
+					}).open();
+				})
+			);
+
+		new Setting(containerEl)
+			.setName('Custom Helpers')
+			.setDesc('Register custom Handlebars helper functions using JavaScript.')
+			.addButton(button => button
+				.setButtonText('Edit Custom Helpers')
+				.onClick(() => {
+					new EditorModal(this.app, {
+						title: 'Edit Custom Helpers',
+						initialContent: this.plugin.settings.userHelpers,
+						language: 'javascript',
+						helpText: `Write JavaScript code to register custom Handlebars helpers.
+These helpers can be used in any template with {{helperName ...}} syntax.
+
+Available Globals:
+- app: Obsidian App instance (vault, workspace, metadataCache, etc.)
+- obsidian: The Obsidian module (Notice, Modal, TFile, etc.)
+- moment: Moment.js for date manipulation
+- Handlebars: The Handlebars instance
+- registerHelper(name, fn): Register a custom helper
+
+Example - transform a value:
+registerHelper('shout', (value) => String(value).toUpperCase() + '!');
+// Usage: {{shout "hello"}} → HELLO!
+
+Example - get recent files:
+registerHelper('recentFiles', () => {
+    return app.vault.getMarkdownFiles()
+        .sort((a, b) => b.stat.mtime - a.stat.mtime)
+        .slice(0, 5)
+        .map(f => f.basename)
+        .join(', ');
+});
+// Usage: {{recentFiles}} → Note A, Note B, ...`,
+						validate: (code) => this.plugin.validateUserHelpers(code),
+						onSave: async (content) => {
+							this.plugin.settings.userHelpers = content;
+							await this.plugin.saveData(this.plugin.settings);
+							// Reload helpers
+							const result = this.plugin.loadUserHelpers(content);
+							if (!result.valid) {
+								new Notice('Failed to load custom helpers - check console');
+								console.error('Custom helpers error:', result.error);
+							}
+						}
+					}).open();
+				})
+			);
+
 		containerEl.createEl('h3', {text: 'Quick Create Commands'});
 		const quickCreateDesc = containerEl.createDiv({cls: 'setting-item'});
 		this.refs.quickCreateDesc = quickCreateDesc.createDiv({cls: 'setting-item-description'});
@@ -507,16 +604,102 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	templateEngine: Z2KTemplateEngine;
 	settings: Z2KTemplatesPluginSettings;
 	errorLogger: ErrorLogger;
+	userHelperFunctions: Record<string, Function> = {};
 	private _refreshTimer: number | null = null;
 	private _queueCheckInterval: number | null = null;
 	private _processingQueue: boolean = false;
 	private _statusBarItem: HTMLElement | null = null;
-	private _templateExtensionsVisible: boolean = false;
+
+	private wrapHelper(name: string, fn: Function): Function {
+		return (...args: unknown[]) => {
+			try {
+				return fn(...args);
+			} catch (e: any) {
+				console.error(`Helper '${name}' threw:`, e);
+				this.errorLogger?.log({
+					severity: 'error',
+					message: `Custom helper '${name}' threw an error: ${e.message}`,
+					error: e,
+				});
+				return `[Error in ${name}]`;
+			}
+		};
+	}
+
+	loadUserHelpers(code: string): { valid: boolean; error?: string; helperNames?: string[] } {
+		const newHelpers: Record<string, Function> = {};
+		const registerHelper = (name: string, fn: Function) => {
+			newHelpers[name] = this.wrapHelper(name, fn);
+		};
+		const context = {
+			app: this.app,
+			obsidian: obsidian,
+			moment,
+			Handlebars,
+			registerHelper,
+		};
+		try {
+			new Function(...Object.keys(context), code)(...Object.values(context));
+			this.userHelperFunctions = newHelpers;
+			return { valid: true, helperNames: Object.keys(newHelpers) };
+		} catch (e: any) {
+			return { valid: false, error: e.message };
+		}
+	}
+
+	validateGlobalBlock(code: string): { valid: boolean; error?: string; message?: string } {
+		if (!code || code.trim() === "") {
+			return { valid: true, message: "Empty" };
+		}
+		try {
+			Handlebars.parse(code);
+			return { valid: true, message: "No syntax issues" };
+		} catch (e: any) {
+			return { valid: false, error: e.message };
+		}
+	}
+
+	validateUserHelpers(code: string): { valid: boolean; error?: string; message?: string } {
+		if (!code || code.trim() === "") {
+			return { valid: true, message: "Empty" };
+		}
+		const newHelpers: Record<string, Function> = {};
+		const registerHelper = (name: string, fn: Function) => {
+			newHelpers[name] = fn;
+		};
+		const context = {
+			app: this.app,
+			obsidian: obsidian,
+			moment,
+			Handlebars,
+			registerHelper,
+		};
+		try {
+			new Function(...Object.keys(context), code)(...Object.values(context));
+			const names = Object.keys(newHelpers);
+			return {
+				valid: true,
+				message: names.length > 0
+					? `${names.length} helper${names.length !== 1 ? 's' : ''} registered: ${names.join(', ')}`
+					: "No helpers registered"
+			};
+		} catch (e: any) {
+			return { valid: false, error: e.message };
+		}
+	}
 
 	async onload() {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
 		this.templateEngine = new Z2KTemplateEngine();
 		this.errorLogger = new ErrorLogger(this.app, this.settings);
+		// Load user-defined custom helpers
+		if (this.settings.userHelpers && this.settings.userHelpers.trim() !== "") {
+			const result = this.loadUserHelpers(this.settings.userHelpers);
+			if (!result.valid) {
+				new Notice('Failed to load custom helpers - check console for details');
+				console.error('Custom helpers error:', result.error);
+			}
+		}
 		this.refreshMainCommands(false); // Don't delete existing, since none exist yet
 		this.refreshDynamicCommands(false);
 		this.registerEvents();
@@ -528,6 +711,11 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		// Initialize offline command queue
 		await this.recoverFromCrash();
 		this.startQueueProcessor();
+		// Restore template extension visibility state
+		if (this.settings.useTemplateFileExtensions && this.settings.templateExtensionsVisible) {
+			// @ts-expect-error: internal API
+			this.app.viewRegistry.registerExtensions(["template", "block"], "markdown");
+		}
 	}
 	onunload() {
 		if (this._queueCheckInterval !== null) {
@@ -650,7 +838,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			},
 			{
 				id: "z2k-toggle-template-visibility",
-				name: this._templateExtensionsVisible ? "Make .template and .block templates hidden" : "Make .template and .block templates visible",
+				name: this.settings.templateExtensionsVisible ? "Make .template and .block templates hidden" : "Make .template and .block templates visible",
 				checkCallback: (checking) => {
 					// Only show if useTemplateFileExtensions is enabled
 					if (checking) { return this.settings.useTemplateFileExtensions; }
@@ -1392,7 +1580,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			fm = this.updateYamlOnCreate(fm, opts.templateFile.basename);
 			content = Z2KYamlDoc.joinFrontmatter(fm, body);
 			let systemBlocksContent = await this.GetSystemBlocksContent(opts.cardTypeFolder);
-			let state = await this.parseTemplate(content, systemBlocksContent, opts.templateFile.parent as TFolder);
+			let state = await this.parseTemplate(content, systemBlocksContent, this.settings.globalBlock, opts.templateFile.parent as TFolder);
 			let hadSourceTextField = !!state.fieldInfos["sourceText"];
 			// Convert sourceText to string for addPluginBuiltIns (handles all VarValueType cases)
 			const sourceTextStr = opts.fieldOverrides.sourceText != null ? String(opts.fieldOverrides.sourceText) : undefined;
@@ -1408,7 +1596,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				this.resolveComputedFieldValues(state, opts.finalize ?? false);
 			}
 
-			let { fm: fmOut, body: bodyOut } = Z2KTemplateEngine.renderTemplate(state, opts.finalize ?? false);
+			let { fm: fmOut, body: bodyOut } = Z2KTemplateEngine.renderTemplate(state, opts.finalize ?? false, this.userHelperFunctions);
 			if (opts.finalize) { fmOut = this.cleanupYamlAfterFinalize(fmOut); }
 			if (!hadSourceTextField && opts.fieldOverrides.sourceText != null) {
 				bodyOut += `\n\n${String(opts.fieldOverrides.sourceText)}\n`;
@@ -1432,11 +1620,12 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	}) {
 		try {
 			let content = await this.app.vault.read(opts.existingFile);
-			let state = await this.parseTemplate(content, "", opts.existingFile.parent as TFolder);
-			// Add system blocks YAML for field values
+			let state = await this.parseTemplate(content, "", "", opts.existingFile.parent as TFolder);
+			// Add global block and system blocks YAML for field values
+			let globalBlockYaml = Z2KYamlDoc.splitFrontmatter(this.settings.globalBlock).fm;
 			let systemBlocksContent = await this.GetSystemBlocksContent(opts.existingFile.parent as TFolder);
 			let systemBlocksYaml = Z2KYamlDoc.splitFrontmatter(systemBlocksContent).fm;
-			await this.addYamlFieldValues(state, [systemBlocksYaml]);
+			await this.addYamlFieldValues(state, [globalBlockYaml, systemBlocksYaml]);
 			await this.addPluginBuiltIns(state, { existingTitle: opts.existingFile.basename });
 			this.handleOverrides(state, opts.fieldOverrides, opts.promptMode || "all");
 			let hasFillableFields = this.hasFillableFields(state.fieldInfos);
@@ -1451,7 +1640,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				this.resolveComputedFieldValues(state, opts.finalize ?? false);
 			}
 
-			let { fm, body } = Z2KTemplateEngine.renderTemplate(state, opts.finalize ?? false);
+			let { fm, body } = Z2KTemplateEngine.renderTemplate(state, opts.finalize ?? false, this.userHelperFunctions);
 			if (opts.finalize) { fm = this.cleanupYamlAfterFinalize(fm); }
 			let contentOut = Z2KYamlDoc.joinFrontmatter(fm, body);
 			let title = this.getTitle(state.resolvedValues);
@@ -1486,14 +1675,15 @@ export default class Z2KTemplatesPlugin extends Plugin {
 
 			// Parse and resolve block
 			let content = await this.app.vault.read(opts.templateFile);
-			let state = await this.parseTemplate(content, "", opts.templateFile.parent as TFolder);
+			let state = await this.parseTemplate(content, "", "", opts.templateFile.parent as TFolder);
 			let hadSourceTextField = !!state.fieldInfos["sourceText"];
-			// Add system blocks and existing file YAML for field values
+			// Add global block, system blocks, and existing file YAML for field values
+			let globalBlockYaml = Z2KYamlDoc.splitFrontmatter(this.settings.globalBlock).fm;
 			let systemBlocksContent = await this.GetSystemBlocksContent(opts.templateFile.parent as TFolder);
 			let systemBlocksYaml = Z2KYamlDoc.splitFrontmatter(systemBlocksContent).fm;
 			let existingFileContent = await this.app.vault.read(opts.existingFile);
 			let existingFileYaml = Z2KYamlDoc.splitFrontmatter(existingFileContent).fm;
-			await this.addYamlFieldValues(state, [systemBlocksYaml, existingFileYaml]);
+			await this.addYamlFieldValues(state, [globalBlockYaml, systemBlocksYaml, existingFileYaml]);
 			// Convert sourceText to string for addPluginBuiltIns (handles all VarValueType cases)
 			const sourceTextStr = opts.fieldOverrides.sourceText != null ? String(opts.fieldOverrides.sourceText) : undefined;
 			await this.addPluginBuiltIns(state, { sourceText: sourceTextStr, existingTitle: opts.existingFile.basename });
@@ -1506,7 +1696,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				this.resolveComputedFieldValues(state, opts.finalize ?? false);
 			}
 
-			let { fm: blockFm, body: blockBody } = Z2KTemplateEngine.renderTemplate(state, opts.finalize ?? false);
+			let { fm: blockFm, body: blockBody } = Z2KTemplateEngine.renderTemplate(state, opts.finalize ?? false, this.userHelperFunctions);
 			if (opts.finalize) { blockFm = this.cleanupYamlAfterFinalize(blockFm); }
 			blockFm = this.updateBlockYamlOnInsert(blockFm);
 			if (!hadSourceTextField && opts.fieldOverrides.sourceText != null) {
@@ -1560,9 +1750,9 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	}
 
 	// de-duplication helper functions
-	async parseTemplate(content: string, systemBlocksContent: string, relativeFolder: TFolder): Promise<TemplateState> {
+	async parseTemplate(content: string, systemBlocksContent: string, globalBlockContent: string, relativeFolder: TFolder): Promise<TemplateState> {
 		try {
-			return await Z2KTemplateEngine.parseTemplate(content, systemBlocksContent, relativeFolder.path, this.getBlockCallbackFunc());
+			return await Z2KTemplateEngine.parseTemplate(content, systemBlocksContent, globalBlockContent, relativeFolder.path, this.getBlockCallbackFunc());
 		} catch (error) {
 			rethrowWithMessage(error, "Error occurred while parsing the template");
 		}
@@ -1570,7 +1760,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	getTitle(resolvedValues: Record<string, VarValueType>): string {
 		let fileTitle = resolvedValues["fileTitle"];
 		let title = fileTitle == null || fileTitle === "" ? "Untitled" : String(fileTitle);
-		return Z2KTemplateEngine.reducedRenderContent(title, resolvedValues) as string;
+		return Z2KTemplateEngine.reducedRenderContent(title, resolvedValues, false, this.userHelperFunctions) as string;
 	}
 	async updateTitleAndContent(file: TFile, title: string, content: string) {
 		try {
@@ -1645,7 +1835,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				const valueDeps = Z2KTemplateEngine.reducedGetDependencies(fieldInfo.value);
 				const allDepsExist = valueDeps.every(dep => dep in context);
 				if (allDepsExist) {
-					const resolved = Z2KTemplateEngine.reducedRenderContent(fieldInfo.value, context, true);
+					const resolved = Z2KTemplateEngine.reducedRenderContent(fieldInfo.value, context, true, this.userHelperFunctions);
 					if (resolved === undefined) {
 						delete state.resolvedValues[fieldName];
 					} else {
@@ -1657,7 +1847,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 
 			// Apply miss value for unspecified fields when finalizing
 			if (finalize && !(fieldName in state.resolvedValues)) {
-				const resolvedMiss = Z2KTemplateEngine.reducedRenderContent(fieldInfo.miss || "", context, true);
+				const resolvedMiss = Z2KTemplateEngine.reducedRenderContent(fieldInfo.miss || "", context, true, this.userHelperFunctions);
 				if (resolvedMiss === undefined) {
 					delete state.resolvedValues[fieldName];
 				} else {
@@ -1730,20 +1920,21 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			}
 		} catch (error) { this.handleErrors(error); }
 	}
-	toggleTemplateExtensionsVisibility() {
-		if (this._templateExtensionsVisible) {
+	async toggleTemplateExtensionsVisibility() {
+		if (this.settings.templateExtensionsVisible) {
 			// Hide: unregister extensions
 			// @ts-expect-error: internal API
 			this.app.viewRegistry.unregisterExtensions(["template", "block"]);
-			this._templateExtensionsVisible = false;
+			this.settings.templateExtensionsVisible = false;
 			new Notice("Template files are now hidden.");
 		} else {
 			// Show: register extensions as markdown
 			// @ts-expect-error: internal API
 			this.app.viewRegistry.registerExtensions(["template", "block"], "markdown");
-			this._templateExtensionsVisible = true;
+			this.settings.templateExtensionsVisible = true;
 			new Notice("Template files are now visible.");
 		}
+		await this.saveData(this.settings);
 		// Refresh commands so the command name updates
 		this.queueRefreshCommands(0);
 	}
@@ -1804,18 +1995,10 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		});
 	}
 	async promptForFieldCollection(templateState: TemplateState): Promise<boolean> {
-		try {
-			return await new Promise<boolean>((resolve, reject) => {
-				new FieldCollectionModal(this.app, `Field Collection for ${cardRefNameUpper(this.settings)}`, templateState, resolve, reject).open();
-			});
-		} catch (e) {
-			// Handle errors from the modal (including circular dependency errors)
-			// Don't re-handle UserCancelError - just let it propagate
-			if (!(e instanceof UserCancelError)) {
-				await this.handleErrors(e);
-			}
-			throw e; // Re-throw so caller knows it failed
-		}
+		// Errors (including circular dependency errors) propagate to caller for handling
+		return await new Promise<boolean>((resolve, reject) => {
+			new FieldCollectionModal(this.app, `Field Collection for ${cardRefNameUpper(this.settings)}`, templateState, this.userHelperFunctions, resolve, reject).open();
+		});
 	}
 	async promptAndDeleteFile(file: TFile) {
 		const shouldDelete = await new Promise<boolean>(resolve => {
@@ -2731,6 +2914,37 @@ function rethrowWithMessage(error: unknown, message: string): never {
 
 
 // ------------------------------------------------------------------------------------------------
+// Error Boundary - Catches React render errors and propagates them to modal error handlers
+// ------------------------------------------------------------------------------------------------
+interface ErrorBoundaryProps {
+	onError: (error: Error) => void;
+	children: ReactNode;
+}
+interface ErrorBoundaryState {
+	hasError: boolean;
+}
+class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+	constructor(props: ErrorBoundaryProps) {
+		super(props);
+		this.state = { hasError: false };
+	}
+	static getDerivedStateFromError(_error: Error): ErrorBoundaryState {
+		return { hasError: true };
+	}
+	componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+		// Error will be logged by handleErrors - just pass it along
+		// Defer to next tick to avoid "synchronously unmount while rendering" race condition
+		setTimeout(() => this.props.onError(error), 0);
+	}
+	render() {
+		if (this.state.hasError) {
+			return null; // Modal will close, ErrorModal will show
+		}
+		return this.props.children;
+	}
+}
+
+// ------------------------------------------------------------------------------------------------
 // Card Type Selection Modal
 // ------------------------------------------------------------------------------------------------
 export class CardTypeSelectionModal extends Modal {
@@ -2755,18 +2969,20 @@ export class CardTypeSelectionModal extends Modal {
 		this.contentEl.addClass('modal-content');
 		this.root = createRoot(this.contentEl);
 		this.root.render(
-			<CardTypeSelector
-				cardTypes={this.cardTypes}
-				settings={this.settings}
-				onConfirm={(cardType: TFolder) => {
-					this.resolve(cardType);
-					this.close();
-				}}
-				onCancel={() => {
-					this.reject(new UserCancelError(`User cancelled ${cardRefNameLower(this.settings)} type selection`));
-					this.close();
-				}}
-			/>
+			<ErrorBoundary onError={(error) => { this.reject(error); this.close(); }}>
+				<CardTypeSelector
+					cardTypes={this.cardTypes}
+					settings={this.settings}
+					onConfirm={(cardType: TFolder) => {
+						this.resolve(cardType);
+						this.close();
+					}}
+					onCancel={() => {
+						this.reject(new UserCancelError(`User cancelled ${cardRefNameLower(this.settings)} type selection`));
+						this.close();
+					}}
+				/>
+			</ErrorBoundary>
 		);
 	}
 
@@ -2886,18 +3102,20 @@ export class TemplateSelectionModal extends Modal {
 		this.contentEl.addClass('modal-content');
 		this.root = createRoot(this.contentEl);
 		this.root.render(
-			<TemplateSelector
-				templates={this.templates}
-				settings={this.settings}
-				onConfirm={(template: TFile) => {
-					this.resolve(template);
-					this.close();
-				}}
-				onCancel={() => {
-					this.reject(new UserCancelError("User cancelled template selection"));
-					this.close();
-				}}
-			/>
+			<ErrorBoundary onError={(error) => { this.reject(error); this.close(); }}>
+				<TemplateSelector
+					templates={this.templates}
+					settings={this.settings}
+					onConfirm={(template: TFile) => {
+						this.resolve(template);
+						this.close();
+					}}
+					onCancel={() => {
+						this.reject(new UserCancelError("User cancelled template selection"));
+						this.close();
+					}}
+				/>
+			</ErrorBoundary>
 		);
 	}
 
@@ -3081,14 +3299,16 @@ const TemplateSelector = ({ templates, settings, onConfirm, onCancel }: Template
 export class FieldCollectionModal extends Modal {
 	title: string;
 	templateState: TemplateState;
+	userHelpers: Record<string, Function>;
 	resolve: (finalize: boolean) => void;
 	reject: (error: Error) => void;
 	root: any; // React root
 
-	constructor(app: App, title: string, templateState: TemplateState, resolve: (finalize: boolean) => void, reject: (error: Error) => void) {
+	constructor(app: App, title: string, templateState: TemplateState, userHelpers: Record<string, Function>, resolve: (finalize: boolean) => void, reject: (error: Error) => void) {
 		super(app);
 		this.title = title;
 		this.templateState = templateState;
+		this.userHelpers = userHelpers;
 		this.resolve = resolve;
 		this.reject = reject;
 	}
@@ -3099,22 +3319,23 @@ export class FieldCollectionModal extends Modal {
 		this.contentEl.empty();
 		this.contentEl.addClass('modal-content');
 		this.root = createRoot(this.contentEl);
+		const handleError = (error: Error) => { this.reject(error); this.close(); };
 		this.root.render(
-			<FieldCollectionForm
-				templateState={this.templateState}
-				onComplete={(finalize) => {
-					this.resolve(finalize);
-					this.close();
-				}}
-				onCancel={() => {
-					this.reject(new UserCancelError("User cancelled field collection"));
-					this.close();
-				}}
-				onError={(error) => {
-					this.reject(error);
-					this.close();
-				}}
-			/>
+			<ErrorBoundary onError={handleError}>
+				<FieldCollectionForm
+					templateState={this.templateState}
+					userHelpers={this.userHelpers}
+					onComplete={(finalize) => {
+						this.resolve(finalize);
+						this.close();
+					}}
+					onCancel={() => {
+						this.reject(new UserCancelError("User cancelled field collection"));
+						this.close();
+					}}
+					onError={handleError}
+				/>
+			</ErrorBoundary>
 		);
 	}
 
@@ -3130,11 +3351,12 @@ export class FieldCollectionModal extends Modal {
  */
 interface FieldCollectionFormProps {
 	templateState: TemplateState;
+	userHelpers: Record<string, Function>;
 	onComplete: (finalize: boolean) => void;
 	onCancel: () => void;
 	onError: (error: Error) => void;
 }
-const FieldCollectionForm = ({ templateState, onComplete, onCancel, onError }: FieldCollectionFormProps) => {
+const FieldCollectionForm = ({ templateState, userHelpers, onComplete, onCancel, onError }: FieldCollectionFormProps) => {
 	function formatFieldName(str: string): string {
 		str = str.charAt(0).toUpperCase() + str.slice(1);
 		return str
@@ -3290,21 +3512,21 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel, onError }: F
 				const valueDeps = Z2KTemplateEngine.reducedGetDependencies(fieldInfo.value);
 				const allDepsExist = valueDeps.every(dep => dep in context);
 				if (allDepsExist) {
-					newFieldStates[fieldName].value = Z2KTemplateEngine.reducedRenderContent(fieldInfo.value, context, true);
+					newFieldStates[fieldName].value = Z2KTemplateEngine.reducedRenderContent(fieldInfo.value, context, true, userHelpers);
 				} else {
 					newFieldStates[fieldName].value = undefined;
 				}
 			}
 
 			// Resolve display fields
-			newFieldStates[fieldName].resolvedPrompt = String(Z2KTemplateEngine.reducedRenderContent(fieldInfo.prompt || formatFieldName(fieldName), context, true));
-			newFieldStates[fieldName].resolvedDefault = Z2KTemplateEngine.reducedRenderContent(fieldInfo.default || "", context, true);
-			newFieldStates[fieldName].resolvedMiss = Z2KTemplateEngine.reducedRenderContent(fieldInfo.miss || "", context, true);
+			newFieldStates[fieldName].resolvedPrompt = String(Z2KTemplateEngine.reducedRenderContent(fieldInfo.prompt || formatFieldName(fieldName), context, true, userHelpers));
+			newFieldStates[fieldName].resolvedDefault = Z2KTemplateEngine.reducedRenderContent(fieldInfo.default || "", context, true, userHelpers);
+			newFieldStates[fieldName].resolvedMiss = Z2KTemplateEngine.reducedRenderContent(fieldInfo.miss || "", context, true, userHelpers);
 
 			// Update resolved options for select fields
 			if ((fieldInfo.type === 'singleSelect' || fieldInfo.type === 'multiSelect') && fieldInfo.opts) {
 				newFieldStates[fieldName].resolvedOpts = fieldInfo.opts.map(opt =>
-					Z2KTemplateEngine.reducedRenderContent(opt, context)
+					Z2KTemplateEngine.reducedRenderContent(opt, context, false, userHelpers)
 				);
 
 				// Update values based on selectedIndices if they exist
@@ -3755,6 +3977,12 @@ const FieldInput = ({ name, label, fieldInfo, fieldState, onChange, onFocus, onB
 		return String(value);
 	};
 
+	// For input field display: show empty for null/undefined instead of [null]/[undefined]
+	const toInputDisplayValue = (value: VarValueType): string => {
+		if (value === null || value === undefined) { return ''; }
+		return toHumanReadable(value);
+	};
+
 	const toInputValue = (value: VarValueType): string => {
 		if (value === null || value === undefined) { return ''; }
 		if (Array.isArray(value)) { return value.map(v => String(v)).join(', '); }
@@ -3780,7 +4008,7 @@ const FieldInput = ({ name, label, fieldInfo, fieldState, onChange, onFocus, onB
 					<input
 						type="text"
 						className={`title-text-input ${fieldState.hasError ? 'has-error' : ''}`}
-						value={toHumanReadable(fieldState.value)}
+						value={toInputDisplayValue(fieldState.value)}
 						onChange={(e) => onChange(e.target.value)}
 						{...commonProps}
 					/>
@@ -3790,7 +4018,7 @@ const FieldInput = ({ name, label, fieldInfo, fieldState, onChange, onFocus, onB
 				return (
 					<textarea
 						className={`text-input ${fieldState.hasError ? 'has-error' : ''}`}
-						value={toHumanReadable(fieldState.value)}
+						value={toInputDisplayValue(fieldState.value)}
 						onChange={(e) => onChange(e.target.value)}
 						{...commonProps}
 					/>
@@ -3801,7 +4029,7 @@ const FieldInput = ({ name, label, fieldInfo, fieldState, onChange, onFocus, onB
 					<input
 						type="number"
 						className={`number-input ${fieldState.hasError ? 'has-error' : ''}`}
-						value={toHumanReadable(fieldState.value)}
+						value={toInputDisplayValue(fieldState.value)}
 						onChange={(e) => {
 							const num = Number(e.target.value);
 							onChange(isNaN(num) ? undefined : num);
@@ -3974,6 +4202,264 @@ const FieldInput = ({ name, label, fieldInfo, fieldState, onChange, onFocus, onB
 };
 
 // ------------------------------------------------------------------------------------------------
+// Code Editor Modal
+// ------------------------------------------------------------------------------------------------
+interface EditorModalOptions {
+	title: string;
+	initialContent: string;
+	language: 'javascript' | 'handlebars';
+	helpText: string;
+	validate: (code: string) => { valid: boolean; error?: string; message?: string };
+	onSave: (content: string) => void;
+}
+
+interface ValidationState {
+	status: 'pending' | 'valid' | 'invalid';
+	message?: string;
+}
+
+function EditorModalContent({
+	initialContent,
+	language,
+	helpText,
+	validate,
+	onCancel,
+	onSave,
+}: {
+	initialContent: string;
+	language: 'javascript' | 'handlebars';
+	helpText: string;
+	validate: (code: string) => { valid: boolean; error?: string; message?: string };
+	onCancel: () => void;
+	onSave: (content: string) => void;
+}) {
+	const [content, setContent] = useState(initialContent);
+	const [helpExpanded, setHelpExpanded] = useState(false);
+	const [validation, setValidation] = useState<ValidationState>({ status: 'pending' });
+	const [canSave, setCanSave] = useState(false);
+	const [fontSize, setFontSize] = useState(14);
+	const editorContainerRef = useRef<HTMLDivElement>(null);
+	const editorViewRef = useRef<EditorView | null>(null);
+	const fontSizeCompartment = useRef(new Compartment());
+	const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+	const makeFontSizeTheme = (size: number) => EditorView.theme({
+		"&": { fontSize: `${size}px` },
+		".cm-scroller": { fontSize: `${size}px` },
+		".cm-content": { fontSize: `${size}px`, fontFamily: "var(--font-monospace)" },
+		".cm-gutters": { fontSize: `${size}px` },
+	});
+
+	// Run validation
+	const runValidation = (code: string) => {
+		const result = validate(code);
+		if (result.valid) {
+			setValidation({ status: 'valid', message: result.message });
+			setCanSave(true);
+		} else {
+			setValidation({ status: 'invalid', message: result.error });
+			setCanSave(false);
+		}
+	};
+
+	// Initial validation
+	useEffect(() => {
+		runValidation(initialContent);
+	}, []);
+
+	// Setup CodeMirror
+	useEffect(() => {
+		if (!editorContainerRef.current) { return; }
+
+		// Custom highlight style using Obsidian's CSS variables
+		const obsidianHighlightStyle = HighlightStyle.define([
+			{ tag: tags.keyword, color: "var(--code-keyword)" },
+			{ tag: tags.string, color: "var(--code-string)" },
+			{ tag: tags.number, color: "var(--code-value)" },
+			{ tag: tags.bool, color: "var(--code-value)" },
+			{ tag: tags.null, color: "var(--code-value)" },
+			{ tag: tags.comment, color: "var(--code-comment)", fontStyle: "italic" },
+			{ tag: tags.variableName, color: "var(--code-property)" },
+			{ tag: tags.function(tags.variableName), color: "var(--code-function)" },
+			{ tag: tags.propertyName, color: "var(--code-property)" },
+			{ tag: tags.operator, color: "var(--code-operator)" },
+			{ tag: tags.punctuation, color: "var(--code-punctuation)" },
+			{ tag: tags.className, color: "var(--code-tag)" },
+			{ tag: tags.definition(tags.variableName), color: "var(--code-property)" },
+		]);
+
+		// Use handlebarsOverlay for Handlebars (matches main editor), javascript() for JS
+		const languageExtensions = language === 'javascript'
+			? [javascript(), syntaxHighlighting(obsidianHighlightStyle)]
+			: [handlebarsOverlay()];
+
+		const extensions: Extension[] = [
+			lineNumbers(),
+			highlightActiveLine(),
+			highlightActiveLineGutter(),
+			history(),
+			bracketMatching(),
+			keymap.of([...defaultKeymap, ...historyKeymap]),
+			...languageExtensions,
+			EditorView.updateListener.of((update) => {
+				if (update.docChanged) {
+					const newContent = update.state.doc.toString();
+					setContent(newContent);
+					setCanSave(false); // Disable save while typing
+					// Debounced validation
+					clearTimeout(debounceRef.current);
+					debounceRef.current = setTimeout(() => {
+						runValidation(newContent);
+					}, 1000);
+				}
+			}),
+			EditorView.theme({
+				"&": { height: "100%" },
+				".cm-scroller": { overflow: "auto" },
+			}),
+			fontSizeCompartment.current.of(makeFontSizeTheme(fontSize)),
+		];
+
+		const state = EditorState.create({
+			doc: initialContent,
+			extensions,
+		});
+
+		const view = new EditorView({
+			state,
+			parent: editorContainerRef.current,
+		});
+
+		editorViewRef.current = view;
+
+		return () => {
+			view.destroy();
+		};
+	}, [language]);
+
+	// Reconfigure font size theme when font size changes
+	useEffect(() => {
+		const view = editorViewRef.current;
+		if (view) {
+			view.dispatch({
+				effects: fontSizeCompartment.current.reconfigure(makeFontSizeTheme(fontSize))
+			});
+			// Force remeasure after CSS applies
+			requestAnimationFrame(() => {
+				view.requestMeasure();
+			});
+		}
+	}, [fontSize]);
+
+	const adjustFontSize = (delta: number) => {
+		setFontSize(prev => Math.max(6, Math.min(20, prev + delta)));
+	};
+
+	return (
+		<div className="editor-modal-content">
+			{/* Toolbar row with help toggle and font size */}
+			<div className="editor-toolbar">
+				<div
+					className="help-header"
+					onClick={() => setHelpExpanded(!helpExpanded)}
+				>
+					<span className="help-toggle">{helpExpanded ? '▼' : '▶'}</span>
+					<span>Help</span>
+				</div>
+				<button
+					className="toolbar-btn"
+					onClick={() => adjustFontSize(-1)}
+					title="Decrease font size"
+				>
+					A−
+				</button>
+				<span className="font-size-label">{fontSize}px</span>
+				<button
+					className="toolbar-btn"
+					onClick={() => adjustFontSize(1)}
+					title="Increase font size"
+				>
+					A+
+				</button>
+			</div>
+
+			{/* Collapsible help content */}
+			{helpExpanded && (
+				<div className="help-content">
+					<pre>{helpText}</pre>
+				</div>
+			)}
+
+			{/* CodeMirror editor */}
+			<div
+				className="editor-container"
+				ref={editorContainerRef}
+			/>
+
+			{/* Validation status */}
+			<div className={`validation-status ${validation.status}`}>
+				{validation.status === 'valid' && `✓ ${validation.message || 'Valid'}`}
+				{validation.status === 'invalid' && `✗ ${validation.message || 'Invalid'}`}
+				{validation.status === 'pending' && ''}
+			</div>
+
+			{/* Buttons */}
+			<div className="modal-buttons">
+				<button className="btn btn-secondary" onClick={onCancel}>
+					Cancel
+				</button>
+				<button
+					className="btn btn-primary"
+					onClick={() => onSave(content)}
+					disabled={!canSave}
+				>
+					Save
+				</button>
+			</div>
+		</div>
+	);
+}
+
+export class EditorModal extends Modal {
+	options: EditorModalOptions;
+	root: any;
+
+	constructor(app: App, options: EditorModalOptions) {
+		super(app);
+		this.options = options;
+	}
+
+	onOpen() {
+		this.modalEl.addClass('z2k', 'editor-modal');
+		this.titleEl.setText(this.options.title);
+		this.contentEl.empty();
+		this.contentEl.addClass('modal-content');
+
+		this.root = createRoot(this.contentEl);
+		this.root.render(
+			<ErrorBoundary onError={(error) => { new Notice(`Editor error: ${error.message}`); this.close(); }}>
+				<EditorModalContent
+					initialContent={this.options.initialContent}
+					language={this.options.language}
+					helpText={this.options.helpText}
+					validate={this.options.validate}
+					onCancel={() => this.close()}
+					onSave={(content) => {
+						this.options.onSave(content);
+						this.close();
+					}}
+				/>
+			</ErrorBoundary>
+		);
+	}
+
+	onClose() {
+		if (this.root) { this.root.unmount(); }
+		this.contentEl.empty();
+	}
+}
+
+// ------------------------------------------------------------------------------------------------
 // Confirmation Modal
 // ------------------------------------------------------------------------------------------------
 interface ConfirmationModalOptions {
@@ -4055,7 +4541,7 @@ export class ErrorModal extends Modal {
 		this.root = createRoot(this.contentEl);
 		this.root.render(
 			<>
-				<p className="error-modal-message">{this.error.message}</p>
+				<p className={`error-modal-message${!(this.error instanceof TemplateError) ? ' error-modal-message--raw' : ''}`}>{this.error.message}</p>
 				{this.error instanceof TemplateError && (
 					<p className="error-modal-description">{this.error.description}</p>
 				)}
@@ -4069,7 +4555,7 @@ export class ErrorModal extends Modal {
 					}}
 					style={{ alignSelf: 'flex-end' }}
 				>
-					Copy Error
+					Copy Full Error
 				</button>
 			</>
 		);

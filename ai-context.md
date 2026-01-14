@@ -36,3 +36,8 @@ Z2K Templates sits between Core Templates (too simple) and Templater (requires J
 - **Template engine:** Uses `z2k-template-engine` package (separate repo) for parsing/rendering
 - **Docs:** `docs/` folder contains full reference manual in Markdown (exported to Docusaurus site)
 - **Design notes:** `design-notes/` folder contains developer notes
+
+## Development
+
+- **Automatic builds:** Projects build automatically via watch mode. Don't run build commands manually.
+- **Testing:** The user will test changes in Obsidian and report results.
