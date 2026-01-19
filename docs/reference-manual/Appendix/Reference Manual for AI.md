@@ -297,9 +297,9 @@ When a field lacks data during processing ("miss"), Z2K offers several handling 
 
 2. **Global YAML Setting**: Set `z2k_template_default_miss_handling` to:
 
-- `preserve`: Keep fields as-is (default)
+- `finalize-preserve`: Keep fields as-is (default)
 
-- `clear`: Remove fields without data
+- `finalize-clear`: Remove fields without data
 
 3. **Helper Functions**: Individual fields can override global setting with:
 

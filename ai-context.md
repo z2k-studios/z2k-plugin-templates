@@ -40,4 +40,5 @@ Z2K Templates sits between Core Templates (too simple) and Templater (requires J
 ## Development
 
 - **Automatic builds:** Projects build automatically via watch mode. Don't run build commands manually.
+- **TypeScript errors:** Use IDE diagnostics (returned with each edit) to check for errors. Don't run `tsc`, `npm run build`, or similar commands to verify compilation.
 - **Testing:** The user will test changes in Obsidian and report results.

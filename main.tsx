@@ -1050,7 +1050,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	// Called by: registerURIHandler (from URI), processQueueFile (from offline queue)
 	// DOCS: Non-field parameters can be templatePath, TemplatePath, template-path, template_path, etc. for robustness
 	// DOCS: but we should just say templatePath in the docs for simplicity
-	private async processCommand(rawParams: CommandParams, context: "user" | "batch"): Promise<void> {
+	private async processCommand(rawParams: CommandParams, context: "user" | "batch", isJsonSource: boolean = false): Promise<void> {
 		const cps: Record<string, any> = {};  // Command parameters
 		const templateData: Record<string, any> = {};  // Template field data (preserves original keys)
 
@@ -1109,6 +1109,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		// DOCS: All params (except recognized command params) are treated as template data
 		// DOCS: Direct params override values in templateJsonData
 		const fieldOverrides: Record<string, VarValueType> = { ...additionalFields, ...templateData };
+		// Only convert URI string values, not JSON-sourced values (already typed)
+		const uriKeys: Set<string> = isJsonSource ? new Set() : new Set(Object.keys(templateData));
 
 		// Validate cmd parameter
 		if (!cps.cmd || typeof cps.cmd !== 'string') {
@@ -1129,8 +1131,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				if (!parsedParams || typeof parsedParams !== "object" || Array.isArray(parsedParams)) {
 					throw new TemplatePluginError("Command: 'json' parameter must be a valid JSON object (not array or null)");
 				}
-				// Recursive call with parsed JSON (inherit context)
-				return await this.processCommand(parsedParams as CommandParams, context);
+				// Recursive call with parsed JSON (inherit context, mark as JSON source)
+				return await this.processCommand(parsedParams as CommandParams, context, true);
 			} catch (e) {
 				if (e instanceof TemplatePluginError) throw e;
 				throw new TemplatePluginError("Command: Invalid json parameter (must be valid JSON)");
@@ -1229,6 +1231,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				cardTypeFolder,
 				templateFile,
 				fieldOverrides,
+				uriKeys,
 				promptMode,
 				destDir,
 				finalize
@@ -1243,6 +1246,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			await this.continueCard({
 				existingFile,
 				fieldOverrides,
+				uriKeys,
 				promptMode,
 				finalize
 			});
@@ -1263,6 +1267,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				destHeader: cps.destHeader,
 				location,
 				fieldOverrides,
+				uriKeys,
 				promptMode,
 				finalize
 			});
@@ -1418,8 +1423,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		}
 
 		try {
-			// Execute command
-			await this.processCommand(cmdParams, 'batch');
+			// Execute command (JSON source - don't convert string types)
+			await this.processCommand(cmdParams, 'batch', true);
 
 			// Success - delete both .json and .retry.json if it exists
 			await adapter.remove(filePath);
@@ -1458,7 +1463,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				}
 
 				try {
-					await this.processCommand(cmdParams, 'batch');
+					await this.processCommand(cmdParams, 'batch', true);
 				} catch (e) {
 					// Command execution failed - check if it has retry config
 					const maxRetries = cmdParams.maxRetries || 0;
@@ -1548,6 +1553,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		cardTypeFolder?: TFolder,
 		templateFile?: TFile,
 		fieldOverrides?: Record<string,VarValueType>,
+		uriKeys?: Set<string>,
 		promptMode?: "none"|"remaining"|"all",
 		destDir?: TFolder,
 		sourceFile?: TFile,
@@ -1588,7 +1594,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			await this.addPluginBuiltIns(state, { sourceText: sourceTextStr, templateName: opts.templateFile.basename });
 			this.setDefaultTitleFromYaml(state);
 			// DOCS: field overrides override the values specified in fieldinfos
-			this.handleOverrides(state, opts.fieldOverrides, opts.promptMode || "all");
+			this.handleOverrides(state, opts.fieldOverrides, opts.uriKeys ?? new Set(), opts.promptMode || "all");
 
 			if (this.hasFillableFields(state.fieldInfos) && opts.promptMode !== "none") {
 				opts.finalize = await this.promptForFieldCollection(state);
@@ -1615,6 +1621,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	async continueCard(opts: {
 		existingFile: TFile,
 		fieldOverrides?: Record<string,VarValueType>,
+		uriKeys?: Set<string>,
 		promptMode?: "none"|"remaining"|"all",
 		finalize?: boolean,
 	}) {
@@ -1627,7 +1634,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			let systemBlocksYaml = Z2KYamlDoc.splitFrontmatter(systemBlocksContent).fm;
 			await this.addYamlFieldValues(state, [globalBlockYaml, systemBlocksYaml]);
 			await this.addPluginBuiltIns(state, { existingTitle: opts.existingFile.basename });
-			this.handleOverrides(state, opts.fieldOverrides, opts.promptMode || "all");
+			this.handleOverrides(state, opts.fieldOverrides, opts.uriKeys ?? new Set(), opts.promptMode || "all");
 			let hasFillableFields = this.hasFillableFields(state.fieldInfos);
 			// TODO: handle the case where fieldOverrides fills all fields and promptMode is "remaining"
 			if (!hasFillableFields && !opts.fieldOverrides) {
@@ -1653,6 +1660,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		destHeader?: string,
 		location?: "file-top"|"file-bottom"|"header-top"|"header-bottom"|number,
 		fieldOverrides?: Record<string,VarValueType>,
+		uriKeys?: Set<string>,
 		promptMode?: "none"|"remaining"|"all",
 		fromSelection?: boolean,
 		finalize?: boolean,
@@ -1687,7 +1695,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			// Convert sourceText to string for addPluginBuiltIns (handles all VarValueType cases)
 			const sourceTextStr = opts.fieldOverrides.sourceText != null ? String(opts.fieldOverrides.sourceText) : undefined;
 			await this.addPluginBuiltIns(state, { sourceText: sourceTextStr, existingTitle: opts.existingFile.basename });
-			this.handleOverrides(state, opts.fieldOverrides, opts.promptMode || "all");
+			this.handleOverrides(state, opts.fieldOverrides, opts.uriKeys ?? new Set(), opts.promptMode || "all");
 
 			// if (this.hasFillableFields(state.fieldInfos) && opts.promptMode !== "none") {
 			if (opts.promptMode !== "none") {
@@ -1789,13 +1797,47 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		// 	rethrowWithMessage(error, "Error occurred while updating the existing file");
 		// }
 	}
-	handleOverrides(state: TemplateState, fieldOverrides: Record<string,VarValueType> | undefined, promptMode: "none"|"remaining"|"all") {
+	handleOverrides(state: TemplateState, fieldOverrides: Record<string,VarValueType> | undefined, uriKeys: Set<string>, promptMode: "none"|"remaining"|"all") {
 		if (!fieldOverrides) { return; }
 		for (const [key, value] of Object.entries(fieldOverrides)) {
 			if (!state.fieldInfos[key]) {
 				state.fieldInfos[key] = { fieldName: key };
 			}
-			state.fieldInfos[key].value = value;
+			// Convert URI string values based on field type (JSON values already typed)
+			let convertedValue = value;
+			if (typeof value === 'string' && uriKeys.has(key)) {
+				const fieldType = state.fieldInfos[key].type;
+				const trimmed = value.trim();
+				if (fieldType === 'text') {
+					// Explicit text type - no conversion
+					convertedValue = value;
+				} else if (fieldType === 'boolean') {
+					// Generous boolean parsing
+					const lower = trimmed.toLowerCase();
+					if (['true', '1', 'yes', 'y', 'on', 'enabled', 'enable'].includes(lower)) {
+						convertedValue = true;
+					} else if (['false', '0', 'no', 'n', 'off', 'disabled', 'disable'].includes(lower)) {
+						convertedValue = false;
+					} else {
+						convertedValue = undefined;
+					}
+				} else if (fieldType === 'number') {
+					const num = Number(trimmed);
+					convertedValue = isNaN(num) ? undefined : num;
+				} else {
+					// Auto-conversion (no type declared or other types like singleSelect)
+					const lower = trimmed.toLowerCase();
+					if (lower === 'true') {
+						convertedValue = true;
+					} else if (lower === 'false') {
+						convertedValue = false;
+					} else if (trimmed !== '' && !isNaN(Number(trimmed))) {
+						convertedValue = Number(trimmed);
+					}
+					// else: stays as string
+				}
+			}
+			state.fieldInfos[key].value = convertedValue;
 			if (promptMode === "remaining") {
 				if (!state.fieldInfos[key].directives) {
 					state.fieldInfos[key].directives = [];
@@ -2498,9 +2540,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				state.fieldInfos[key].directives.push('no-prompt');
 			}
 
-			// Set resolved value (will be overridden by plugin built-ins or explicit overrides later)
-			// YAML values are compatible with VarValueType (string | number | boolean | array | null | undefined)
-			state.resolvedValues[key] = value as VarValueType;
+			// Store as formula so {{references}} resolve dynamically and value is available for other fields
+			state.fieldInfos[key].value = value as VarValueType;
 		}
 	}
 
@@ -3507,8 +3548,8 @@ const FieldCollectionForm = ({ templateState, userHelpers, onComplete, onCancel,
 				}
 			}
 
-			// Resolve value= if present (and not overridden by external data)
-			if (fieldInfo.value !== undefined && !(fieldName in templateState.resolvedValues)) {
+			// Resolve value= if present (and not overridden by external data or user input)
+			if (fieldInfo.value !== undefined && !(fieldName in templateState.resolvedValues) && !newFieldStates[fieldName].touched) {
 				const valueDeps = Z2KTemplateEngine.reducedGetDependencies(fieldInfo.value);
 				const allDepsExist = valueDeps.every(dep => dep in context);
 				if (allDepsExist) {
@@ -3790,6 +3831,32 @@ const FieldCollectionForm = ({ templateState, userHelpers, onComplete, onCancel,
 
 /**
  * Tracks the state of a field during form interaction.
+ *
+ * ## Value Storage: fieldInfo.value vs resolvedValues
+ *
+ * Two properties control field values - understanding when to use each is critical:
+ *
+ * ### fieldInfo.value (formula)
+ * A template expression that computes the field's value from other fields.
+ * Example: `value="{{firstName}} {{lastName}}"`
+ * - Re-evaluated whenever dependencies change (until user edits the field)
+ * - Used by: field-info value= parameter, URI overrides, YAML frontmatter values
+ * - When adding external data, store here so {{references}} resolve dynamically
+ *
+ * ### resolvedValues[fieldName] (locked result)
+ * Concrete value that should NOT be re-computed. Key existence = "field is specified."
+ * - Used for: form submission results, values that are "locked in"
+ * - If a field is in resolvedValues, its formula (fieldInfo.value) is ignored
+ *
+ * ### touched (user override flag)
+ * Set to true when user interacts with a field in the form.
+ * Once touched, the field's formula stops auto-updating, preserving user input.
+ *
+ * ### Priority (highest to lowest)
+ * 1. User input (touched = true) - user's edits are preserved
+ * 2. resolvedValues - externally locked, no re-computation
+ * 3. fieldInfo.value formula - computed from dependencies
+ * 4. fieldInfo.default - fallback value
  *
  * ## Resolution System Overview
  *
