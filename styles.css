@@ -4,12 +4,29 @@
 --------------------------------------------------------------------------------------------------------------------------------
 */
 
+.z2k-settings .setting-item.is-invalid {
+	flex-wrap: wrap;
+}
 .z2k-settings .setting-item.is-invalid input {
 	border-color: var(--text-error);
 	box-shadow: none;
 }
-.z2k-settings .setting-item.is-invalid .setting-item-error-description {
+.z2k-settings .setting-item-error-description {
 	color: var(--text-error);
+	margin-top: 4px;
+	flex-basis: 100%;
+}
+
+/* Full-width setting: control appears below the info, spanning full width */
+.z2k-settings .setting-item.setting-full-width {
+	flex-wrap: wrap;
+}
+.z2k-settings .setting-item.setting-full-width .setting-item-control {
+	width: 100%;
+	margin-top: 8px;
+}
+.z2k-settings .setting-item.setting-full-width .setting-item-control input[type="text"] {
+	width: 100%;
 }
 
 

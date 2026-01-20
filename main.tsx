@@ -1,5 +1,5 @@
 
-import { App, Plugin, Modal, Notice, TAbstractFile, TFolder, TFile, PluginSettingTab, Setting, MarkdownView, Editor, Command } from 'obsidian';
+import { App, Plugin, Modal, Notice, TAbstractFile, TFolder, TFile, PluginSettingTab, Setting, MarkdownView, Editor, Command, ToggleComponent } from 'obsidian';
 import * as obsidian from 'obsidian';
 import { Z2KTemplateEngine, Z2KYamlDoc, TemplateState, VarValueType, FieldInfo, TemplateError, Handlebars } from 'z2k-template-engine';
 import React, { useState, useEffect, useRef, Component, ReactNode } from 'react';
@@ -25,7 +25,11 @@ interface Z2KTemplatesPluginSettings {
 		name: string; // display name
 		targetFolder: string; // vault-relative path to folder
 	}>;
+	offlineCommandQueueEnabled: boolean; // Whether offline command queue processing is enabled
 	offlineCommandQueueDir: string; // Directory for offline command queue (JSON/JSONL files)
+	offlineCommandQueueFrequency: string; // Duration between queue scans (e.g., "60s", "5m"). Blank = manual only
+	offlineCommandQueuePause: string; // Duration to pause between commands (e.g., "500ms", "1s"). Blank = no pause
+	offlineCommandQueueArchiveDuration: string; // How long to keep archives (e.g., "1d", "1w"). Blank = delete immediately
 	errorLogPath: string; // Path to error log file (relative to vault or absolute)
 	errorLogLevel: "none" | "error" | "warn" | "info" | "debug"; // Minimum severity level to log
 	useTemplateFileExtensions: boolean; // Whether to use .template and .block file extensions
@@ -41,7 +45,11 @@ const DEFAULT_SETTINGS: Z2KTemplatesPluginSettings = {
 	templatesFolderName: 'Templates',
 	cardReferenceName: 'note',
 	dynamicCardCommands: [],
-	offlineCommandQueueDir: '.obsidian/plugins/z2k-plugin-templates/queue',
+	offlineCommandQueueEnabled: true,
+	offlineCommandQueueDir: '.obsidian/plugins/z2k-plugin-templates/command-queue',
+	offlineCommandQueueFrequency: '60s',
+	offlineCommandQueuePause: '',
+	offlineCommandQueueArchiveDuration: '1d',
 	errorLogPath: '.obsidian/plugins/z2k-plugin-templates/error-log.md',
 	errorLogLevel: 'warn',
 	useTemplateFileExtensions: false,
@@ -86,6 +94,56 @@ interface RetryMetadata {
 	nextRetryAfter: number;  // Timestamp (ms since epoch)
 }
 
+const DURATION_FORMAT_ERROR = 'Invalid duration. Use number + suffix: ms, s, m, h, d, w, mo, y (e.g., 500ms, 30s, 5m, 12h, 3d, 1w, 6mo, 1y)';
+
+// Parses duration strings like "500ms", "30s", "5m", "12h", "3d", "1w", "6mo", "1y" into milliseconds
+// If defaultOnError is provided, returns it for invalid/empty input. Otherwise throws Error.
+function parseDuration(value: string, defaultOnError?: number): number {
+	const trimmed = value.trim();
+	if (trimmed === '') {
+		if (defaultOnError !== undefined) return defaultOnError;
+		throw new Error(DURATION_FORMAT_ERROR);
+	}
+	const match = trimmed.match(/^(\d+)(ms|s|m|h|d|w|mo|y)$/i);
+	if (!match) {
+		if (defaultOnError !== undefined) return defaultOnError;
+		throw new Error(DURATION_FORMAT_ERROR);
+	}
+	const num = parseInt(match[1], 10);
+	const unit = match[2].toLowerCase();
+	switch (unit) {
+		case 'ms': return num;
+		case 's': return num * 1000;
+		case 'm': return num * 60 * 1000;
+		case 'h': return num * 60 * 60 * 1000;
+		case 'd': return num * 24 * 60 * 60 * 1000;
+		case 'w': return num * 7 * 24 * 60 * 60 * 1000;
+		case 'mo': return num * 30 * 24 * 60 * 60 * 1000;
+		case 'y': return num * 365 * 24 * 60 * 60 * 1000;
+		default:
+			if (defaultOnError !== undefined) return defaultOnError;
+			throw new Error(DURATION_FORMAT_ERROR);
+	}
+}
+
+// Parses .delay. filenames: name.YYYY-MM-DD.delay.json or name.YYYY-MM-DD_HH-mm-ss.delay.json
+// Returns timestamp if valid delay date found, else null
+function parseDelayFromFilename(filename: string): number | null {
+	const match = filename.match(/\.(\d{4}-\d{2}-\d{2})(?:_(\d{2}-\d{2}-\d{2}))?\.delay\.json$/i);
+	if (!match) return null;
+	const dateStr = match[1];
+	const timeStr = match[2] || '00-00-00';
+	const [h, m, s] = timeStr.split('-').map(Number);
+	const date = moment(dateStr, 'YYYY-MM-DD');
+	if (!date.isValid()) return null;
+	date.hour(h).minute(m).second(s);
+	return date.valueOf();
+}
+
+function sleep(ms: number): Promise<void> {
+	return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 class Z2KTemplatesSettingTab extends PluginSettingTab {
 	plugin: Z2KTemplatesPlugin;
 	private refs = {
@@ -117,14 +175,10 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 		containerEl.addClass('z2k-settings');
 		containerEl.createEl('h3', {text: 'Z2K Template Settings'});
 
-		// About block
-		const about = containerEl.createDiv({cls: ['z2k-about', 'setting-item']});
-		// const aboutInfo = about.createDiv({cls: 'setting-item-info'});
-		about.createEl('div', {cls: 'setting-item-description', text: 'Here you can customize some of the functionality of the template plugin.'});
-
 		this.refs.descTemplatesRootFolder = new Setting(containerEl)
 			.setName('Templates root folder')
 			.setDesc('') // Description is set dynamically
+			.setClass('setting-full-width')
 			.addText(text => {
 				const input = text
 					.setPlaceholder(DEFAULT_SETTINGS.templatesRootFolder)
@@ -215,6 +269,9 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 						this.plugin.queueRefreshCommands();
 					});
 			});
+		const visibilitySettingContainer = containerEl.createDiv();
+		let visibilityToggle: ToggleComponent | null = null;
+
 		new Setting(containerEl)
 			.setName('Use template file extensions')
 			.setDesc(createFragment(f => {
@@ -228,38 +285,77 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 				.setValue(this.plugin.settings.useTemplateFileExtensions)
 				.onChange(async (value) => {
 					if (!value && this.plugin.settings.useTemplateFileExtensions) {
-						// Turning OFF - show warning
-						const confirmed = await new Promise<boolean>((resolve) => {
-							new ConfirmationModal(this.app, {
-								title: 'Disable Template File Extensions?',
-								message: <>
-									<p>We recommend that you convert your existing .template and .block template files back to markdown before disabling Template File Extensions.</p>
-									<p>If you do not convert them to markdown, then these templates will not be easily accessible inside Obsidian for updates and changes.</p>
-									<p><a href="https://z2k-studios.github.io/z2k-plugin-templates-docs/docs/reference-manual/Template%20File%20Extensions" target="_blank">See docs for more details.</a></p>
-								</>,
-								confirmText: 'Disable Anyway',
-								cancelText: 'Cancel',
-							}, resolve).open();
-						});
-						if (!confirmed) {
-							toggle.setValue(true); // Revert toggle
-							return;
+						// Turning OFF - check if there are any .template or .block files first
+						const files = this.app.vault.getFiles();
+						const templateFiles = files.filter(f => f.extension === 'template' || f.extension === 'block');
+						if (templateFiles.length > 0) {
+							// Show warning only if template files exist
+							const confirmed = await new Promise<boolean>((resolve) => {
+								new ConfirmationModal(this.app, {
+									title: 'Disable Template File Extensions?',
+									message: <>
+										<p>We recommend that you convert your existing .template and .block template files back to markdown before disabling Template File Extensions.</p>
+										<p>If you do not convert them to markdown, then these templates will not be easily accessible inside Obsidian for updates and changes.</p>
+										<p><a href="https://z2k-studios.github.io/z2k-plugin-templates-docs/docs/reference-manual/Template%20File%20Extensions" target="_blank">See docs for more details.</a></p>
+									</>,
+									confirmText: 'Disable Anyway',
+									cancelText: 'Cancel',
+								}, resolve).open();
+							});
+							if (!confirmed) {
+								toggle.setValue(true); // Revert toggle
+								return;
+							}
 						}
+						// Also hide template files when disabling the feature
+						await this.plugin.setTemplateExtensionsVisible(false);
+						visibilityToggle?.setValue(false);
 					}
 					this.plugin.settings.useTemplateFileExtensions = value;
 					await this.plugin.saveData(this.plugin.settings);
 					this.plugin.queueRefreshCommands();
+					visibilitySettingContainer.toggle(value);
 				}));
 
+		containerEl.appendChild(visibilitySettingContainer);
+		visibilitySettingContainer.toggle(this.plugin.settings.useTemplateFileExtensions);
+		new Setting(visibilitySettingContainer)
+			.setName('Template files visible in file explorer')
+			.setDesc('When off, .template and .block files are hidden from the file explorer.')
+			.addToggle(toggle => {
+				visibilityToggle = toggle;
+				toggle.setValue(this.plugin.settings.templateExtensionsVisible)
+					.onChange(async (value) => {
+						await this.plugin.setTemplateExtensionsVisible(value);
+					});
+			});
+
+		containerEl.createEl('h3', {text: 'Offline Command Queue'});
+
+		const queueSettingsContainer = containerEl.createDiv();
+		queueSettingsContainer.toggle(this.plugin.settings.offlineCommandQueueEnabled);
+
 		new Setting(containerEl)
-			.setName('Offline command queue directory')
-			.setDesc('Directory for queued command files (JSON/JSONL) - vault-relative or absolute. Commands will be processed automatically.')
+			.setName('Enable offline command queue')
+			.setDesc('Process queued JSON command files automatically.')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.offlineCommandQueueEnabled)
+				.onChange(async (value) => {
+					this.plugin.settings.offlineCommandQueueEnabled = value;
+					await this.plugin.saveData(this.plugin.settings);
+					queueSettingsContainer.toggle(value);
+				}));
+
+		containerEl.appendChild(queueSettingsContainer);
+
+		new Setting(queueSettingsContainer)
+			.setName('Queue directory')
+			.setDesc('Directory for queued command files (JSON/JSONL) - vault-relative or absolute.')
+			.setClass('setting-full-width')
 			.addText(text => {
 				const input = text
-					.setPlaceholder(DEFAULT_SETTINGS.offlineCommandQueueDir)
 					.setValue(this.plugin.settings.offlineCommandQueueDir)
 					.inputEl;
-
 				this.validateTextInput(input,
 					(value) => {
 						if (value && /[*?"<>|]/.test(value)) { return "Invalid characters in file path"; }
@@ -270,14 +366,87 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 					});
 			});
 
+		new Setting(queueSettingsContainer)
+			.setName('Scan frequency')
+			.setDesc('How often to scan for new commands. Blank = manual only.')
+			.addText(text => {
+				const input = text
+					.setValue(this.plugin.settings.offlineCommandQueueFrequency)
+					.inputEl;
+				this.validateTextInput(input,
+					(value) => {
+						const trimmed = value.trim();
+						if (trimmed === '') return null; // Blank = manual only
+						try {
+							const ms = parseDuration(trimmed);
+							if (ms < 5000) return "Minimum is 5s";
+							return null;
+						} catch (e: any) {
+							return e.message;
+						}
+					},
+					async (validValue) => {
+						this.plugin.settings.offlineCommandQueueFrequency = validValue;
+						await this.plugin.saveData(this.plugin.settings);
+					});
+			});
+
+		new Setting(queueSettingsContainer)
+			.setName('Pause between commands')
+			.setDesc('Delay between processing each command. Blank = no pause.')
+			.addText(text => {
+				const input = text
+					.setValue(this.plugin.settings.offlineCommandQueuePause)
+					.inputEl;
+				this.validateTextInput(input,
+					(value) => {
+						const trimmed = value.trim();
+						if (trimmed === '') return null; // Blank = no pause
+						try {
+							parseDuration(trimmed);
+							return null;
+						} catch (e: any) {
+							return e.message;
+						}
+					},
+					async (validValue) => {
+						this.plugin.settings.offlineCommandQueuePause = validValue;
+						await this.plugin.saveData(this.plugin.settings);
+					});
+			});
+
+		new Setting(queueSettingsContainer)
+			.setName('Archive duration')
+			.setDesc('How long to keep processed files. Blank = delete immediately.')
+			.addText(text => {
+				const input = text
+					.setValue(this.plugin.settings.offlineCommandQueueArchiveDuration)
+					.inputEl;
+				this.validateTextInput(input,
+					(value) => {
+						const trimmed = value.trim();
+						if (trimmed === '') return null; // Blank = delete immediately
+						try {
+							parseDuration(trimmed);
+							return null;
+						} catch (e: any) {
+							return e.message;
+						}
+					},
+					async (validValue) => {
+						this.plugin.settings.offlineCommandQueueArchiveDuration = validValue;
+						await this.plugin.saveData(this.plugin.settings);
+					});
+			});
+
 		containerEl.createEl('h3', {text: 'Error Logging'});
 
 		new Setting(containerEl)
 			.setName('Error log file')
 			.setDesc('Path to error log file (vault-relative or absolute).')
+			.setClass('setting-full-width')
 			.addText(text => {
 				const input = text
-					.setPlaceholder(DEFAULT_SETTINGS.errorLogPath)
 					.setValue(this.plugin.settings.errorLogPath)
 					.inputEl;
 
@@ -493,9 +662,10 @@ registerHelper('recentFiles', () => {
 		let errorDescEl: HTMLElement | null = null;
 
 		const showError = (msg: string) => {
-			const infoEl = settingItem?.querySelector('.setting-item-info');
-			if (!errorDescEl && infoEl) {
-				errorDescEl = infoEl.createDiv({cls: ['setting-item-description', 'setting-item-error-description']});
+			if (!errorDescEl && settingItem) {
+				errorDescEl = createDiv({cls: ['setting-item-description', 'setting-item-error-description']});
+				// Append to settingItem - CSS handles layout via .is-invalid flex-wrap
+				settingItem.appendChild(errorDescEl);
 			}
 			errorDescEl?.setText(msg);
 			settingItem?.addClass('is-invalid');
@@ -573,7 +743,7 @@ class ErrorLogger {
 	}
 
 	private formatLogEntry(context: LogContext): string {
-		const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
+		const timestamp = moment().format('YYYY-MM-DD HH:mm:ss');
 
 		// Compact format for error/warn/info
 		if (this.settings.errorLogLevel !== "debug") {
@@ -608,6 +778,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	private _refreshTimer: number | null = null;
 	private _queueCheckInterval: number | null = null;
 	private _processingQueue: boolean = false;
+	private _lastQueueCheck: number = 0;
 	private _statusBarItem: HTMLElement | null = null;
 
 	private wrapHelper(name: string, fn: Function): Function {
@@ -782,6 +953,19 @@ export default class Z2KTemplatesPlugin extends Plugin {
 					}
 					this.insertBlock({ fromSelection: true });
 				}
+			},
+			{
+				id: 'z2k-process-command-queue',
+				name: 'Process command queue now',
+				checkCallback: (checking) => {
+					if (!this.settings.offlineCommandQueueEnabled) return false;
+					if (checking) return true;
+					if (this._processingQueue) {
+						new Notice('Command queue is already being processed');
+						return;
+					}
+					this.checkAndProcessQueue();
+				},
 			},
 			// {
 			// 	id: 'z2k-enable-template-editing',
@@ -1304,22 +1488,23 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			}
 		}
 
-		// Ensure new directory exists
-		if (newPath) {
-			const dirPath = this.resolveQueueFilePath(newPath);
-			if (dirPath && !(await adapter.exists(dirPath))) {
-				await adapter.mkdir(dirPath);
-			}
-		}
 	}
 
 	private startQueueProcessor() {
 		if (!this.settings.offlineCommandQueueDir) return;
-
-		// Check queue every 5 seconds
+		// Set initial lastQueueCheck to now (delays first scan by frequency duration)
+		this._lastQueueCheck = Date.now();
+		// Meta-timer: check every second if it's time to process
 		this._queueCheckInterval = window.setInterval(() => {
-			this.checkAndProcessQueue();
-		}, 5000);
+			if (!this.settings.offlineCommandQueueEnabled) return;
+			const freqMs = parseDuration(this.settings.offlineCommandQueueFrequency, 0);
+			if (freqMs === 0) return; // Manual only (blank or invalid)
+			const now = Date.now();
+			if (now >= this._lastQueueCheck + freqMs) {
+				this._lastQueueCheck = now;
+				this.checkAndProcessQueue();
+			}
+		}, 1000);
 	}
 
 	private async recoverFromCrash() {
@@ -1342,37 +1527,36 @@ export default class Z2KTemplatesPlugin extends Plugin {
 
 	private async checkAndProcessQueue() {
 		if (this._processingQueue || !this.settings.offlineCommandQueueDir) return;
-
+		if (!this.settings.offlineCommandQueueEnabled) return;
 		const dirPath = this.resolveQueueFilePath(this.settings.offlineCommandQueueDir);
 		if (!dirPath) return;
-
 		const adapter = this.app.vault.adapter;
 		if (!(await adapter.exists(dirPath))) return;
-
 		// Verify it's actually a directory
 		const stat = await adapter.stat(dirPath);
 		if (!stat || stat.type !== 'folder') {
 			await this.log('error', 'batch', `Queue path is not a directory: ${dirPath}`);
 			return;
 		}
-
 		this._processingQueue = true;
+		this.updateStatusBar('⏳ Processing commands...');
 		try {
 			// Get all files in queue directory
 			const listing = await adapter.list(dirPath);
-
-			// Filter for .json and .jsonl files (excluding .retry.json and .processing.jsonl)
+			// Clean up old archives first
+			await this.cleanupOldArchives(listing.files);
+			// Filter for .json and .jsonl files (excluding special files)
 			const queueFiles = listing.files.filter(f =>
 				(f.endsWith('.json') || f.endsWith('.jsonl')) &&
 				!f.endsWith('.retry.json') &&
-				!f.endsWith('.processing.jsonl')
+				!f.endsWith('.processing.jsonl') &&
+				!f.endsWith('.done.json') &&
+				!f.endsWith('.failed.json') &&
+				!f.endsWith('.failed.jsonl')
 			);
-
 			if (queueFiles.length === 0) {
-				this._processingQueue = false;
 				return;
 			}
-
 			// Get file stats and sort by birth time (creation time)
 			const fileStats = await Promise.all(
 				queueFiles.map(async (file) => ({
@@ -1380,29 +1564,41 @@ export default class Z2KTemplatesPlugin extends Plugin {
 					stat: await adapter.stat(file)
 				}))
 			);
-
 			fileStats.sort((a, b) => (a.stat?.ctime || 0) - (b.stat?.ctime || 0));
-
+			const pauseMs = parseDuration(this.settings.offlineCommandQueuePause, 0);
 			// Process each file
-			for (const { path: filePath } of fileStats) {
-				// Check for retry sidecar - skip if not ready
-				const retryPath = filePath + '.retry.json';
-				if (await adapter.exists(retryPath)) {
-					const retryData = JSON.parse(await adapter.read(retryPath)) as RetryMetadata;
-					if (retryData.nextRetryAfter > Date.now()) {
-						continue; // Not ready to retry yet
+			for (let i = 0; i < fileStats.length; i++) {
+				const { path: filePath } = fileStats[i];
+				// Check .delay. filename - skip if not ready yet
+				const basename = filePath.split('/').pop() || '';
+				const delayUntil = parseDelayFromFilename(basename);
+				if (delayUntil !== null && delayUntil > Date.now()) {
+					continue; // Not ready yet
+				}
+				// Check for retry sidecar - skip if not ready (only applies to .json files)
+				if (filePath.endsWith('.json')) {
+					const retryPath = filePath.replace(/\.json$/, '.retry.json');
+					if (await adapter.exists(retryPath)) {
+						const retryData = JSON.parse(await adapter.read(retryPath)) as RetryMetadata;
+						if (retryData.nextRetryAfter > Date.now()) {
+							continue; // Not ready to retry yet
+						}
 					}
 				}
-
 				// Process the file
 				if (filePath.endsWith('.jsonl')) {
 					await this.processJsonlFile(filePath);
 				} else if (filePath.endsWith('.json')) {
 					await this.processJsonFile(filePath);
 				}
+				// Pause between files (but not after the last one)
+				if (pauseMs > 0 && i < fileStats.length - 1) {
+					await sleep(pauseMs);
+				}
 			}
 		} finally {
 			this._processingQueue = false;
+			this.updateStatusBar('');
 		}
 	}
 
@@ -1416,19 +1612,28 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			const content = await adapter.read(filePath);
 			cmdParams = JSON.parse(content) as CommandParams;
 		} catch (parseError) {
-			// Invalid JSON - log and delete file
+			// Invalid JSON - log and rename to .TIMESTAMP.failed.json
 			await this.log('error', 'batch', `Invalid JSON in command file ${filePath}`);
-			await adapter.remove(filePath);
+			const failedPath = await this.getFailedPath(filePath);
+			await adapter.rename(filePath, failedPath);
 			return;
 		}
 
 		try {
 			// Execute command (JSON source - don't convert string types)
 			await this.processCommand(cmdParams, 'batch', true);
-
-			// Success - delete both .json and .retry.json if it exists
-			await adapter.remove(filePath);
-			const retryPath = filePath + '.retry.json';
+			// Success - archive or delete based on setting
+			const archiveDurationMs = parseDuration(this.settings.offlineCommandQueueArchiveDuration, 0);
+			if (archiveDurationMs > 0) {
+				// Archive: rename to name.TIMESTAMP.done.json
+				const archivePath = await this.getArchivePath(filePath);
+				await adapter.rename(filePath, archivePath);
+			} else {
+				// Delete immediately
+				await adapter.remove(filePath);
+			}
+			// Clean up retry sidecar if it exists
+			const retryPath = filePath.replace(/\.json$/, '.retry.json');
 			if (await adapter.exists(retryPath)) {
 				await adapter.remove(retryPath);
 			}
@@ -1450,39 +1655,48 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		try {
 			const content = await adapter.read(processingPath);
 			const lines = content.split('\n').filter(line => line.trim());
-
+			const pauseMs = parseDuration(this.settings.offlineCommandQueuePause, 0);
+			const failedLines: string[] = [];
 			// Process each line
-			for (const line of lines) {
+			for (let i = 0; i < lines.length; i++) {
+				const line = lines[i];
 				let cmdParams: CommandParams;
 				try {
 					cmdParams = JSON.parse(line) as CommandParams;
 				} catch (parseError) {
-					// Invalid JSON - log and skip
+					// Invalid JSON - log and collect
 					await this.log('error', 'batch', `Invalid JSON in command queue: ${line}`);
+					failedLines.push(line);
 					continue;
 				}
-
 				try {
 					await this.processCommand(cmdParams, 'batch', true);
 				} catch (e) {
 					// Command execution failed - check if it has retry config
 					const maxRetries = cmdParams.maxRetries || 0;
-
 					if (maxRetries > 0) {
 						// Create individual .json file for retry
 						const retryFileName = `command-${moment().format('YYYY-MM-DD_HH-mm-ss-SSS')}.json`;
 						const retryFilePath = dirPath + '/' + retryFileName;
 						await adapter.write(retryFilePath, line);
-
 						// Handle as failed command (creates .retry.json)
 						await this.handleCommandFailure(retryFilePath, e, cmdParams);
 					} else {
-						// No retries - just log error
+						// No retries - collect failed line
 						await this.handleErrors(e, 'batch');
+						failedLines.push(line);
 					}
 				}
+				// Pause between commands (but not after the last one)
+				if (pauseMs > 0 && i < lines.length - 1) {
+					await sleep(pauseMs);
+				}
 			}
-
+			// Write failed lines to .failed.jsonl if any
+			if (failedLines.length > 0) {
+				const failedPath = await this.getFailedPath(filePath);
+				await adapter.write(failedPath, failedLines.join('\n'));
+			}
 			// Done processing - delete .processing.jsonl
 			await adapter.remove(processingPath);
 		} catch (e) {
@@ -1510,13 +1724,14 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		const retryDelayMs = cmdParams.retryDelayMs || 0;
 
 		if (maxRetries === 0) {
-			// No retries configured - just delete
-			await adapter.remove(filePath);
+			// No retries configured - rename to .TIMESTAMP.failed.json
+			const failedPath = await this.getFailedPath(filePath);
+			await adapter.rename(filePath, failedPath);
 			return;
 		}
 
 		// Check if retry metadata exists
-		const retryPath = filePath + '.retry.json';
+		const retryPath = filePath.replace(/\.json$/, '.retry.json');
 		let retryData: RetryMetadata;
 
 		if (await adapter.exists(retryPath)) {
@@ -1533,8 +1748,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 
 		// Check if retries exhausted
 		if (retryData.attempts >= maxRetries) {
-			// Rename to .failed.json and delete retry metadata
-			const failedPath = filePath.replace(/\.json$/, '.failed.json');
+			// Rename to .TIMESTAMP.failed.json and delete retry metadata
+			const failedPath = await this.getFailedPath(filePath);
 			await adapter.rename(filePath, failedPath);
 			await adapter.remove(retryPath);
 
@@ -1546,6 +1761,54 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			// Save retry metadata
 			await adapter.write(retryPath, JSON.stringify(retryData, null, 2));
 		}
+	}
+
+	private updateStatusBar(text: string) {
+		if (this._statusBarItem) {
+			this._statusBarItem.setText(text);
+		}
+	}
+
+	private async cleanupOldArchives(allFiles: string[]) {
+		const archiveDurationMs = parseDuration(this.settings.offlineCommandQueueArchiveDuration, 0);
+		if (archiveDurationMs === 0) return; // Archives are deleted immediately, nothing to clean
+		const adapter = this.app.vault.adapter;
+		const now = Date.now();
+		// Find .TIMESTAMP.done.json files
+		const archivePattern = /\.(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})\.done\.json$/;
+		for (const file of allFiles) {
+			const match = file.match(archivePattern);
+			if (!match) continue;
+			const archiveTime = moment(match[1], 'YYYY-MM-DD_HH-mm-ss').valueOf();
+			if (now > archiveTime + archiveDurationMs) {
+				await adapter.remove(file);
+			}
+		}
+	}
+
+	private async getArchivePath(filePath: string): Promise<string> {
+		return this.getTimestampedPath(filePath, 'done');
+	}
+
+	private async getFailedPath(filePath: string): Promise<string> {
+		return this.getTimestampedPath(filePath, 'failed');
+	}
+
+	private async getTimestampedPath(filePath: string, suffix: string): Promise<string> {
+		const adapter = this.app.vault.adapter;
+		// Determine extension (.json or .jsonl)
+		const ext = filePath.endsWith('.jsonl') ? '.jsonl' : '.json';
+		// Strip extension and .DATE.delay or .DATE_TIME.delay suffix if present
+		const baseName = filePath
+			.replace(/\.jsonl?$/, '')
+			.replace(/\.\d{4}-\d{2}-\d{2}(?:_\d{2}-\d{2}-\d{2})?\.delay$/, '');
+		let timestamp = moment();
+		let resultPath: string;
+		do {
+			resultPath = `${baseName}.${timestamp.format('YYYY-MM-DD_HH-mm-ss')}.${suffix}${ext}`;
+			timestamp.add(1, 'second');
+		} while (await adapter.exists(resultPath));
+		return resultPath;
 	}
 
 	//// Functions called from [commands/context menu/uris/etc]
@@ -1962,23 +2225,28 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			}
 		} catch (error) { this.handleErrors(error); }
 	}
-	async toggleTemplateExtensionsVisibility() {
-		if (this.settings.templateExtensionsVisible) {
-			// Hide: unregister extensions
-			// @ts-expect-error: internal API
-			this.app.viewRegistry.unregisterExtensions(["template", "block"]);
-			this.settings.templateExtensionsVisible = false;
-			new Notice("Template files are now hidden.");
-		} else {
+	async setTemplateExtensionsVisible(visible: boolean) {
+		if (this.settings.templateExtensionsVisible === visible) {
+			return; // Already in desired state
+		}
+		if (visible) {
 			// Show: register extensions as markdown
 			// @ts-expect-error: internal API
 			this.app.viewRegistry.registerExtensions(["template", "block"], "markdown");
-			this.settings.templateExtensionsVisible = true;
 			new Notice("Template files are now visible.");
+		} else {
+			// Hide: unregister extensions
+			// @ts-expect-error: internal API
+			this.app.viewRegistry.unregisterExtensions(["template", "block"]);
+			new Notice("Template files are now hidden.");
 		}
+		this.settings.templateExtensionsVisible = visible;
 		await this.saveData(this.settings);
 		// Refresh commands so the command name updates
 		this.queueRefreshCommands(0);
+	}
+	async toggleTemplateExtensionsVisibility() {
+		await this.setTemplateExtensionsVisible(!this.settings.templateExtensionsVisible);
 	}
 	// async enableTemplateEditing() {
 	// 	try {
