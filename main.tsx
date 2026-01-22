@@ -2826,6 +2826,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		return doc.toString();
 	}
 	cleanupYamlAfterFinalize(fm: string): string {
+		if (!fm || fm.trim() === "") { return fm; }
 		// Remove template-only YAML properties that should not appear in finalized output
 		const doc = Z2KYamlDoc.fromString(fm);
 		doc.del("z2k_template_default_miss_handling");
@@ -2865,6 +2866,10 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				// Need to use adapter because the usual file read doesn't work for files that start with .
 				systemBlocks.push(await this.app.vault.adapter.read(filePath));
 			} catch {} // Can't find/read the file
+
+			// Check for stop file - if present, don't continue to parent folders
+			const stopFilePath = this.joinPath(currentFolder.path, '.system-block-stop');
+			if (await this.app.vault.adapter.exists(stopFilePath)) break;
 
 			if (currentFolder === templatesRoot) break; // Stop at the templates root
 			currentFolder = currentFolder.parent;
@@ -3912,7 +3917,7 @@ const FieldCollectionForm = ({ templateState, userHelpers, onComplete, onCancel,
 				hasError = true;
 				errorMessage = 'Please enter a valid number';
 			}
-			if (value === '' && fieldInfo.directives?.contains('required')) {
+			if (value === '' && fieldInfo.directives?.includes('required')) {
 				hasFinalizeError = true;
 				errorMessage = 'This field is required to finalize';
 			}
