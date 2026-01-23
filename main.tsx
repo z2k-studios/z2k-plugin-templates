@@ -330,13 +330,13 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 					});
 			});
 
-		containerEl.createEl('h3', {text: 'Offline Command Queue'});
+		containerEl.createEl('h3', {text: 'Command Queue'});
 
 		const queueSettingsContainer = containerEl.createDiv();
 		queueSettingsContainer.toggle(this.plugin.settings.offlineCommandQueueEnabled);
 
 		new Setting(containerEl)
-			.setName('Enable offline command queue')
+			.setName('Enable command queue')
 			.setDesc('Process queued JSON command files automatically.')
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.offlineCommandQueueEnabled)
