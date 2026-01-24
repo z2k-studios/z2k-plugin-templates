@@ -2123,6 +2123,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 
 		const orderedFields = calculateFieldDependencyOrder(depsMap);
 
+		// NOTE: Similar logic exists in handleSubmit() in PromptForm. If you modify
+		// the value= or miss handling here, check if the same change is needed there.
 		for (const fieldName of orderedFields) {
 			const fieldInfo = state.fieldInfos[fieldName];
 			if (!fieldInfo) { continue; }
@@ -2136,6 +2138,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			}
 
 			// Resolve value= if present (and not overridden by external data)
+			// NOTE: Similar logic in handleSubmit() - keep in sync
 			if (fieldInfo.value !== undefined && !(fieldName in state.resolvedValues)) {
 				const valueDeps = Z2KTemplateEngine.reducedGetDependencies(fieldInfo.value);
 				const allDepsExist = valueDeps.every(dep => dep in context);
@@ -2151,7 +2154,10 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			}
 
 			// Apply miss value for unspecified fields when finalizing
-			if (finalize && !(fieldName in state.resolvedValues)) {
+			// Skip finalize-preserve fields - leave undefined so preservation logic handles them
+			// NOTE: Similar logic in handleSubmit() - keep in sync
+			const hasFinalizePreserve = fieldInfo.directives?.includes('finalize-preserve');
+			if (finalize && !(fieldName in state.resolvedValues) && !hasFinalizePreserve) {
 				const resolvedMiss = Z2KTemplateEngine.reducedRenderContent(fieldInfo.miss || "", context, true, this.userHelperFunctions);
 				if (resolvedMiss === undefined) {
 					delete state.resolvedValues[fieldName];
@@ -4005,6 +4011,8 @@ const FieldCollectionForm = ({ templateState, userHelpers, onComplete, onCancel,
 		}
 
 		// Update template state with resolved values
+		// NOTE: Similar logic exists in applyFinalFieldStates(). If you modify
+		// the value= or miss handling here, check if the same change is needed there.
 		for (const fieldName of dependencyOrderedFieldNames) {
 			const fieldInfo = templateState.fieldInfos[fieldName];
 			if (!fieldInfo) { continue; }
@@ -4021,13 +4029,16 @@ const FieldCollectionForm = ({ templateState, userHelpers, onComplete, onCancel,
 				}
 			} else if (fieldInfo.value !== undefined && !(fieldName in templateState.resolvedValues)) {
 				// Computed field (value=) not overridden by external data
+				// NOTE: Similar logic in applyFinalFieldStates() - keep in sync
 				if (value === undefined) {
 					delete templateState.resolvedValues[fieldName];
 				} else {
 					templateState.resolvedValues[fieldName] = value;
 				}
-			} else if (finalize && !(fieldName in templateState.resolvedValues)) {
+			} else if (finalize && !(fieldName in templateState.resolvedValues) && !fieldInfo.directives?.includes('finalize-preserve')) {
 				// Unspecified field during finalization - use miss value
+				// Skip finalize-preserve fields - leave undefined so preservation logic handles them
+				// NOTE: Similar logic in applyFinalFieldStates() - keep in sync
 				const missValue = fieldState.resolvedMiss;
 				if (missValue === undefined) {
 					delete templateState.resolvedValues[fieldName];
