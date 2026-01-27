@@ -27,13 +27,13 @@ Each command can specify retry behavior via two parameters:
 When a command fails:
 
 1. **No retries configured** (`maxRetries === 0`):
-   - Command file is renamed to `.TIMESTAMP.failed.json`
+   - Command file is moved to `failed/` subfolder as `.TIMESTAMP.json`
    - Processing continues to next command
 
 2. **Retries configured** (`maxRetries > 0`):
    - A sidecar file (`.retry.json`) is created/updated with retry metadata
    - Metadata tracks `attempts` count and `nextRetryAfter` timestamp
-   - If `attempts >= maxRetries`: file renamed to `.failed.json`, sidecar deleted
+   - If `attempts >= maxRetries`: file moved to `failed/` subfolder, sidecar deleted
    - Otherwise: `nextRetryAfter` is set to `Date.now() + retryDelayMs`
 
 ### Retry Metadata Sidecar
@@ -56,12 +56,13 @@ Sidecar contents:
 The queue processor (`checkAndProcessQueue()`) runs periodically based on `offlineCommandQueueFrequency` setting:
 
 1. Lists all files in queue directory
-2. Filters out special files (`.retry.json`, `.done.json`, `.failed.json`, `.processing.jsonl`)
-3. Sorts by creation time (oldest first)
-4. For each `.json` file with a `.retry.json` sidecar:
+2. Filters out special files (`.retry.json`, `.processing.jsonl`)
+3. Cleans up old archives in `done/` subfolder
+4. Sorts by creation time (oldest first)
+5. For each `.json` file with a `.retry.json` sidecar:
    - Checks if `nextRetryAfter > Date.now()`
    - If true, **skips** the file (not ready yet)
-5. Processes eligible files
+6. Processes eligible files
 
 ## JSONL (Batch) Handling
 
@@ -71,8 +72,8 @@ Batch files (`.jsonl`) have different retry behavior:
 2. Each line is processed independently
 3. On line failure:
    - **If `maxRetries > 0`**: Line is extracted to individual `.json` file, then handled via normal retry logic
-   - **If `maxRetries === 0`**: Line is collected into `.failed.jsonl`
-4. File is deleted when complete; failed lines go to `.TIMESTAMP.failed.jsonl`
+   - **If `maxRetries === 0`**: Line is collected into a failed batch
+4. File is deleted when complete; failed lines go to `failed/.TIMESTAMP.jsonl`
 
 ## File State Lifecycle
 
@@ -80,11 +81,11 @@ Batch files (`.jsonl`) have different retry behavior:
 |---------|-------|
 | `command.json` | Ready to process |
 | `command.retry.json` | Retry metadata sidecar |
-| `command.TIMESTAMP.done.json` | Archived (auto-cleaned after configured duration) |
-| `command.TIMESTAMP.failed.json` | Failed after all retries exhausted |
+| `done/command.TIMESTAMP.json` | Archived (auto-cleaned after configured duration) |
+| `failed/command.TIMESTAMP.json` | Failed after all retries exhausted |
 | `commands.jsonl` | Batch ready to process |
 | `commands.processing.jsonl` | Batch being processed (lock/crash recovery) |
-| `commands.TIMESTAMP.failed.jsonl` | Batch with failed lines |
+| `failed/commands.TIMESTAMP.jsonl` | Batch with failed lines |
 
 ## What Constitutes a Failure
 

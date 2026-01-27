@@ -1,5 +1,5 @@
 
-import { App, Plugin, Modal, Notice, TAbstractFile, TFolder, TFile, PluginSettingTab, Setting, MarkdownView, Editor, Command, ToggleComponent } from 'obsidian';
+import { App, Plugin, Modal, Notice, TAbstractFile, TFolder, TFile, PluginSettingTab, Setting, MarkdownView, Editor, Command, ToggleComponent, setIcon } from 'obsidian';
 import * as obsidian from 'obsidian';
 import { Z2KTemplateEngine, Z2KYamlDoc, TemplateState, VarValueType, FieldInfo, TemplateError, Handlebars } from 'z2k-template-engine';
 import React, { useState, useEffect, useRef, Component, ReactNode } from 'react';
@@ -150,6 +150,7 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 		descTemplatesRootFolder: null as Setting | null,
 		descEmbeddedTemplatesFolderName: null as Setting | null,
 		quickCreateDesc: null as HTMLElement | null,
+		commandsContainer: null as HTMLElement | null,
 	}
 
 	constructor(app: App, plugin: Z2KTemplatesPlugin) {
@@ -476,6 +477,12 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 					await this.plugin.saveData(this.plugin.settings);
 				}));
 
+		containerEl.createEl('h3', {text: 'Quick Create Commands'});
+		const commandsWrapper = containerEl.createDiv({cls: 'setting-item'});
+		this.refs.quickCreateDesc = commandsWrapper.createDiv({cls: 'setting-item-description'});
+		this.refs.commandsContainer = commandsWrapper.createDiv({cls: 'quick-create-rows'});
+		this.renderCommandRows();
+
 		containerEl.createEl('h3', {text: 'Advanced'});
 
 		new Setting(containerEl)
@@ -559,97 +566,91 @@ registerHelper('recentFiles', () => {
 				})
 			);
 
-		containerEl.createEl('h3', {text: 'Quick Create Commands'});
-		const quickCreateDesc = containerEl.createDiv({cls: 'setting-item'});
-		this.refs.quickCreateDesc = quickCreateDesc.createDiv({cls: 'setting-item-description'});
+		this.applyDescs(); // Apply dynamic descriptions
+	}
+
+	private renderCommandRows(): void {
+		const container = this.refs.commandsContainer;
+		if (!container) { return; }
+		container.empty();
 		const dyn = this.plugin.settings.dynamicCardCommands;
 		for (let i = 0; i < dyn.length; i++) {
-			const row = new Setting(containerEl)
-				.setName(`Command ${i + 1}`);
-				// .setDesc('Command label and target folder');
-
-			row.addText((text) => {
-				text.setPlaceholder('New Thought').setValue(dyn[i].name || '');
-				text.onChange(async v => {
-					const nv = v.trim();
-					if (nv === dyn[i].name) return;
-					dyn[i].name = nv;
-					await this.plugin.saveData(this.plugin.settings);
-					this.plugin.queueRefreshCommands();
-				});
+			const row = container.createDiv({cls: 'command-row'});
+			// Name input
+			const nameInput = row.createEl('input', {type: 'text', placeholder: 'New Thought'});
+			nameInput.value = dyn[i].name || '';
+			nameInput.addEventListener('change', async () => {
+				const nv = nameInput.value.trim();
+				if (nv === dyn[i].name) { return; }
+				dyn[i].name = nv;
+				await this.plugin.saveData(this.plugin.settings);
+				this.plugin.queueRefreshCommands();
 			});
-
-			row.addText((text) => {
-				text.setPlaceholder('/Thoughts').setValue(dyn[i].targetFolder || '');
-				text.onChange(async v => {
-					const nv = v.trim();
-					if (nv === dyn[i].targetFolder) return;
-					dyn[i].targetFolder = nv;
-					await this.plugin.saveData(this.plugin.settings);
-					this.plugin.queueRefreshCommands();
-				});
+			// Folder input
+			const folderInput = row.createEl('input', {type: 'text', placeholder: '/Thoughts'});
+			folderInput.value = dyn[i].targetFolder || '';
+			folderInput.addEventListener('change', async () => {
+				const nv = folderInput.value.trim();
+				if (nv === dyn[i].targetFolder) { return; }
+				dyn[i].targetFolder = nv;
+				await this.plugin.saveData(this.plugin.settings);
+				this.plugin.queueRefreshCommands();
 			});
-
-			row.addExtraButton((button) => {
-				button.setIcon('arrow-up').setTooltip('Move up').setDisabled(i === 0).onClick(async () => {
-					if (i <= 0) { return; }
-					const tmp = dyn[i - 1];
-					dyn[i - 1] = dyn[i];
-					dyn[i] = tmp;
-					await this.plugin.saveData(this.plugin.settings);
-					this.plugin.queueRefreshCommands();
-					this.display();
-				});
+			// Buttons container
+			const buttons = row.createDiv({cls: 'command-buttons'});
+			// Move up
+			const upBtn = buttons.createEl('button', {cls: 'clickable-icon', attr: {'aria-label': 'Move up'}});
+			setIcon(upBtn, 'arrow-up');
+			if (i === 0) { upBtn.addClass('is-disabled'); }
+			upBtn.addEventListener('click', async () => {
+				if (i <= 0) { return; }
+				[dyn[i - 1], dyn[i]] = [dyn[i], dyn[i - 1]];
+				await this.plugin.saveData(this.plugin.settings);
+				this.plugin.queueRefreshCommands();
+				this.renderCommandRows();
 			});
-
-			row.addExtraButton((button) => {
-				button.setIcon('arrow-down').setTooltip('Move down').setDisabled(i >= dyn.length - 1).onClick(async () => {
-					if (i >= dyn.length - 1) { return; }
-					const tmp = dyn[i + 1];
-					dyn[i + 1] = dyn[i];
-					dyn[i] = tmp;
-					await this.plugin.saveData(this.plugin.settings);
-					this.plugin.queueRefreshCommands();
-					this.display();
-				});
+			// Move down
+			const downBtn = buttons.createEl('button', {cls: 'clickable-icon', attr: {'aria-label': 'Move down'}});
+			setIcon(downBtn, 'arrow-down');
+			if (i >= dyn.length - 1) { downBtn.addClass('is-disabled'); }
+			downBtn.addEventListener('click', async () => {
+				if (i >= dyn.length - 1) { return; }
+				[dyn[i + 1], dyn[i]] = [dyn[i], dyn[i + 1]];
+				await this.plugin.saveData(this.plugin.settings);
+				this.plugin.queueRefreshCommands();
+				this.renderCommandRows();
 			});
-
-			row.addExtraButton((button) => {
-				button.setIcon('plus').setTooltip('Insert below').onClick(async () => {
-					const id = Math.random().toString(36).slice(2,10) + Date.now().toString(36); // unique id
-					dyn.splice(i + 1, 0, { id, name: '', targetFolder: '' }); // insert after this row
-					await this.plugin.saveData(this.plugin.settings);
-					this.plugin.queueRefreshCommands();
-					this.display(); // structural change: repaint
-				});
+			// Insert below
+			const insertBtn = buttons.createEl('button', {cls: 'clickable-icon', attr: {'aria-label': 'Insert below'}});
+			setIcon(insertBtn, 'plus');
+			insertBtn.addEventListener('click', async () => {
+				const id = Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+				dyn.splice(i + 1, 0, {id, name: '', targetFolder: ''});
+				await this.plugin.saveData(this.plugin.settings);
+				this.plugin.queueRefreshCommands();
+				this.renderCommandRows();
 			});
-
-			row.addExtraButton((button) => {
-				button.setIcon('trash').setTooltip('Delete').onClick(async () => {
-					const id = dyn[i]?.id;
-					if (id) { this.plugin.removeCommand(id); }
-					dyn.splice(i, 1);
-					await this.plugin.saveData(this.plugin.settings);
-					this.plugin.queueRefreshCommands();
-					this.display(); // structural change: safe to repaint
-				});
+			// Delete
+			const deleteBtn = buttons.createEl('button', {cls: 'clickable-icon', attr: {'aria-label': 'Delete'}});
+			setIcon(deleteBtn, 'trash');
+			deleteBtn.addEventListener('click', async () => {
+				const id = dyn[i]?.id;
+				if (id) { this.plugin.removeCommand(id); }
+				dyn.splice(i, 1);
+				await this.plugin.saveData(this.plugin.settings);
+				this.plugin.queueRefreshCommands();
+				this.renderCommandRows();
 			});
 		}
-
-		new Setting(containerEl)
-			.addButton((button) => {
-				button.setButtonText('Add Command').onClick(async () => {
-					const id = Math.random().toString(36).slice(2,10) + Date.now().toString(36);
-					// No need to add the command, the command will be added in the refresh
-					dyn.push({ id, name: '', targetFolder: '' });
-					await this.plugin.saveData(this.plugin.settings);
-					this.plugin.queueRefreshCommands();
-					this.display(); // structural change: repaint is fine
-				});
-			});
-
-
-		this.applyDescs(); // Apply dynamic descriptions
+		// Add Command button
+		const addBtn = container.createEl('button', {cls: 'mod-cta', text: 'Add Command'});
+		addBtn.addEventListener('click', async () => {
+			const id = Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+			dyn.push({id, name: '', targetFolder: ''});
+			await this.plugin.saveData(this.plugin.settings);
+			this.plugin.queueRefreshCommands();
+			this.renderCommandRows();
+		});
 	}
 
 	validateTextInput(
@@ -1543,16 +1544,13 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		try {
 			// Get all files in queue directory
 			const listing = await adapter.list(dirPath);
-			// Clean up old archives first
-			await this.cleanupOldArchives(listing.files);
+			// Clean up old archives first (scans done/ subfolder)
+			await this.cleanupOldArchives();
 			// Filter for .json and .jsonl files (excluding special files)
 			const queueFiles = listing.files.filter(f =>
 				(f.endsWith('.json') || f.endsWith('.jsonl')) &&
 				!f.endsWith('.retry.json') &&
-				!f.endsWith('.processing.jsonl') &&
-				!f.endsWith('.done.json') &&
-				!f.endsWith('.failed.json') &&
-				!f.endsWith('.failed.jsonl')
+				!f.endsWith('.processing.jsonl')
 			);
 			if (queueFiles.length === 0) {
 				return;
@@ -1769,14 +1767,19 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		}
 	}
 
-	private async cleanupOldArchives(allFiles: string[]) {
+	private async cleanupOldArchives() {
 		const archiveDurationMs = parseDuration(this.settings.offlineCommandQueueArchiveDuration, 0);
 		if (archiveDurationMs === 0) return; // Archives are deleted immediately, nothing to clean
+		const queueDir = this.resolveQueueFilePath(this.settings.offlineCommandQueueDir);
+		if (!queueDir) return;
+		const doneDir = `${queueDir}/done`;
 		const adapter = this.app.vault.adapter;
+		if (!(await adapter.exists(doneDir))) return;
+		const listing = await adapter.list(doneDir);
 		const now = Date.now();
-		// Find .TIMESTAMP.done.json files
-		const archivePattern = /\.(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})\.done\.json$/;
-		for (const file of allFiles) {
+		// Find .TIMESTAMP.json/.jsonl files in done/ folder
+		const archivePattern = /\.(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})\.jsonl?$/;
+		for (const file of listing.files) {
 			const match = file.match(archivePattern);
 			if (!match) continue;
 			const archiveTime = moment(match[1], 'YYYY-MM-DD_HH-mm-ss').valueOf();
@@ -1794,18 +1797,25 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		return this.getTimestampedPath(filePath, 'failed');
 	}
 
-	private async getTimestampedPath(filePath: string, suffix: string): Promise<string> {
+	private async getTimestampedPath(filePath: string, suffix: 'done' | 'failed'): Promise<string> {
 		const adapter = this.app.vault.adapter;
 		// Determine extension (.json or .jsonl)
 		const ext = filePath.endsWith('.jsonl') ? '.jsonl' : '.json';
-		// Strip extension and .DATE.delay or .DATE_TIME.delay suffix if present
-		const baseName = filePath
+		// Extract directory and filename
+		const lastSlash = filePath.lastIndexOf('/');
+		const queueDir = filePath.substring(0, lastSlash);
+		const filename = filePath.substring(lastSlash + 1)
 			.replace(/\.jsonl?$/, '')
 			.replace(/\.\d{4}-\d{2}-\d{2}(?:_\d{2}-\d{2}-\d{2})?\.delay$/, '');
+		// Ensure subfolder exists
+		const subfolderPath = `${queueDir}/${suffix}`;
+		if (!(await adapter.exists(subfolderPath))) {
+			await adapter.mkdir(subfolderPath);
+		}
 		let timestamp = moment();
 		let resultPath: string;
 		do {
-			resultPath = `${baseName}.${timestamp.format('YYYY-MM-DD_HH-mm-ss')}.${suffix}${ext}`;
+			resultPath = `${subfolderPath}/${filename}.${timestamp.format('YYYY-MM-DD_HH-mm-ss')}${ext}`;
 			timestamp.add(1, 'second');
 		} while (await adapter.exists(resultPath));
 		return resultPath;
@@ -1872,13 +1882,23 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			}
 			let contentOut = Z2KYamlDoc.joinFrontmatter(fmOut, bodyOut);
 			let title = this.getTitle(state.resolvedValues);
-			let newFile = await this.createFile(opts.destDir, title, contentOut);
 			if (opts.fromSelection) {
 				const editor = this.getEditorOrThrow();
 				editor.replaceSelection("");
 			}
-			await this.app.workspace.openLinkText(newFile.path, "");
-			if (opts.sourceFile) { await this.promptAndDeleteFile(opts.sourceFile); }
+			if (opts.sourceFile) {
+				// Rename-based flow: modify content, then rename/move (updates links)
+				await this.app.vault.modify(opts.sourceFile, contentOut);
+				const filename = this.getValidFilename(title);
+				const newPath = this.generateUniqueFilePath(opts.destDir.path, filename);
+				if (newPath !== opts.sourceFile.path) {
+					await this.app.fileManager.renameFile(opts.sourceFile, newPath);
+				}
+				await this.app.workspace.openLinkText(opts.sourceFile.path, "");
+			} else {
+				let newFile = await this.createFile(opts.destDir, title, contentOut);
+				await this.app.workspace.openLinkText(newFile.path, "");
+			}
 		} catch (error) { this.handleErrors(error); }
 	}
 	async continueCard(opts: {
@@ -2316,25 +2336,6 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			new FieldCollectionModal(this.app, `Field Collection for ${cardRefNameUpper(this.settings)}`, templateState, this.userHelperFunctions, resolve, reject).open();
 		});
 	}
-	async promptAndDeleteFile(file: TFile) {
-		const shouldDelete = await new Promise<boolean>(resolve => {
-			new ConfirmationModal(this.app, {
-				title: "Delete Original File?",
-				message: `Would you like to now delete "${file.name}"?`,
-				confirmText: "Move to Trash",
-				cancelText: "Keep Original File",
-				confirmClass: "btn-warning"
-			}, resolve).open();
-		});
-		if (shouldDelete) {
-			try {
-				await this.app.vault.delete(file);
-			} catch (error) {
-				rethrowWithMessage(error, "Error deleting original file");
-			}
-		}
-	}
-
 	// Helpers
 	insertIntoHeaderSection(body: string, header: string, insertText: string, location: "header-top"|"header-bottom" = "header-top"): string {
 		if (!insertText || insertText.trim() === "") { return body; }
@@ -3717,7 +3718,7 @@ const FieldCollectionForm = ({ templateState, userHelpers, onComplete, onCancel,
 
 			initialFieldStates[fieldName] = {
 				value: currentValue,
-				omitFromForm: fieldInfo.directives?.includes('no-prompt') ?? false,
+				omitFromForm: (fieldInfo.directives?.includes('no-prompt') || (!templateState.referencedFields.has(fieldName) && !fieldInfo.directives?.includes('prompt'))) ?? false,
 				touched: false,
 				focused: false,
 				hasError: false,

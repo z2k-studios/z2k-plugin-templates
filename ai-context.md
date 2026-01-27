@@ -37,6 +37,10 @@ Z2K Templates sits between Core Templates (too simple) and Templater (requires J
 - **Docs:** `docs/` folder contains full reference manual in Markdown (exported to Docusaurus site)
 - **Design notes:** `design-notes/` folder contains developer notes
 
+## Project Status
+
+**Pre-release / No users yet.** This plugin is in active development and has not been publicly released. There are no external users to consider for backwards compatibility. Breaking changes to APIs, property names, or template syntax are acceptable if they improve clarity or architecture.
+
 ## Development
 
 - **Automatic builds:** Projects build automatically via watch mode. Don't run build commands manually.

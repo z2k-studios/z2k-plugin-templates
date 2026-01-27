@@ -29,6 +29,38 @@
 	width: 100%;
 }
 
+/* Quick Create Commands */
+.z2k-settings .setting-item:has(.quick-create-rows) {
+	flex-direction: column;
+	align-items: stretch;
+}
+.z2k-settings .quick-create-rows {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin-top: 12px;
+}
+.z2k-settings .command-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+.z2k-settings .command-row input[type="text"] {
+	flex: 1;
+	min-width: 0;
+}
+.z2k-settings .command-buttons {
+	display: flex;
+	gap: 4px;
+}
+.z2k-settings .command-buttons .is-disabled {
+	opacity: 0.3;
+	pointer-events: none;
+}
+.z2k-settings .quick-create-rows > button {
+	align-self: flex-end;
+	margin-top: 4px;
+}
 
 
 /*
@@ -632,6 +664,8 @@ textarea:focus {
 	font-size: var(--font-ui-small);
 	font-family: var(--font-monospace);
 	color: var(--text-muted);
+	user-select: text;
+	cursor: text;
 }
 
 .z2k .editor-modal-content .editor-container {
