@@ -66,9 +66,9 @@ aliases:
 		- [[Typical Templates Workflow]] - Maps the Lifecycle into a Templates Workflow
 
 4. [[Template Folders]] - Where template files are stored in your vault  
-	- [[Template Folders Configurations]]
+	- [[What is a Template Folder]]
 		- [[Embedded Template Folders]]
-		- [[External Template Folders]]
+		- [[Template Folder Subfolders]]
 	- [[Template Folder Hierarchies]]
 	- [[Hiding your Templates and Template Folders from Obsidian]]
 

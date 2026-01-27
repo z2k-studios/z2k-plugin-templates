@@ -9,11 +9,11 @@ sidebar_metacategory: "Basics"
 At the very core of Z2K Templates is the Template File. In short, a template file is a markdown file that is used as a template to create new files in your vault. 
 
 ## Contents
-- [[What is a Template File|What is a Template File?]] - what fundamentally is a template file?
-- [[Template Requirements]] - what makes a template file be recognized as one?
-- [[Template File Structure]] - what is the structure of a template file?
+- [[What is a Template File|What is a Template File?]] - what fundamentally is a Template File?
+- [[Template Requirements]] - what makes a Template File be recognized as one?
+- [[Template File Structure]] - what is the structure of a Template File?
 - [[Types of Template Files]] - what are the different types of Template Files?
-- [[Template Discovery]] - how does a template file become discoverable?
+- [[Template Discovery]] - how does a Template File become discoverable?
 - [[Deferred Field Resolution]] - Reviews how an WIP content file iterates on fields
 - [[Lifecycle of a Template]]
 	- [[Template Lifecycle Overview]] - Overview of the Template Lifecycle

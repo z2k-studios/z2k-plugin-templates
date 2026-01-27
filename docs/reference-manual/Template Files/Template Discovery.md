@@ -27,10 +27,18 @@ To build the list of relevant templates for a given destination folder, the plug
 2. Looks in the destination folder itself for any markdown files that is using a [[Template File Extensions|Template File Extension]] or has been marked as a Template File with a [[YAML Configuration Properties|YAML Configuration Setting]].
 3. The plugin then steps through each successive parent folder all the way up to the [[Templates Root Folder]] and look for additional Templates subfolders and files, adding their template names to the list of allowable templates for that destination. Note in particular: it does not travel back down into any "sibling" folders.
 
-For instance, consider the following folder structure and template files:
+%% This has been included within the Templates Hierarchies page %%
+## Discovery Example
+To understand [[Template Discovery]] better, let's step through an example. Consider the following folder structure and template files:
 
 ![[TemplateDiscovery-Context.png]]
 
-If the destination context (destination folder) is "Interactions", then only the `Board Meeting` and `Business Meeting` templates will be presented to the user. If the context is "1 on 1's", then the `Mentoring Check In` template will also be presented in addition. In both cases, however, the `Quarterly Financial Overview` template will not be presented as a valid template for that destination.
+Now, suppose a user issues the [[Create new note]] command. The first thing it does is to have the user specify the destination context (destination folder) of the file to be created. 
 
+In this example,
+- If the destination context is "Interactions", then only the `Board Meeting` and `Business Meeting` templates will be presented to the user. 
+- If the destination context is "1 on 1's", then the `Mentoring Check In` template will also be presented in addition to the `Board Meeting` and `Business Meeting` templates. 
+- In both of the above cases, however, the `Quarterly Financial Overview` template will not be presented as a valid template for that destination.
+
+## Additional Details
 See [[Template Folder Hierarchies]] for more details.
