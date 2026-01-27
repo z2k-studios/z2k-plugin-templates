@@ -6,7 +6,7 @@ aliases:
 ---
 
 # Template Folders
-All Templates used by the Z2K Templates Plugin must be saved in dedicated Template Folders. The section steps through how to use Template Folders in your system. 
+Template Folders are the default and easiest [[Template Requirements#Standard Method Use a Template Folder|way]] to store [[Template Files]] in the vault. This section steps through how to use Template Folders.
 
 ## Contents
 - [[Template Folders Configurations]]

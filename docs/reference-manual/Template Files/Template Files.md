@@ -10,10 +10,9 @@ At the very core of Z2K Templates is the Template File. In short, a template fil
 
 ## Contents
 - [[What is a Template File|What is a Template File?]] - what fundamentally is a template file?
-- [[Template Requirements]] - what are the hard and soft requirements for a template file?
+- [[Template Requirements]] - what makes a template file be recognized as one?
 - [[Template File Structure]] - what is the structure of a template file?
 - [[Types of Template Files]] - what are the different types of Template Files?
-- [[Becoming a Template]] - how does a markdown file become a template?
 - [[Template Discovery]] - how does a template file become discoverable?
 - [[Deferred Field Resolution]] - Reviews how an WIP content file iterates on fields
 - [[Lifecycle of a Template]]

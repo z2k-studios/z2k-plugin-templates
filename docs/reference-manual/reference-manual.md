@@ -54,7 +54,6 @@ aliases:
 	- [[Template Requirements]] - what are the hard and soft requirements for a template file?
 	- [[Template File Structure]] - what is the structure of a template file?
 	- [[Types of Template Files]] - what are the different types of Template Files?
-	- [[Becoming a Template]] - how does a markdown file become a template?
 	- [[Deferred Field Resolution]] - Reviews how an instantiated content file iterates on fields
 	- [[Lifecycle of a Template]]
 		- [[Template Lifecycle Overview]] - Overview of the Template Lifecycle

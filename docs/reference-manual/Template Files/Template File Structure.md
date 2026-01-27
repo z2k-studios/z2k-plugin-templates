@@ -44,7 +44,7 @@ custom_field: "{{myField}}"
 
 
 ## Body Content
-The body contains Markdown mixed with template expressions. Everything written in the body is copied to the final file after fields have been resolved.
+The body contains Markdown mixed with template expressions ([[Template Fields]], [[Helper Functions]], etc). Everything written in the body is copied to the final file after template expressions have been resolved.
 
 Example:
 
@@ -64,16 +64,6 @@ The body allows:
 - Field references: `{{attendees}}`, `{{agenda}}`
 - Helper functions: `{{format-date date}}` (see [[format-date]])
 - Conditional Handlebars constructs
-
-
-## Minimum Structure
-A template file must contain **at least one** of the following:
-
-- YAML frontmatter with metadata or fields
-- Body content with Markdown or fields
-
-A template with no YAML and no fields is valid but not useful.
-
 
 ## Example Template File Structures
 
