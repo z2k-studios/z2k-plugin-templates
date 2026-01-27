@@ -6,11 +6,17 @@ aliases:
 - Partial Templates
 - Block Template
 ---
+# Block Templates
 
-The Z2K Template Plugin supports the concept of "*Partial Templates*", or also just called "*Partials*". These special templates are intended to be *block level* template text that can be inserted inside of another file. 
+## Overview
+In addition to file level [[Types of Template Files#Document Templates|Document Template Files]], the Z2K Templates plugin also supports *block level* templates that can be inserted inside of an existing file. 
 
-Partials are extremely useful for enforcing consistent naming and formatting of text blocks across multiple files.
-
+## Contents
+- [[What is a Block Template|What is a Block Template?]] - what fundamentally is a Block Template? 
+- [[Why Use Block Templates|Why Use Block Templates?]] - when are Block Templates useful?
+- [[How Do You Use Block Templates|How Do You Use Block Templates?]] - How do you actually use a Block Template?
+- [[Block Template Requirements]] - what makes a Block Template be recognized as one?
+- [[Block Template File Structure]] - what is the structure of a Block Template File?
 
 
 ---
@@ -48,6 +54,13 @@ Inserted via:
 ```
 {{> tasks/task-block }}
 ```
+
+
+## Why Use Block Templates
+
+The Z2K Template Plugin supports the concept of "*Partial Templates*", or also just called "*Partials*". These special templates are intended to be *block level* template text that can be inserted inside of another file. 
+
+Partials are extremely useful for enforcing consistent naming and formatting of text blocks across multiple files.
 
 ---
 
