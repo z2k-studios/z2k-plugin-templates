@@ -1,10 +1,10 @@
 ---
-sidebar_position: 10
+sidebar_position: 20
 sidebar_label: "{{sourceText}}"
 title: "{{sourceText}}"
 sidebar_class_name: z2k-code
 aliases:
-- sourceText
+  - sourceText
 ---
 # sourceText Built-In Field
 

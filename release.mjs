@@ -1,7 +1,8 @@
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync, copyFileSync, rmSync } from "fs";
+import { readFileSync, writeFileSync, existsSync, mkdirSync, copyFileSync, rmSync, statSync } from "fs";
 import { execSync } from "child_process";
 import { createRequire } from "module";
+import { resolve } from "path";
 
 const require = createRequire(import.meta.url);
 let crossZip;
@@ -41,12 +42,14 @@ function writeJsonFile(path, data, indent = "\t") {
 }
 
 // --- Parse args ---
-const v = process.argv[2];
+const args = process.argv.slice(2);
+const forceFlag = args.includes("--force");
+const v = args.find(a => !a.startsWith("--"));
 const pkg = readJsonFile("package.json");
 const currentVersion = pkg.version;
 
 if (!v) {
-	console.error(`Current version: ${currentVersion}\nUsage: npm run release <version>`);
+	console.error(`Current version: ${currentVersion}\nUsage: npm run release <version> [-- --force]`);
 	process.exit(1);
 }
 
@@ -60,9 +63,6 @@ if (v === currentVersion) {
 	process.exit(1);
 }
 
-// --- Preflight: check cross-zip works ---
-// (already checked above)
-
 // --- Preflight: git sanity ---
 if (!runSilent("git rev-parse --is-inside-work-tree")) {
 	console.error("Not a git repo.");
@@ -71,11 +71,13 @@ if (!runSilent("git rev-parse --is-inside-work-tree")) {
 
 // Check working tree is clean
 const status = runCapture("git status --porcelain");
-if (status) {
-	console.error("Working tree not clean. Commit or stash changes before releasing.");
+if (status && !forceFlag) {
+	console.error("Working tree not clean. Commit or stash changes, or use --force to skip this check.");
 	console.error("\nModified files:");
 	console.error(status);
 	process.exit(1);
+} else if (status && forceFlag) {
+	console.warn("Warning: Working tree not clean (continuing due to --force)");
 }
 
 // Check remote sync
@@ -121,22 +123,31 @@ if (versionMismatches.length > 0) {
 
 console.log(`\nReleasing v${v} (current: ${currentVersion})\n`);
 
-// --- Track what we've changed for recovery ---
-const changedFiles = [];
+// --- 1) Build first (before any file changes) ---
+// If build fails, nothing has been modified yet - no recovery needed
+console.log("Building...");
+run("node esbuild.config.mjs production");
 
+// --- Track state for recovery ---
+let commitMade = false;
+const changedFiles = [];
+const zipFile = "z2k-plugin-templates.zip";
+const tempDir = ".release-temp";
+
+(async () => {
 try {
-	// --- 1) bump package.json and package-lock.json using npm version ---
+	// --- 2) bump package.json and package-lock.json ---
 	console.log("Updating package.json and package-lock.json...");
 	run(`npm version ${v} --no-git-tag-version --allow-same-version`);
 	changedFiles.push("package.json", "package-lock.json");
 
-	// --- 2) sync manifest.json ---
+	// --- 3) sync manifest.json ---
 	console.log("Updating manifest.json...");
 	manifest.version = v;
 	writeJsonFile("manifest.json", manifest);
 	changedFiles.push("manifest.json");
 
-	// --- 3) update versions.json ---
+	// --- 4) update versions.json ---
 	if (existsSync("versions.json")) {
 		console.log("Updating versions.json...");
 		const versions = readJsonFile("versions.json");
@@ -145,30 +156,41 @@ try {
 		changedFiles.push("versions.json");
 	}
 
-	// --- 4) build ---
-	console.log("Building...");
-	run("node esbuild.config.mjs production");
-
 	// --- 5) zip payload ---
 	console.log("Creating zip...");
-	const tempDir = ".release-temp";
 	rmSync(tempDir, { recursive: true, force: true });
+	rmSync(zipFile, { force: true });
 	mkdirSync(tempDir);
 	copyFileSync("main.js", `${tempDir}/main.js`);
 	copyFileSync("manifest.json", `${tempDir}/manifest.json`);
 	if (existsSync("styles.css")) { copyFileSync("styles.css", `${tempDir}/styles.css`); }
-	crossZip.zipSync(tempDir, "z2k-plugin-templates.zip");
+	// Use async zip with promise wrapper for better error handling
+	await new Promise((res, rej) => {
+		crossZip.zip(resolve(tempDir), resolve(zipFile), (err) => {
+			if (err) { rej(err); }
+			else { res(); }
+		});
+	});
 	rmSync(tempDir, { recursive: true });
-	changedFiles.push("z2k-plugin-templates.zip");
+	// Verify zip was created
+	if (!existsSync(zipFile)) {
+		throw new Error("Zip file was not created");
+	}
+	const zipSize = statSync(zipFile).size;
+	if (zipSize < 1000) {
+		throw new Error(`Zip file seems too small (${zipSize} bytes)`);
+	}
+	// Note: zip file is NOT committed - it's uploaded to GitHub release page
 
-	// --- 6) commit, tag, push ---
+	// --- 6) commit and tag ---
 	console.log("Committing...");
 	run('git add package.json package-lock.json manifest.json');
 	fileAddIfExists("versions.json");
-	fileAddIfExists("z2k-plugin-templates.zip");
 	run(`git commit -m "release: v${v}"`);
 	run(`git tag "v${v}"`);
+	commitMade = true;
 
+	// --- 7) push ---
 	console.log("Pushing...");
 	run("git push");
 	run("git push --tags");
@@ -177,18 +199,28 @@ try {
 	console.log("\nNext steps:");
 	console.log("  1. Go to the GitHub repository");
 	console.log("  2. Create a new release from tag v" + v);
-	console.log("  3. Upload: main.js, manifest.json, styles.css, z2k-plugin-templates.zip");
+	console.log("  3. Upload: main.js, manifest.json, styles.css, " + zipFile);
 
 } catch (err) {
+	// Clean up temp directory
+	rmSync(tempDir, { recursive: true, force: true });
+
 	console.error("\n❌ Release failed!\n");
-	if (changedFiles.length > 0) {
-		console.error("The following files were modified before the failure:");
-		changedFiles.forEach(f => console.error(`  - ${f}`));
+	console.error("Error:", err.message || err);
+
+	if (commitMade) {
+		// Commit was made but push failed
+		console.error("\nCommit was created but push failed. To recover:");
+		console.error(`  git reset --soft HEAD~1`);
+		console.error(`  git tag -d v${v}`);
+		console.error(`  git checkout -- ${changedFiles.join(" ")}`);
+	} else if (changedFiles.length > 0) {
+		// Files were modified but no commit yet
 		console.error("\nTo recover, run:");
 		console.error(`  git checkout -- ${changedFiles.join(" ")}`);
-		console.error("\nOr if a commit was made:");
-		console.error("  git reset --soft HEAD~1");
-		console.error(`  git tag -d v${v}`);
 	}
+	// If neither, build failed before any changes - no recovery needed
+
 	process.exit(1);
 }
+})();

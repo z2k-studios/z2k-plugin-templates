@@ -9,6 +9,7 @@ These Helper Functions are useful for mathematically manipulating fields and dat
 
 | Link         | Helper Function Name | Purpose                           |
 | ------------ | -------------------- | --------------------------------- |
+| [[Arithmetic Operators]] | `{{add}}`, `{{subtract}}`, `{{multiply}}`, `{{divide}}` | Basic arithmetic operations |
 | [[calc]]     | `{{calc}}`           | Performs a calculation            |
 | [[date-add]] | `{{date-add}}`       | Adds time to a date field         |
 | [[random]]   | `{{random}}`         | Picks a random item from an array |

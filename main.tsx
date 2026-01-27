@@ -2543,6 +2543,51 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		}
 		return folder || null;
 	}
+	// Extension priority for block templates: more specific extensions win
+	static readonly BLOCK_EXTENSIONS = ['.block', '.template', '.md'];
+	// Get list of paths that would be tried for a given base path
+	getTriedPaths(basePath: string): string[] {
+		const hasKnownExt = Z2KTemplatesPlugin.BLOCK_EXTENSIONS.some(ext => basePath.endsWith(ext));
+		if (hasKnownExt) {
+			return [basePath];
+		}
+		return Z2KTemplatesPlugin.BLOCK_EXTENSIONS.map(ext => basePath + ext);
+	}
+	// Try to resolve a file path, attempting extensions in priority order if none given
+	tryResolveWithExtensions(basePath: string): TFile | null {
+		for (const tryPath of this.getTriedPaths(basePath)) {
+			const file = this.getFile(tryPath);
+			if (file) { return file; }
+		}
+		return null;
+	}
+	// Sort blocks by extension priority (.block > .template > .md), unknown extensions last
+	sortByExtensionPriority(blocks: [TFile, string][]): [TFile, string][] {
+		return [...blocks].sort((a, b) => {
+			const aIdx = Z2KTemplatesPlugin.BLOCK_EXTENSIONS.findIndex(ext => a[0].path.endsWith(ext));
+			const bIdx = Z2KTemplatesPlugin.BLOCK_EXTENSIONS.findIndex(ext => b[0].path.endsWith(ext));
+			const aPriority = aIdx === -1 ? Infinity : aIdx;
+			const bPriority = bIdx === -1 ? Infinity : bIdx;
+			return aPriority - bPriority;
+		});
+	}
+	// Check if a normalized path ends with a given suffix (for scoped name matching)
+	// suffix can be "Sub/Block" or "Sub/Block.md" - handles with/without extension
+	pathMatchesSuffix(normPath: string, suffix: string): boolean {
+		const hasKnownExt = Z2KTemplatesPlugin.BLOCK_EXTENSIONS.some(ext => suffix.endsWith(ext));
+		const normSuffix = normalizeFullPath(suffix);
+		if (hasKnownExt) {
+			return normPath.endsWith('/' + normSuffix) || normPath === normSuffix;
+		}
+		// No extension given - match any known extension
+		for (const ext of Z2KTemplatesPlugin.BLOCK_EXTENSIONS) {
+			const suffixWithExt = normSuffix + ext;
+			if (normPath.endsWith('/' + suffixWithExt) || normPath === suffixWithExt) {
+				return true;
+			}
+		}
+		return false;
+	}
 	getBlockCallbackFunc(): (name: string, path: string) => Promise<[found: boolean, content: string, path: string]> {
 		// Store [file, normalized path] pairs for all blocks
 		let allBlocks: [TFile, string][] = [];
@@ -2551,51 +2596,123 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				allBlocks.push([t.file, normalizeFullPath(t.file.path)]);
 			}
 		}
+		// Helper to return a block's content (returns parent directory for nested block resolution)
+		const returnBlock = async (file: TFile): Promise<[true, string, string]> => {
+			const parentDir = file.parent?.path || '';
+			return [true, await this.app.vault.read(file), parentDir];
+		};
+		// Helper for hierarchical resolution: prefer current folder → parents → first match
+		const resolveHierarchically = async (matches: [TFile, string][], currentPath: string): Promise<[boolean, string, string]> => {
+			if (matches.length === 0) { return [false, "", ""]; }
+			const sortedMatches = this.sortByExtensionPriority(matches);
+			if (sortedMatches.length === 1) {
+				return returnBlock(sortedMatches[0][0]);
+			}
+			let currFolder = this.getFolder(currentPath);
+			if (!currFolder) { throw new Error(`Path '${currentPath}' does not point to a folder.`); }
+			while (true) {
+				for (const match of sortedMatches) {
+					if (this.isInThisFolderOrItsTemplatesFolder(match[0], currFolder as TFolder)) {
+						return returnBlock(match[0]);
+					}
+				}
+				if (currFolder === this.getTemplatesRootFolder() || !currFolder.parent) { break; }
+				currFolder = currFolder.parent as TFolder;
+			}
+			// No match in hierarchy, return first (highest priority by extension)
+			return returnBlock(sortedMatches[0][0]);
+		};
 
 		return async (name: string, path: string): Promise<[found: boolean, content: string, path: string]> => {
-			// TODO: support more path formats, like relative paths, block paths, etc; Maybe make relative paths required to start with './' or '../'?
-			// name can be just the title (block.md) or an absolute path (/folder/block.md).
-			// path is the folder of the template/block where the block was referenced (so it's relative to here).
-			if (name.startsWith("/")) { // absolute path
-				const absolutePath = normalizeFullPath(this.joinPath(this.getTemplatesRootFolder().path, name.substring(1))); // DOCS: relative to templates root folder
-				const file = this.getFile(absolutePath);
-				if (!file) { return [false, "", ""]; }
+			// Block reference formats:
+			// 1. /Sub/Block - absolute path from templates root
+			// 2. ./Sub/Block or ../Sub/Block - relative path from current template
+			// 3. Sub/Block - scoped name lookup (path suffix match, hierarchical)
+			// 4. Block - simple name lookup (hierarchical)
+			// All formats work with or without extension (.block > .template > .md priority)
+			const templatesRoot = this.getTemplatesRootFolder().path;
+			if (name.startsWith("/")) {
+				// Absolute path from templates root
+				const basePath = this.joinPath(templatesRoot, name.substring(1));
+				const file = this.tryResolveWithExtensions(basePath);
+				if (!file) {
+					const triedPaths = this.getTriedPaths(basePath);
+					throw new Error(
+						`Block not found: '${name}'\n\n` +
+						`Resolution mode: Absolute path (from templates root '${templatesRoot}')\n\n` +
+						`Tried these paths:\n${triedPaths.map(p => `  - ${p}`).join('\n')}\n\n` +
+						`None of these files exist.`
+					);
+				}
 				const normPath = normalizeFullPath(file.path);
-				if (!allBlocks.some(([f, p]) => p === normPath)) { return [false, "", ""]; }
-				return [true, await this.app.vault.read(file), normPath];
+				if (!allBlocks.some(([, p]) => p === normPath)) {
+					throw new Error(
+						`File exists but is not a block template: '${file.path}'\n\n` +
+						`To make it a block template, either:\n` +
+						`  - Add 'z2k_template_type: block-template' to frontmatter\n` +
+						`  - Use .block file extension`
+					);
+				}
+				return returnBlock(file);
 			}
-			// if given just the name, search current dir first (including templates dir), then search parents, then the whole vault
-			if (!name.includes("/")) { // just the name
+			if (name.startsWith("./") || name.startsWith("../")) {
+				// Relative path from current template's folder
+				const basePath = this.joinPath(path, name);
+				const file = this.tryResolveWithExtensions(basePath);
+				if (!file) {
+					const triedPaths = this.getTriedPaths(basePath);
+					throw new Error(
+						`Block not found: '${name}'\n\n` +
+						`Resolution mode: Relative path (from '${path}')\n\n` +
+						`Tried these paths:\n${triedPaths.map(p => `  - ${p}`).join('\n')}\n\n` +
+						`None of these files exist.`
+					);
+				}
+				const normPath = normalizeFullPath(file.path);
+				if (!allBlocks.some(([, p]) => p === normPath)) {
+					throw new Error(
+						`File exists but is not a block template: '${file.path}'\n\n` +
+						`To make it a block template, either:\n` +
+						`  - Add 'z2k_template_type: block-template' to frontmatter\n` +
+						`  - Use .block file extension`
+					);
+				}
+				return returnBlock(file);
+			}
+			if (name.includes("/")) {
+				// Scoped name lookup - match blocks whose path ends with this suffix
 				let matches: [TFile, string][] = [];
 				for (const block of allBlocks) {
-					if (block[0].basename === name || block[0].name === name) {
+					if (this.pathMatchesSuffix(block[1], name)) {
 						matches.push(block);
 					}
 				}
-				if (matches.length === 0) { return [false, "", ""]; }
-				if (matches.length === 1) {
-					// found exactly one match, return it
-					return [true, await this.app.vault.read(matches[0][0]), matches[0][1]];
+				if (matches.length === 0) {
+					throw new Error(
+						`Block not found: '${name}'\n\n` +
+						`Resolution mode: Scoped name (path suffix match)\n\n` +
+						`No block template path ends with '${name}'\n` +
+						`Searched from: '${path}'`
+					);
 				}
-
-				let currFolder = this.getFolder(path);
-				if (!currFolder) { throw new Error(`Path '${path}' does not point to a folder.`); }
-				while (true) {
-					// check if any of the matches are in the current folder
-					for (const match of matches) {
-						if (this.isInThisFolderOrItsTemplatesFolder(match[0], currFolder as TFolder)) {
-							return [true, await this.app.vault.read(match[0]), match[1]];
-						}
-					}
-					if (currFolder === this.getTemplatesRootFolder() || !currFolder.parent) { break; }
-					currFolder = currFolder.parent as TFolder;
-				}
-				// if we reach here, no match was found in the current folder or its parents, so return the first match
-				return [true, await this.app.vault.read(matches[0][0]), matches[0][1]];
-			} else {
-				// relative path
-				throw new Error("Relative paths are not supported yet. Please use absolute paths or just the name of the block template.");
+				return resolveHierarchically(matches, path);
 			}
+			// Simple name lookup - match by basename (no ext) or name (with ext)
+			let matches: [TFile, string][] = [];
+			for (const block of allBlocks) {
+				if (block[0].basename === name || block[0].name === name) {
+					matches.push(block);
+				}
+			}
+			if (matches.length === 0) {
+				throw new Error(
+					`Block not found: '${name}'\n\n` +
+					`Resolution mode: Simple name lookup\n\n` +
+					`No block template named '${name}' exists.\n` +
+					`Searched from: '${path}'`
+				);
+			}
+			return resolveHierarchically(matches, path);
 		}
 	}
 
@@ -3008,13 +3125,24 @@ export default class Z2KTemplatesPlugin extends Plugin {
 }
 
 function normalizeFullPath(path: string): string {
-	return path
+	path = path
 		.trim()
 		.replace(/\\/g, '/')       // Normalize backslashes to '/'
 		.replace(/\/{2,}/g, '/')   // Collapse multiple slashes
 		.replace(/^\.\//, '')      // Remove leading "./"
 		.replace(/^\/+/, '')       // Remove leading slashes
 		.replace(/\/+$/, '');      // Remove trailing slashes
+	// Resolve ".." segments
+	const segments = path.split('/');
+	const resolved: string[] = [];
+	for (const seg of segments) {
+		if (seg === '..') {
+			resolved.pop(); // Go up one level
+		} else if (seg !== '.' && seg !== '') {
+			resolved.push(seg);
+		}
+	}
+	return resolved.join('/');
 }
 function escapeRegExp(s: string): string {
 	return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
