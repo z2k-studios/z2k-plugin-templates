@@ -13,6 +13,7 @@ sidebar_class_name: z2k-code
 
 ### Select Destination Context
 ==Rename this dialog to be Select Destination Context==
+[[Destination Context]]
 ![[CreateNewNote-SelectFileType.png]]
 
 ### Select Template

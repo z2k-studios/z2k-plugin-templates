@@ -15,7 +15,7 @@ As discussed in the [[Template Folder Hierarchies]] page, the plugin uses the fo
 A feature, though, exists where *if* you have subfolders in a Templates folder, *and* that subfolder exists in the same name and relative position in the parent folder, then the plugin will traverse down inside that subfolder. 
 
 ## Why Would This Be Useful?
-This technique is particularly powerful when applied to a **root level Templates folder**. It allows you to create a "shadow" folder hierarchy / tree inside the templates folder to store all of your Templates files. The plugin will still smartly identify only those Templates relevant to the [[Template Discovery#Understanding Context|destination context]] by looking into subfolders that echo the folder structure of the destination. 
+This technique is particularly powerful when applied to a **root level Templates folder**. It allows you to create a "shadow" folder hierarchy / tree inside the templates folder to store all of your Templates files. The plugin will still smartly identify only those Templates relevant to the [[Destination Context|destination context]] by looking into subfolders that echo the folder structure of the destination. 
 
 Thus, by using this technique, you can dispense with all of the "`Templates`" folders distributed throughout your vault and use just a single `Templates` folder in your [[Templates Root Folder]]. This makes the vault appear "cleaner", with templates fading away into the background of the vault structure. (See [[Hiding Template Folders]] for other solutions).
 

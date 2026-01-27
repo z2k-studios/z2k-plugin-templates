@@ -9,112 +9,49 @@ aliases:
 # Block Templates
 
 ## Overview
-In addition to file level [[Types of Template Files#Document Templates|Document Template Files]], the Z2K Templates plugin also supports *block level* templates that can be inserted inside of an existing file. 
+In addition to file-level [[Types of Template Files#Document Templates|Document Templates]], the Z2K Templates plugin also supports *block-level* templates that can be inserted inside existing files.
+
+Block Templates are reusable fragments of markdown that help you maintain consistency across your vault. They typically are small, structured units like checklists, metadata blocks, or standard snippets
 
 ## Contents
-- [[What is a Block Template|What is a Block Template?]] - what fundamentally is a Block Template? 
-- [[Why Use Block Templates|Why Use Block Templates?]] - when are Block Templates useful?
+- [[What is a Block Template|What is a Block Template?]] - What fundamentally is a Block Template?
+- [[Why Use Block Templates|Why Use Block Templates?]] - When are Block Templates useful?
 - [[How Do You Use Block Templates|How Do You Use Block Templates?]] - How do you actually use a Block Template?
-- [[Block Template Requirements]] - what makes a Block Template be recognized as one?
-- [[Block Template File Structure]] - what is the structure of a Block Template File?
+- [[Where Do You Store Block Templates|Where Do You Store Block Templates?]] - Where do you put them in your vault?
+- [[Block Template Requirements]] - What makes a Block Template be recognized as one?
+- [[Block Template File Structure]] - What is the structure of a Block Template file?
+- [[What Happens When You Insert A Block|What Happens When You Insert A Block?]] - Steps through the process of inserting a block.
 
+## Quick Example
 
----
-# Block Templates (Partials)
+A simple block template for adding a task to a file:
 
-## What Is a Block Template?
-
-A **Block Template** is a reusable fragment of markdown. It is not used to create a new file. Instead it is:
-
-- Inserted into an existing document
-- Turned into body content during Named Template rendering
-- Used to build modular, composable templates
-
-Block Templates are typically small, structured units such as:
-
-- A checklist block
-- A project metadata block
-- A quote or highlight block
-- A standard header/footer snippet
-
-### Example Block Template
-
-```md
+```handlebars
 ## Task
 - [ ] {{taskName}}
 - Priority: {{priority}}
 ```
 
-Inserted via:
-
-- *Insert block template*
-- *Insert block template using selection*
-- Or inside another template:
-
-```
-{{> tasks/task-block }}
-```
+Insert it via:
+- The [[Insert block template]] command in Obsidian
+- Inside another template using the handlebars [[Partials|partial]] command, e.g.`{{> task-block}}`
 
 
-## Why Use Block Templates
 
-The Z2K Template Plugin supports the concept of "*Partial Templates*", or also just called "*Partials*". These special templates are intended to be *block level* template text that can be inserted inside of another file. 
 
-Partials are extremely useful for enforcing consistent naming and formatting of text blocks across multiple files.
+
+
+
 
 ---
+==remove after a quick validation check that these are covered elsewhere==
+## Historical Note
 
-## How the Plugin Identifies a Block Template
+Block Templates were previously referred to as "Partials" in earlier versions of Z2K Templates, following Handlebars.js terminology. The term "Block Template" was adopted as it is more commonly understood.
 
-Z2K determines a block template using:
 
-### 1. **YAML override**
 
-```yaml
-z2k_template_type: partial
-```
-
-This is the highest-precedence signal.
-
-### 2. **Convert-to-block command**
-
-When you run:
-
-- *Convert file to block template*
-
-…the plugin writes the appropriate YAML override.
-
-### 3. **Folder placement (experimental but supported)**
-
-A file located in a card type's `/Partials` or `/Blocks` subfolder can optionally be treated as a partial depending on naming conventions. This behavior is less strict than named template resolution and may evolve further.
-
-### 4. **Everything else is not a block template**
-
-If none of the above apply, it’s a normal file (or possibly a Named Template if other rules match).
-
----
-
-# System Block Templates
-
-**System Block Templates** are injected globally into templates before rendering.
-
-Examples include:
-
-- Vault-wide header/footer blocks
-- Global metadata such as creator info or timestamps
-- Standard tags
-- Required fields
-
-They behave like invisible partials:
-
-- They merge **before** template YAML
-- Their `field-info` definitions can be overridden by template-level fields
-- Their content is prepended to template bodies
-
-This allows an entire vault to maintain consistent structure without repeating boilerplate.
-
----
-
+Old Content in need of review:
 
 # Block Template Naming Conventions
 Block Templates' filenames must be prefixed with the text "`Partial - `". 
@@ -145,8 +82,8 @@ Passing context - this won't be allowed because we're not allowing fields.with.d
 - Shouldn't worry about this right now
 Does the prompt need to prompt for the fields in the partials?
 - Yes
-Should relative paths be relative to the template or relative to the new card location?
-- donno, just do relative to template
+==Should relative paths be relative to the template or relative to the new card location?==
+- ==donno, just do relative to template==
 
 
 
@@ -232,4 +169,3 @@ Result:
 - You do **not** see every partial in the vault – only ones under the templates root and structurally associated with your current folder via direct membership or its Templates subfolder.
     
 
-  

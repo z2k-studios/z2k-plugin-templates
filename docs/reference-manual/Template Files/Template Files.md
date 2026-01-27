@@ -14,6 +14,7 @@ At the very core of Z2K Templates is the Template File. In short, a template fil
 - [[Template File Structure]] - what is the structure of a Template File?
 - [[Types of Template Files]] - what are the different types of Template Files?
 - [[Template Discovery]] - how does a Template File become discoverable?
+- [[Destination Context]] - why the first question that is asked is "Where?"?
 - [[Deferred Field Resolution]] - Reviews how an WIP content file iterates on fields
 - [[Lifecycle of a Template]]
 	- [[Template Lifecycle Overview]] - Overview of the Template Lifecycle

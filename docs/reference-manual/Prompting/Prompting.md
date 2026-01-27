@@ -10,7 +10,6 @@ In many circumstances, a template will be activated directly by the user by usin
 ## Contents
 For more details, see:
 
-==TODO: Create a Destination Context page?==
 1. [[Prompting Interface]]
 2. [[Prompting Interface per Type]]
 3. [[Prompting Defaults]]

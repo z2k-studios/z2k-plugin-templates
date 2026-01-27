@@ -2,7 +2,7 @@
 sidebar_position: 20
 ---
 # Overview
-The simplest way to begin using Z2K Templates is to use a single [[Templates Folder]] located in the [[Templates Root Folder]] (typically the root of your vault). This [[What is a Template Folder#Design Approach Single Root Templates Folder|single Templates Folder design]] is simple and works well for vaults with a small number of Templates. All templates will be globally visible. 
+The simplest way to begin using Z2K Templates is to use a single [[Template Folders|templates folder]] located in the [[Templates Root Folder]] (typically the root of your vault). This [[What is a Template Folder#Design Approach Single Root Templates Folder|single Templates Folder design]] is simple and works well for vaults with a small number of Templates. All templates will be globally visible. 
 
 As your vault grows, however, so too will the number of templates in your vault. Even in relatively flat vault structures, the number of templates can balloon quickly. 
 
@@ -13,7 +13,7 @@ To address this, Z2K Templates supports the use of *hierarchical* template folde
 > To emphasize, with this feature, your workflow for creating files becomes *context sensitive*. When creating a new file in your vault, you first give it the general context of the file you are creating (inferred by the destination folder) and then the template plugin will only present templates relevant to that context. 
 
 ## More Details
-Specifically, when a new file is created with the [[Create new note]] command, it will first ask for a destination context (folder). Once the plugin knows the destination, it can then step through the path and build a list of viable templates by looking within any template folders that exist along the way up the path, folder by folder, all the way to the [[Templates Root Folder]].
+Specifically, when a new file is created with the [[Create new note]] command, it will first ask for a [[Destination Context|destination context]] (folder). Once the plugin knows the destination, it can then step through the path and build a list of viable templates by looking within any template folders that exist along the way up the path, folder by folder, all the way to the [[Templates Root Folder]].
 
 For example, creating a note under `/Projects/Work/2025/` will include templates from:
 

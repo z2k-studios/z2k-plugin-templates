@@ -48,3 +48,112 @@ Or prepend structured Markdown:
 ```
 
 
+---
+
+ here's another version: 
+# System Block Templates
+**System Block Templates** are special block templates that are automatically injected into all templates before rendering. They provide vault-wide consistency without requiring explicit inclusion in every template.
+
+## Overview
+
+System Block Templates behave like invisible partials that are automatically applied:
+
+- They merge **before** template YAML
+- Their `field-info` definitions can be overridden by template-level fields
+- Their content is prepended to template bodies
+
+This allows an entire vault to maintain consistent structure without repeating boilerplate in every template.
+
+## Common Use Cases
+
+### Vault-Wide Headers/Footers
+Add standard header or footer content to every generated document:
+
+```handlebars
+---
+z2k_template_type: system-partial
+---
+---
+created: {{date}}
+modified: {{date}}
+creator: {{creator}}
+---
+```
+
+### Global Metadata
+Ensure every document includes required metadata:
+
+```handlebars
+---
+z2k_template_type: system-partial
+---
+---
+vault: My Vault
+version: 1.0
+---
+```
+
+### Standard Tags
+Apply default tags to all generated documents:
+
+```handlebars
+---
+z2k_template_type: system-partial
+---
+---
+tags:
+  - generated
+  - z2k-template
+---
+```
+
+### Required Fields
+Define fields that should appear in every template:
+
+```handlebars
+---
+z2k_template_type: system-partial
+---
+{{field-info author default="{{creator}}"}}
+```
+
+## How System Block Templates Work
+
+1. **Discovery**: The plugin identifies all system block templates in the vault
+2. **Merge Order**: System templates are processed before regular template content
+3. **Override Behavior**: Template-level definitions take precedence over system definitions
+
+### Override Example
+
+**System Block Template**:
+```yaml
+---
+z2k_template_type: system-partial
+---
+---
+status: draft
+---
+```
+
+**Regular Template**:
+```yaml
+---
+status: published
+---
+# My Document
+```
+
+**Result**: The document will have `status: published` because the template-level definition overrides the system default.
+
+## Configuration
+
+System Block Templates are configured through the plugin settings. Consult the plugin documentation for details on:
+- Designating a template as a system block template
+- Controlling the order of system template application
+- Excluding specific templates from system block injection
+
+## See Also
+
+- [[What is a Block Template]] for block template fundamentals
+- [[Block Template Requirements]] for identification rules
+- [[Why Use Block Templates]] for general use cases
