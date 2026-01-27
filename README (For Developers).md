@@ -60,7 +60,12 @@ The plugin files are copied into here whenever `npm run build` or `npm run dev` 
 ### Releasing
 The script 'release.mjs' has been made to handle most of the steps for creating a new release. Once you have committed all changes and the plugin is ready, run the script using:
 ```bash
-npm run release 0.1.0
+npm run release <version>
+```
+
+To see the current version before releasing:
+```bash
+npm run release
 ```
 
 This will:

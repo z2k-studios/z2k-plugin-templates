@@ -3,7 +3,11 @@ import { readFileSync, writeFileSync, existsSync } from "fs";
 import { execSync } from "child_process";
 
 const v = process.argv[2];
-if (!v) { console.error("Usage: npm run release 0.1.0"); process.exit(1); }
+if (!v) {
+	const currentVersion = JSON.parse(readFileSync("package.json", "utf8")).version;
+	console.error(`Current version: ${currentVersion}\nUsage: npm run release <version>`);
+	process.exit(1);
+}
 
 function run(cmd, opts = {}) {
 	return execSync(cmd, { stdio: "inherit", ...opts });
