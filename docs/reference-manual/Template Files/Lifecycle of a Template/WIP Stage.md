@@ -20,17 +20,14 @@ In a perfect world, one knows all the data that goes into a content file the mom
 
 That said, there is no requirement to use [[WIP Stage|WIP Content Files]] - simply always click the [[Finalization|Finalize]] button on the [[Prompting Interface|prompting interface]] to bypass the WIP Content File stage. 
 
-
 ## How to Iterate on the WIP Content File?
 While a content file exists in a WIP state, you can continue to iterate on the file with new data. Simply issue the [[Continue Filling in Data]] command and then selecting the "Save for now" button in the [[Prompting Interface|prompting dialog box]] to close out the current iteration.
 
-
 ## How are WIP Content Files Named?
-==Insert a description of how WIP Content files are named, whether it be with the YAML property, the prompting interface, or fileTitle fieldInfo. This may need to be its own docpage== 
+WIP Content files are created with a filename that is specified by the user during the initial prompting interface. More advanced templates can assist in the naming of the content file through the use of the [[z2k_template_default_title]] [[YAML Configuration Properties|YAML Configuration Setting]] or the [[fileTitle and Variations|fileTitle]] built in field using [[field-info Helper|field-info]].
 
-## Can I Add New Fields?
+## Can I Add New Fields into WIP Content Files?
 Definitely. For instance, it is common to insert new [[Block Templates]] into WIP Content files. With each insertion, a new set of fields will potentially be placed into the WIP file. 
-
 
 ## Must I Finalize?
 Technically, a content file can remain in a WIP state forever (I.e. persist with unresolved fields). This is perfectly acceptable, although some may consider it to be a bit messy. But then, vaults, like brains, are messy. 
@@ -38,7 +35,7 @@ Technically, a content file can remain in a WIP state forever (I.e. persist with
 The biggest issue with never finalizing is the potential for some fields to inadvertently cause [[Template Pollution]] (see next section). 
 
 ## How to Avoid Template Pollution?
-Because WIP content files exist inside the content area of the vault, it is important to minimize potential [[Template Pollution|pollution]] of data with `{{fields}}`. Pollution is where content files continue to have placeholder fields in places that there larger vault system expects to see real data.  See the [[Template Pollution#How To Minimize Template Pollution|pollution guidelines]] for how to minimize template pollution. 
+Because WIP content files exist inside the content area of the vault, it is important to minimize potential [[Template Pollution|pollution]] of vault metadata with `{{fields}}`. Pollution is where content files continue to have placeholder fields in places that there larger vault system expects to see real data.  See the [[Template Pollution#How To Minimize Template Pollution|pollution guidelines]] for how to minimize template pollution. 
 
 ## Can Any Field Be Deferred?
 In short, no. For example:

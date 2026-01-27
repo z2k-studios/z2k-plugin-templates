@@ -43,4 +43,4 @@ The following is a list of actions performed by the Templates Plugin during fina
 Technically, no. It is possible to configure some fields to linger past even finalization. For instance, if a field is specified to be [[field-info directives#finalize-preserve|preserved]], they will continue to persist even past finalization. 
 
 ## Finalization Output
-Once you have finalized a content file, what is the output? Well, duh - a [[Finalized Stage|Finalized Content File]].
+Once you have finalized a content file, what is the output? Well, to state the obvious, it is a [[Finalized Stage|Finalized Content File]]. Let's continue on with that documentation page.

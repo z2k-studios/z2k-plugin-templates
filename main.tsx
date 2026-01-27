@@ -1,12 +1,17 @@
 
-import { App, Plugin, Modal, Notice, TAbstractFile, TFolder, TFile, PluginSettingTab, Setting, MarkdownView, Editor, Command } from 'obsidian';
-import { Z2KTemplateEngine, Z2KYamlDoc, TemplateState, VarValueType, FieldInfo, TemplateError } from 'z2k-template-engine';
-import React, { useState, useEffect, useRef } from 'react';
+import { App, Plugin, Modal, Notice, TAbstractFile, TFolder, TFile, PluginSettingTab, Setting, MarkdownView, Editor, Command, ToggleComponent, setIcon } from 'obsidian';
+import * as obsidian from 'obsidian';
+import { Z2KTemplateEngine, Z2KYamlDoc, TemplateState, VarValueType, FieldInfo, TemplateError, Handlebars } from 'z2k-template-engine';
+import React, { useState, useEffect, useRef, Component, ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import moment from 'moment';   // npm i moment
 
-import { EditorView, ViewPlugin, ViewUpdate, Decoration, DecorationSet } from "@codemirror/view";
-import { RangeSetBuilder, type Extension } from "@codemirror/state";
+import { EditorView, ViewPlugin, ViewUpdate, Decoration, DecorationSet, keymap, lineNumbers, highlightActiveLine, highlightActiveLineGutter } from "@codemirror/view";
+import { RangeSetBuilder, type Extension, EditorState, Compartment } from "@codemirror/state";
+import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
+import { syntaxHighlighting, bracketMatching, HighlightStyle } from "@codemirror/language";
+import { tags } from "@lezer/highlight";
+import { javascript } from "@codemirror/lang-javascript"; // npm i @codemirror/lang-javascript
 import { handlebarsLanguage } from "@xiechao/codemirror-lang-handlebars"; // npm i @xiechao/codemirror-lang-handlebars
 import { highlightTree, classHighlighter } from "@lezer/highlight"; // npm i @lezer/highlight
 
@@ -20,10 +25,17 @@ interface Z2KTemplatesPluginSettings {
 		name: string; // display name
 		targetFolder: string; // vault-relative path to folder
 	}>;
+	offlineCommandQueueEnabled: boolean; // Whether offline command queue processing is enabled
 	offlineCommandQueueDir: string; // Directory for offline command queue (JSON/JSONL files)
+	offlineCommandQueueFrequency: string; // Duration between queue scans (e.g., "60s", "5m"). Blank = manual only
+	offlineCommandQueuePause: string; // Duration to pause between commands (e.g., "500ms", "1s"). Blank = no pause
+	offlineCommandQueueArchiveDuration: string; // How long to keep archives (e.g., "1d", "1w"). Blank = delete immediately
 	errorLogPath: string; // Path to error log file (relative to vault or absolute)
 	errorLogLevel: "none" | "error" | "warn" | "info" | "debug"; // Minimum severity level to log
-	// templateEditingEnabled: boolean;
+	useTemplateFileExtensions: boolean; // Whether to use .template and .block file extensions
+	templateExtensionsVisible: boolean; // Whether .template and .block files are currently visible in Obsidian
+	globalBlock: string; // Global field-info declarations (applied to all templates)
+	userHelpers: string; // Custom JavaScript helper functions
 }
 
 const DEFAULT_SETTINGS: Z2KTemplatesPluginSettings = {
@@ -33,10 +45,20 @@ const DEFAULT_SETTINGS: Z2KTemplatesPluginSettings = {
 	templatesFolderName: 'Templates',
 	cardReferenceName: 'note',
 	dynamicCardCommands: [],
-	offlineCommandQueueDir: '.obsidian/plugins/z2k-plugin-templates/queue',
+	offlineCommandQueueEnabled: true,
+	offlineCommandQueueDir: '.obsidian/plugins/z2k-plugin-templates/command-queue',
+	offlineCommandQueueFrequency: '60s',
+	offlineCommandQueuePause: '',
+	offlineCommandQueueArchiveDuration: '1d',
 	errorLogPath: '.obsidian/plugins/z2k-plugin-templates/error-log.md',
 	errorLogLevel: 'warn',
-	// templateEditingEnabled: true,
+	useTemplateFileExtensions: false,
+	templateExtensionsVisible: false,
+	globalBlock: '',
+	userHelpers: `// Register custom Handlebars helpers here
+// Example:
+// registerHelper('shout', (value) => String(value).toUpperCase() + '!');
+`,
 };
 
 // Command parameter interface for processCommand()
@@ -72,12 +94,63 @@ interface RetryMetadata {
 	nextRetryAfter: number;  // Timestamp (ms since epoch)
 }
 
+const DURATION_FORMAT_ERROR = 'Invalid duration. Use number + suffix: ms, s, m, h, d, w, mo, y (e.g., 500ms, 30s, 5m, 12h, 3d, 1w, 6mo, 1y)';
+
+// Parses duration strings like "500ms", "30s", "5m", "12h", "3d", "1w", "6mo", "1y" into milliseconds
+// If defaultOnError is provided, returns it for invalid/empty input. Otherwise throws Error.
+function parseDuration(value: string, defaultOnError?: number): number {
+	const trimmed = value.trim();
+	if (trimmed === '') {
+		if (defaultOnError !== undefined) return defaultOnError;
+		throw new Error(DURATION_FORMAT_ERROR);
+	}
+	const match = trimmed.match(/^(\d+)(ms|s|m|h|d|w|mo|y)$/i);
+	if (!match) {
+		if (defaultOnError !== undefined) return defaultOnError;
+		throw new Error(DURATION_FORMAT_ERROR);
+	}
+	const num = parseInt(match[1], 10);
+	const unit = match[2].toLowerCase();
+	switch (unit) {
+		case 'ms': return num;
+		case 's': return num * 1000;
+		case 'm': return num * 60 * 1000;
+		case 'h': return num * 60 * 60 * 1000;
+		case 'd': return num * 24 * 60 * 60 * 1000;
+		case 'w': return num * 7 * 24 * 60 * 60 * 1000;
+		case 'mo': return num * 30 * 24 * 60 * 60 * 1000;
+		case 'y': return num * 365 * 24 * 60 * 60 * 1000;
+		default:
+			if (defaultOnError !== undefined) return defaultOnError;
+			throw new Error(DURATION_FORMAT_ERROR);
+	}
+}
+
+// Parses .delay. filenames: name.YYYY-MM-DD.delay.json or name.YYYY-MM-DD_HH-mm-ss.delay.json
+// Returns timestamp if valid delay date found, else null
+function parseDelayFromFilename(filename: string): number | null {
+	const match = filename.match(/\.(\d{4}-\d{2}-\d{2})(?:_(\d{2}-\d{2}-\d{2}))?\.delay\.json$/i);
+	if (!match) return null;
+	const dateStr = match[1];
+	const timeStr = match[2] || '00-00-00';
+	const [h, m, s] = timeStr.split('-').map(Number);
+	const date = moment(dateStr, 'YYYY-MM-DD');
+	if (!date.isValid()) return null;
+	date.hour(h).minute(m).second(s);
+	return date.valueOf();
+}
+
+function sleep(ms: number): Promise<void> {
+	return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 class Z2KTemplatesSettingTab extends PluginSettingTab {
 	plugin: Z2KTemplatesPlugin;
 	private refs = {
 		descTemplatesRootFolder: null as Setting | null,
 		descEmbeddedTemplatesFolderName: null as Setting | null,
 		quickCreateDesc: null as HTMLElement | null,
+		commandsContainer: null as HTMLElement | null,
 	}
 
 	constructor(app: App, plugin: Z2KTemplatesPlugin) {
@@ -103,14 +176,10 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 		containerEl.addClass('z2k-settings');
 		containerEl.createEl('h3', {text: 'Z2K Template Settings'});
 
-		// About block
-		const about = containerEl.createDiv({cls: ['z2k-about', 'setting-item']});
-		// const aboutInfo = about.createDiv({cls: 'setting-item-info'});
-		about.createEl('div', {cls: 'setting-item-description', text: 'Here you can customize some of the functionality of the template plugin.'});
-
 		this.refs.descTemplatesRootFolder = new Setting(containerEl)
 			.setName('Templates root folder')
 			.setDesc('') // Description is set dynamically
+			.setClass('setting-full-width')
 			.addText(text => {
 				const input = text
 					.setPlaceholder(DEFAULT_SETTINGS.templatesRootFolder)
@@ -201,30 +270,93 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 						this.plugin.queueRefreshCommands();
 					});
 			});
-		// new Setting(containerEl)
-		// 	.setName('Enable template editing')
-		// 	.setDesc('Enables editing of templates in the Templates folder')
-		// 	.addToggle(toggle => toggle
-		// 		.setValue(this.plugin.settings.templateEditingEnabled)
-		// 		.onChange(async (value) => {
-		// 			this.plugin.settings.templateEditingEnabled = value;
-		// 			await this.plugin.saveData(this.plugin.settings);
-		// 			if (value) {
-		// 				await this.plugin.enableTemplateEditing();
-		// 			} else {
-		// 				await this.plugin.disableTemplateEditing();
-		// 			}
-		// 		}));
+		const visibilitySettingContainer = containerEl.createDiv();
+		let visibilityToggle: ToggleComponent | null = null;
 
 		new Setting(containerEl)
-			.setName('Offline command queue directory')
-			.setDesc('Directory for queued command files (JSON/JSONL) - vault-relative or absolute. Commands will be processed automatically.')
+			.setName('Use template file extensions')
+			.setDesc(createFragment(f => {
+				f.appendText('Use .template and .block file extensions to hide template files from Obsidian. ');
+				f.createEl('a', {
+					text: '(?)',
+					href: 'https://z2k-studios.github.io/z2k-plugin-templates-docs/docs/reference-manual/Template%20File%20Extensions',
+				});
+			}))
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.useTemplateFileExtensions)
+				.onChange(async (value) => {
+					if (!value && this.plugin.settings.useTemplateFileExtensions) {
+						// Turning OFF - check if there are any .template or .block files first
+						const files = this.app.vault.getFiles();
+						const templateFiles = files.filter(f => f.extension === 'template' || f.extension === 'block');
+						if (templateFiles.length > 0) {
+							// Show warning only if template files exist
+							const confirmed = await new Promise<boolean>((resolve) => {
+								new ConfirmationModal(this.app, {
+									title: 'Disable Template File Extensions?',
+									message: <>
+										<p>We recommend that you convert your existing .template and .block template files back to markdown before disabling Template File Extensions.</p>
+										<p>If you do not convert them to markdown, then these templates will not be easily accessible inside Obsidian for updates and changes.</p>
+										<p><a href="https://z2k-studios.github.io/z2k-plugin-templates-docs/docs/reference-manual/Template%20File%20Extensions" target="_blank">See docs for more details.</a></p>
+									</>,
+									confirmText: 'Disable Anyway',
+									cancelText: 'Cancel',
+								}, resolve).open();
+							});
+							if (!confirmed) {
+								toggle.setValue(true); // Revert toggle
+								return;
+							}
+						}
+						// Also hide template files when disabling the feature
+						await this.plugin.setTemplateExtensionsVisible(false);
+						visibilityToggle?.setValue(false);
+					}
+					this.plugin.settings.useTemplateFileExtensions = value;
+					await this.plugin.saveData(this.plugin.settings);
+					this.plugin.queueRefreshCommands();
+					visibilitySettingContainer.toggle(value);
+				}));
+
+		containerEl.appendChild(visibilitySettingContainer);
+		visibilitySettingContainer.toggle(this.plugin.settings.useTemplateFileExtensions);
+		new Setting(visibilitySettingContainer)
+			.setName('Template files visible in file explorer')
+			.setDesc('When off, .template and .block files are hidden from the file explorer.')
+			.addToggle(toggle => {
+				visibilityToggle = toggle;
+				toggle.setValue(this.plugin.settings.templateExtensionsVisible)
+					.onChange(async (value) => {
+						await this.plugin.setTemplateExtensionsVisible(value);
+					});
+			});
+
+		containerEl.createEl('h3', {text: 'Command Queue'});
+
+		const queueSettingsContainer = containerEl.createDiv();
+		queueSettingsContainer.toggle(this.plugin.settings.offlineCommandQueueEnabled);
+
+		new Setting(containerEl)
+			.setName('Enable command queue')
+			.setDesc('Process queued JSON command files automatically.')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.offlineCommandQueueEnabled)
+				.onChange(async (value) => {
+					this.plugin.settings.offlineCommandQueueEnabled = value;
+					await this.plugin.saveData(this.plugin.settings);
+					queueSettingsContainer.toggle(value);
+				}));
+
+		containerEl.appendChild(queueSettingsContainer);
+
+		new Setting(queueSettingsContainer)
+			.setName('Queue directory')
+			.setDesc('Directory for queued command files (JSON/JSONL) - vault-relative or absolute.')
+			.setClass('setting-full-width')
 			.addText(text => {
 				const input = text
-					.setPlaceholder(DEFAULT_SETTINGS.offlineCommandQueueDir)
 					.setValue(this.plugin.settings.offlineCommandQueueDir)
 					.inputEl;
-
 				this.validateTextInput(input,
 					(value) => {
 						if (value && /[*?"<>|]/.test(value)) { return "Invalid characters in file path"; }
@@ -235,14 +367,87 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 					});
 			});
 
+		new Setting(queueSettingsContainer)
+			.setName('Scan frequency')
+			.setDesc('How often to scan for new commands. Blank = manual only.')
+			.addText(text => {
+				const input = text
+					.setValue(this.plugin.settings.offlineCommandQueueFrequency)
+					.inputEl;
+				this.validateTextInput(input,
+					(value) => {
+						const trimmed = value.trim();
+						if (trimmed === '') return null; // Blank = manual only
+						try {
+							const ms = parseDuration(trimmed);
+							if (ms < 5000) return "Minimum is 5s";
+							return null;
+						} catch (e: any) {
+							return e.message;
+						}
+					},
+					async (validValue) => {
+						this.plugin.settings.offlineCommandQueueFrequency = validValue;
+						await this.plugin.saveData(this.plugin.settings);
+					});
+			});
+
+		new Setting(queueSettingsContainer)
+			.setName('Pause between commands')
+			.setDesc('Delay between processing each command. Blank = no pause.')
+			.addText(text => {
+				const input = text
+					.setValue(this.plugin.settings.offlineCommandQueuePause)
+					.inputEl;
+				this.validateTextInput(input,
+					(value) => {
+						const trimmed = value.trim();
+						if (trimmed === '') return null; // Blank = no pause
+						try {
+							parseDuration(trimmed);
+							return null;
+						} catch (e: any) {
+							return e.message;
+						}
+					},
+					async (validValue) => {
+						this.plugin.settings.offlineCommandQueuePause = validValue;
+						await this.plugin.saveData(this.plugin.settings);
+					});
+			});
+
+		new Setting(queueSettingsContainer)
+			.setName('Archive duration')
+			.setDesc('How long to keep processed files. Blank = delete immediately.')
+			.addText(text => {
+				const input = text
+					.setValue(this.plugin.settings.offlineCommandQueueArchiveDuration)
+					.inputEl;
+				this.validateTextInput(input,
+					(value) => {
+						const trimmed = value.trim();
+						if (trimmed === '') return null; // Blank = delete immediately
+						try {
+							parseDuration(trimmed);
+							return null;
+						} catch (e: any) {
+							return e.message;
+						}
+					},
+					async (validValue) => {
+						this.plugin.settings.offlineCommandQueueArchiveDuration = validValue;
+						await this.plugin.saveData(this.plugin.settings);
+					});
+			});
+
 		containerEl.createEl('h3', {text: 'Error Logging'});
 
 		new Setting(containerEl)
 			.setName('Error log file')
 			.setDesc('Path to error log file (vault-relative or absolute).')
+			.setClass('setting-full-width')
 			.addText(text => {
 				const input = text
-					.setPlaceholder(DEFAULT_SETTINGS.errorLogPath)
 					.setValue(this.plugin.settings.errorLogPath)
 					.inputEl;
 
@@ -273,96 +478,179 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 				}));
 
 		containerEl.createEl('h3', {text: 'Quick Create Commands'});
-		const quickCreateDesc = containerEl.createDiv({cls: 'setting-item'});
-		this.refs.quickCreateDesc = quickCreateDesc.createDiv({cls: 'setting-item-description'});
-		const dyn = this.plugin.settings.dynamicCardCommands;
-		for (let i = 0; i < dyn.length; i++) {
-			const row = new Setting(containerEl)
-				.setName(`Command ${i + 1}`);
-				// .setDesc('Command label and target folder');
+		const commandsWrapper = containerEl.createDiv({cls: 'setting-item'});
+		this.refs.quickCreateDesc = commandsWrapper.createDiv({cls: 'setting-item-description'});
+		this.refs.commandsContainer = commandsWrapper.createDiv({cls: 'quick-create-rows'});
+		this.renderCommandRows();
 
-			row.addText((text) => {
-				text.setPlaceholder('New Thought').setValue(dyn[i].name || '');
-				text.onChange(async v => {
-					const nv = v.trim();
-					if (nv === dyn[i].name) return;
-					dyn[i].name = nv;
-					await this.plugin.saveData(this.plugin.settings);
-					this.plugin.queueRefreshCommands();
-				});
-			});
-
-			row.addText((text) => {
-				text.setPlaceholder('/Thoughts').setValue(dyn[i].targetFolder || '');
-				text.onChange(async v => {
-					const nv = v.trim();
-					if (nv === dyn[i].targetFolder) return;
-					dyn[i].targetFolder = nv;
-					await this.plugin.saveData(this.plugin.settings);
-					this.plugin.queueRefreshCommands();
-				});
-			});
-
-			row.addExtraButton((button) => {
-				button.setIcon('arrow-up').setTooltip('Move up').setDisabled(i === 0).onClick(async () => {
-					if (i <= 0) { return; }
-					const tmp = dyn[i - 1];
-					dyn[i - 1] = dyn[i];
-					dyn[i] = tmp;
-					await this.plugin.saveData(this.plugin.settings);
-					this.plugin.queueRefreshCommands();
-					this.display();
-				});
-			});
-
-			row.addExtraButton((button) => {
-				button.setIcon('arrow-down').setTooltip('Move down').setDisabled(i >= dyn.length - 1).onClick(async () => {
-					if (i >= dyn.length - 1) { return; }
-					const tmp = dyn[i + 1];
-					dyn[i + 1] = dyn[i];
-					dyn[i] = tmp;
-					await this.plugin.saveData(this.plugin.settings);
-					this.plugin.queueRefreshCommands();
-					this.display();
-				});
-			});
-
-			row.addExtraButton((button) => {
-				button.setIcon('plus').setTooltip('Insert below').onClick(async () => {
-					const id = Math.random().toString(36).slice(2,10) + Date.now().toString(36); // unique id
-					dyn.splice(i + 1, 0, { id, name: '', targetFolder: '' }); // insert after this row
-					await this.plugin.saveData(this.plugin.settings);
-					this.plugin.queueRefreshCommands();
-					this.display(); // structural change: repaint
-				});
-			});
-
-			row.addExtraButton((button) => {
-				button.setIcon('trash').setTooltip('Delete').onClick(async () => {
-					const id = dyn[i]?.id;
-					if (id) { this.plugin.removeCommand(id); }
-					dyn.splice(i, 1);
-					await this.plugin.saveData(this.plugin.settings);
-					this.plugin.queueRefreshCommands();
-					this.display(); // structural change: safe to repaint
-				});
-			});
-		}
+		containerEl.createEl('h3', {text: 'Advanced'});
 
 		new Setting(containerEl)
-			.addButton((button) => {
-				button.setButtonText('Add Command').onClick(async () => {
-					const id = Math.random().toString(36).slice(2,10) + Date.now().toString(36);
-					// No need to add the command, the command will be added in the refresh
-					dyn.push({ id, name: '', targetFolder: '' });
-					await this.plugin.saveData(this.plugin.settings);
-					this.plugin.queueRefreshCommands();
-					this.display(); // structural change: repaint is fine
-				});
-			});
+			.setName('Global Block')
+			.setDesc('Template content that is prepended to all templates across all vaults.')
+			.addButton(button => button
+				.setButtonText('Edit Global Block')
+				.onClick(() => {
+					new EditorModal(this.app, {
+						title: 'Edit Global Block',
+						initialContent: this.plugin.settings.globalBlock,
+						language: 'handlebars',
+						helpText: `The global block works like a system block but applies to all templates
+across all vaults. Content here is prepended to every template before rendering.
 
+Use it for:
+- Field-info declarations that should be available everywhere
+- Common template snippets
+- Default values you want across all templates
+
+Priority: built-in < global < system < block < main
+(Global field-infos can be overridden by system blocks or the template itself.)
+
+Example:
+{{field-info author "Author name" default="Anonymous"}}
+{{field-info project "Project" type="text"}}`,
+						validate: (code) => this.plugin.validateGlobalBlock(code),
+						onSave: async (content) => {
+							this.plugin.settings.globalBlock = content;
+							await this.plugin.saveData(this.plugin.settings);
+						}
+					}).open();
+				})
+			);
+
+		new Setting(containerEl)
+			.setName('Custom Helpers')
+			.setDesc('Register custom Handlebars helper functions using JavaScript.')
+			.addButton(button => button
+				.setButtonText('Edit Custom Helpers')
+				.onClick(() => {
+					new EditorModal(this.app, {
+						title: 'Edit Custom Helpers',
+						initialContent: this.plugin.settings.userHelpers,
+						language: 'javascript',
+						helpText: `Write JavaScript code to register custom Handlebars helpers.
+These helpers can be used in any template with {{helperName ...}} syntax.
+
+Available Globals:
+- app: Obsidian App instance (vault, workspace, metadataCache, etc.)
+- obsidian: The Obsidian module (Notice, Modal, TFile, etc.)
+- moment: Moment.js for date manipulation
+- Handlebars: The Handlebars instance
+- registerHelper(name, fn): Register a custom helper
+
+Example - transform a value:
+registerHelper('shout', (value) => String(value).toUpperCase() + '!');
+// Usage: {{shout "hello"}} → HELLO!
+
+Example - get recent files:
+registerHelper('recentFiles', () => {
+    return app.vault.getMarkdownFiles()
+        .sort((a, b) => b.stat.mtime - a.stat.mtime)
+        .slice(0, 5)
+        .map(f => f.basename)
+        .join(', ');
+});
+// Usage: {{recentFiles}} → Note A, Note B, ...`,
+						validate: (code) => this.plugin.validateUserHelpers(code),
+						onSave: async (content) => {
+							this.plugin.settings.userHelpers = content;
+							await this.plugin.saveData(this.plugin.settings);
+							// Reload helpers
+							const result = this.plugin.loadUserHelpers(content);
+							if (!result.valid) {
+								new Notice('Failed to load custom helpers - check console');
+								console.error('Custom helpers error:', result.error);
+							}
+						}
+					}).open();
+				})
+			);
 
 		this.applyDescs(); // Apply dynamic descriptions
+	}
+
+	private renderCommandRows(): void {
+		const container = this.refs.commandsContainer;
+		if (!container) { return; }
+		container.empty();
+		const dyn = this.plugin.settings.dynamicCardCommands;
+		for (let i = 0; i < dyn.length; i++) {
+			const row = container.createDiv({cls: 'command-row'});
+			// Name input
+			const nameInput = row.createEl('input', {type: 'text', placeholder: 'New Thought'});
+			nameInput.value = dyn[i].name || '';
+			nameInput.addEventListener('change', async () => {
+				const nv = nameInput.value.trim();
+				if (nv === dyn[i].name) { return; }
+				dyn[i].name = nv;
+				await this.plugin.saveData(this.plugin.settings);
+				this.plugin.queueRefreshCommands();
+			});
+			// Folder input
+			const folderInput = row.createEl('input', {type: 'text', placeholder: '/Thoughts'});
+			folderInput.value = dyn[i].targetFolder || '';
+			folderInput.addEventListener('change', async () => {
+				const nv = folderInput.value.trim();
+				if (nv === dyn[i].targetFolder) { return; }
+				dyn[i].targetFolder = nv;
+				await this.plugin.saveData(this.plugin.settings);
+				this.plugin.queueRefreshCommands();
+			});
+			// Buttons container
+			const buttons = row.createDiv({cls: 'command-buttons'});
+			// Move up
+			const upBtn = buttons.createEl('button', {cls: 'clickable-icon', attr: {'aria-label': 'Move up'}});
+			setIcon(upBtn, 'arrow-up');
+			if (i === 0) { upBtn.addClass('is-disabled'); }
+			upBtn.addEventListener('click', async () => {
+				if (i <= 0) { return; }
+				[dyn[i - 1], dyn[i]] = [dyn[i], dyn[i - 1]];
+				await this.plugin.saveData(this.plugin.settings);
+				this.plugin.queueRefreshCommands();
+				this.renderCommandRows();
+			});
+			// Move down
+			const downBtn = buttons.createEl('button', {cls: 'clickable-icon', attr: {'aria-label': 'Move down'}});
+			setIcon(downBtn, 'arrow-down');
+			if (i >= dyn.length - 1) { downBtn.addClass('is-disabled'); }
+			downBtn.addEventListener('click', async () => {
+				if (i >= dyn.length - 1) { return; }
+				[dyn[i + 1], dyn[i]] = [dyn[i], dyn[i + 1]];
+				await this.plugin.saveData(this.plugin.settings);
+				this.plugin.queueRefreshCommands();
+				this.renderCommandRows();
+			});
+			// Insert below
+			const insertBtn = buttons.createEl('button', {cls: 'clickable-icon', attr: {'aria-label': 'Insert below'}});
+			setIcon(insertBtn, 'plus');
+			insertBtn.addEventListener('click', async () => {
+				const id = Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+				dyn.splice(i + 1, 0, {id, name: '', targetFolder: ''});
+				await this.plugin.saveData(this.plugin.settings);
+				this.plugin.queueRefreshCommands();
+				this.renderCommandRows();
+			});
+			// Delete
+			const deleteBtn = buttons.createEl('button', {cls: 'clickable-icon', attr: {'aria-label': 'Delete'}});
+			setIcon(deleteBtn, 'trash');
+			deleteBtn.addEventListener('click', async () => {
+				const id = dyn[i]?.id;
+				if (id) { this.plugin.removeCommand(id); }
+				dyn.splice(i, 1);
+				await this.plugin.saveData(this.plugin.settings);
+				this.plugin.queueRefreshCommands();
+				this.renderCommandRows();
+			});
+		}
+		// Add Command button
+		const addBtn = container.createEl('button', {cls: 'mod-cta', text: 'Add Command'});
+		addBtn.addEventListener('click', async () => {
+			const id = Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+			dyn.push({id, name: '', targetFolder: ''});
+			await this.plugin.saveData(this.plugin.settings);
+			this.plugin.queueRefreshCommands();
+			this.renderCommandRows();
+		});
 	}
 
 	validateTextInput(
@@ -375,9 +663,10 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 		let errorDescEl: HTMLElement | null = null;
 
 		const showError = (msg: string) => {
-			const infoEl = settingItem?.querySelector('.setting-item-info');
-			if (!errorDescEl && infoEl) {
-				errorDescEl = infoEl.createDiv({cls: ['setting-item-description', 'setting-item-error-description']});
+			if (!errorDescEl && settingItem) {
+				errorDescEl = createDiv({cls: ['setting-item-description', 'setting-item-error-description']});
+				// Append to settingItem - CSS handles layout via .is-invalid flex-wrap
+				settingItem.appendChild(errorDescEl);
 			}
 			errorDescEl?.setText(msg);
 			settingItem?.addClass('is-invalid');
@@ -455,7 +744,7 @@ class ErrorLogger {
 	}
 
 	private formatLogEntry(context: LogContext): string {
-		const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
+		const timestamp = moment().format('YYYY-MM-DD HH:mm:ss');
 
 		// Compact format for error/warn/info
 		if (this.settings.errorLogLevel !== "debug") {
@@ -486,15 +775,103 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	templateEngine: Z2KTemplateEngine;
 	settings: Z2KTemplatesPluginSettings;
 	errorLogger: ErrorLogger;
+	userHelperFunctions: Record<string, Function> = {};
 	private _refreshTimer: number | null = null;
 	private _queueCheckInterval: number | null = null;
 	private _processingQueue: boolean = false;
+	private _lastQueueCheck: number = 0;
 	private _statusBarItem: HTMLElement | null = null;
+
+	private wrapHelper(name: string, fn: Function): Function {
+		return (...args: unknown[]) => {
+			try {
+				return fn(...args);
+			} catch (e: any) {
+				console.error(`Helper '${name}' threw:`, e);
+				this.errorLogger?.log({
+					severity: 'error',
+					message: `Custom helper '${name}' threw an error: ${e.message}`,
+					error: e,
+				});
+				return `[Error in ${name}]`;
+			}
+		};
+	}
+
+	loadUserHelpers(code: string): { valid: boolean; error?: string; helperNames?: string[] } {
+		const newHelpers: Record<string, Function> = {};
+		const registerHelper = (name: string, fn: Function) => {
+			newHelpers[name] = this.wrapHelper(name, fn);
+		};
+		const context = {
+			app: this.app,
+			obsidian: obsidian,
+			moment,
+			Handlebars,
+			registerHelper,
+		};
+		try {
+			new Function(...Object.keys(context), code)(...Object.values(context));
+			this.userHelperFunctions = newHelpers;
+			return { valid: true, helperNames: Object.keys(newHelpers) };
+		} catch (e: any) {
+			return { valid: false, error: e.message };
+		}
+	}
+
+	validateGlobalBlock(code: string): { valid: boolean; error?: string; message?: string } {
+		if (!code || code.trim() === "") {
+			return { valid: true, message: "Empty" };
+		}
+		try {
+			Handlebars.parse(code);
+			return { valid: true, message: "No syntax issues" };
+		} catch (e: any) {
+			return { valid: false, error: e.message };
+		}
+	}
+
+	validateUserHelpers(code: string): { valid: boolean; error?: string; message?: string } {
+		if (!code || code.trim() === "") {
+			return { valid: true, message: "Empty" };
+		}
+		const newHelpers: Record<string, Function> = {};
+		const registerHelper = (name: string, fn: Function) => {
+			newHelpers[name] = fn;
+		};
+		const context = {
+			app: this.app,
+			obsidian: obsidian,
+			moment,
+			Handlebars,
+			registerHelper,
+		};
+		try {
+			new Function(...Object.keys(context), code)(...Object.values(context));
+			const names = Object.keys(newHelpers);
+			return {
+				valid: true,
+				message: names.length > 0
+					? `${names.length} helper${names.length !== 1 ? 's' : ''} registered: ${names.join(', ')}`
+					: "No helpers registered"
+			};
+		} catch (e: any) {
+			return { valid: false, error: e.message };
+		}
+	}
 
 	async onload() {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
 		this.templateEngine = new Z2KTemplateEngine();
 		this.errorLogger = new ErrorLogger(this.app, this.settings);
+		// Load user-defined custom helpers
+		if (this.settings.userHelpers && this.settings.userHelpers.trim() !== "") {
+			const result = this.loadUserHelpers(this.settings.userHelpers);
+			if (!result.valid) {
+				new Notice('Failed to load custom helpers - check console for details');
+				console.error('Custom helpers error:', result.error);
+			}
+		}
 		this.refreshMainCommands(false); // Don't delete existing, since none exist yet
 		this.refreshDynamicCommands(false);
 		this.registerEvents();
@@ -506,6 +883,11 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		// Initialize offline command queue
 		await this.recoverFromCrash();
 		this.startQueueProcessor();
+		// Restore template extension visibility state
+		if (this.settings.useTemplateFileExtensions && this.settings.templateExtensionsVisible) {
+			// @ts-expect-error: internal API
+			this.app.viewRegistry.registerExtensions(["template", "block"], "markdown");
+		}
 	}
 	onunload() {
 		if (this._queueCheckInterval !== null) {
@@ -573,6 +955,19 @@ export default class Z2KTemplatesPlugin extends Plugin {
 					this.insertBlock({ fromSelection: true });
 				}
 			},
+			{
+				id: 'z2k-process-command-queue',
+				name: 'Process command queue now',
+				checkCallback: (checking) => {
+					if (!this.settings.offlineCommandQueueEnabled) return false;
+					if (checking) return true;
+					if (this._processingQueue) {
+						new Notice('Command queue is already being processed');
+						return;
+					}
+					this.checkAndProcessQueue();
+				},
+			},
 			// {
 			// 	id: 'z2k-enable-template-editing',
 			// 	name: 'Enable template editing mode',
@@ -591,29 +986,48 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			// },
 			{
 				id: "z2k-convert-file-to-template",
-				name: "Convert file to named template",
+				name: "Convert to document template",
 				checkCallback: (checking) => {
 					let file = this.app.workspace.getActiveFile();
-					if (checking) { return !!file && this.getFileTemplateType(file) !== "named"; }
-					this.convertFileTemplateType(file as TFile, "named");
+					if (checking) { return !!file && this.getFileTemplateType(file) !== "document-template"; }
+					this.convertFileTemplateType(file as TFile, "document-template");
 				},
 			},
 			{
 				id: "z2k-convert-file-to-block-template",
-				name: "Convert file to block template",
+				name: "Convert to block template",
 				checkCallback: (checking) => {
 					let file = this.app.workspace.getActiveFile();
-					if (checking) { return !!file && this.getFileTemplateType(file) !== "block"; }
-					this.convertFileTemplateType(file as TFile, "block");
+					if (checking) { return !!file && this.getFileTemplateType(file) !== "block-template"; }
+					this.convertFileTemplateType(file as TFile, "block-template");
+				},
+			},
+			{
+				id: "z2k-convert-file-to-md-template",
+				name: "Convert to markdown template",
+				checkCallback: (checking) => {
+					let file = this.app.workspace.getActiveFile();
+					// Only show if file has .template or .block extension
+					if (checking) { return !!file && (file.extension === "template" || file.extension === "block"); }
+					this.convertToMarkdownTemplate(file as TFile);
 				},
 			},
 			{
 				id: "z2k-convert-file-to-md",
-				name: "Convert file to markdown",
+				name: "Convert to content file",
 				checkCallback: (checking) => {
 					let file = this.app.workspace.getActiveFile();
-					if (checking) { return !!file && this.getFileTemplateType(file) !== "normal"; }
-					this.convertFileTemplateType(file as TFile, "normal");
+					if (checking) { return !!file && this.getFileTemplateType(file) !== "content-file"; }
+					this.convertFileTemplateType(file as TFile, "content-file");
+				},
+			},
+			{
+				id: "z2k-toggle-template-visibility",
+				name: this.settings.templateExtensionsVisible ? "Make .template and .block templates hidden" : "Make .template and .block templates visible",
+				checkCallback: (checking) => {
+					// Only show if useTemplateFileExtensions is enabled
+					if (checking) { return this.settings.useTemplateFileExtensions; }
+					this.toggleTemplateExtensionsVisibility();
 				},
 			}
 
@@ -767,28 +1181,38 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		// Template conversion context menu in file explorer
 		this.registerEvent(
 			this.app.workspace.on("file-menu", (menu, file) => {
-				if (!(file instanceof TFile) || this.getFileTemplateType(file) === "named") return;
+				if (!(file instanceof TFile) || this.getFileTemplateType(file) === "document-template") { return; }
 				menu.addItem((item) => {
-					item.setTitle("Z2K - Convert to named template")
-						.onClick(() => this.convertFileTemplateType(file as TFile, "named"));
+					item.setTitle("Z2K - Convert to document template")
+						.onClick(() => this.convertFileTemplateType(file as TFile, "document-template"));
 				});
 			})
 		);
 		this.registerEvent(
 			this.app.workspace.on("file-menu", (menu, file) => {
-				if (!(file instanceof TFile) || this.getFileTemplateType(file) === "block") return;
+				if (!(file instanceof TFile) || this.getFileTemplateType(file) === "block-template") { return; }
 				menu.addItem((item) => {
 					item.setTitle("Z2K - Convert to block template")
-						.onClick(() => this.convertFileTemplateType(file as TFile, "block"));
+						.onClick(() => this.convertFileTemplateType(file as TFile, "block-template"));
 				});
 			})
 		);
 		this.registerEvent(
 			this.app.workspace.on("file-menu", (menu, file) => {
-				if (!(file instanceof TFile) || this.getFileTemplateType(file) === "normal") return;
+				// Only show for .template or .block files
+				if (!(file instanceof TFile) || (file.extension !== "template" && file.extension !== "block")) { return; }
 				menu.addItem((item) => {
-					item.setTitle("Z2K - Convert to markdown")
-						.onClick(() => this.convertFileTemplateType(file as TFile, "normal"));
+					item.setTitle("Z2K - Convert to markdown template")
+						.onClick(() => this.convertToMarkdownTemplate(file as TFile));
+				});
+			})
+		);
+		this.registerEvent(
+			this.app.workspace.on("file-menu", (menu, file) => {
+				if (!(file instanceof TFile) || this.getFileTemplateType(file) === "content-file") { return; }
+				menu.addItem((item) => {
+					item.setTitle("Z2K - Convert to content file")
+						.onClick(() => this.convertFileTemplateType(file as TFile, "content-file"));
 				});
 			})
 		);
@@ -811,7 +1235,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	// Called by: registerURIHandler (from URI), processQueueFile (from offline queue)
 	// DOCS: Non-field parameters can be templatePath, TemplatePath, template-path, template_path, etc. for robustness
 	// DOCS: but we should just say templatePath in the docs for simplicity
-	private async processCommand(rawParams: CommandParams, context: "user" | "batch"): Promise<void> {
+	private async processCommand(rawParams: CommandParams, context: "user" | "batch", isJsonSource: boolean = false): Promise<void> {
 		const cps: Record<string, any> = {};  // Command parameters
 		const templateData: Record<string, any> = {};  // Template field data (preserves original keys)
 
@@ -870,6 +1294,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		// DOCS: All params (except recognized command params) are treated as template data
 		// DOCS: Direct params override values in templateJsonData
 		const fieldOverrides: Record<string, VarValueType> = { ...additionalFields, ...templateData };
+		// Only convert URI string values, not JSON-sourced values (already typed)
+		const uriKeys: Set<string> = isJsonSource ? new Set() : new Set(Object.keys(templateData));
 
 		// Validate cmd parameter
 		if (!cps.cmd || typeof cps.cmd !== 'string') {
@@ -890,8 +1316,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				if (!parsedParams || typeof parsedParams !== "object" || Array.isArray(parsedParams)) {
 					throw new TemplatePluginError("Command: 'json' parameter must be a valid JSON object (not array or null)");
 				}
-				// Recursive call with parsed JSON (inherit context)
-				return await this.processCommand(parsedParams as CommandParams, context);
+				// Recursive call with parsed JSON (inherit context, mark as JSON source)
+				return await this.processCommand(parsedParams as CommandParams, context, true);
 			} catch (e) {
 				if (e instanceof TemplatePluginError) throw e;
 				throw new TemplatePluginError("Command: Invalid json parameter (must be valid JSON)");
@@ -990,6 +1416,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				cardTypeFolder,
 				templateFile,
 				fieldOverrides,
+				uriKeys,
 				promptMode,
 				destDir,
 				finalize
@@ -1004,6 +1431,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			await this.continueCard({
 				existingFile,
 				fieldOverrides,
+				uriKeys,
 				promptMode,
 				finalize
 			});
@@ -1024,6 +1452,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				destHeader: cps.destHeader,
 				location,
 				fieldOverrides,
+				uriKeys,
 				promptMode,
 				finalize
 			});
@@ -1060,22 +1489,23 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			}
 		}
 
-		// Ensure new directory exists
-		if (newPath) {
-			const dirPath = this.resolveQueueFilePath(newPath);
-			if (dirPath && !(await adapter.exists(dirPath))) {
-				await adapter.mkdir(dirPath);
-			}
-		}
 	}
 
 	private startQueueProcessor() {
 		if (!this.settings.offlineCommandQueueDir) return;
-
-		// Check queue every 5 seconds
+		// Set initial lastQueueCheck to now (delays first scan by frequency duration)
+		this._lastQueueCheck = Date.now();
+		// Meta-timer: check every second if it's time to process
 		this._queueCheckInterval = window.setInterval(() => {
-			this.checkAndProcessQueue();
-		}, 5000);
+			if (!this.settings.offlineCommandQueueEnabled) return;
+			const freqMs = parseDuration(this.settings.offlineCommandQueueFrequency, 0);
+			if (freqMs === 0) return; // Manual only (blank or invalid)
+			const now = Date.now();
+			if (now >= this._lastQueueCheck + freqMs) {
+				this._lastQueueCheck = now;
+				this.checkAndProcessQueue();
+			}
+		}, 1000);
 	}
 
 	private async recoverFromCrash() {
@@ -1098,37 +1528,33 @@ export default class Z2KTemplatesPlugin extends Plugin {
 
 	private async checkAndProcessQueue() {
 		if (this._processingQueue || !this.settings.offlineCommandQueueDir) return;
-
+		if (!this.settings.offlineCommandQueueEnabled) return;
 		const dirPath = this.resolveQueueFilePath(this.settings.offlineCommandQueueDir);
 		if (!dirPath) return;
-
 		const adapter = this.app.vault.adapter;
 		if (!(await adapter.exists(dirPath))) return;
-
 		// Verify it's actually a directory
 		const stat = await adapter.stat(dirPath);
 		if (!stat || stat.type !== 'folder') {
 			await this.log('error', 'batch', `Queue path is not a directory: ${dirPath}`);
 			return;
 		}
-
 		this._processingQueue = true;
+		this.updateStatusBar('⏳ Processing commands...');
 		try {
 			// Get all files in queue directory
 			const listing = await adapter.list(dirPath);
-
-			// Filter for .json and .jsonl files (excluding .retry.json and .processing.jsonl)
+			// Clean up old archives first (scans done/ subfolder)
+			await this.cleanupOldArchives();
+			// Filter for .json and .jsonl files (excluding special files)
 			const queueFiles = listing.files.filter(f =>
 				(f.endsWith('.json') || f.endsWith('.jsonl')) &&
 				!f.endsWith('.retry.json') &&
 				!f.endsWith('.processing.jsonl')
 			);
-
 			if (queueFiles.length === 0) {
-				this._processingQueue = false;
 				return;
 			}
-
 			// Get file stats and sort by birth time (creation time)
 			const fileStats = await Promise.all(
 				queueFiles.map(async (file) => ({
@@ -1136,29 +1562,41 @@ export default class Z2KTemplatesPlugin extends Plugin {
 					stat: await adapter.stat(file)
 				}))
 			);
-
 			fileStats.sort((a, b) => (a.stat?.ctime || 0) - (b.stat?.ctime || 0));
-
+			const pauseMs = parseDuration(this.settings.offlineCommandQueuePause, 0);
 			// Process each file
-			for (const { path: filePath } of fileStats) {
-				// Check for retry sidecar - skip if not ready
-				const retryPath = filePath + '.retry.json';
-				if (await adapter.exists(retryPath)) {
-					const retryData = JSON.parse(await adapter.read(retryPath)) as RetryMetadata;
-					if (retryData.nextRetryAfter > Date.now()) {
-						continue; // Not ready to retry yet
+			for (let i = 0; i < fileStats.length; i++) {
+				const { path: filePath } = fileStats[i];
+				// Check .delay. filename - skip if not ready yet
+				const basename = filePath.split('/').pop() || '';
+				const delayUntil = parseDelayFromFilename(basename);
+				if (delayUntil !== null && delayUntil > Date.now()) {
+					continue; // Not ready yet
+				}
+				// Check for retry sidecar - skip if not ready (only applies to .json files)
+				if (filePath.endsWith('.json')) {
+					const retryPath = filePath.replace(/\.json$/, '.retry.json');
+					if (await adapter.exists(retryPath)) {
+						const retryData = JSON.parse(await adapter.read(retryPath)) as RetryMetadata;
+						if (retryData.nextRetryAfter > Date.now()) {
+							continue; // Not ready to retry yet
+						}
 					}
 				}
-
 				// Process the file
 				if (filePath.endsWith('.jsonl')) {
 					await this.processJsonlFile(filePath);
 				} else if (filePath.endsWith('.json')) {
 					await this.processJsonFile(filePath);
 				}
+				// Pause between files (but not after the last one)
+				if (pauseMs > 0 && i < fileStats.length - 1) {
+					await sleep(pauseMs);
+				}
 			}
 		} finally {
 			this._processingQueue = false;
+			this.updateStatusBar('');
 		}
 	}
 
@@ -1172,19 +1610,28 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			const content = await adapter.read(filePath);
 			cmdParams = JSON.parse(content) as CommandParams;
 		} catch (parseError) {
-			// Invalid JSON - log and delete file
+			// Invalid JSON - log and rename to .TIMESTAMP.failed.json
 			await this.log('error', 'batch', `Invalid JSON in command file ${filePath}`);
-			await adapter.remove(filePath);
+			const failedPath = await this.getFailedPath(filePath);
+			await adapter.rename(filePath, failedPath);
 			return;
 		}
 
 		try {
-			// Execute command
-			await this.processCommand(cmdParams, 'batch');
-
-			// Success - delete both .json and .retry.json if it exists
-			await adapter.remove(filePath);
-			const retryPath = filePath + '.retry.json';
+			// Execute command (JSON source - don't convert string types)
+			await this.processCommand(cmdParams, 'batch', true);
+			// Success - archive or delete based on setting
+			const archiveDurationMs = parseDuration(this.settings.offlineCommandQueueArchiveDuration, 0);
+			if (archiveDurationMs > 0) {
+				// Archive: rename to name.TIMESTAMP.done.json
+				const archivePath = await this.getArchivePath(filePath);
+				await adapter.rename(filePath, archivePath);
+			} else {
+				// Delete immediately
+				await adapter.remove(filePath);
+			}
+			// Clean up retry sidecar if it exists
+			const retryPath = filePath.replace(/\.json$/, '.retry.json');
 			if (await adapter.exists(retryPath)) {
 				await adapter.remove(retryPath);
 			}
@@ -1206,39 +1653,48 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		try {
 			const content = await adapter.read(processingPath);
 			const lines = content.split('\n').filter(line => line.trim());
-
+			const pauseMs = parseDuration(this.settings.offlineCommandQueuePause, 0);
+			const failedLines: string[] = [];
 			// Process each line
-			for (const line of lines) {
+			for (let i = 0; i < lines.length; i++) {
+				const line = lines[i];
 				let cmdParams: CommandParams;
 				try {
 					cmdParams = JSON.parse(line) as CommandParams;
 				} catch (parseError) {
-					// Invalid JSON - log and skip
+					// Invalid JSON - log and collect
 					await this.log('error', 'batch', `Invalid JSON in command queue: ${line}`);
+					failedLines.push(line);
 					continue;
 				}
-
 				try {
-					await this.processCommand(cmdParams, 'batch');
+					await this.processCommand(cmdParams, 'batch', true);
 				} catch (e) {
 					// Command execution failed - check if it has retry config
 					const maxRetries = cmdParams.maxRetries || 0;
-
 					if (maxRetries > 0) {
 						// Create individual .json file for retry
 						const retryFileName = `command-${moment().format('YYYY-MM-DD_HH-mm-ss-SSS')}.json`;
 						const retryFilePath = dirPath + '/' + retryFileName;
 						await adapter.write(retryFilePath, line);
-
 						// Handle as failed command (creates .retry.json)
 						await this.handleCommandFailure(retryFilePath, e, cmdParams);
 					} else {
-						// No retries - just log error
+						// No retries - collect failed line
 						await this.handleErrors(e, 'batch');
+						failedLines.push(line);
 					}
 				}
+				// Pause between commands (but not after the last one)
+				if (pauseMs > 0 && i < lines.length - 1) {
+					await sleep(pauseMs);
+				}
 			}
-
+			// Write failed lines to .failed.jsonl if any
+			if (failedLines.length > 0) {
+				const failedPath = await this.getFailedPath(filePath);
+				await adapter.write(failedPath, failedLines.join('\n'));
+			}
 			// Done processing - delete .processing.jsonl
 			await adapter.remove(processingPath);
 		} catch (e) {
@@ -1266,13 +1722,14 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		const retryDelayMs = cmdParams.retryDelayMs || 0;
 
 		if (maxRetries === 0) {
-			// No retries configured - just delete
-			await adapter.remove(filePath);
+			// No retries configured - rename to .TIMESTAMP.failed.json
+			const failedPath = await this.getFailedPath(filePath);
+			await adapter.rename(filePath, failedPath);
 			return;
 		}
 
 		// Check if retry metadata exists
-		const retryPath = filePath + '.retry.json';
+		const retryPath = filePath.replace(/\.json$/, '.retry.json');
 		let retryData: RetryMetadata;
 
 		if (await adapter.exists(retryPath)) {
@@ -1289,8 +1746,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 
 		// Check if retries exhausted
 		if (retryData.attempts >= maxRetries) {
-			// Rename to .failed.json and delete retry metadata
-			const failedPath = filePath.replace(/\.json$/, '.failed.json');
+			// Rename to .TIMESTAMP.failed.json and delete retry metadata
+			const failedPath = await this.getFailedPath(filePath);
 			await adapter.rename(filePath, failedPath);
 			await adapter.remove(retryPath);
 
@@ -1304,11 +1761,72 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		}
 	}
 
+	private updateStatusBar(text: string) {
+		if (this._statusBarItem) {
+			this._statusBarItem.setText(text);
+		}
+	}
+
+	private async cleanupOldArchives() {
+		const archiveDurationMs = parseDuration(this.settings.offlineCommandQueueArchiveDuration, 0);
+		if (archiveDurationMs === 0) return; // Archives are deleted immediately, nothing to clean
+		const queueDir = this.resolveQueueFilePath(this.settings.offlineCommandQueueDir);
+		if (!queueDir) return;
+		const doneDir = `${queueDir}/done`;
+		const adapter = this.app.vault.adapter;
+		if (!(await adapter.exists(doneDir))) return;
+		const listing = await adapter.list(doneDir);
+		const now = Date.now();
+		// Find .TIMESTAMP.json/.jsonl files in done/ folder
+		const archivePattern = /\.(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})\.jsonl?$/;
+		for (const file of listing.files) {
+			const match = file.match(archivePattern);
+			if (!match) continue;
+			const archiveTime = moment(match[1], 'YYYY-MM-DD_HH-mm-ss').valueOf();
+			if (now > archiveTime + archiveDurationMs) {
+				await adapter.remove(file);
+			}
+		}
+	}
+
+	private async getArchivePath(filePath: string): Promise<string> {
+		return this.getTimestampedPath(filePath, 'done');
+	}
+
+	private async getFailedPath(filePath: string): Promise<string> {
+		return this.getTimestampedPath(filePath, 'failed');
+	}
+
+	private async getTimestampedPath(filePath: string, suffix: 'done' | 'failed'): Promise<string> {
+		const adapter = this.app.vault.adapter;
+		// Determine extension (.json or .jsonl)
+		const ext = filePath.endsWith('.jsonl') ? '.jsonl' : '.json';
+		// Extract directory and filename
+		const lastSlash = filePath.lastIndexOf('/');
+		const queueDir = filePath.substring(0, lastSlash);
+		const filename = filePath.substring(lastSlash + 1)
+			.replace(/\.jsonl?$/, '')
+			.replace(/\.\d{4}-\d{2}-\d{2}(?:_\d{2}-\d{2}-\d{2})?\.delay$/, '');
+		// Ensure subfolder exists
+		const subfolderPath = `${queueDir}/${suffix}`;
+		if (!(await adapter.exists(subfolderPath))) {
+			await adapter.mkdir(subfolderPath);
+		}
+		let timestamp = moment();
+		let resultPath: string;
+		do {
+			resultPath = `${subfolderPath}/${filename}.${timestamp.format('YYYY-MM-DD_HH-mm-ss')}${ext}`;
+			timestamp.add(1, 'second');
+		} while (await adapter.exists(resultPath));
+		return resultPath;
+	}
+
 	//// Functions called from [commands/context menu/uris/etc]
 	async createCard(opts?: {
 		cardTypeFolder?: TFolder,
 		templateFile?: TFile,
 		fieldOverrides?: Record<string,VarValueType>,
+		uriKeys?: Set<string>,
 		promptMode?: "none"|"remaining"|"all",
 		destDir?: TFolder,
 		sourceFile?: TFile,
@@ -1330,7 +1848,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				opts.cardTypeFolder = await this.promptForCardTypeFolder();
 			}
 			if (!opts.templateFile) {
-				opts.templateFile = await this.promptForTemplateFile(opts.cardTypeFolder, "named");
+				opts.templateFile = await this.promptForTemplateFile(opts.cardTypeFolder, "document-template");
 			}
 			if (!opts.destDir) {
 				opts.destDir = opts.cardTypeFolder;
@@ -1341,50 +1859,65 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			fm = this.updateYamlOnCreate(fm, opts.templateFile.basename);
 			content = Z2KYamlDoc.joinFrontmatter(fm, body);
 			let systemBlocksContent = await this.GetSystemBlocksContent(opts.cardTypeFolder);
-			let state = await this.parseTemplate(content, systemBlocksContent, opts.templateFile.parent as TFolder);
+			let state = await this.parseTemplate(content, systemBlocksContent, this.settings.globalBlock, opts.templateFile.parent as TFolder);
 			let hadSourceTextField = !!state.fieldInfos["sourceText"];
-			// DOCS: field overrides override the values specified in fieldinfos
-			this.handleOverrides(state, opts.fieldOverrides, opts.promptMode || "all");
-			// Convert sourceText to string for addBuiltIns (handles all VarValueType cases)
+			// Convert sourceText to string for addPluginBuiltIns (handles all VarValueType cases)
 			const sourceTextStr = opts.fieldOverrides.sourceText != null ? String(opts.fieldOverrides.sourceText) : undefined;
 			await this.addYamlFieldValues(state); // System blocks already in state from parseTemplate
-			await this.addBuiltIns(state, { sourceText: sourceTextStr, templateName: opts.templateFile.basename });
+			await this.addPluginBuiltIns(state, { sourceText: sourceTextStr, templateName: opts.templateFile.basename });
 			this.setDefaultTitleFromYaml(state);
+			// DOCS: field overrides override the values specified in fieldinfos
+			this.handleOverrides(state, opts.fieldOverrides, opts.uriKeys ?? new Set(), opts.promptMode || "all");
 
 			if (this.hasFillableFields(state.fieldInfos) && opts.promptMode !== "none") {
 				opts.finalize = await this.promptForFieldCollection(state);
+			} else {
+				this.resolveComputedFieldValues(state, opts.finalize ?? false);
 			}
 
-			let { fm: fmOut, body: bodyOut } = Z2KTemplateEngine.renderTemplate(state, opts.finalize ?? false);
+			let { fm: fmOut, body: bodyOut } = Z2KTemplateEngine.renderTemplate(state, opts.finalize ?? false, this.userHelperFunctions);
+			if (opts.finalize) { fmOut = this.cleanupYamlAfterFinalize(fmOut); }
 			if (!hadSourceTextField && opts.fieldOverrides.sourceText != null) {
 				bodyOut += `\n\n${String(opts.fieldOverrides.sourceText)}\n`;
 			}
 			let contentOut = Z2KYamlDoc.joinFrontmatter(fmOut, bodyOut);
 			let title = this.getTitle(state.resolvedValues);
-			let newFile = await this.createFile(opts.destDir, title, contentOut);
 			if (opts.fromSelection) {
 				const editor = this.getEditorOrThrow();
 				editor.replaceSelection("");
 			}
-			await this.app.workspace.openLinkText(newFile.path, "");
-			if (opts.sourceFile) { await this.promptAndDeleteFile(opts.sourceFile); }
+			if (opts.sourceFile) {
+				// Rename-based flow: modify content, then rename/move (updates links)
+				await this.app.vault.modify(opts.sourceFile, contentOut);
+				const filename = this.getValidFilename(title);
+				const newPath = this.generateUniqueFilePath(opts.destDir.path, filename);
+				if (newPath !== opts.sourceFile.path) {
+					await this.app.fileManager.renameFile(opts.sourceFile, newPath);
+				}
+				await this.app.workspace.openLinkText(opts.sourceFile.path, "");
+			} else {
+				let newFile = await this.createFile(opts.destDir, title, contentOut);
+				await this.app.workspace.openLinkText(newFile.path, "");
+			}
 		} catch (error) { this.handleErrors(error); }
 	}
 	async continueCard(opts: {
 		existingFile: TFile,
 		fieldOverrides?: Record<string,VarValueType>,
+		uriKeys?: Set<string>,
 		promptMode?: "none"|"remaining"|"all",
 		finalize?: boolean,
 	}) {
 		try {
 			let content = await this.app.vault.read(opts.existingFile);
-			let state = await this.parseTemplate(content, "", opts.existingFile.parent as TFolder);
-			this.handleOverrides(state, opts.fieldOverrides, opts.promptMode || "all");
-			// Add system blocks YAML for field values
+			let state = await this.parseTemplate(content, "", "", opts.existingFile.parent as TFolder);
+			// Add global block and system blocks YAML for field values
+			let globalBlockYaml = Z2KYamlDoc.splitFrontmatter(this.settings.globalBlock).fm;
 			let systemBlocksContent = await this.GetSystemBlocksContent(opts.existingFile.parent as TFolder);
 			let systemBlocksYaml = Z2KYamlDoc.splitFrontmatter(systemBlocksContent).fm;
-			await this.addYamlFieldValues(state, [systemBlocksYaml]);
-			await this.addBuiltIns(state, { existingTitle: opts.existingFile.basename });
+			await this.addYamlFieldValues(state, [globalBlockYaml, systemBlocksYaml]);
+			await this.addPluginBuiltIns(state, { existingTitle: opts.existingFile.basename });
+			this.handleOverrides(state, opts.fieldOverrides, opts.uriKeys ?? new Set(), opts.promptMode || "all");
 			let hasFillableFields = this.hasFillableFields(state.fieldInfos);
 			// TODO: handle the case where fieldOverrides fills all fields and promptMode is "remaining"
 			if (!hasFillableFields && !opts.fieldOverrides) {
@@ -1393,9 +1926,12 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			}
 			if (hasFillableFields && opts.promptMode !== "none") {
 				opts.finalize = await this.promptForFieldCollection(state);
+			} else {
+				this.resolveComputedFieldValues(state, opts.finalize ?? false);
 			}
 
-			let { fm, body } = Z2KTemplateEngine.renderTemplate(state, opts.finalize ?? false);
+			let { fm, body } = Z2KTemplateEngine.renderTemplate(state, opts.finalize ?? false, this.userHelperFunctions);
+			if (opts.finalize) { fm = this.cleanupYamlAfterFinalize(fm); }
 			let contentOut = Z2KYamlDoc.joinFrontmatter(fm, body);
 			let title = this.getTitle(state.resolvedValues);
 			await this.updateTitleAndContent(opts.existingFile, title, contentOut);
@@ -1407,6 +1943,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		destHeader?: string,
 		location?: "file-top"|"file-bottom"|"header-top"|"header-bottom"|number,
 		fieldOverrides?: Record<string,VarValueType>,
+		uriKeys?: Set<string>,
 		promptMode?: "none"|"remaining"|"all",
 		fromSelection?: boolean,
 		finalize?: boolean,
@@ -1417,7 +1954,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			if (!opts.existingFile) { opts.existingFile = this.getOpenFileOrThrow(); }
 			if (!opts.templateFile) {
 				const currDir = this.getOpenFileOrThrow().parent as TFolder;
-				opts.templateFile = await this.promptForTemplateFile(currDir, "block");
+				opts.templateFile = await this.promptForTemplateFile(currDir, "block-template");
 			}
 			let editor: Editor | null = null;
 			if (!opts.location && !opts.destHeader) {
@@ -1429,25 +1966,29 @@ export default class Z2KTemplatesPlugin extends Plugin {
 
 			// Parse and resolve block
 			let content = await this.app.vault.read(opts.templateFile);
-			let state = await this.parseTemplate(content, "", opts.templateFile.parent as TFolder);
+			let state = await this.parseTemplate(content, "", "", opts.templateFile.parent as TFolder);
 			let hadSourceTextField = !!state.fieldInfos["sourceText"];
-			this.handleOverrides(state, opts.fieldOverrides, opts.promptMode || "all");
-			// Add system blocks and existing file YAML for field values
+			// Add global block, system blocks, and existing file YAML for field values
+			let globalBlockYaml = Z2KYamlDoc.splitFrontmatter(this.settings.globalBlock).fm;
 			let systemBlocksContent = await this.GetSystemBlocksContent(opts.templateFile.parent as TFolder);
 			let systemBlocksYaml = Z2KYamlDoc.splitFrontmatter(systemBlocksContent).fm;
 			let existingFileContent = await this.app.vault.read(opts.existingFile);
 			let existingFileYaml = Z2KYamlDoc.splitFrontmatter(existingFileContent).fm;
-			await this.addYamlFieldValues(state, [systemBlocksYaml, existingFileYaml]);
-			// Convert sourceText to string for addBuiltIns (handles all VarValueType cases)
+			await this.addYamlFieldValues(state, [globalBlockYaml, systemBlocksYaml, existingFileYaml]);
+			// Convert sourceText to string for addPluginBuiltIns (handles all VarValueType cases)
 			const sourceTextStr = opts.fieldOverrides.sourceText != null ? String(opts.fieldOverrides.sourceText) : undefined;
-			await this.addBuiltIns(state, { sourceText: sourceTextStr, existingTitle: opts.existingFile.basename });
+			await this.addPluginBuiltIns(state, { sourceText: sourceTextStr, existingTitle: opts.existingFile.basename });
+			this.handleOverrides(state, opts.fieldOverrides, opts.uriKeys ?? new Set(), opts.promptMode || "all");
 
 			// if (this.hasFillableFields(state.fieldInfos) && opts.promptMode !== "none") {
 			if (opts.promptMode !== "none") {
 				opts.finalize = await this.promptForFieldCollection(state);
+			} else {
+				this.resolveComputedFieldValues(state, opts.finalize ?? false);
 			}
 
-			let { fm: blockFm, body: blockBody } = Z2KTemplateEngine.renderTemplate(state, opts.finalize ?? false);
+			let { fm: blockFm, body: blockBody } = Z2KTemplateEngine.renderTemplate(state, opts.finalize ?? false, this.userHelperFunctions);
+			if (opts.finalize) { blockFm = this.cleanupYamlAfterFinalize(blockFm); }
 			blockFm = this.updateBlockYamlOnInsert(blockFm);
 			if (!hadSourceTextField && opts.fieldOverrides.sourceText != null) {
 				blockBody += `\n\n${String(opts.fieldOverrides.sourceText)}\n`;
@@ -1500,9 +2041,9 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	}
 
 	// de-duplication helper functions
-	async parseTemplate(content: string, systemBlocksContent: string, relativeFolder: TFolder): Promise<TemplateState> {
+	async parseTemplate(content: string, systemBlocksContent: string, globalBlockContent: string, relativeFolder: TFolder): Promise<TemplateState> {
 		try {
-			return await Z2KTemplateEngine.parseTemplate(content, systemBlocksContent, relativeFolder.path, this.getBlockCallbackFunc());
+			return await Z2KTemplateEngine.parseTemplate(content, systemBlocksContent, globalBlockContent, relativeFolder.path, this.getBlockCallbackFunc());
 		} catch (error) {
 			rethrowWithMessage(error, "Error occurred while parsing the template");
 		}
@@ -1510,7 +2051,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	getTitle(resolvedValues: Record<string, VarValueType>): string {
 		let fileTitle = resolvedValues["fileTitle"];
 		let title = fileTitle == null || fileTitle === "" ? "Untitled" : String(fileTitle);
-		return Z2KTemplateEngine.reducedRenderContent(title, resolvedValues) as string;
+		return Z2KTemplateEngine.reducedRenderContent(title, resolvedValues, false, this.userHelperFunctions) as string;
 	}
 	async updateTitleAndContent(file: TFile, title: string, content: string) {
 		try {
@@ -1539,48 +2080,199 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		// 	rethrowWithMessage(error, "Error occurred while updating the existing file");
 		// }
 	}
-	handleOverrides(state: TemplateState, fieldOverrides: Record<string,VarValueType> | undefined, promptMode: "none"|"remaining"|"all") {
+	handleOverrides(state: TemplateState, fieldOverrides: Record<string,VarValueType> | undefined, uriKeys: Set<string>, promptMode: "none"|"remaining"|"all") {
 		if (!fieldOverrides) { return; }
-		state.resolvedValues = {...state.resolvedValues, ...fieldOverrides};
-		for (const k in fieldOverrides) {
-			if (!state.fieldInfos[k]) {
-				state.fieldInfos[k] = { fieldName: k };
+		for (const [key, value] of Object.entries(fieldOverrides)) {
+			if (!state.fieldInfos[key]) {
+				state.fieldInfos[key] = { fieldName: key };
 			}
-			if (promptMode === "remaining") {
-				if (!state.fieldInfos[k].directives) {
-					state.fieldInfos[k].directives = [];
+			// Convert URI string values based on field type (JSON values already typed)
+			let convertedValue = value;
+			if (typeof value === 'string' && uriKeys.has(key)) {
+				const fieldType = state.fieldInfos[key].type;
+				const trimmed = value.trim();
+				if (fieldType === 'text') {
+					// Explicit text type - no conversion
+					convertedValue = value;
+				} else if (fieldType === 'boolean') {
+					// Generous boolean parsing
+					const lower = trimmed.toLowerCase();
+					if (['true', '1', 'yes', 'y', 'on', 'enabled', 'enable'].includes(lower)) {
+						convertedValue = true;
+					} else if (['false', '0', 'no', 'n', 'off', 'disabled', 'disable'].includes(lower)) {
+						convertedValue = false;
+					} else {
+						convertedValue = undefined;
+					}
+				} else if (fieldType === 'number') {
+					const num = Number(trimmed);
+					convertedValue = isNaN(num) ? undefined : num;
+				} else {
+					// Auto-conversion (no type declared or other types like singleSelect)
+					const lower = trimmed.toLowerCase();
+					if (lower === 'true') {
+						convertedValue = true;
+					} else if (lower === 'false') {
+						convertedValue = false;
+					} else if (trimmed !== '' && !isNaN(Number(trimmed))) {
+						convertedValue = Number(trimmed);
+					}
+					// else: stays as string
 				}
-				if (!state.fieldInfos[k].directives.includes("no-prompt")) {
-					state.fieldInfos[k].directives.push("no-prompt");
+			}
+			state.fieldInfos[key].value = convertedValue;
+			if (promptMode === "remaining") {
+				if (!state.fieldInfos[key].directives) {
+					state.fieldInfos[key].directives = [];
+				}
+				if (!state.fieldInfos[key].directives.includes("no-prompt")) {
+					state.fieldInfos[key].directives.push("no-prompt");
 				}
 			}
 		}
 	}
 
+	resolveComputedFieldValues(state: TemplateState, finalize: boolean): void {
+		const depsMap = buildDependencyMap(state.fieldInfos);
 
+		// Check for circular dependencies
+		const circular = detectCircularDependencies(depsMap);
+		if (circular.length > 0) {
+			throw new TemplatePluginError(`Circular dependency detected: ${circular.join(' -> ')}`);
+		}
+
+		const orderedFields = calculateFieldDependencyOrder(depsMap);
+
+		// NOTE: Similar logic exists in handleSubmit() in PromptForm. If you modify
+		// the value= or miss handling here, check if the same change is needed there.
+		for (const fieldName of orderedFields) {
+			const fieldInfo = state.fieldInfos[fieldName];
+			if (!fieldInfo) { continue; }
+
+			// Build context from current resolvedValues (excluding undefined)
+			const context: Record<string, VarValueType> = {};
+			for (const [name, value] of Object.entries(state.resolvedValues)) {
+				if (value !== undefined) {
+					context[name] = value;
+				}
+			}
+
+			// Resolve value= if present (and not overridden by external data)
+			// NOTE: Similar logic in handleSubmit() - keep in sync
+			if (fieldInfo.value !== undefined && !(fieldName in state.resolvedValues)) {
+				const valueDeps = Z2KTemplateEngine.reducedGetDependencies(fieldInfo.value);
+				const allDepsExist = valueDeps.every(dep => dep in context);
+				if (allDepsExist) {
+					const resolved = Z2KTemplateEngine.reducedRenderContent(fieldInfo.value, context, true, this.userHelperFunctions);
+					if (resolved === undefined) {
+						delete state.resolvedValues[fieldName];
+					} else {
+						state.resolvedValues[fieldName] = resolved;
+					}
+				}
+				// Else: deps missing, leave unspecified (don't set key)
+			}
+
+			// Apply miss value for unspecified fields when finalizing
+			// Skip finalize-preserve fields - leave undefined so preservation logic handles them
+			// NOTE: Similar logic in handleSubmit() - keep in sync
+			const hasFinalizePreserve = fieldInfo.directives?.includes('finalize-preserve');
+			if (finalize && !(fieldName in state.resolvedValues) && !hasFinalizePreserve) {
+				const resolvedMiss = Z2KTemplateEngine.reducedRenderContent(fieldInfo.miss || "", context, true, this.userHelperFunctions);
+				if (resolvedMiss === undefined) {
+					delete state.resolvedValues[fieldName];
+				} else {
+					state.resolvedValues[fieldName] = resolvedMiss || '';
+				}
+			}
+		}
+	}
 
 	// Template editing
-	async convertFileTemplateType(file: TFile, type: "normal" | "named" | "block") {
+	async convertFileTemplateType(file: TFile, type: "content-file" | "document-template" | "block-template") {
 		try {
-			if (type === "normal" && this.isInsideTemplatesFolder(file)) {
+			if (type === "content-file" && this.isInsideTemplatesFolder(file)) {
 				await this.logInfo("You will need to manually move the file outside of your templates folder (" + this.settings.templatesFolderName + ").");
 			}
 			let content = await this.app.vault.read(file);
 			let { fm, body } = Z2KYamlDoc.splitFrontmatter(content);
 			let doc = Z2KYamlDoc.fromString(fm);
-			if (type === "normal") {
+			if (type === "content-file") {
 				doc.del("z2k_template_type");
-			} else if (type === "named" || type === "block") {
+			} else if (type === "document-template" || type === "block-template") {
 				doc.set("z2k_template_type", type);
 			}
 			fm = doc.toString();
 			content = Z2KYamlDoc.joinFrontmatter(fm, body);
 			await this.app.vault.modify(file, content);
-			// // if editing is disabled, rename file to start with '.' (this shouldn't ever really happen though)
-			// if (!this.settings.templateEditingEnabled && type !== "normal") {
-			// 	await this.hideTemplateFile(file);
-			// }
+			// Rename file extension if template file extensions are enabled
+			if (this.settings.useTemplateFileExtensions) {
+				let targetExt: string;
+				if (type === "document-template") {
+					targetExt = "template";
+				} else if (type === "block-template") {
+					targetExt = "block";
+				} else {
+					targetExt = "md";
+				}
+				await this.renameFileExtension(file, targetExt);
+			} else if (type === "content-file" && (file.extension === "template" || file.extension === "block")) {
+				// Always rename .template/.block to .md when converting to content-file
+				await this.renameFileExtension(file, "md");
+			}
 		} catch (error) { this.handleErrors(error); }
+	}
+	async convertToMarkdownTemplate(file: TFile) {
+		try {
+			// Determine the template type to preserve (or set based on current extension)
+			let currentType = this.getFileTemplateType(file);
+			if (currentType === "content-file") {
+				// If it's a content file, determine type from extension
+				if (file.extension === "template") {
+					currentType = "document-template";
+				} else if (file.extension === "block") {
+					currentType = "block-template";
+				} else {
+					// Default to document-template if converting a .md content file
+					currentType = "document-template";
+				}
+			}
+			// Update YAML to ensure type is set
+			let content = await this.app.vault.read(file);
+			let { fm, body } = Z2KYamlDoc.splitFrontmatter(content);
+			let doc = Z2KYamlDoc.fromString(fm);
+			doc.set("z2k_template_type", currentType);
+			fm = doc.toString();
+			content = Z2KYamlDoc.joinFrontmatter(fm, body);
+			await this.app.vault.modify(file, content);
+			// Rename to .md if currently .template or .block
+			if (file.extension === "template" || file.extension === "block") {
+				await this.renameFileExtension(file, "md");
+			}
+		} catch (error) { this.handleErrors(error); }
+	}
+	async setTemplateExtensionsVisible(visible: boolean) {
+		if (this.settings.templateExtensionsVisible === visible) {
+			return; // Already in desired state
+		}
+		if (visible) {
+			// Show: register extensions as markdown
+			// @ts-expect-error: internal API
+			this.app.viewRegistry.registerExtensions(["template", "block"], "markdown");
+			new Notice("Template files are now visible.");
+		} else {
+			// Hide: unregister extensions
+			// @ts-expect-error: internal API
+			this.app.viewRegistry.unregisterExtensions(["template", "block"]);
+			new Notice("Template files are now hidden.");
+		}
+		this.settings.templateExtensionsVisible = visible;
+		await this.saveData(this.settings);
+		// Refresh commands so the command name updates
+		this.queueRefreshCommands(0);
+	}
+	async toggleTemplateExtensionsVisibility() {
+		await this.setTemplateExtensionsVisible(!this.settings.templateExtensionsVisible);
 	}
 	// async enableTemplateEditing() {
 	// 	try {
@@ -1591,7 +2283,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	// 			if (f instanceof TFolder && f.name === "." + this.settings.templatesFolderName) {
 	// 				this.unhideFolder(f);
 	// 			}
-	// 			if (f instanceof TFile && f.name.startsWith(".") && this.getFileTemplateType(f) !== "normal") {
+	// 			if (f instanceof TFile && f.name.startsWith(".") && this.getFileTemplateType(f) !== "content-file") {
 	// 				this.unhideTemplateFile(f);
 	// 			}
 	// 		}
@@ -1608,7 +2300,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	// 			if (f instanceof TFolder && f.name === this.settings.templatesFolderName) {
 	// 				this.hideFolder(f);
 	// 			}
-	// 			if (f instanceof TFile && this.getFileTemplateType(f) !== "normal") {
+	// 			if (f instanceof TFile && this.getFileTemplateType(f) !== "content-file") {
 	// 				this.hideTemplateFile(f);
 	// 			}
 	// 		}
@@ -1621,7 +2313,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 
 	// Prompts
 	async promptForCardTypeFolder(): Promise<TFolder> {
-		const cardTypes = this.getAllCardTypes("named");
+		const cardTypes = this.getAllCardTypes("document-template");
 		if (cardTypes.length === 0) {
 			throw new Error(`No ${cardRefNameLower(this.settings)} types available. Please create a template folder first.`);
 		}
@@ -1629,42 +2321,21 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			new CardTypeSelectionModal(this.app, cardTypes, this.settings, resolve, reject).open();
 		});
 	}
-	async promptForTemplateFile(cardType: TFolder, type: "named" | "block"): Promise<TFile> {
+	async promptForTemplateFile(cardType: TFolder, type: "document-template" | "block-template"): Promise<TFile> {
 		const templates = this.getAssociatedTemplates(type, cardType);
 		if (templates.length === 0) {
-			throw new Error(`No ${type === "named" ? "" : "block "}templates available in the selected ${cardRefNameLower(this.settings)} type folder.`);
+			throw new Error(`No ${type === "document-template" ? "" : "block "}templates available in the selected ${cardRefNameLower(this.settings)} type folder.`);
 		}
 		return new Promise<TFile>((resolve, reject) => {
 			new TemplateSelectionModal(this.app, templates, this.settings, resolve, reject).open();
 		});
 	}
 	async promptForFieldCollection(templateState: TemplateState): Promise<boolean> {
-		try {
-			return await new Promise<boolean>((resolve, reject) => {
-				new FieldCollectionModal(this.app, `Field Collection for ${cardRefNameUpper(this.settings)}`, templateState, resolve, reject).open();
-			});
-		} catch (e) {
-			// Handle errors from the modal (including circular dependency errors)
-			// Don't re-handle UserCancelError - just let it propagate
-			if (!(e instanceof UserCancelError)) {
-				await this.handleErrors(e);
-			}
-			throw e; // Re-throw so caller knows it failed
-		}
-	}
-	async promptAndDeleteFile(file: TFile) {
-		const shouldDelete = await new Promise<boolean>(resolve => {
-			new DeleteConfirmationModal(this.app, file as TFile, resolve).open();
+		// Errors (including circular dependency errors) propagate to caller for handling
+		return await new Promise<boolean>((resolve, reject) => {
+			new FieldCollectionModal(this.app, `Field Collection for ${cardRefNameUpper(this.settings)}`, templateState, this.userHelperFunctions, resolve, reject).open();
 		});
-		if (shouldDelete) {
-			try {
-				await this.app.vault.delete(file);
-			} catch (error) {
-				rethrowWithMessage(error, "Error deleting original file");
-			}
-		}
 	}
-
 	// Helpers
 	insertIntoHeaderSection(body: string, header: string, insertText: string, location: "header-top"|"header-bottom" = "header-top"): string {
 		if (!insertText || insertText.trim() === "") { return body; }
@@ -1748,17 +2419,30 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		return rows.join("\n");
 	}
 
-	getFileTemplateType(file: TFile): "normal" | "named" | "block" {
+	getFileTemplateType(file: TFile): "content-file" | "document-template" | "block-template" {
 		const yamlTemplateType = this.app.metadataCache.getFileCache(file)?.frontmatter?.["z2k_template_type"];
-		if (yamlTemplateType === "named" || yamlTemplateType === "block") {
+		if (yamlTemplateType === "document-template" || yamlTemplateType === "block-template") {
 			return yamlTemplateType;
 		} else if (this.isInsideTemplatesFolder(file)) {
-			return "named";
+			return "document-template";
 		} else if (file.extension === "template") {
-			return "named";
+			return "document-template";
+		} else if (file.extension === "block") {
+			return "block-template";
 		} else {
-			return "normal";
+			return "content-file";
 		}
+	}
+	async renameFileExtension(file: TFile, newExtension: string): Promise<TFile | null> {
+		const currentExt = file.extension;
+		if (currentExt === newExtension) { return file; }
+		const parentPath = file.parent?.path ?? "";
+		const baseName = file.basename; // filename without extension
+		const newFileName = `${baseName}.${newExtension}`;
+		const newPath = parentPath ? `${parentPath}/${newFileName}` : newFileName;
+		await this.app.vault.rename(file, newPath);
+		// Return the renamed file (vault.rename updates the TFile object in place, but we can also re-fetch)
+		return this.app.vault.getAbstractFileByPath(newPath) as TFile | null;
 	}
 	// async hideTemplateFile(file: TFile) {
 	// 	// hide a file by renaming it to start with '.' if it doesn't already start with '.' and it's not a '.template' file
@@ -1802,17 +2486,17 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	// 	// @ts-expect-error: internal API
 	// 	this.app.viewRegistry.unregisterExtensions("template");
 	// }
-	getAllTemplates(): { file: TFile, type: "named" | "block" }[] {
+	getAllTemplates(): { file: TFile, type: "document-template" | "block-template" }[] {
 		let list = [];
 		for (const f of this.getAllTemplatesRootFiles()) {
 			if (!(f instanceof TFile)) { continue; }
 			const type = this.getFileTemplateType(f);
-			if (type === "normal") { continue; }
+			if (type === "content-file") { continue; }
 			list.push({ file: f, type });
 		}
 		return list;
 	}
-	getAllCardTypes(filter: "named" | "block"): TFolder[] {
+	getAllCardTypes(filter: "document-template" | "block-template"): TFolder[] {
 		let folders: TFolder[] = [];
 		for (const t of this.getAllTemplates()) {
 			if (t.type !== filter) { continue; }
@@ -1827,7 +2511,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		folders.sort((a, b) => a.path.localeCompare(b.path));
 		return folders;
 	}
-	getAssociatedTemplates(filter: "named" | "block", cardType: TFolder): TFile[] {
+	getAssociatedTemplates(filter: "document-template" | "block-template", cardType: TFolder): TFile[] {
 		const templatesRootFolder = this.getTemplatesRootFolder();
 		if (!this.isSubPathOf(cardType.path, templatesRootFolder.path)) {
 			throw new Error(`The selected ${cardRefNameLower(this.settings)} type folder is not inside your templates root folder.`);
@@ -1851,7 +2535,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		return templates;
 	}
 	getTemplateCardType(template: TFile): TFolder | null {
-		if (this.getFileTemplateType(template) === "normal") { return null; } // not a template
+		if (this.getFileTemplateType(template) === "content-file") { return null; } // not a template
 		let folder = template.parent;
 		if (folder?.name === this.settings.templatesFolderName ||
 				folder?.name === '.' + this.settings.templatesFolderName) {
@@ -1863,7 +2547,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		// Store [file, normalized path] pairs for all blocks
 		let allBlocks: [TFile, string][] = [];
 		for (const t of this.getAllTemplates()) {
-			if (t.type === "block") {
+			if (t.type === "block-template") {
 				allBlocks.push([t.file, normalizeFullPath(t.file.path)]);
 			}
 		}
@@ -1982,8 +2666,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		for (const yamlStr of state.templatesYaml) {
 			let yaml = Z2KYamlDoc.fromString(yamlStr);
 
-			let raw = yaml.get("z2k_template_default_title");
-			let defaultTitle = (raw && typeof raw === "object" && "toJSON" in raw) ? (raw as any).toJSON() : raw;
+			let defaultTitle = yaml.get("z2k_template_default_title");
 			if (defaultTitle === undefined) { continue; } // not found in this yaml
 			if (typeof defaultTitle !== "string") {
 				throw new TemplatePluginError(`z2k_template_default_title must be a string (got a ${typeof defaultTitle})`);
@@ -1992,35 +2675,29 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			break; // take the first one we find
 		}
 	}
-	async addBuiltIns(state: TemplateState, opts: { sourceText?: string, existingTitle?: string, templateName?: string } = {}) {
+	async addPluginBuiltIns(state: TemplateState, opts: { sourceText?: string, existingTitle?: string, templateName?: string, templateVersion?: string, templateAuthor?: string } = {}) {
 		// sourceText
 		state.fieldInfos["sourceText"] = {
 			fieldName: "sourceText",
 			type: "text",
 			directives: ['no-prompt'],
+			value: opts.sourceText || "",
 		};
-		state.resolvedValues["sourceText"] = opts.sourceText || "";
 
 		// creator
 		state.fieldInfos["creator"] = {
 			fieldName: "creator",
 			type: "text",
 			directives: ['no-prompt'],
+			value: this.settings.creator || "",
 		};
-		state.resolvedValues["creator"] = this.settings.creator || "";
 
 		// template name
-		state.fieldInfos["templateName"] = {
-			fieldName: "templateName",
-			type: "text",
-			directives: ['no-prompt'],
-		};
 		// try getting existing template name from yaml if not provided
 		if (!opts.templateName) {
 			for (const yamlStr of state.templatesYaml) {
 				let yaml = Z2KYamlDoc.fromString(yamlStr);
-				let raw = yaml.get("z2k_template_name");
-				let templateName = (raw && typeof raw === "object" && "toJSON" in raw) ? (raw as any).toJSON() : raw;
+				let templateName = yaml.get("z2k_template_name");
 				if (templateName === undefined) { continue; } // not found in this yaml
 				if (typeof templateName !== "string") {
 					throw new TemplatePluginError(`z2k_template_name must be a string (got a ${typeof templateName})`);
@@ -2029,15 +2706,60 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				break; // take the first one we find
 			}
 		}
-		state.resolvedValues["templateName"] = opts.templateName || "";
+		state.fieldInfos["templateName"] = {
+			fieldName: "templateName",
+			type: "text",
+			directives: ['no-prompt'],
+			value: opts.templateName || "",
+		};
+
+		// templateVersion - get from yaml if not provided
+		if (!opts.templateVersion) {
+			for (const yamlStr of state.templatesYaml) {
+				let yaml = Z2KYamlDoc.fromString(yamlStr);
+				let templateVersion = yaml.get("z2k_template_version");
+				if (templateVersion === undefined) { continue; }
+				if (typeof templateVersion !== "string" && typeof templateVersion !== "number") {
+					throw new TemplatePluginError(`z2k_template_version must be a string or number (got a ${typeof templateVersion})`);
+				}
+				opts.templateVersion = String(templateVersion);
+				break;
+			}
+		}
+		state.fieldInfos["templateVersion"] = {
+			fieldName: "templateVersion",
+			type: "text",
+			directives: ['no-prompt'],
+			value: opts.templateVersion || "",
+		};
+
+		// templateAuthor - get from yaml if not provided
+		if (!opts.templateAuthor) {
+			for (const yamlStr of state.templatesYaml) {
+				let yaml = Z2KYamlDoc.fromString(yamlStr);
+				let templateAuthor = yaml.get("z2k_template_author");
+				if (templateAuthor === undefined) { continue; }
+				if (typeof templateAuthor !== "string") {
+					throw new TemplatePluginError(`z2k_template_author must be a string (got a ${typeof templateAuthor})`);
+				}
+				opts.templateAuthor = templateAuthor;
+				break;
+			}
+		}
+		state.fieldInfos["templateAuthor"] = {
+			fieldName: "templateAuthor",
+			type: "text",
+			directives: ['no-prompt'],
+			value: opts.templateAuthor || "",
+		};
 
 		// fileTitle (aliased as noteTitle and cardTitle)
 		let tfi = state.fieldInfos["fileTitle"]; // tfi = titleFieldInfo
 		if (!tfi) { tfi = { fieldName: "fileTitle" }; }
 		tfi.type = "titleText"; // Always make it titleText
-		if (!state.resolvedValues["fileTitle"]) {
+		if (tfi.value === undefined) {
 			if (opts.existingTitle) {
-				state.resolvedValues["fileTitle"] = opts.existingTitle;
+				tfi.value = opts.existingTitle;
 			}
 			tfi.default = "Untitled";
 		}
@@ -2054,8 +2776,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			fieldName: "clipboard",
 			type: "text",
 			directives: ['no-prompt'],
+			value: await navigator.clipboard.readText(),
 		};
-		state.resolvedValues["clipboard"] = await navigator.clipboard.readText();
 	}
 
 	async addYamlFieldValues(state: TemplateState, additionalYamlSources?: string[]): Promise<void> {
@@ -2093,18 +2815,32 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				state.fieldInfos[key].directives.push('no-prompt');
 			}
 
-			// Set resolved value (will be overridden by plugin built-ins or explicit overrides later)
-			// YAML values are compatible with VarValueType (string | number | boolean | array | null | undefined)
-			state.resolvedValues[key] = value as VarValueType;
+			// Store as formula so {{references}} resolve dynamically and value is available for other fields
+			state.fieldInfos[key].value = value as VarValueType;
 		}
 	}
 
 	updateYamlOnCreate(fm: string, templateName: string): string {
 		const doc = Z2KYamlDoc.fromString(fm);
 		doc.set("z2k_template_name", templateName);
-		doc.del("z2k_template_type");
+		// Only update z2k_template_type if it already exists in the template
+		if (doc.get("z2k_template_type") !== undefined) {
+			doc.set("z2k_template_type", "wip-content-file");
+		}
 		doc.del("z2k_template_default_title");
+		// NOTE: Do NOT delete z2k_template_default_miss_handling here - the engine needs it for parsing
+		// It will be deleted later during finalization in cleanupYamlAfterFinalize
+		return doc.toString();
+	}
+	cleanupYamlAfterFinalize(fm: string): string {
+		if (!fm || fm.trim() === "") { return fm; }
+		// Remove template-only YAML properties that should not appear in finalized output
+		const doc = Z2KYamlDoc.fromString(fm);
 		doc.del("z2k_template_default_miss_handling");
+		// Only update z2k_template_type if it already exists
+		if (doc.get("z2k_template_type") !== undefined) {
+			doc.set("z2k_template_type", "finalized-content-file");
+		}
 		return doc.toString();
 	}
 	updateBlockYamlOnInsert(fm: string): string {
@@ -2137,6 +2873,10 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				// Need to use adapter because the usual file read doesn't work for files that start with .
 				systemBlocks.push(await this.app.vault.adapter.read(filePath));
 			} catch {} // Can't find/read the file
+
+			// Check for stop file - if present, don't continue to parent folders
+			const stopFilePath = this.joinPath(currentFolder.path, '.system-block-stop');
+			if (await this.app.vault.adapter.exists(stopFilePath)) break;
 
 			if (currentFolder === templatesRoot) break; // Stop at the templates root
 			currentFolder = currentFolder.parent;
@@ -2495,6 +3235,37 @@ function rethrowWithMessage(error: unknown, message: string): never {
 
 
 // ------------------------------------------------------------------------------------------------
+// Error Boundary - Catches React render errors and propagates them to modal error handlers
+// ------------------------------------------------------------------------------------------------
+interface ErrorBoundaryProps {
+	onError: (error: Error) => void;
+	children: ReactNode;
+}
+interface ErrorBoundaryState {
+	hasError: boolean;
+}
+class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+	constructor(props: ErrorBoundaryProps) {
+		super(props);
+		this.state = { hasError: false };
+	}
+	static getDerivedStateFromError(_error: Error): ErrorBoundaryState {
+		return { hasError: true };
+	}
+	componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+		// Error will be logged by handleErrors - just pass it along
+		// Defer to next tick to avoid "synchronously unmount while rendering" race condition
+		setTimeout(() => this.props.onError(error), 0);
+	}
+	render() {
+		if (this.state.hasError) {
+			return null; // Modal will close, ErrorModal will show
+		}
+		return this.props.children;
+	}
+}
+
+// ------------------------------------------------------------------------------------------------
 // Card Type Selection Modal
 // ------------------------------------------------------------------------------------------------
 export class CardTypeSelectionModal extends Modal {
@@ -2519,18 +3290,20 @@ export class CardTypeSelectionModal extends Modal {
 		this.contentEl.addClass('modal-content');
 		this.root = createRoot(this.contentEl);
 		this.root.render(
-			<CardTypeSelector
-				cardTypes={this.cardTypes}
-				settings={this.settings}
-				onConfirm={(cardType: TFolder) => {
-					this.resolve(cardType);
-					this.close();
-				}}
-				onCancel={() => {
-					this.reject(new UserCancelError(`User cancelled ${cardRefNameLower(this.settings)} type selection`));
-					this.close();
-				}}
-			/>
+			<ErrorBoundary onError={(error) => { this.reject(error); this.close(); }}>
+				<CardTypeSelector
+					cardTypes={this.cardTypes}
+					settings={this.settings}
+					onConfirm={(cardType: TFolder) => {
+						this.resolve(cardType);
+						this.close();
+					}}
+					onCancel={() => {
+						this.reject(new UserCancelError(`User cancelled ${cardRefNameLower(this.settings)} type selection`));
+						this.close();
+					}}
+				/>
+			</ErrorBoundary>
 		);
 	}
 
@@ -2650,18 +3423,20 @@ export class TemplateSelectionModal extends Modal {
 		this.contentEl.addClass('modal-content');
 		this.root = createRoot(this.contentEl);
 		this.root.render(
-			<TemplateSelector
-				templates={this.templates}
-				settings={this.settings}
-				onConfirm={(template: TFile) => {
-					this.resolve(template);
-					this.close();
-				}}
-				onCancel={() => {
-					this.reject(new UserCancelError("User cancelled template selection"));
-					this.close();
-				}}
-			/>
+			<ErrorBoundary onError={(error) => { this.reject(error); this.close(); }}>
+				<TemplateSelector
+					templates={this.templates}
+					settings={this.settings}
+					onConfirm={(template: TFile) => {
+						this.resolve(template);
+						this.close();
+					}}
+					onCancel={() => {
+						this.reject(new UserCancelError("User cancelled template selection"));
+						this.close();
+					}}
+				/>
+			</ErrorBoundary>
 		);
 	}
 
@@ -2845,14 +3620,16 @@ const TemplateSelector = ({ templates, settings, onConfirm, onCancel }: Template
 export class FieldCollectionModal extends Modal {
 	title: string;
 	templateState: TemplateState;
+	userHelpers: Record<string, Function>;
 	resolve: (finalize: boolean) => void;
 	reject: (error: Error) => void;
 	root: any; // React root
 
-	constructor(app: App, title: string, templateState: TemplateState, resolve: (finalize: boolean) => void, reject: (error: Error) => void) {
+	constructor(app: App, title: string, templateState: TemplateState, userHelpers: Record<string, Function>, resolve: (finalize: boolean) => void, reject: (error: Error) => void) {
 		super(app);
 		this.title = title;
 		this.templateState = templateState;
+		this.userHelpers = userHelpers;
 		this.resolve = resolve;
 		this.reject = reject;
 	}
@@ -2863,22 +3640,23 @@ export class FieldCollectionModal extends Modal {
 		this.contentEl.empty();
 		this.contentEl.addClass('modal-content');
 		this.root = createRoot(this.contentEl);
+		const handleError = (error: Error) => { this.reject(error); this.close(); };
 		this.root.render(
-			<FieldCollectionForm
-				templateState={this.templateState}
-				onComplete={(finalize) => {
-					this.resolve(finalize);
-					this.close();
-				}}
-				onCancel={() => {
-					this.reject(new UserCancelError("User cancelled field collection"));
-					this.close();
-				}}
-				onError={(error) => {
-					this.reject(error);
-					this.close();
-				}}
-			/>
+			<ErrorBoundary onError={handleError}>
+				<FieldCollectionForm
+					templateState={this.templateState}
+					userHelpers={this.userHelpers}
+					onComplete={(finalize) => {
+						this.resolve(finalize);
+						this.close();
+					}}
+					onCancel={() => {
+						this.reject(new UserCancelError("User cancelled field collection"));
+						this.close();
+					}}
+					onError={handleError}
+				/>
+			</ErrorBoundary>
 		);
 	}
 
@@ -2894,11 +3672,12 @@ export class FieldCollectionModal extends Modal {
  */
 interface FieldCollectionFormProps {
 	templateState: TemplateState;
+	userHelpers: Record<string, Function>;
 	onComplete: (finalize: boolean) => void;
 	onCancel: () => void;
 	onError: (error: Error) => void;
 }
-const FieldCollectionForm = ({ templateState, onComplete, onCancel, onError }: FieldCollectionFormProps) => {
+const FieldCollectionForm = ({ templateState, userHelpers, onComplete, onCancel, onError }: FieldCollectionFormProps) => {
 	function formatFieldName(str: string): string {
 		str = str.charAt(0).toUpperCase() + str.slice(1);
 		return str
@@ -2906,35 +3685,31 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel, onError }: F
 			.replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')   // XMLFile → XML File, HTTPServer → HTTP Server
 			.trim();
 	}
+
 	function computeInitialFieldStates(): Record<string, FieldState> {
 		const initialFieldStates: Record<string, FieldState> = {};
 
-		// Initialize field states with metadata
 		for (const [fieldName, fieldInfo] of Object.entries(templateState.fieldInfos)) {
-			// Get dependencies from prompt text, default value, miss text, and opts
-			const dependencies = [
-				...fieldInfo.prompt ? Z2KTemplateEngine.reducedGetDependencies(fieldInfo.prompt) : [],
-				...fieldInfo.default ? Z2KTemplateEngine.reducedGetDependencies(fieldInfo.default) : [],
-				...fieldInfo.miss ? Z2KTemplateEngine.reducedGetDependencies(fieldInfo.miss) : [],
-				// Extract dependencies from each option in opts array
-				...fieldInfo.opts ? fieldInfo.opts.flatMap(opt =>
-					opt ? Z2KTemplateEngine.reducedGetDependencies(opt) : []
-				) : [],
-			];
+			// Get dependencies using shared helper
+			const dependencies = getFieldDependencies(fieldInfo);
 
+			// Determine if field is already specified externally
+			const wasSpecified = fieldName in templateState.resolvedValues;
 
-			// Set initial field state
-			const currentValue = templateState.resolvedValues[fieldName] ?? fieldInfo.default ?? '';
+			// Initial value: use existing value, or default, or empty
+			// NOTE: This is a best-effort initial value. The real values will be
+			// calculated in updateFieldStates which runs immediately after first render.
+			const currentValue = wasSpecified
+				? templateState.resolvedValues[fieldName]
+				: (fieldInfo.default ?? '');
 
 			// Initialize selectedIndices for select fields
 			let initialSelectedIndices: number[] | undefined = undefined;
 			if (fieldInfo.type === 'singleSelect' || fieldInfo.type === 'multiSelect') {
 				if (fieldInfo.type === 'singleSelect' && currentValue !== '' && currentValue !== undefined) {
-					// Find the index of the current value in opts
 					const index = fieldInfo.opts?.findIndex(opt => opt === currentValue) ?? -1;
 					initialSelectedIndices = index >= 0 ? [index] : [0];
 				} else if (fieldInfo.type === 'multiSelect' && Array.isArray(currentValue)) {
-					// Find indices of all current values in opts
 					initialSelectedIndices = currentValue
 						.map(val => fieldInfo.opts?.findIndex(opt => opt === val) ?? -1)
 						.filter(idx => idx >= 0);
@@ -2943,14 +3718,12 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel, onError }: F
 
 			initialFieldStates[fieldName] = {
 				value: currentValue,
-				alreadyResolved: templateState.resolvedValues[fieldName] !== undefined,
-				omitFromForm: fieldInfo.directives?.contains('no-prompt') ?? false,
+				omitFromForm: (fieldInfo.directives?.includes('no-prompt') || (!templateState.referencedFields.has(fieldName) && !fieldInfo.directives?.includes('prompt'))) ?? false,
 				touched: false,
 				focused: false,
 				hasError: false,
 				dependencies: [...new Set(dependencies)],
 				dependentFields: [],
-				// these will be set properly in updateFieldStates, but we need initial values
 				resolvedPrompt: String(fieldInfo.prompt) ?? formatFieldName(fieldName),
 				resolvedDefault: fieldInfo.default ?? "",
 				resolvedMiss: fieldInfo.miss ?? "",
@@ -2972,14 +3745,18 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel, onError }: F
 		}
 
 		// Check for circular dependencies
-		const circularDependency = detectCircularDependencies(initialFieldStates);
+		const depsMap: Record<string, string[]> = {};
+		for (const [name, state] of Object.entries(initialFieldStates)) {
+			depsMap[name] = state.dependencies;
+		}
+		const circularDependency = detectCircularDependencies(depsMap);
 		if (circularDependency.length > 0) {
 			const error = new TemplatePluginError(
 				`Circular dependency detected in template fields: ${circularDependency.join(' -> ')}`
 			);
 			error.userMessage = `Circular dependency detected in template fields: ${circularDependency.join(' -> ')}`;
-			setTimeout(() => { onError(error); }, 0); // defer unmounting until after the render finishes
-			return {}; // Return empty state to prevent further processing
+			setTimeout(() => { onError(error); }, 0);
+			return {};
 		}
 
 		return initialFieldStates;
@@ -3022,7 +3799,13 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel, onError }: F
 
 	// State variables (definition order is important here)
 	const [fieldStates, setFieldStates] = useState<Record<string, FieldState>>(computeInitialFieldStates());
-	const [dependencyOrderedFieldNames] = useState<string[]>(() => calculateFieldDependencyOrder(fieldStates));
+	const [dependencyOrderedFieldNames] = useState<string[]>(() => {
+		const depsMap: Record<string, string[]> = {};
+		for (const [name, state] of Object.entries(fieldStates)) {
+			depsMap[name] = state.dependencies;
+		}
+		return calculateFieldDependencyOrder(depsMap);
+	});
 	const [renderOrderFieldNames] = useState<string[]>(() => computeInitialRenderOrderFieldNames());
 	// Update fields after the first render to distribute and apply dependencies
 	useEffect(() => {
@@ -3033,24 +3816,38 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel, onError }: F
 	}, []);
 
 	function updateFieldStates(newFieldStates: Record<string, FieldState>) {
-		for (const fieldName of dependencyOrderedFieldNames) { // dependencyOrderedFieldNames ensures dependencies are resolved first
+		for (const fieldName of dependencyOrderedFieldNames) {
 			const fieldInfo = templateState.fieldInfos[fieldName];
-			if (!fieldInfo || newFieldStates[fieldName].omitFromForm) { continue; }
+			if (!fieldInfo) { continue; }
 
-			let context = {
-				...Object.fromEntries(Object.entries(newFieldStates).map(
-					([name, state]) => [name, state.value])),
-			};
+			// Build context from current field values (excluding undefined)
+			const context: Record<string, VarValueType> = {};
+			for (const [name, state] of Object.entries(newFieldStates)) {
+				if (state.value !== undefined) {
+					context[name] = state.value;
+				}
+			}
 
-			// Update all resolved text fields
-			newFieldStates[fieldName].resolvedPrompt = String(Z2KTemplateEngine.reducedRenderContent(fieldInfo.prompt || formatFieldName(fieldName), context));
-			newFieldStates[fieldName].resolvedDefault = Z2KTemplateEngine.reducedRenderContent(fieldInfo.default || "", context);
-			newFieldStates[fieldName].resolvedMiss = Z2KTemplateEngine.reducedRenderContent(fieldInfo.miss || "", context);
+			// Resolve value= if present (and not overridden by external data or user input)
+			if (fieldInfo.value !== undefined && !(fieldName in templateState.resolvedValues) && !newFieldStates[fieldName].touched) {
+				const valueDeps = Z2KTemplateEngine.reducedGetDependencies(fieldInfo.value);
+				const allDepsExist = valueDeps.every(dep => dep in context);
+				if (allDepsExist) {
+					newFieldStates[fieldName].value = Z2KTemplateEngine.reducedRenderContent(fieldInfo.value, context, true, userHelpers);
+				} else {
+					newFieldStates[fieldName].value = undefined;
+				}
+			}
+
+			// Resolve display fields
+			newFieldStates[fieldName].resolvedPrompt = String(Z2KTemplateEngine.reducedRenderContent(fieldInfo.prompt || formatFieldName(fieldName), context, true, userHelpers));
+			newFieldStates[fieldName].resolvedDefault = Z2KTemplateEngine.reducedRenderContent(fieldInfo.default || "", context, true, userHelpers);
+			newFieldStates[fieldName].resolvedMiss = Z2KTemplateEngine.reducedRenderContent(fieldInfo.miss || "", context, true, userHelpers);
 
 			// Update resolved options for select fields
 			if ((fieldInfo.type === 'singleSelect' || fieldInfo.type === 'multiSelect') && fieldInfo.opts) {
 				newFieldStates[fieldName].resolvedOpts = fieldInfo.opts.map(opt =>
-					Z2KTemplateEngine.reducedRenderContent(opt, context)
+					Z2KTemplateEngine.reducedRenderContent(opt, context, false, userHelpers)
 				);
 
 				// Update values based on selectedIndices if they exist
@@ -3058,13 +3855,11 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel, onError }: F
 				const resolvedOpts = newFieldStates[fieldName].resolvedOpts!;
 				if (selectedIndices && selectedIndices.length > 0) {
 					if (fieldInfo.type === 'singleSelect') {
-						// For singleSelect, use the first (only) selected index
 						const idx = selectedIndices[0];
 						if (idx >= 0 && idx < resolvedOpts.length) {
 							newFieldStates[fieldName].value = resolvedOpts[idx];
 						}
 					} else if (fieldInfo.type === 'multiSelect') {
-						// For multiSelect, get all values at selected indices
 						newFieldStates[fieldName].value = selectedIndices
 							.filter(idx => idx >= 0 && idx < resolvedOpts.length)
 							.map(idx => resolvedOpts[idx]);
@@ -3072,47 +3867,38 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel, onError }: F
 				}
 			}
 
-			// DOCS: Right now, if a value or default is given for a single/multi-select field that is not in the options list, for single select it will select the first option, and for multi-select it will leave no option selected.
-			// DOCS: The value/default for multi-select fields should be an array of selected options.
-
-			if (!newFieldStates[fieldName].alreadyResolved && !newFieldStates[fieldName].touched) {
-				// For select fields, validate that resolvedDefault exists in the options list
+			// Auto-update value for untouched, unspecified, non-computed fields
+			if (fieldInfo.value === undefined
+				&& !(fieldName in templateState.resolvedValues)
+				&& !newFieldStates[fieldName].touched) {
 				if (fieldInfo.type === 'singleSelect' || fieldInfo.type === 'multiSelect') {
 					const resolvedDefault = newFieldStates[fieldName].resolvedDefault;
 					const resolvedOpts = newFieldStates[fieldName].resolvedOpts || [];
 
 					if (fieldInfo.type === 'singleSelect') {
-						// Find the index of resolvedDefault in the options
 						const defaultIndex = resolvedOpts.findIndex(opt => opt === resolvedDefault);
 						if (defaultIndex >= 0) {
-							// Default exists in options, use it
 							newFieldStates[fieldName].value = resolvedDefault;
 							newFieldStates[fieldName].selectedIndices = [defaultIndex];
 						} else {
-							// Default not in options, set to "Select an option" state
 							newFieldStates[fieldName].value = undefined;
 							newFieldStates[fieldName].selectedIndices = [];
 						}
 					} else if (fieldInfo.type === 'multiSelect') {
-						// For multiSelect, resolvedDefault could be an array or single value
 						const defaultValues = Array.isArray(resolvedDefault) ? resolvedDefault : [resolvedDefault];
-						// Find indices of all default values that exist in options
 						const defaultIndices = defaultValues
 							.map(val => resolvedOpts.findIndex(opt => opt === val))
 							.filter(idx => idx >= 0);
 
 						if (defaultIndices.length > 0) {
-							// At least some defaults exist in options
 							newFieldStates[fieldName].value = defaultIndices.map(idx => resolvedOpts[idx]);
 							newFieldStates[fieldName].selectedIndices = defaultIndices;
 						} else {
-							// No defaults in options, set to empty
 							newFieldStates[fieldName].value = [];
 							newFieldStates[fieldName].selectedIndices = [];
 						}
 					}
 				} else {
-					// For non-select fields, use resolvedDefault directly
 					newFieldStates[fieldName].value = newFieldStates[fieldName].resolvedDefault;
 				}
 			}
@@ -3138,7 +3924,7 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel, onError }: F
 				hasError = true;
 				errorMessage = 'Please enter a valid number';
 			}
-			if (value === '' && fieldInfo.directives?.contains('required')) {
+			if (value === '' && fieldInfo.directives?.includes('required')) {
 				hasFinalizeError = true;
 				errorMessage = 'This field is required to finalize';
 			}
@@ -3226,21 +4012,46 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel, onError }: F
 		}
 
 		// Update template state with resolved values
+		// NOTE: Similar logic exists in applyFinalFieldStates(). If you modify
+		// the value= or miss handling here, check if the same change is needed there.
 		for (const fieldName of dependencyOrderedFieldNames) {
-			const propmtInfo = templateState.fieldInfos[fieldName];
-			if (!propmtInfo) { continue; }
-			if (fieldStates[fieldName].alreadyResolved || fieldStates[fieldName].touched || fieldName === 'fileTitle') {
-				templateState.resolvedValues[fieldName] = fieldStates[fieldName].value;
-			} else {
-				// Left untouched, use miss value if finalizing
-				if (finalize) {
-					templateState.resolvedValues[fieldName] = fieldStates[fieldName].resolvedMiss || '';
+			const fieldInfo = templateState.fieldInfos[fieldName];
+			if (!fieldInfo) { continue; }
+			const fieldState = fieldStates[fieldName];
+			const value = fieldState.value;
+
+			// fileTitle is special - always write it (file needs a name)
+			if (fieldState.touched || fieldName === 'fileTitle') {
+				// User interacted with field (or it's fileTitle) - write the value
+				if (value === undefined) {
+					delete templateState.resolvedValues[fieldName];
+				} else {
+					templateState.resolvedValues[fieldName] = value;
+				}
+			} else if (fieldInfo.value !== undefined && !(fieldName in templateState.resolvedValues)) {
+				// Computed field (value=) not overridden by external data
+				// NOTE: Similar logic in applyFinalFieldStates() - keep in sync
+				if (value === undefined) {
+					delete templateState.resolvedValues[fieldName];
+				} else {
+					templateState.resolvedValues[fieldName] = value;
+				}
+			} else if (finalize && !(fieldName in templateState.resolvedValues) && !fieldInfo.directives?.includes('finalize-preserve')) {
+				// Unspecified field during finalization - use miss value
+				// Skip finalize-preserve fields - leave undefined so preservation logic handles them
+				// NOTE: Similar logic in applyFinalFieldStates() - keep in sync
+				const missValue = fieldState.resolvedMiss;
+				if (missValue === undefined) {
+					delete templateState.resolvedValues[fieldName];
+				} else {
+					templateState.resolvedValues[fieldName] = missValue || '';
 				}
 			}
+			// Else: field already specified externally, leave it alone
 		}
 
 		onComplete(finalize);
-	};
+	}
 
 	function scrollToFirstError() {
 		for (const fieldName of dependencyOrderedFieldNames) {
@@ -3304,14 +4115,70 @@ const FieldCollectionForm = ({ templateState, onComplete, onCancel, onError }: F
 };
 
 /**
- * Tracks the state of each field including user interactions
+ * Tracks the state of a field during form interaction.
+ *
+ * ## Value Storage: fieldInfo.value vs resolvedValues
+ *
+ * Two properties control field values - understanding when to use each is critical:
+ *
+ * ### fieldInfo.value (formula)
+ * A template expression that computes the field's value from other fields.
+ * Example: `value="{{firstName}} {{lastName}}"`
+ * - Re-evaluated whenever dependencies change (until user edits the field)
+ * - Used by: field-info value= parameter, URI overrides, YAML frontmatter values
+ * - When adding external data, store here so {{references}} resolve dynamically
+ *
+ * ### resolvedValues[fieldName] (locked result)
+ * Concrete value that should NOT be re-computed. Key existence = "field is specified."
+ * - Used for: form submission results, values that are "locked in"
+ * - If a field is in resolvedValues, its formula (fieldInfo.value) is ignored
+ *
+ * ### touched (user override flag)
+ * Set to true when user interacts with a field in the form.
+ * Once touched, the field's formula stops auto-updating, preserving user input.
+ *
+ * ### Priority (highest to lowest)
+ * 1. User input (touched = true) - user's edits are preserved
+ * 2. resolvedValues - externally locked, no re-computation
+ * 3. fieldInfo.value formula - computed from dependencies
+ * 4. fieldInfo.default - fallback value
+ *
+ * ## Resolution System Overview
+ *
+ * The source of truth for whether a field is "specified" is KEY EXISTENCE in
+ * templateState.resolvedValues (not the value itself). This allows undefined
+ * as a valid value while still distinguishing "unspecified" fields.
+ *
+ * - Key exists in resolvedValues → field is specified → will be rendered
+ * - Key doesn't exist → field is unspecified → {{field}} preserved in output
+ *
+ * When setting values:
+ * - If value is undefined, delete the key: `delete resolvedValues[field]`
+ * - Otherwise set normally: `resolvedValues[field] = value`
+ *
+ * ## Field State Properties
+ *
+ * - `value`: Current value shown in UI and used in dependency context.
+ *   For computed fields (value=), this is calculated from dependencies.
+ *   Set to undefined if dependencies are missing.
+ *
+ * - `touched`: Whether user has interacted with this field in the current
+ *   form session. Used to determine if user input should override defaults,
+ *   and whether to write to resolvedValues at submit.
+ *
+ * - `omitFromForm`: Field is hidden from UI. Set when field has 'no-prompt'
+ *   directive or has a value= property.
+ *
+ * Note: We previously had `alreadyResolved` which tracked if a field had a
+ * value in resolvedValues at form init. This was removed because we can
+ * simply check `fieldName in templateState.resolvedValues` directly, since
+ * templateState.resolvedValues is not mutated during form operation.
  */
 interface FieldState {
 	// The current value of the field
 	// 	Should always be ready to be verified/submitted (except for miss text resolution, that can be applied upon being verified/submitted)
 	//    Should also always be what's shown in the field and be used for dependencies
 	value: VarValueType;
-	alreadyResolved?: boolean;
 	omitFromForm: boolean;
 	// Keeps track of whether the field has been interacted with
 	// 	(determines miss text behavior and default value behavior in the field itself)
@@ -3328,10 +4195,42 @@ interface FieldState {
 	selectedIndices?: number[]; // Selected option indices (for singleSelect this is an array of size 1, for multiSelect it can be multiple)
 }
 
+function getFieldDependencies(fieldInfo: FieldInfo): string[] {
+	const deps: string[] = [];
+	if (fieldInfo.prompt) {
+		deps.push(...Z2KTemplateEngine.reducedGetDependencies(fieldInfo.prompt));
+	}
+	if (fieldInfo.default) {
+		deps.push(...Z2KTemplateEngine.reducedGetDependencies(fieldInfo.default));
+	}
+	if (fieldInfo.miss) {
+		deps.push(...Z2KTemplateEngine.reducedGetDependencies(fieldInfo.miss));
+	}
+	if (fieldInfo.value) {
+		deps.push(...Z2KTemplateEngine.reducedGetDependencies(fieldInfo.value));
+	}
+	if (fieldInfo.opts) {
+		for (const opt of fieldInfo.opts) {
+			if (opt) {
+				deps.push(...Z2KTemplateEngine.reducedGetDependencies(opt));
+			}
+		}
+	}
+	return [...new Set(deps)];
+}
+
+function buildDependencyMap(fieldInfos: Record<string, FieldInfo>): Record<string, string[]> {
+	const deps: Record<string, string[]> = {};
+	for (const [fieldName, fieldInfo] of Object.entries(fieldInfos)) {
+		deps[fieldName] = getFieldDependencies(fieldInfo);
+	}
+	return deps;
+}
+
 /**
  * Returns an array of field names involved in circular dependencies, or an empty array if none are found
  */
-function detectCircularDependencies(fieldStates: Record<string, FieldState>): string[] {
+function detectCircularDependencies(dependencies: Record<string, string[]>): string[] {
 	const visited = new Set<string>();
 	const stack: string[] = [];
 	let circularPath: string[] = [];
@@ -3339,57 +4238,51 @@ function detectCircularDependencies(fieldStates: Record<string, FieldState>): st
 	function visit(fieldName: string) {
 		const cycleStartIndex = stack.indexOf(fieldName);
 		if (cycleStartIndex !== -1) {
-			// Found a cycle, capture the complete circular path
 			circularPath = [...stack.slice(cycleStartIndex), fieldName];
 			return;
 		}
-		if (visited.has(fieldName)) return;
+		if (visited.has(fieldName)) { return; }
 
 		visited.add(fieldName);
 		stack.push(fieldName);
 
-		const fieldState = fieldStates[fieldName];
-		if (!fieldState) {
-			stack.pop();
-			return;
-		}
-
-		for (const dependency of fieldState.dependencies) {
-			visit(dependency);
-			// If we found a cycle, stop traversing
-			if (circularPath.length > 0) return;
+		const deps = dependencies[fieldName];
+		if (deps) {
+			for (const dependency of deps) {
+				visit(dependency);
+				if (circularPath.length > 0) { return; }
+			}
 		}
 
 		stack.pop();
 	}
 
-	for (const fieldName of Object.keys(fieldStates)) {
+	for (const fieldName of Object.keys(dependencies)) {
 		visit(fieldName);
-		if (circularPath.length > 0) return circularPath;
+		if (circularPath.length > 0) { return circularPath; }
 	}
 
 	return [];
 }
 
-function calculateFieldDependencyOrder(fieldStates: Record<string, FieldState>): string[] {
-	const orderedFields: string[] = [...Object.keys(fieldStates)];
+function calculateFieldDependencyOrder(dependencies: Record<string, string[]>): string[] {
+	const orderedFields: string[] = [...Object.keys(dependencies)];
 
 	let madeChange = true;
 	while (madeChange) {
 		madeChange = false;
 		for (const fieldName of [...orderedFields]) {
-			const fieldState = fieldStates[fieldName];
-			if (!fieldState) continue;
+			const deps = dependencies[fieldName];
+			if (!deps) { continue; }
 			const fieldIndex = orderedFields.indexOf(fieldName);
 			let maxDepIndex = -1;
-			for (const dep of fieldState.dependencies) {
+			for (const dep of deps) {
 				const depIndex = orderedFields.indexOf(dep);
 				if (depIndex > maxDepIndex) {
 					maxDepIndex = depIndex;
 				}
 			}
 			if (maxDepIndex >= 0 && fieldIndex < maxDepIndex) {
-				// Move field after its farthest dependency
 				orderedFields.splice(fieldIndex, 1);
 				orderedFields.splice(maxDepIndex, 0, fieldName);
 				madeChange = true;
@@ -3436,6 +4329,12 @@ const FieldInput = ({ name, label, fieldInfo, fieldState, onChange, onFocus, onB
 		return String(value);
 	};
 
+	// For input field display: show empty for null/undefined instead of [null]/[undefined]
+	const toInputDisplayValue = (value: VarValueType): string => {
+		if (value === null || value === undefined) { return ''; }
+		return toHumanReadable(value);
+	};
+
 	const toInputValue = (value: VarValueType): string => {
 		if (value === null || value === undefined) { return ''; }
 		if (Array.isArray(value)) { return value.map(v => String(v)).join(', '); }
@@ -3461,7 +4360,7 @@ const FieldInput = ({ name, label, fieldInfo, fieldState, onChange, onFocus, onB
 					<input
 						type="text"
 						className={`title-text-input ${fieldState.hasError ? 'has-error' : ''}`}
-						value={toHumanReadable(fieldState.value)}
+						value={toInputDisplayValue(fieldState.value)}
 						onChange={(e) => onChange(e.target.value)}
 						{...commonProps}
 					/>
@@ -3471,7 +4370,7 @@ const FieldInput = ({ name, label, fieldInfo, fieldState, onChange, onFocus, onB
 				return (
 					<textarea
 						className={`text-input ${fieldState.hasError ? 'has-error' : ''}`}
-						value={toHumanReadable(fieldState.value)}
+						value={toInputDisplayValue(fieldState.value)}
 						onChange={(e) => onChange(e.target.value)}
 						{...commonProps}
 					/>
@@ -3482,7 +4381,7 @@ const FieldInput = ({ name, label, fieldInfo, fieldState, onChange, onFocus, onB
 					<input
 						type="number"
 						className={`number-input ${fieldState.hasError ? 'has-error' : ''}`}
-						value={toHumanReadable(fieldState.value)}
+						value={toInputDisplayValue(fieldState.value)}
 						onChange={(e) => {
 							const num = Number(e.target.value);
 							onChange(isNaN(num) ? undefined : num);
@@ -3654,34 +4553,300 @@ const FieldInput = ({ name, label, fieldInfo, fieldState, onChange, onFocus, onB
 
 };
 
-
 // ------------------------------------------------------------------------------------------------
-// Delete Confirmation Modal
+// Code Editor Modal
 // ------------------------------------------------------------------------------------------------
-export class DeleteConfirmationModal extends Modal {
-	file: TFile;
-	onConfirm: (shouldDelete: boolean) => void;
-	root: any; // For React root
+interface EditorModalOptions {
+	title: string;
+	initialContent: string;
+	language: 'javascript' | 'handlebars';
+	helpText: string;
+	validate: (code: string) => { valid: boolean; error?: string; message?: string };
+	onSave: (content: string) => void;
+}
 
-	constructor(app: App, file: TFile, onConfirm: (shouldDelete: boolean) => void) {
+interface ValidationState {
+	status: 'pending' | 'valid' | 'invalid';
+	message?: string;
+}
+
+function EditorModalContent({
+	initialContent,
+	language,
+	helpText,
+	validate,
+	onCancel,
+	onSave,
+}: {
+	initialContent: string;
+	language: 'javascript' | 'handlebars';
+	helpText: string;
+	validate: (code: string) => { valid: boolean; error?: string; message?: string };
+	onCancel: () => void;
+	onSave: (content: string) => void;
+}) {
+	const [content, setContent] = useState(initialContent);
+	const [helpExpanded, setHelpExpanded] = useState(false);
+	const [validation, setValidation] = useState<ValidationState>({ status: 'pending' });
+	const [canSave, setCanSave] = useState(false);
+	const [fontSize, setFontSize] = useState(14);
+	const editorContainerRef = useRef<HTMLDivElement>(null);
+	const editorViewRef = useRef<EditorView | null>(null);
+	const fontSizeCompartment = useRef(new Compartment());
+	const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+	const makeFontSizeTheme = (size: number) => EditorView.theme({
+		"&": { fontSize: `${size}px` },
+		".cm-scroller": { fontSize: `${size}px` },
+		".cm-content": { fontSize: `${size}px`, fontFamily: "var(--font-monospace)" },
+		".cm-gutters": { fontSize: `${size}px` },
+	});
+
+	// Run validation
+	const runValidation = (code: string) => {
+		const result = validate(code);
+		if (result.valid) {
+			setValidation({ status: 'valid', message: result.message });
+			setCanSave(true);
+		} else {
+			setValidation({ status: 'invalid', message: result.error });
+			setCanSave(false);
+		}
+	};
+
+	// Initial validation
+	useEffect(() => {
+		runValidation(initialContent);
+	}, []);
+
+	// Setup CodeMirror
+	useEffect(() => {
+		if (!editorContainerRef.current) { return; }
+
+		// Custom highlight style using Obsidian's CSS variables
+		const obsidianHighlightStyle = HighlightStyle.define([
+			{ tag: tags.keyword, color: "var(--code-keyword)" },
+			{ tag: tags.string, color: "var(--code-string)" },
+			{ tag: tags.number, color: "var(--code-value)" },
+			{ tag: tags.bool, color: "var(--code-value)" },
+			{ tag: tags.null, color: "var(--code-value)" },
+			{ tag: tags.comment, color: "var(--code-comment)", fontStyle: "italic" },
+			{ tag: tags.variableName, color: "var(--code-property)" },
+			{ tag: tags.function(tags.variableName), color: "var(--code-function)" },
+			{ tag: tags.propertyName, color: "var(--code-property)" },
+			{ tag: tags.operator, color: "var(--code-operator)" },
+			{ tag: tags.punctuation, color: "var(--code-punctuation)" },
+			{ tag: tags.className, color: "var(--code-tag)" },
+			{ tag: tags.definition(tags.variableName), color: "var(--code-property)" },
+		]);
+
+		// Use handlebarsOverlay for Handlebars (matches main editor), javascript() for JS
+		const languageExtensions = language === 'javascript'
+			? [javascript(), syntaxHighlighting(obsidianHighlightStyle)]
+			: [handlebarsOverlay()];
+
+		const extensions: Extension[] = [
+			lineNumbers(),
+			highlightActiveLine(),
+			highlightActiveLineGutter(),
+			history(),
+			bracketMatching(),
+			keymap.of([...defaultKeymap, ...historyKeymap]),
+			...languageExtensions,
+			EditorView.updateListener.of((update) => {
+				if (update.docChanged) {
+					const newContent = update.state.doc.toString();
+					setContent(newContent);
+					setCanSave(false); // Disable save while typing
+					// Debounced validation
+					clearTimeout(debounceRef.current);
+					debounceRef.current = setTimeout(() => {
+						runValidation(newContent);
+					}, 1000);
+				}
+			}),
+			EditorView.theme({
+				"&": { height: "100%" },
+				".cm-scroller": { overflow: "auto" },
+			}),
+			fontSizeCompartment.current.of(makeFontSizeTheme(fontSize)),
+		];
+
+		const state = EditorState.create({
+			doc: initialContent,
+			extensions,
+		});
+
+		const view = new EditorView({
+			state,
+			parent: editorContainerRef.current,
+		});
+
+		editorViewRef.current = view;
+
+		return () => {
+			view.destroy();
+		};
+	}, [language]);
+
+	// Reconfigure font size theme when font size changes
+	useEffect(() => {
+		const view = editorViewRef.current;
+		if (view) {
+			view.dispatch({
+				effects: fontSizeCompartment.current.reconfigure(makeFontSizeTheme(fontSize))
+			});
+			// Force remeasure after CSS applies
+			requestAnimationFrame(() => {
+				view.requestMeasure();
+			});
+		}
+	}, [fontSize]);
+
+	const adjustFontSize = (delta: number) => {
+		setFontSize(prev => Math.max(6, Math.min(20, prev + delta)));
+	};
+
+	return (
+		<div className="editor-modal-content">
+			{/* Toolbar row with help toggle and font size */}
+			<div className="editor-toolbar">
+				<div
+					className="help-header"
+					onClick={() => setHelpExpanded(!helpExpanded)}
+				>
+					<span className="help-toggle">{helpExpanded ? '▼' : '▶'}</span>
+					<span>Help</span>
+				</div>
+				<button
+					className="toolbar-btn"
+					onClick={() => adjustFontSize(-1)}
+					title="Decrease font size"
+				>
+					A−
+				</button>
+				<span className="font-size-label">{fontSize}px</span>
+				<button
+					className="toolbar-btn"
+					onClick={() => adjustFontSize(1)}
+					title="Increase font size"
+				>
+					A+
+				</button>
+			</div>
+
+			{/* Collapsible help content */}
+			{helpExpanded && (
+				<div className="help-content">
+					<pre>{helpText}</pre>
+				</div>
+			)}
+
+			{/* CodeMirror editor */}
+			<div
+				className="editor-container"
+				ref={editorContainerRef}
+			/>
+
+			{/* Validation status */}
+			<div className={`validation-status ${validation.status}`}>
+				{validation.status === 'valid' && `✓ ${validation.message || 'Valid'}`}
+				{validation.status === 'invalid' && `✗ ${validation.message || 'Invalid'}`}
+				{validation.status === 'pending' && ''}
+			</div>
+
+			{/* Buttons */}
+			<div className="modal-buttons">
+				<button className="btn btn-secondary" onClick={onCancel}>
+					Cancel
+				</button>
+				<button
+					className="btn btn-primary"
+					onClick={() => onSave(content)}
+					disabled={!canSave}
+				>
+					Save
+				</button>
+			</div>
+		</div>
+	);
+}
+
+export class EditorModal extends Modal {
+	options: EditorModalOptions;
+	root: any;
+
+	constructor(app: App, options: EditorModalOptions) {
 		super(app);
-		this.file = file;
+		this.options = options;
+	}
+
+	onOpen() {
+		this.modalEl.addClass('z2k', 'editor-modal');
+		this.titleEl.setText(this.options.title);
+		this.contentEl.empty();
+		this.contentEl.addClass('modal-content');
+
+		this.root = createRoot(this.contentEl);
+		this.root.render(
+			<ErrorBoundary onError={(error) => { new Notice(`Editor error: ${error.message}`); this.close(); }}>
+				<EditorModalContent
+					initialContent={this.options.initialContent}
+					language={this.options.language}
+					helpText={this.options.helpText}
+					validate={this.options.validate}
+					onCancel={() => this.close()}
+					onSave={(content) => {
+						this.options.onSave(content);
+						this.close();
+					}}
+				/>
+			</ErrorBoundary>
+		);
+	}
+
+	onClose() {
+		if (this.root) { this.root.unmount(); }
+		this.contentEl.empty();
+	}
+}
+
+// ------------------------------------------------------------------------------------------------
+// Confirmation Modal
+// ------------------------------------------------------------------------------------------------
+interface ConfirmationModalOptions {
+	title: string;
+	message: React.ReactNode; // Can be string, JSX, or array of elements
+	confirmText: string;
+	cancelText: string;
+	confirmClass?: string; // CSS class for confirm button (default: btn-warning)
+	modalClass?: string; // Additional CSS class for modal
+}
+
+export class ConfirmationModal extends Modal {
+	options: ConfirmationModalOptions;
+	onConfirm: (confirmed: boolean) => void;
+	root: any;
+
+	constructor(app: App, options: ConfirmationModalOptions, onConfirm: (confirmed: boolean) => void) {
+		super(app);
+		this.options = options;
 		this.onConfirm = onConfirm;
 	}
 
 	onOpen() {
-		this.modalEl.addClass('z2k', 'delete-confirmation-modal');
-		this.titleEl.setText('Delete Original File?');
+		this.modalEl.addClass('z2k', 'confirmation-modal');
+		if (this.options.modalClass) {
+			this.modalEl.addClass(this.options.modalClass);
+		}
+		this.titleEl.setText(this.options.title);
 		this.contentEl.empty();
 		this.contentEl.addClass('modal-content');
 		this.root = createRoot(this.contentEl);
 		this.root.render(
 			<>
-				<p className="delete-confirmation-message">
-					Would you like to now delete "{this.file.name}"?
-				</p>
-
-				<div className="delete-confirmation-buttons">
+				<div className="confirmation-message">{this.options.message}</div>
+				<div className="confirmation-buttons">
 					<button
 						className="btn btn-secondary"
 						onClick={() => {
@@ -3689,17 +4854,16 @@ export class DeleteConfirmationModal extends Modal {
 							this.close();
 						}}
 					>
-						Keep Original File
+						{this.options.cancelText}
 					</button>
-
 					<button
-						className="btn btn-warning"
+						className={`btn ${this.options.confirmClass ?? 'btn-warning'}`}
 						onClick={() => {
 							this.onConfirm(true);
 							this.close();
 						}}
 					>
-						Move to Trash
+						{this.options.confirmText}
 					</button>
 				</div>
 			</>
@@ -3729,7 +4893,7 @@ export class ErrorModal extends Modal {
 		this.root = createRoot(this.contentEl);
 		this.root.render(
 			<>
-				<p className="error-modal-message">{this.error.message}</p>
+				<p className={`error-modal-message${!(this.error instanceof TemplateError) ? ' error-modal-message--raw' : ''}`}>{this.error.message}</p>
 				{this.error instanceof TemplateError && (
 					<p className="error-modal-description">{this.error.description}</p>
 				)}
@@ -3743,7 +4907,7 @@ export class ErrorModal extends Modal {
 					}}
 					style={{ alignSelf: 'flex-end' }}
 				>
-					Copy Error
+					Copy Full Error
 				</button>
 			</>
 		);
@@ -3753,3 +4917,4 @@ export class ErrorModal extends Modal {
 		this.contentEl.empty();
 	}
 }
+

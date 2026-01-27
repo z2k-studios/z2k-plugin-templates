@@ -4,14 +4,63 @@
 --------------------------------------------------------------------------------------------------------------------------------
 */
 
+.z2k-settings .setting-item.is-invalid {
+	flex-wrap: wrap;
+}
 .z2k-settings .setting-item.is-invalid input {
 	border-color: var(--text-error);
 	box-shadow: none;
 }
-.z2k-settings .setting-item.is-invalid .setting-item-error-description {
+.z2k-settings .setting-item-error-description {
 	color: var(--text-error);
+	margin-top: 4px;
+	flex-basis: 100%;
 }
 
+/* Full-width setting: control appears below the info, spanning full width */
+.z2k-settings .setting-item.setting-full-width {
+	flex-wrap: wrap;
+}
+.z2k-settings .setting-item.setting-full-width .setting-item-control {
+	width: 100%;
+	margin-top: 8px;
+}
+.z2k-settings .setting-item.setting-full-width .setting-item-control input[type="text"] {
+	width: 100%;
+}
+
+/* Quick Create Commands */
+.z2k-settings .setting-item:has(.quick-create-rows) {
+	flex-direction: column;
+	align-items: stretch;
+}
+.z2k-settings .quick-create-rows {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin-top: 12px;
+}
+.z2k-settings .command-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+.z2k-settings .command-row input[type="text"] {
+	flex: 1;
+	min-width: 0;
+}
+.z2k-settings .command-buttons {
+	display: flex;
+	gap: 4px;
+}
+.z2k-settings .command-buttons .is-disabled {
+	opacity: 0.3;
+	pointer-events: none;
+}
+.z2k-settings .quick-create-rows > button {
+	align-self: flex-end;
+	margin-top: 4px;
+}
 
 
 /*
@@ -482,24 +531,24 @@ textarea:focus {
 
 /*
 --------------------------------------------------------------------------------------------------------------------------------
-	Delete Confirmation Modal
+	Confirmation Modal
 --------------------------------------------------------------------------------------------------------------------------------
 */
-.z2k.delete-confirmation-modal {
+.z2k.confirmation-modal {
 	padding: 16px 20px;
 	display: flex;
 	flex-direction: column;
 	gap: 16px;
 }
 
-.z2k .delete-confirmation-message {
+.z2k .confirmation-message {
 	font-size: 14px;
 	line-height: 1.5;
 	margin: 0;
 	color: var(--text-normal);
 }
 
-.z2k .delete-confirmation-buttons {
+.z2k .confirmation-buttons {
 	padding: 12px 0 0 0;
 	display: flex;
 	justify-content: flex-end;
@@ -514,6 +563,9 @@ textarea:focus {
 --------------------------------------------------------------------------------------------------------------------------------
 */
 .z2k.error-modal {
+	width: fit-content;
+	min-width: 18.75rem;
+	max-width: min(37.5rem, 80vw);
 	padding: 16px 20px;
 	display: flex;
 	flex-direction: column;
@@ -527,6 +579,9 @@ textarea:focus {
 	margin: 0;
 	color: var(--text-error);
 	font-weight: 500;
+}
+.z2k .error-modal-message--raw {
+	font-family: var(--font-monospace, monospace);
 }
 
 .z2k .error-modal-description {
@@ -546,4 +601,173 @@ textarea:focus {
 	white-space: pre-wrap;
 	word-break: break-word;
 	cursor: text;
+}
+
+
+
+/*
+--------------------------------------------------------------------------------------------------------------------------------
+	Code Editor Modal
+--------------------------------------------------------------------------------------------------------------------------------
+*/
+.z2k.editor-modal {
+	width: calc(100vw - 6rem);
+	max-width: none;
+	height: calc(100vh - 6rem);
+	max-height: none;
+}
+
+.z2k.editor-modal .modal-content {
+	height: 100%;
+	max-height: none;
+}
+
+.z2k .editor-modal-content {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	padding: 0 20px 16px 20px;
+	gap: 12px;
+}
+
+.z2k .editor-modal-content .help-header {
+	cursor: pointer;
+	padding: 4px 8px;
+	font-weight: 500;
+	color: var(--text-muted);
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	border-radius: 4px;
+}
+
+.z2k .editor-modal-content .help-header:hover {
+	color: var(--text-normal);
+	background-color: var(--background-secondary);
+}
+
+.z2k .editor-modal-content .help-toggle {
+	font-size: var(--font-ui-smaller);
+}
+
+.z2k .editor-modal-content .help-content {
+	background-color: var(--background-secondary);
+	border-radius: 4px;
+	padding: 12px;
+	max-height: 300px;
+	overflow-y: auto;
+}
+
+.z2k .editor-modal-content .help-content pre {
+	margin: 0;
+	white-space: pre-wrap;
+	font-size: var(--font-ui-small);
+	font-family: var(--font-monospace);
+	color: var(--text-muted);
+	user-select: text;
+	cursor: text;
+}
+
+.z2k .editor-modal-content .editor-container {
+	flex: 1;
+	min-height: 200px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	overflow: hidden;
+}
+
+.z2k .editor-modal-content .editor-container .cm-editor {
+	height: 100%;
+}
+
+.z2k .editor-modal-content .editor-container .cm-gutters {
+	background-color: var(--background-secondary);
+	border-right: 1px solid var(--background-modifier-border);
+}
+
+.z2k .editor-modal-content .editor-container .cm-lineNumbers .cm-gutterElement {
+	color: var(--text-muted);
+}
+
+.z2k .editor-modal-content .editor-container .cm-activeLineGutter {
+	background-color: var(--background-secondary-alt);
+}
+
+.z2k .editor-modal-content .editor-container .cm-activeLine {
+	background-color: var(--background-secondary-alt);
+}
+
+.z2k .editor-modal-content .editor-container .cm-editor.cm-focused .cm-cursor {
+	border-left-color: var(--text-normal) !important;
+}
+
+.z2k .editor-modal-content .editor-container .cm-line {
+	caret-color: var(--text-normal) !important;
+}
+
+.z2k .editor-modal-content .validation-status {
+	flex-shrink: 0;
+	padding: 8px 12px;
+	border-radius: 4px;
+	font-size: var(--font-ui-small);
+	font-family: var(--font-monospace);
+	min-height: 20px;
+	white-space: pre-wrap;
+	max-height: 120px;
+	overflow-y: auto;
+}
+
+.z2k .editor-modal-content .validation-status.valid {
+	background-color: rgba(var(--color-green-rgb, 0, 200, 83), 0.1);
+	color: var(--color-green, #00c853);
+}
+
+.z2k .editor-modal-content .validation-status.invalid {
+	background-color: rgba(var(--text-error-rgb, 255, 0, 0), 0.1);
+	color: var(--text-error);
+}
+
+.z2k .editor-modal-content .validation-status.pending {
+	background-color: transparent;
+}
+
+.z2k .editor-modal-content .editor-toolbar {
+	flex-shrink: 0;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 4px 0;
+}
+
+.z2k .editor-modal-content .toolbar-btn {
+	padding: 4px 8px;
+	font-size: var(--font-ui-small);
+	background-color: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	cursor: pointer;
+	color: var(--text-normal);
+}
+
+.z2k .editor-modal-content .toolbar-btn:hover {
+	background-color: var(--background-secondary-alt);
+}
+
+.z2k .editor-modal-content .font-size-label {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+	min-width: 40px;
+	text-align: center;
+}
+
+.z2k .editor-modal-content .editor-container .cm-editor {
+	font-size: inherit;
+}
+
+.z2k .editor-modal-content .modal-buttons {
+	flex-shrink: 0;
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
+	padding-top: 8px;
 }

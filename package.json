@@ -1,12 +1,12 @@
 {
 	"name": "z2k-plugin-templates",
-	"version": "0.1.2",
+	"version": "0.2.0",
 	"description": "Provides template functionality for Z2K and more, allowing you to create new cards and perform other actions using templates and blocks.",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
 		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
-		"release": "node scripts/release.mjs"
+		"release": "node release.mjs"
 	},
 	"keywords": [],
 	"author": "",
@@ -25,7 +25,10 @@
 		"typescript": "4.7.4"
 	},
 	"dependencies": {
+		"@codemirror/commands": "^6.8.0",
+		"@codemirror/lang-javascript": "^6.2.3",
 		"@codemirror/lang-markdown": "^6.3.4",
+		"@codemirror/language": "^6.10.8",
 		"@lezer/markdown": "^1.4.3",
 		"@xiechao/codemirror-lang-handlebars": "^1.0.4",
 		"react": "^19.0.0",

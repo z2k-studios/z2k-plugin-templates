@@ -10,7 +10,7 @@ The first [[Template Lifecycle Overview|stage]] of a [[Types of Template Files#D
 
 ![[Lifecycle of a Template - Template Stage.jpeg]]
 
-A template is a standard markdown file that is then saved in a [[Template Folders|Template Folder]]. While a template file can be like any other markdown content file in the vault, a template file becomes useful once you:
+A template is a standard markdown file that is then typically saved in a [[Template Folders|Template Folder]] (see [[Template Requirements]] for more advanced altertnatives). While a template file can be like any other markdown content file in the vault, a template file becomes useful once you:
 - a) have inserted [[Template Fields]] and [[Helper Functions]] to automate and standardize the placement of future content within the template file structure, and 
 - b) moved the template into a [[Template Folders|Template Folder]] so that it can be recognized by the plugin as a valid template file. 
 

@@ -8,10 +8,15 @@ This mode is used during certain circumstances to restict the capabilities of th
 
 ## When is Restriction Functionality Mode Active?
 - Inside the parameters of `{{field-info}}` and `{{field-output}}`
+- yaml?
 
 
 
 ## What are you still able to do? not able to do?
+- field-infos
+- block
+
+keyword = reducedRenderContent()
 
 ==update==
 

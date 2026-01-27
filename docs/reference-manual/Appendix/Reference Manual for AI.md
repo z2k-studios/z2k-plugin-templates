@@ -121,19 +121,15 @@ Z2K provides various built-in helper functions:
 
 - `format-number`: Format numbers using Numeral.js
 
-- `format-number-toFixed`: Format to fixed decimal places
+- `format-number-to-fixed`: Format to fixed decimal places
 
-  
+
 
 **Linking Helpers**:
 
-- `wikilink`: Create Obsidian wiki links
+- `wikilink`: Create Obsidian wiki links (accepts optional display text as second parameter)
 
-- `wikilink-named`: Create wiki links with custom display text
-
-- `url`: Format as URL
-
-- `url-named`: Create named URLs
+- `url`: Format as URL (accepts optional display text as second parameter)
 
   
 
@@ -301,9 +297,9 @@ When a field lacks data during processing ("miss"), Z2K offers several handling 
 
 2. **Global YAML Setting**: Set `z2k_template_default_miss_handling` to:
 
-- `preserve`: Keep fields as-is (default)
+- `finalize-preserve`: Keep fields as-is (default)
 
-- `clear`: Remove fields without data
+- `finalize-clear`: Remove fields without data
 
 3. **Helper Functions**: Individual fields can override global setting with:
 

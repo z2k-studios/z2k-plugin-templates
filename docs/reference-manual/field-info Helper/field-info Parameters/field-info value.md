@@ -56,6 +56,9 @@ Consider this template
 
 ==todo==
 
+Note that setting a value will effectively remove it from being prompted (i.e. impleses a noprompt)
+
+
 readability - assign a complicated expresion to a fieldname and then just reference that field name thereafter.
 
 if statements

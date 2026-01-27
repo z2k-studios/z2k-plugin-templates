@@ -54,7 +54,6 @@ aliases:
 	- [[Template Requirements]] - what are the hard and soft requirements for a template file?
 	- [[Template File Structure]] - what is the structure of a template file?
 	- [[Types of Template Files]] - what are the different types of Template Files?
-	- [[Becoming a Template]] - how does a markdown file become a template?
 	- [[Deferred Field Resolution]] - Reviews how an instantiated content file iterates on fields
 	- [[Lifecycle of a Template]]
 		- [[Template Lifecycle Overview]] - Overview of the Template Lifecycle
@@ -67,9 +66,9 @@ aliases:
 		- [[Typical Templates Workflow]] - Maps the Lifecycle into a Templates Workflow
 
 4. [[Template Folders]] - Where template files are stored in your vault  
-	- [[Template Folders Configurations]]
+	- [[What is a Template Folder]]
 		- [[Embedded Template Folders]]
-		- [[External Template Folders]]
+		- [[Template Folder Subfolders]]
 	- [[Template Folder Hierarchies]]
 	- [[Hiding your Templates and Template Folders from Obsidian]]
 

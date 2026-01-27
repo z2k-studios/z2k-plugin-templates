@@ -4,13 +4,14 @@ sidebar_folder_position: 50
 aliases:
 - Template Folder
 ---
-
 # Template Folders
-All Templates used by the Z2K Templates Plugin must be saved in dedicated Template Folders. The section steps through how to use Template Folders in your system. 
+
+## Overview
+Template Folders are the default and easiest [[Template Requirements#Standard Method Use a Template Folder|way]] to store [[Template Files]] in a vault. This section steps through how to use Template Folders and the subtle nuances to know in designing powerful Obsidian vaults.
 
 ## Contents
-- [[Template Folders Configurations]]
-	- [[Embedded Template Folders]]
-	- [[External Template Folders]]
-- [[Template Folder Hierarchies]]
-- [[Hiding your Templates and Template Folders from Obsidian]]
+- [[What is a Template Folder|What is a Template Folder?]] - what fundamentally is a Template Folder?
+- [[Template Folder Hierarchies]] - how do you build a context-sensitive templating system?
+- [[Template Folder Subfolders]] - can template folders have sub folders?
+- [[Hiding Template Folders]] - how to deal with the proliferation of template folders?
+
