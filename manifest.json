@@ -1,11 +1,13 @@
 {
 	"id": "z2k-plugin-templates",
 	"name": "Z2K - Templates",
-	"version": "0.1.2",
+	"version": "0.2.0",
 	"minAppVersion": "0.15.0",
 	"description": "Provides template functionality for Z2K and more, allowing you to create new cards and perform other actions using templates and partials.",
 	"author": "Z2K",
 	"authorUrl": "https://z2k.dev/",
 	"isDesktopOnly": false,
-	"styles": ["styles.css"]
+	"styles": [
+		"styles.css"
+	]
 }
