@@ -70,3 +70,7 @@ When using the [[Silent Helper Functions|silent]] `{{field-info}}` helper (unlik
 
 If you want to embed the field-info directives inside body text of your template, consider using the `{{field-output}}` helper function instead (see [[field-output Helper Variation]])
 
+
+## Global Field Infos
+
+==Mention somewhere that only fields that are actually referenced somewhere are displayed in the prompting interface. This allows for field-info's to be defined in the global system block to set values or prompting information for fields in templates globally. If any particular template does not use those fields, it will not prompt for them==

@@ -22,6 +22,7 @@ The first key to template discovery is to understand the destination context wit
 To do so, it looks for a `Templates` [[Template Folders|subfolder]] in the destination and adds all template files in that folder (and its subfolders). Then the plugin steps through each successive parent folder all the way up to the [[Templates Root Folder]] and look for additional Templates subfolders, adding their files to the list. Note: it does not travel back down into "sibling" folders.
 
 For instance, consider the following folder structure and template files:
+
 ![[TemplateDiscovery-Context.png]]
 
 If the context (destination folder) is "Interactions", then only the `Board Meeting` and `Business Meeting` templates will be presented to the user. If the context is "1 on 1's", then the `Mentoring Check In` template will also be presented. In both cases, however, the `Quarterly Financial Overview` template will not be presented. 
@@ -45,7 +46,6 @@ Here, the "Quick Interaction" template is embedded directly in the `\Interaction
 
 ## Method 3 :  Advanced : File Extensions
 A third method for making a template file be discoverable is to use [[Template File Extensions|File Extensions]] and rename the file to have either a  [[Extension .template|.template]] or [[Extension .block|.block]] file extension. As was the case with the previous method, if you use file extensions, there is no longer a need to store the template into a [[Templates Folder]].
-
 
 %% Note: this next section is directly included elsewhere %%
 ## Summary

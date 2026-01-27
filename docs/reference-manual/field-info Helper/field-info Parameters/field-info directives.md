@@ -69,8 +69,11 @@ The `"finalize-preserve"` specifies that, upon [[Finalization|finalization]], if
 
 This is similar to setting the [[field-info miss|miss]] parameter to be that of its own field name - but this method is much preferred, as it is less ambiguous. 
 
+Note: this will force all `{{field-info}}` (and variants) referencing the field to also be preserved during finalization.
+
 **When this is useful**: 
 - When you have fields that you want to persist long after finalization. 
+- ==Would be good to give an example==
 
 ## finalize-clear
 The `"finalize-clear"` specifies that, upon [[Finalization|finalization]], if the user has not provide a value for the field, the plug-in will "clear" this field in the final output. All references to the `{{fieldName}}` will be cleared out with an empty string. Please see [[Miss Handling]] for more details.
