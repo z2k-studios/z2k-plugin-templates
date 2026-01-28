@@ -1866,6 +1866,13 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			await this.addYamlFieldValues(state); // System blocks already in state from parseTemplate
 			await this.addPluginBuiltIns(state, { sourceText: sourceTextStr, templateName: opts.templateFile.basename });
 			this.setDefaultTitleFromYaml(state);
+			// For sourceFile: use original filename as suggestion if template doesn't specify one
+			if (opts.sourceFile) {
+				const tfi = state.fieldInfos["fileTitle"];
+				if (tfi && tfi.value === undefined && tfi.default === undefined) {
+					tfi.default = opts.sourceFile.basename;
+				}
+			}
 			// DOCS: field overrides override the values specified in fieldinfos
 			this.handleOverrides(state, opts.fieldOverrides, opts.uriKeys ?? new Set(), opts.promptMode || "all");
 
@@ -2874,11 +2881,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		let tfi = state.fieldInfos["fileTitle"]; // tfi = titleFieldInfo
 		if (!tfi) { tfi = { fieldName: "fileTitle" }; }
 		tfi.type = "titleText"; // Always make it titleText
-		if (tfi.value === undefined) {
-			if (opts.existingTitle) {
-				tfi.value = opts.existingTitle;
-			}
-			tfi.default = "Untitled";
+		if (tfi.value === undefined && opts.existingTitle) {
+			tfi.value = opts.existingTitle;
 		}
 		if (opts.existingTitle) {
 			tfi.directives = tfi.directives || [];
@@ -4062,10 +4066,6 @@ const FieldCollectionForm = ({ templateState, userHelpers, onComplete, onCancel,
 					errorMessage = 'Invalid value';
 				} else {
 					const valueTrimmed = value.trim();
-					if (!valueTrimmed && fieldName === 'fileTitle') {
-						hasError = true;
-						errorMessage = 'A title is required';
-					}
 					if (fieldInfo.type === "titleText") {
 						if (/^[.]+$/.test(valueTrimmed)) {
 							hasError = true;
