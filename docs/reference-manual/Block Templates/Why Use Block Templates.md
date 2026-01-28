@@ -50,4 +50,4 @@ When you need to update a common structure, you only need to change it in one pl
 
 - [[What is a Block Template]] for fundamentals
 - [[How Do You Use Block Templates]] for insertion methods
-- [[System Block Templates]] for vault-wide blocks
+- [[System Block Templates 2]] for vault-wide blocks
