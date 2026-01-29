@@ -2596,12 +2596,10 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		return false;
 	}
 	getBlockCallbackFunc(): (name: string, path: string) => Promise<[found: boolean, content: string, path: string]> {
-		// Store [file, normalized path] pairs for all blocks
+		// Includes all templates, not just blocks — partials can include document templates too
 		let allBlocks: [TFile, string][] = [];
 		for (const t of this.getAllTemplates()) {
-			if (t.type === "block-template") {
-				allBlocks.push([t.file, normalizeFullPath(t.file.path)]);
-			}
+			allBlocks.push([t.file, normalizeFullPath(t.file.path)]);
 		}
 		// Helper to return a block's content (returns parent directory for nested block resolution)
 		const returnBlock = async (file: TFile): Promise<[true, string, string]> => {
@@ -2654,10 +2652,11 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				const normPath = normalizeFullPath(file.path);
 				if (!allBlocks.some(([, p]) => p === normPath)) {
 					throw new Error(
-						`File exists but is not a block template: '${file.path}'\n\n` +
-						`To make it a block template, either:\n` +
-						`  - Add 'z2k_template_type: block-template' to frontmatter\n` +
-						`  - Use .block file extension`
+						`File exists but is not a template: '${file.path}'\n\n` +
+						`To use it as a block, either:\n` +
+						`  - Add 'z2k_template_type: block-template' or 'z2k_template_type: document-template' to frontmatter\n` +
+						`  - Use .block or .template file extension\n` +
+						`  - Place it inside a templates folder`
 					);
 				}
 				return returnBlock(file);
@@ -2678,10 +2677,11 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				const normPath = normalizeFullPath(file.path);
 				if (!allBlocks.some(([, p]) => p === normPath)) {
 					throw new Error(
-						`File exists but is not a block template: '${file.path}'\n\n` +
-						`To make it a block template, either:\n` +
-						`  - Add 'z2k_template_type: block-template' to frontmatter\n` +
-						`  - Use .block file extension`
+						`File exists but is not a template: '${file.path}'\n\n` +
+						`To use it as a block, either:\n` +
+						`  - Add 'z2k_template_type: block-template' or 'z2k_template_type: document-template' to frontmatter\n` +
+						`  - Use .block or .template file extension\n` +
+						`  - Place it inside a templates folder`
 					);
 				}
 				return returnBlock(file);
