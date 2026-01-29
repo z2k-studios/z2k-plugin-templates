@@ -27,6 +27,7 @@ There are many other more advanced ways to cause an instantiation:
 - Using [[Quick Create Commands]]
 - Using [[URI Calls]]
 - Using [[Command Lists]]
+
 ## What Exactly Happens During Instantiation?
 Here are the specific actions taken during instantiation: 
 - a copy of the template is made into the destination content folder
@@ -34,7 +35,7 @@ Here are the specific actions taken during instantiation:
 - a prompting interface is presented to the user to provide any data currently available to fill the template
 - all helper functions that operate on known data are then executed
 - all fields with provided data are replaced with the data provided
-- all system blocks for the destination context are inserted into the instantiated file
+- all system blocks for the [[Destination Context|destination context]] are inserted into the instantiated file
 - Certain [[YAML Configuration Properties]] are adjusted to reflect instantiation (e.g. the [[z2k_template_type]] property is reconfigured to [[z2k_template_type#value -- wip-content-file|wip-content-file]]). 
 - then, if the user has requested finalization via the prompting interface, it will also perform the actions taken during the [[Finalization|Finalization Transition]].
 ## Types of Instantiated Content Files

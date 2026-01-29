@@ -117,13 +117,13 @@ A "failure" is any exception thrown during command processing. Failures fall int
 
 ### Missing Field Data (Template has field, command doesn't provide it)
 
-**Not an error.** The plugin has explicit "miss handling" logic:
+**Not an error.** The plugin has explicit fallback behavior logic:
 
 - Default: Field placeholder is **preserved** in output (`{{Field}}` stays)
-- Configurable via `z2k_template_default_miss_handling`:
+- Configurable via `z2k_template_default_fallback_handling`:
   - `finalize-preserve` (default): Keep the placeholder
   - `finalize-clear`: Remove the placeholder
-- Per-field overrides via `clear`/`preserve` helpers or `miss` parameter
+- Per-field overrides via `clear`/`preserve` helpers or `fallback` parameter
 
 This supports "deferred resolution" where fields can remain unfilled and completed later via "Continue filling note."
 
@@ -135,7 +135,7 @@ This supports "deferred resolution" where fields can remain unfilled and complet
 
 | Scenario | Triggers Retry? |
 |----------|-----------------|
-| Template has `{{Field}}`, command doesn't provide it | No (miss handling) |
+| Template has `{{Field}}`, command doesn't provide it | No (fallback behavior) |
 | Command provides `Field`, template doesn't use it | No (silently ignored) |
 | Template file not found | **Yes** |
 | Invalid JSON in command file | **Yes** |

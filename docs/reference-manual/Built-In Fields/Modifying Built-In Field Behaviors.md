@@ -39,12 +39,12 @@ Chat: 2025-11-13
 Just can't self reference
 
 > I tried  
-> `{{field-info today default=(format-date "M/D/YY") directives="finalize-default"}}`  
+> `{{field-info today suggest=(format-date "M/D/YY") directives="finalize-suggest"}}`  
 > and it aborted because of a circular dependency
 > 
 > I tried  
-> `{{field-info today default=(format-date "M/D/YY") directives="finalize-default"}}`  
-> and it took it fine, but didn't work as expected - I think it's because the today field already is given a value, so when it created the card it already filled out the today field so the finalize-default never triggered
+> `{{field-info today suggest=(format-date "M/D/YY") directives="finalize-suggest"}}`  
+> and it took it fine, but didn't work as expected - I think it's because the today field already is given a value, so when it created the card it already filled out the today field so the finalize-suggest never triggered
 > 
 > I tried doing  
 > `{{field-info today value=(format-date "M/D/YY")}}`  

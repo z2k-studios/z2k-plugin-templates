@@ -2,7 +2,10 @@
 sidebar_position: 1
 sidebar_folder_position: 50
 aliases:
-- Template Folder
+  - Template Folder
+  - template folder
+  - templates subfolder
+  - templates folder
 ---
 # Template Folders
 

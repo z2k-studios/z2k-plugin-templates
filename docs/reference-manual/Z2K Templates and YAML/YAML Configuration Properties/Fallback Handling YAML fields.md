@@ -6,8 +6,8 @@ There several built in directives for adjusting how fields are prompted for:
 
 | Function     | Description                                                                                                                                                |
 | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@clear`     | Specifies that a field should clear itself if no data was provided (see [[Miss Handling\|Miss Handling]] for more details)    |
-| `@preserve`  | Specifies that a field should preserve itself if no data was provided (see [[Miss Handling\|Miss Handling]] for more details) |
+| `@clear`     | Specifies that a field should clear itself if no data was provided (see [[Fallback Behavior]] for more details)    |
+| `@preserve`  | Specifies that a field should preserve itself if no data was provided (see [[Fallback Behavior]] for more details) |
 | `@no-prompt` | Specifies that a field should not be included in the UI to prompt the user for values.                                                                     |
 | `@required`  | Specifies that a field is required for input before proceeding. Note: if a default value is provided, then that is sufficient for proceeding forward       |
 
@@ -23,7 +23,7 @@ Below are directives whose behavior is stable or clearly implied by current engi
   Do not show a prompt for this field. Use when the engine can compute a value automatically (e.g., built‑ins like `date`, `time`). The value is set in `resolvedValues` before prompting, and the field is omitted from the dialog. Useful for programmatically supplied overrides as well.
 
 - **`required`** *(inferred)*  
-  Treat the field as mandatory during collection. The dialog should not finalize until a non‑empty value is supplied, or an injected default exists. If paired with `miss="clear"`, the collection UI still enforces input.
+  Treat the field as mandatory during collection. The dialog should not finalize until a non‑empty value is supplied, or an injected default exists. If paired with `fallback="clear"`, the collection UI still enforces input.
 
 
 > [!WARNING]

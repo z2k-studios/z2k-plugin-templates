@@ -30,7 +30,7 @@ This reference page steps through the different types of templates, how they are
 
 
 > [!NOTE] System Block Templates
-> In addition to standard block templates stored in the vault, there are also a special kind of block template called [[Intro to System Blocks|System Blocks]]. See the reference manual section on [[Block Templates]] and [[System Block Templates|System Blocks]] for more details. 
+> In addition to standard block templates stored in the vault, there are also a special kind of block template called [[Intro to System Blocks|System Blocks]]. See the reference manual section on [[Block Templates]] and [[System Block Templates 2|System Blocks]] for more details. 
 
 ## What is NOT a Template?
 ### Content Files
@@ -85,7 +85,7 @@ Consider this file and its path:
 /People/Templates/Birthday Note.md
 ```
 
-Notice that the file has been placed in a [[Templates Folder]] and thus will be identified as a Template file. It will be treated as a [[#Document Templates]] unless it has a [[YAML Configuration Properties|YAML Configuration Property]] identifying it as a [[#Block Templates|Block Template]].
+Notice that the file has been placed in a [[Template Folders|templates folder]] and thus will be identified as a Template file. It will be treated as a [[#Document Templates]] unless it has a [[YAML Configuration Properties|YAML Configuration Property]] identifying it as a [[#Block Templates|Block Template]].
 
 ### Document Template via File Extension
 The following filename identifies it as a markdown file to be interpreted as a [[#Document Templates|Document Template]].

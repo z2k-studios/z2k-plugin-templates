@@ -24,7 +24,7 @@ That said, there is no requirement to use [[WIP Stage|WIP Content Files]] - simp
 While a content file exists in a WIP state, you can continue to iterate on the file with new data. Simply issue the [[Continue Filling in Data]] command and then selecting the "Save for now" button in the [[Prompting Interface|prompting dialog box]] to close out the current iteration.
 
 ## How are WIP Content Files Named?
-WIP Content files are created with a filename that is specified by the user during the initial prompting interface. More advanced templates can assist in the naming of the content file through the use of the [[z2k_template_default_title]] [[YAML Configuration Properties|YAML Configuration Setting]] or the [[fileTitle and Variations|fileTitle]] built in field using [[field-info Helper|field-info]].
+WIP Content files are created with a filename that is specified by the user during the initial prompting interface. More advanced templates can assist in the naming of the content file through the use of the [[z2k_template_suggested_title]] [[YAML Configuration Properties|YAML Configuration Setting]] or the [[fileTitle and Variations|fileTitle]] built in field using [[field-info Helper|field-info]].
 
 ## Can I Add New Fields into WIP Content Files?
 Definitely. For instance, it is common to insert new [[Block Templates]] into WIP Content files. With each insertion, a new set of fields will potentially be placed into the WIP file. 

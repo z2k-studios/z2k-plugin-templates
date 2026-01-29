@@ -51,7 +51,7 @@ Even though `{{fileTitle}}` is a [[Built-In Fields|Built-In Field]], you can sti
 
 
 ## See Also
-- [[z2k_template_default_title]]
+- [[z2k_template_suggested_title]]
 
 
 

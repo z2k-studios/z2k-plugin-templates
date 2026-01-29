@@ -507,7 +507,7 @@ Priority: built-in < global < system < block < main
 (Global field-infos can be overridden by system blocks or the template itself.)
 
 Example:
-{{field-info author "Author name" default="Anonymous"}}
+{{field-info author "Author name" suggest="Anonymous"}}
 {{field-info project "Project" type="text"}}`,
 						validate: (code) => this.plugin.validateGlobalBlock(code),
 						onSave: async (content) => {
@@ -1865,7 +1865,14 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			const sourceTextStr = opts.fieldOverrides.sourceText != null ? String(opts.fieldOverrides.sourceText) : undefined;
 			await this.addYamlFieldValues(state); // System blocks already in state from parseTemplate
 			await this.addPluginBuiltIns(state, { sourceText: sourceTextStr, templateName: opts.templateFile.basename });
-			this.setDefaultTitleFromYaml(state);
+			this.setSuggestedTitleFromYaml(state);
+			// For sourceFile: use original filename as suggestion if template doesn't specify one
+			if (opts.sourceFile) {
+				const tfi = state.fieldInfos["fileTitle"];
+				if (tfi && tfi.value === undefined && tfi.suggest === undefined) {
+					tfi.suggest = opts.sourceFile.basename;
+				}
+			}
 			// DOCS: field overrides override the values specified in fieldinfos
 			this.handleOverrides(state, opts.fieldOverrides, opts.uriKeys ?? new Set(), opts.promptMode || "all");
 
@@ -2144,7 +2151,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		const orderedFields = calculateFieldDependencyOrder(depsMap);
 
 		// NOTE: Similar logic exists in handleSubmit() in PromptForm. If you modify
-		// the value= or miss handling here, check if the same change is needed there.
+		// the value= or fallback handling here, check if the same change is needed there.
 		for (const fieldName of orderedFields) {
 			const fieldInfo = state.fieldInfos[fieldName];
 			if (!fieldInfo) { continue; }
@@ -2173,16 +2180,16 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				// Else: deps missing, leave unspecified (don't set key)
 			}
 
-			// Apply miss value for unspecified fields when finalizing
+			// Apply fallback value for unspecified fields when finalizing
 			// Skip finalize-preserve fields - leave undefined so preservation logic handles them
 			// NOTE: Similar logic in handleSubmit() - keep in sync
 			const hasFinalizePreserve = fieldInfo.directives?.includes('finalize-preserve');
 			if (finalize && !(fieldName in state.resolvedValues) && !hasFinalizePreserve) {
-				const resolvedMiss = Z2KTemplateEngine.reducedRenderContent(fieldInfo.miss || "", context, true, this.userHelperFunctions);
-				if (resolvedMiss === undefined) {
+				const resolvedFallback = Z2KTemplateEngine.reducedRenderContent(fieldInfo.fallback || "", context, true, this.userHelperFunctions);
+				if (resolvedFallback === undefined) {
 					delete state.resolvedValues[fieldName];
 				} else {
-					state.resolvedValues[fieldName] = resolvedMiss || '';
+					state.resolvedValues[fieldName] = resolvedFallback || '';
 				}
 			}
 		}
@@ -2589,12 +2596,10 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		return false;
 	}
 	getBlockCallbackFunc(): (name: string, path: string) => Promise<[found: boolean, content: string, path: string]> {
-		// Store [file, normalized path] pairs for all blocks
+		// Includes all templates, not just blocks — partials can include document templates too
 		let allBlocks: [TFile, string][] = [];
 		for (const t of this.getAllTemplates()) {
-			if (t.type === "block-template") {
-				allBlocks.push([t.file, normalizeFullPath(t.file.path)]);
-			}
+			allBlocks.push([t.file, normalizeFullPath(t.file.path)]);
 		}
 		// Helper to return a block's content (returns parent directory for nested block resolution)
 		const returnBlock = async (file: TFile): Promise<[true, string, string]> => {
@@ -2647,10 +2652,11 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				const normPath = normalizeFullPath(file.path);
 				if (!allBlocks.some(([, p]) => p === normPath)) {
 					throw new Error(
-						`File exists but is not a block template: '${file.path}'\n\n` +
-						`To make it a block template, either:\n` +
-						`  - Add 'z2k_template_type: block-template' to frontmatter\n` +
-						`  - Use .block file extension`
+						`File exists but is not a template: '${file.path}'\n\n` +
+						`To use it as a block, either:\n` +
+						`  - Add 'z2k_template_type: block-template' or 'z2k_template_type: document-template' to frontmatter\n` +
+						`  - Use .block or .template file extension\n` +
+						`  - Place it inside a templates folder`
 					);
 				}
 				return returnBlock(file);
@@ -2671,10 +2677,11 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				const normPath = normalizeFullPath(file.path);
 				if (!allBlocks.some(([, p]) => p === normPath)) {
 					throw new Error(
-						`File exists but is not a block template: '${file.path}'\n\n` +
-						`To make it a block template, either:\n` +
-						`  - Add 'z2k_template_type: block-template' to frontmatter\n` +
-						`  - Use .block file extension`
+						`File exists but is not a template: '${file.path}'\n\n` +
+						`To use it as a block, either:\n` +
+						`  - Add 'z2k_template_type: block-template' or 'z2k_template_type: document-template' to frontmatter\n` +
+						`  - Use .block or .template file extension\n` +
+						`  - Place it inside a templates folder`
 					);
 				}
 				return returnBlock(file);
@@ -2778,17 +2785,17 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		}
 		return fullPath;
 	}
-	setDefaultTitleFromYaml(state: TemplateState) {
-		// look through all the yaml (including from blocks) and find any z2k_template_default_title field
+	setSuggestedTitleFromYaml(state: TemplateState) {
+		// look through all the yaml (including from blocks) and find any z2k_template_suggested_title field
 		for (const yamlStr of state.templatesYaml) {
 			let yaml = Z2KYamlDoc.fromString(yamlStr);
 
-			let defaultTitle = yaml.get("z2k_template_default_title");
-			if (defaultTitle === undefined) { continue; } // not found in this yaml
-			if (typeof defaultTitle !== "string") {
-				throw new TemplatePluginError(`z2k_template_default_title must be a string (got a ${typeof defaultTitle})`);
+			let suggestedTitle = yaml.get("z2k_template_suggested_title");
+			if (suggestedTitle === undefined) { continue; } // not found in this yaml
+			if (typeof suggestedTitle !== "string") {
+				throw new TemplatePluginError(`z2k_template_suggested_title must be a string (got a ${typeof suggestedTitle})`);
 			}
-			state.fieldInfos["fileTitle"].default = defaultTitle;
+			state.fieldInfos["fileTitle"].suggest = suggestedTitle;
 			break; // take the first one we find
 		}
 	}
@@ -2874,11 +2881,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		let tfi = state.fieldInfos["fileTitle"]; // tfi = titleFieldInfo
 		if (!tfi) { tfi = { fieldName: "fileTitle" }; }
 		tfi.type = "titleText"; // Always make it titleText
-		if (tfi.value === undefined) {
-			if (opts.existingTitle) {
-				tfi.value = opts.existingTitle;
-			}
-			tfi.default = "Untitled";
+		if (tfi.value === undefined && opts.existingTitle) {
+			tfi.value = opts.existingTitle;
 		}
 		if (opts.existingTitle) {
 			tfi.directives = tfi.directives || [];
@@ -2944,8 +2948,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		if (doc.get("z2k_template_type") !== undefined) {
 			doc.set("z2k_template_type", "wip-content-file");
 		}
-		doc.del("z2k_template_default_title");
-		// NOTE: Do NOT delete z2k_template_default_miss_handling here - the engine needs it for parsing
+		doc.del("z2k_template_suggested_title");
+		// NOTE: Do NOT delete z2k_template_default_fallback_handling here - the engine needs it for parsing
 		// It will be deleted later during finalization in cleanupYamlAfterFinalize
 		return doc.toString();
 	}
@@ -2953,7 +2957,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		if (!fm || fm.trim() === "") { return fm; }
 		// Remove template-only YAML properties that should not appear in finalized output
 		const doc = Z2KYamlDoc.fromString(fm);
-		doc.del("z2k_template_default_miss_handling");
+		doc.del("z2k_template_default_fallback_handling");
 		// Only update z2k_template_type if it already exists
 		if (doc.get("z2k_template_type") !== undefined) {
 			doc.set("z2k_template_type", "finalized-content-file");
@@ -2964,8 +2968,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		if (!fm || fm.trim() === "") { return fm; }
 		const doc = Z2KYamlDoc.fromString(fm);
 		doc.del("z2k_template_type");
-		doc.del("z2k_template_default_title");
-		doc.del("z2k_template_default_miss_handling");
+		doc.del("z2k_template_suggested_title");
+		doc.del("z2k_template_default_fallback_handling");
 		return doc.toString();
 	}
 	ensureSourceText(content: string, hadSourceTextField: boolean, sourceText: string): string {
@@ -3824,12 +3828,12 @@ const FieldCollectionForm = ({ templateState, userHelpers, onComplete, onCancel,
 			// Determine if field is already specified externally
 			const wasSpecified = fieldName in templateState.resolvedValues;
 
-			// Initial value: use existing value, or default, or empty
+			// Initial value: use existing value, or suggest, or empty
 			// NOTE: This is a best-effort initial value. The real values will be
 			// calculated in updateFieldStates which runs immediately after first render.
 			const currentValue = wasSpecified
 				? templateState.resolvedValues[fieldName]
-				: (fieldInfo.default ?? '');
+				: (fieldInfo.suggest ?? '');
 
 			// Initialize selectedIndices for select fields
 			let initialSelectedIndices: number[] | undefined = undefined;
@@ -3853,8 +3857,8 @@ const FieldCollectionForm = ({ templateState, userHelpers, onComplete, onCancel,
 				dependencies: [...new Set(dependencies)],
 				dependentFields: [],
 				resolvedPrompt: String(fieldInfo.prompt) ?? formatFieldName(fieldName),
-				resolvedDefault: fieldInfo.default ?? "",
-				resolvedMiss: fieldInfo.miss ?? "",
+				resolvedSuggest: fieldInfo.suggest ?? "",
+				resolvedFallback: fieldInfo.fallback ?? "",
 				resolvedOpts: fieldInfo.opts,
 				selectedIndices: initialSelectedIndices
 			};
@@ -3969,8 +3973,8 @@ const FieldCollectionForm = ({ templateState, userHelpers, onComplete, onCancel,
 
 			// Resolve display fields
 			newFieldStates[fieldName].resolvedPrompt = String(Z2KTemplateEngine.reducedRenderContent(fieldInfo.prompt || formatFieldName(fieldName), context, true, userHelpers));
-			newFieldStates[fieldName].resolvedDefault = Z2KTemplateEngine.reducedRenderContent(fieldInfo.default || "", context, true, userHelpers);
-			newFieldStates[fieldName].resolvedMiss = Z2KTemplateEngine.reducedRenderContent(fieldInfo.miss || "", context, true, userHelpers);
+			newFieldStates[fieldName].resolvedSuggest = Z2KTemplateEngine.reducedRenderContent(fieldInfo.suggest || "", context, true, userHelpers);
+			newFieldStates[fieldName].resolvedFallback = Z2KTemplateEngine.reducedRenderContent(fieldInfo.fallback || "", context, true, userHelpers);
 
 			// Update resolved options for select fields
 			if ((fieldInfo.type === 'singleSelect' || fieldInfo.type === 'multiSelect') && fieldInfo.opts) {
@@ -4000,34 +4004,34 @@ const FieldCollectionForm = ({ templateState, userHelpers, onComplete, onCancel,
 				&& !(fieldName in templateState.resolvedValues)
 				&& !newFieldStates[fieldName].touched) {
 				if (fieldInfo.type === 'singleSelect' || fieldInfo.type === 'multiSelect') {
-					const resolvedDefault = newFieldStates[fieldName].resolvedDefault;
+					const resolvedSuggest = newFieldStates[fieldName].resolvedSuggest;
 					const resolvedOpts = newFieldStates[fieldName].resolvedOpts || [];
 
 					if (fieldInfo.type === 'singleSelect') {
-						const defaultIndex = resolvedOpts.findIndex(opt => opt === resolvedDefault);
-						if (defaultIndex >= 0) {
-							newFieldStates[fieldName].value = resolvedDefault;
-							newFieldStates[fieldName].selectedIndices = [defaultIndex];
+						const suggestIndex = resolvedOpts.findIndex(opt => opt === resolvedSuggest);
+						if (suggestIndex >= 0) {
+							newFieldStates[fieldName].value = resolvedSuggest;
+							newFieldStates[fieldName].selectedIndices = [suggestIndex];
 						} else {
 							newFieldStates[fieldName].value = undefined;
 							newFieldStates[fieldName].selectedIndices = [];
 						}
 					} else if (fieldInfo.type === 'multiSelect') {
-						const defaultValues = Array.isArray(resolvedDefault) ? resolvedDefault : [resolvedDefault];
-						const defaultIndices = defaultValues
+						const suggestValues = Array.isArray(resolvedSuggest) ? resolvedSuggest : [resolvedSuggest];
+						const suggestIndices = suggestValues
 							.map(val => resolvedOpts.findIndex(opt => opt === val))
 							.filter(idx => idx >= 0);
 
-						if (defaultIndices.length > 0) {
-							newFieldStates[fieldName].value = defaultIndices.map(idx => resolvedOpts[idx]);
-							newFieldStates[fieldName].selectedIndices = defaultIndices;
+						if (suggestIndices.length > 0) {
+							newFieldStates[fieldName].value = suggestIndices.map(idx => resolvedOpts[idx]);
+							newFieldStates[fieldName].selectedIndices = suggestIndices;
 						} else {
 							newFieldStates[fieldName].value = [];
 							newFieldStates[fieldName].selectedIndices = [];
 						}
 					}
 				} else {
-					newFieldStates[fieldName].value = newFieldStates[fieldName].resolvedDefault;
+					newFieldStates[fieldName].value = newFieldStates[fieldName].resolvedSuggest;
 				}
 			}
 		}
@@ -4062,10 +4066,6 @@ const FieldCollectionForm = ({ templateState, userHelpers, onComplete, onCancel,
 					errorMessage = 'Invalid value';
 				} else {
 					const valueTrimmed = value.trim();
-					if (!valueTrimmed && fieldName === 'fileTitle') {
-						hasError = true;
-						errorMessage = 'A title is required';
-					}
 					if (fieldInfo.type === "titleText") {
 						if (/^[.]+$/.test(valueTrimmed)) {
 							hasError = true;
@@ -4123,7 +4123,7 @@ const FieldCollectionForm = ({ templateState, userHelpers, onComplete, onCancel,
 	function handleFieldReset(fieldName: string) {
 		let newFieldStates = { ...fieldStates };
 		newFieldStates[fieldName].touched = false;
-		newFieldStates[fieldName].value = newFieldStates[fieldName].resolvedDefault;
+		newFieldStates[fieldName].value = newFieldStates[fieldName].resolvedSuggest;
 		updateFieldStates(newFieldStates);
 		validateAllFields(newFieldStates, false);
 		setFieldStates(newFieldStates);
@@ -4141,7 +4141,7 @@ const FieldCollectionForm = ({ templateState, userHelpers, onComplete, onCancel,
 
 		// Update template state with resolved values
 		// NOTE: Similar logic exists in applyFinalFieldStates(). If you modify
-		// the value= or miss handling here, check if the same change is needed there.
+		// the value= or fallback handling here, check if the same change is needed there.
 		for (const fieldName of dependencyOrderedFieldNames) {
 			const fieldInfo = templateState.fieldInfos[fieldName];
 			if (!fieldInfo) { continue; }
@@ -4165,14 +4165,14 @@ const FieldCollectionForm = ({ templateState, userHelpers, onComplete, onCancel,
 					templateState.resolvedValues[fieldName] = value;
 				}
 			} else if (finalize && !(fieldName in templateState.resolvedValues) && !fieldInfo.directives?.includes('finalize-preserve')) {
-				// Unspecified field during finalization - use miss value
+				// Unspecified field during finalization - use fallback value
 				// Skip finalize-preserve fields - leave undefined so preservation logic handles them
 				// NOTE: Similar logic in applyFinalFieldStates() - keep in sync
-				const missValue = fieldState.resolvedMiss;
-				if (missValue === undefined) {
+				const fallbackValue = fieldState.resolvedFallback;
+				if (fallbackValue === undefined) {
 					delete templateState.resolvedValues[fieldName];
 				} else {
-					templateState.resolvedValues[fieldName] = missValue || '';
+					templateState.resolvedValues[fieldName] = fallbackValue || '';
 				}
 			}
 			// Else: field already specified externally, leave it alone
@@ -4269,7 +4269,7 @@ const FieldCollectionForm = ({ templateState, userHelpers, onComplete, onCancel,
  * 1. User input (touched = true) - user's edits are preserved
  * 2. resolvedValues - externally locked, no re-computation
  * 3. fieldInfo.value formula - computed from dependencies
- * 4. fieldInfo.default - fallback value
+ * 4. fieldInfo.suggest - suggested value shown in prompt
  *
  * ## Resolution System Overview
  *
@@ -4304,12 +4304,12 @@ const FieldCollectionForm = ({ templateState, userHelpers, onComplete, onCancel,
  */
 interface FieldState {
 	// The current value of the field
-	// 	Should always be ready to be verified/submitted (except for miss text resolution, that can be applied upon being verified/submitted)
+	// 	Should always be ready to be verified/submitted (except for fallback resolution, that can be applied upon being verified/submitted)
 	//    Should also always be what's shown in the field and be used for dependencies
 	value: VarValueType;
 	omitFromForm: boolean;
 	// Keeps track of whether the field has been interacted with
-	// 	(determines miss text behavior and default value behavior in the field itself)
+	// 	(determines fallback text behavior and suggest value behavior in the field itself)
 	touched: boolean;
 	focused: boolean;
 	hasError: boolean;
@@ -4317,8 +4317,8 @@ interface FieldState {
 	dependentFields: string[]; // Fields that depend on this field
 	dependencies: string[]; // Fields this field depends on
 	resolvedPrompt?: string; // Prompt text with references resolved
-	resolvedDefault?: VarValueType; // Default value with references resolved
-	resolvedMiss?: VarValueType; // Miss text with references resolved
+	resolvedSuggest?: VarValueType; // Suggest value with references resolved
+	resolvedFallback?: VarValueType; // Fallback text with references resolved
 	resolvedOpts?: VarValueType[]; // Options with references resolved (for singleSelect/multiSelect)
 	selectedIndices?: number[]; // Selected option indices (for singleSelect this is an array of size 1, for multiSelect it can be multiple)
 }
@@ -4328,11 +4328,11 @@ function getFieldDependencies(fieldInfo: FieldInfo): string[] {
 	if (fieldInfo.prompt) {
 		deps.push(...Z2KTemplateEngine.reducedGetDependencies(fieldInfo.prompt));
 	}
-	if (fieldInfo.default) {
-		deps.push(...Z2KTemplateEngine.reducedGetDependencies(fieldInfo.default));
+	if (fieldInfo.suggest) {
+		deps.push(...Z2KTemplateEngine.reducedGetDependencies(fieldInfo.suggest));
 	}
-	if (fieldInfo.miss) {
-		deps.push(...Z2KTemplateEngine.reducedGetDependencies(fieldInfo.miss));
+	if (fieldInfo.fallback) {
+		deps.push(...Z2KTemplateEngine.reducedGetDependencies(fieldInfo.fallback));
 	}
 	if (fieldInfo.value) {
 		deps.push(...Z2KTemplateEngine.reducedGetDependencies(fieldInfo.value));
@@ -4638,11 +4638,11 @@ const FieldInput = ({ name, label, fieldInfo, fieldState, onChange, onFocus, onB
 		return finalText;
 	}
 
-	function renderMissTextPreview() {
-		if (fieldState.resolvedMiss && !fieldState.touched) {
+	function renderFallbackPreview() {
+		if (fieldState.resolvedFallback && !fieldState.touched) {
 			return (
-				<div className="miss-text-preview">
-					Value if left untouched:<br/><span>{toHumanReadable(fieldState.resolvedMiss)}</span>
+				<div className="fallback-preview">
+					Value if left untouched:<br/><span>{toHumanReadable(fieldState.resolvedFallback)}</span>
 				</div>
 			);
 		}
@@ -4657,7 +4657,7 @@ const FieldInput = ({ name, label, fieldInfo, fieldState, onChange, onFocus, onB
 					<span className="reset-icon-wrapper">
 						<span
 							className="reset-icon"
-							title="Reset to default"
+							title="Reset to suggested value"
 							onMouseDown={(e) => { // use onMouseDown instead of onClick to prevent focus issues
 								e.preventDefault(); // Prevent icon from taking focus
 								onReset();
@@ -4672,7 +4672,7 @@ const FieldInput = ({ name, label, fieldInfo, fieldState, onChange, onFocus, onB
 				</div>
 			)}
 			{renderInput()}
-			{renderMissTextPreview()}
+			{renderFallbackPreview()}
 			{fieldState.hasError && fieldState.errorMessage && (
 				<div className="error-message">{fieldState.errorMessage}</div>
 			)}

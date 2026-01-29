@@ -17,8 +17,8 @@ For fully fleshed out complete template files, please see out [[template-library
 This simple example handles automatic naming of a file based on fields located in the template. Take for instance a template for people that you know:
 
 ```md title="Template - Person.md"
-{{field-info fileTitle default="{{FullName}}" miss="{{FullName}}"}}
-{{field-info FullName default="{{FirstName}} {{LastName}}"}}
+{{field-info fileTitle suggest="{{FullName}}" fallback="{{FullName}}"}}
+{{field-info FullName suggest="{{FirstName}} {{LastName}}"}}
 # Person: {{FullName}}
 - First Name :: {{LastName}}
 - Last Name  :: {{FirstName}}
@@ -36,14 +36,14 @@ This simple example handles automatic naming of a file based on fields located i
 This "Workout Log" example demonstrates the most basic example of using embedded `{{field-output}}` commands (in its abbreviated `{{fo}}` [[fo Helper Variation|form]]). It uses `{{fo}}` to directly embed the prompting information into the summary list. 
 
 ```md title="Template - Workout Log.md"
-{{field-info fileTitle default="{{today}} - {{Duration}} min workout - {{WorkoutType}}" directives="finalize-default" ~}}
+{{field-info fileTitle suggest="{{today}} - {{Duration}} min workout - {{WorkoutType}}" directives="finalize-suggest" ~}}
 
 ## Summary
-**Date**:: {{fo WorkoutDate default="{{today}}" directives="finalize-default"}}
-**Workout Type**:: {{fo WorkoutType "What types of workouts did you have today?" "Strength" "multiSelect" opts="Strength, Cardio, Mobility" miss="Unspecified"}}  
+**Date**:: {{fo WorkoutDate suggest="{{today}}" directives="finalize-suggest"}}
+**Workout Type**:: {{fo WorkoutType "What types of workouts did you have today?" "Strength" "multiSelect" opts="Strength, Cardio, Mobility" fallback="Unspecified"}}  
 **Duration**:: {{fo Duration "Duration in Minutes:" type="number"}}  
 **Intensity**:: {{fo Intensity type="singleSelect" opts="Low, Moderate, High"}}  
-**Location**:: {{fo Location "Where?" "Home Gym" "text" miss="Home Gym"}}  
+**Location**:: {{fo Location "Where?" "Home Gym" "text" fallback="Home Gym"}}  
 ```
 
 **Behavior Breakdown**:

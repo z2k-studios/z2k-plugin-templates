@@ -14,8 +14,8 @@ aliases:
 ## Overview
 The [[field-info directives|directives]] parameter is a list of strings, with each string being one of the following directives:
 
-- **Miss Handling Special Cases**:
-	- '**[[#finalize-default|finalize-default]]**' :: Instructs the plugin to use the value of the [[field-info default|default]] string as the resultant value of the field if the user has not provided an answer
+- **Fallback Behavior Special Cases**:
+	- '**[[#finalize-suggest|finalize-suggest]]**' :: Instructs the plugin to use the value of the [[field-info suggest|suggest]] string as the resultant value of the field if the user has not provided an answer
 	- '**[[field-info directives#finalize-preserve|finalize-preserve]]**' :: Instructs the plugin to preserve the `{{field}}` entry in the final generated file if the user does not specify a value
 	- '**[[field-info directives#finalize-clear|finalize-clear]]**' :: Directs the plugin to clear out the value of this field if no value is provided
 - **Required**: 
@@ -35,7 +35,7 @@ The `directives` parameter *must* be specified with the `directives` keyword as 
 The directives parameter is a string of comma separated entries. Spaces are ignored. The entries in the directives list must be one of the ones listed above. Other entries are simply ignored. For instance:
 
 ```md title="Sample multiple directives parameter"
-{{field-info YourName "Your Name?" "[[Me]]" directives="required, finalize-default"}}
+{{field-info YourName "Your Name?" "[[Me]]" directives="required, finalize-suggest"}}
 ```
 
 ## Accepted Values
@@ -47,27 +47,27 @@ If omitted, the default `directives` for a user defined field is:
 > `"yes-prompt, not-required, finalize-clear"`
 
 **Details:**
-- While `finalize-clear` is the default directive for finalizing, please note that there are additional forces to control [[Miss Handling]]
+- While `finalize-clear` is the default directive for finalizing, please note that there are additional forces to control [[Fallback Behavior]]
 - Please note that if you are using `{{field-info}}` with [[Built-In Fields]], they may have alternatives default directives.
 
 ## Directives
 For more details on each directive, see below:
 
-## finalize-default
-The `"finalize-default"` directive specifies that, if the user has not provide a value for the field upon [[Finalization|finalization]], the plug-in will use the value of the [[field-info default|default]] parameter.  
+## finalize-suggest
+The `"finalize-suggest"` directive specifies that, if the user has not provided a value for the field upon [[Finalization|finalization]], the plug-in will use the value of the [[field-info suggest|suggest]] parameter.
 
 **Notes**:
-- Please see [[Miss Handling]] for more details. It works hand in hand with the [[YAML Configuration Properties]].
-- This is likely the most commonly used directive. 
-- If no default is given then it will use the empty string. 
+- Please see [[Fallback Behavior]] for more details. It works hand in hand with the [[YAML Configuration Properties]].
+- This is likely the most commonly used directive.
+- If no suggest value is given then it will use the empty string.
 
-**When this is useful**: 
-- If you have specified a field with a default response, you can use this directive to cause the default string to be the [[field-info miss|miss]] string as well. This saves data entry time and prevents errors.
+**When this is useful**:
+- If you have specified a field with a suggest value, you can use this directive to cause the suggest value to be the [[field-info fallback|fallback]] value as well. This saves data entry time and prevents errors.
 
 ## finalize-preserve
-The `"finalize-preserve"` specifies that, upon [[Finalization|finalization]], if the user has not provide a value for the field, the plug-in will "preserve" this field in the final output. That is, it will keep the existing `{{fieldName}}` entry in the final output. Please see [[Miss Handling]] for more details.
+The `"finalize-preserve"` specifies that, upon [[Finalization|finalization]], if the user has not provide a value for the field, the plug-in will "preserve" this field in the final output. That is, it will keep the existing `{{fieldName}}` entry in the final output. Please see [[Fallback Behavior]] for more details.
 
-This is similar to setting the [[field-info miss|miss]] parameter to be that of its own field name - but this method is much preferred, as it is less ambiguous. 
+This is similar to setting the [[field-info fallback|fallback]] parameter to be that of its own field name - but this method is much preferred, as it is less ambiguous. 
 
 Note: this will force all `{{field-info}}` (and variants) referencing the field to also be preserved during finalization.
 
@@ -76,11 +76,11 @@ Note: this will force all `{{field-info}}` (and variants) referencing the field 
 - ==Would be good to give an example==
 
 ## finalize-clear
-The `"finalize-clear"` specifies that, upon [[Finalization|finalization]], if the user has not provide a value for the field, the plug-in will "clear" this field in the final output. All references to the `{{fieldName}}` will be cleared out with an empty string. Please see [[Miss Handling]] for more details.
+The `"finalize-clear"` specifies that, upon [[Finalization|finalization]], if the user has not provide a value for the field, the plug-in will "clear" this field in the final output. All references to the `{{fieldName}}` will be cleared out with an empty string. Please see [[Fallback Behavior]] for more details.
 
 **Notes**:
 - This is the default setting for user defined fields
-- This is similar to setting the [[field-info miss|miss]] parameter to be `miss=""`.
+- This is similar to setting the [[field-info fallback|fallback]] parameter to be `fallback=""`.
 
 **When this is useful**: 
 - If you have specified a field with a different "finalize" directive, setting it back to `"finalize-clear"` resets it back to the default. 

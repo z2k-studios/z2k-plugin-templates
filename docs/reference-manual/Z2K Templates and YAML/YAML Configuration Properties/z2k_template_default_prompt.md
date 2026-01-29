@@ -18,7 +18,7 @@ This [[YAML Configuration Properties|Z2K Templates YAML Configuration Setting]] 
 
 
 ## Example
-This resets the default miss handling for this file to clear the field completely if no value is given. 
+This sets a custom default prompt for all fields in this file. 
 ```yaml
 ---
 z2k_template_default_prompt : "Please specify the value of {{FieldName)}}"

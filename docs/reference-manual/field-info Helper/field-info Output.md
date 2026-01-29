@@ -19,8 +19,8 @@ The `{{field-info}}` helper function will remove any whitespace after it up unti
 > If you have multiple lines of text that you wish to remove around a `{{field-info}}`, consider using the Handlebars [[tilde]] command. For example:
 > ```md title="Template - Person.md"
 > 
-> {{~field-info fileTitle default="{{FullName}}" miss="{{FullName}}"}}
-> {{field-info FullName default="{{FirstName}} {{LastName}}" ~}}
+> {{~field-info fileTitle suggest="{{FullName}}" fallback="{{FullName}}"}}
+> {{field-info FullName suggest="{{FirstName}} {{LastName}}" ~}}
 > 
 > # Person: {{FullName}}
 > - First Name :: {{LastName}}

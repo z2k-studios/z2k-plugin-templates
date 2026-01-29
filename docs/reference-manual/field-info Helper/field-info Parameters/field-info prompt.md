@@ -21,7 +21,7 @@ The `prompt` parameter is the first parameter after that `fieldName` and as such
 The `prompt` parameter can be specified with the `prompt` keyword for the [[field-info Syntax#Named Parameters|Named Parameter]] if you want greater clarity. For example:
 
 ```md title="Sample named prompt parameter"
-{{field-info SupportingCharacter prompt="Supporting Character?" default="John Watson"}}
+{{field-info SupportingCharacter prompt="Supporting Character?" suggest="John Watson"}}
 ```
 
 If you are using positional parameters, please see the [[field-info Syntax]] for more  [[field-info Syntax#Positional Parameters|information on its position]].
@@ -64,7 +64,7 @@ Take for instance the previous example. Say you want to have a prompt for the ti
 > These advanced `prompt` settings can seem like a bit much. But using customized prompts are a way to really add polish to the quality of your template files. Make use of prompts to:
 > 1. Provide details of what exactly is being asked for.
 > 2. Provide Tips on how to answer
-> 3. Provide suggested answers to consider (or move these to the [[field-info default|default]] parameter)
+> 3. Provide suggested answers to consider (or move these to the [[field-info suggest|suggest]] parameter)
 > 4. Soften the otherwise quite utilitarian [[Prompting Interface]], welcoming users to provide as much detail as possible. 
 
 

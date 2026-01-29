@@ -28,7 +28,7 @@ When the plugin replaces the Helper function in the final outputted file, it wil
 Suppose the following template file excerpt:
 
 ```md title="Book Template.md"
-{{field-info fileTitle default="{{format-string-file-friendly BookTitle}}"}}
+{{field-info fileTitle suggest="{{format-string-file-friendly BookTitle}}"}}
 {{field-info ISBN-URL value="https://isbnsearch.org/isbn/{{format-string-sluggify ISBN}}"}}
 
 # Links to More Information

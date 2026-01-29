@@ -68,7 +68,7 @@ For more complex calculations, chain operations using subexpressions:
 
 ```handlebars
 {{field-info subtotal type="number"}}
-{{field-info taxRate type="number" default=0.08}}
+{{field-info taxRate type="number" suggest=0.08}}
 
 Tax: ${{multiply subtotal taxRate}}
 Total: ${{add subtotal (multiply subtotal taxRate)}}
@@ -86,7 +86,7 @@ Progress: {{multiply (divide completed total) 100}}%
 ### Incrementing Values
 
 ```handlebars
-{{field-info version type="number" default=1}}
+{{field-info version type="number" suggest=1}}
 
 Next version: {{add version 1}}
 ```

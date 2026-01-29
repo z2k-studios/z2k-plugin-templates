@@ -15,7 +15,7 @@ The core concepts are:
    1. [[#Template Files]]
    2. [[#Template Fields]]
    3. [[#Built-In Fields and Helper Functions]]
-   4. [[#Prompting, Deferred Resolution and Miss Handling]]
+   4. [[#Prompting and Fallback Behavior]]
    5. [[#Deferred Resolution]]
    6. [[#YAML Integration]]
    7. [[#Data Sources]]
@@ -65,16 +65,16 @@ Date::{{format-date 'MMMM D, YYYY' now}}
 Status:: {{#if Completed}}✅{{else}}❌{{/if}}
 ```
 
-## Prompting and Miss Handling
+## Prompting and Fallback Behavior
 
-When a field’s value can’t be resolved (for example, it isn’t provided via JSON, YAML frontmatter, or a built-in function), the plugin will **prompt** you for the data. Z2K Templates allows you to configure how the prompting interface works with the Built-in Helper Function [[field-output]].  Example:
+When a field's value can't be resolved (for example, it isn't provided via JSON, YAML frontmatter, or a built-in function), the plugin will **prompt** you for the data. Z2K Templates allows you to configure how the prompting interface works with the Built-in Helper Function [[field-output]].  Example:
 
 ```md title="Template - Prompting.md"
 My Location :: {{field-output Location "Where were you today?" "NYC, NY"}}
 My Mood     :: {{field-output Mood type="singleSelect" opts="Happy, Neutral, Stressed"}}
 ```
 
-If a field remains blank, Z2K Templates follows its [[Prompting#Miss Handling|miss handling rules]] — such as clearing it, keeping the placeholder, or applying a default value.
+If a field remains blank, Z2K Templates follows its [[Fallback Behavior|fallback behavior rules]] — such as clearing it, keeping the placeholder, or applying a suggest value.
 
 - Read More: [[Prompting]]
 
@@ -84,7 +84,7 @@ Not all data is known when you create a new note in your vault. Z2K Templates al
 
 In this state, unresolved `{{fields}}` remain visible in the note and remain being fully functional placeholders.  You can reopen the file later and use the command **[[Continue filling note]]** to supply additional data when it becomes available.  
 
-Then, when you eventually explicitly **[[Lifecycle of a Template#Finalize|finalize]]** the file, Z2K Templates will handle the remaining unresolved fields according to the configured [[Prompting#Miss Handling|miss handling rules]].
+Then, when you eventually explicitly **[[Lifecycle of a Template#Finalize|finalize]]** the file, Z2K Templates will handle the remaining unresolved fields according to the configured [[Fallback Behavior|fallback behavior]].
 
 For example, consider a daily log template that includes:
 ```md title="Template - Daily Log.md"
@@ -129,7 +129,7 @@ Templates can pull data from multiple origins. Potential data sources include::
 3. **Existing files** — other vault files can be read through built-in fields such as `{{SystemData}}` and [[Block Templates]].
 4. **External URI calls** — incoming data provided through [[URI and JSON Support|URI triggers]].
 5. **External JSON command lists** — batches of Z2K Templates actions written in to [[JSON Packages]]
-6. **Miss handling directives** — [[Miss Handling|fallback behavior]] applied when all other sources fail.
+6. **Fallback directives** — [[Fallback Behavior|fallback behavior]] applied when all other sources fail.
 
 - Read more: [[Field Data Sources]]
 

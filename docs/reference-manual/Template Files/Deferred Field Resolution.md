@@ -17,7 +17,7 @@ Take for instance a Daily Log for a Quantified Self. This daily log may be creat
 Another example may be for a "Meeting Notes" template. Here, you want to use a template file to quickly create a new content file for a meeting. At that point you may only have at most the intended meeting title. Be separating the [[Finalization|finalization]] of a content file from the initial [[Instantiation|instantiation]] you allow for later data entry of fields like `{{MeetingSummary}}` and `{{MeetingAttendees}}`, and in the mean time, have full access to the file to record content into the note as the meeting unfolds. 
 
 ## Handlebars and Deferred Resolution
-For users familiar with Handlebars, this additional "[[WIP Stage]]" may take some getting use to. It introduces new concepts around it, e.g. [[Miss Handling]] and deferred helper function execution. Handlebars was written explicitly for the case where either data is known or unknown, but never deferred.
+For users familiar with Handlebars, this additional "[[WIP Stage]]" may take some getting use to. It introduces new concepts around it, e.g. [[Fallback Behavior]] and deferred helper function execution. Handlebars was written explicitly for the case where either data is known or unknown, but never deferred.
 
 ## More Details
 Deferred Field Resolution is the central concept behind the [[WIP Stage]] in the [[Lifecycle of a Template]]. Please see that page for more details on how deferred field resolution is actually implemented and how it fits into a [[Typical Templates Workflow]].
