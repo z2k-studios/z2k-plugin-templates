@@ -14,7 +14,7 @@ For more details, see:
 2. [[Prompting Interface per Type]]
 3. [[Prompting Defaults]]
 4. [[Prompt Touching]]
-5. [[Miss Handling]]
+5. [[Fallback Behavior]]
 6. [[Built-in Helpers for Prompting]]
 
 

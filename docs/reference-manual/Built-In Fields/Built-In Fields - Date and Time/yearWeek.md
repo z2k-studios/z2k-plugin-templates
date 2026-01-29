@@ -29,7 +29,7 @@ Given today's date is January 27, 2026:
 Use `yearWeek` to create weekly notes with consistent naming:
 
 ```handlebars
-{{field-info fileTitle default="{{yearWeek}}" directives="finalize-default"}}
+{{field-info fileTitle suggest="{{yearWeek}}" directives="finalize-suggest"}}
 
 # Weekly Review: {{yearWeek}}
 

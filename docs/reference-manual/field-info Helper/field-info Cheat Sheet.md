@@ -11,10 +11,10 @@ The `{{field-info}}` built-In helper function is a powerful tool for controlling
 
 ## Syntax
 The [[field-info Syntax|Syntax]] of `{{field-info}}` supports both positional and named parameters:
-- **Positional Parameters**: 
-  - `{{field-info` [[field-info fieldName|fieldName]] [[field-info prompt|prompt]] [[field-info default|default]] [[field-info type|type]]`}}`
-- **Named Parameters**: 
-  - `{{field-info fieldName=`*[[field-info fieldName|fieldName]]*` prompt=`*[[field-info prompt|prompt]]*` default=`*[[field-info default|default]]*` type=`*[[field-info type|type]]*` opts=`*[[field-info opts|opts]]*` miss=`*[[field-info miss|miss]]*` directives=`*[[field-info directives|directives]]`}}`
+- **Positional Parameters**:
+  - `{{field-info` [[field-info fieldName|fieldName]] [[field-info prompt|prompt]] [[field-info suggest|suggest]] [[field-info type|type]]`}}`
+- **Named Parameters**:
+  - `{{field-info fieldName=`*[[field-info fieldName|fieldName]]*` prompt=`*[[field-info prompt|prompt]]*` suggest=`*[[field-info suggest|suggest]]*` type=`*[[field-info type|type]]*` opts=`*[[field-info opts|opts]]*` fallback=`*[[field-info fallback|fallback]]*` directives=`*[[field-info directives|directives]]`}}`
 
 ## Parameters
 ![[field-info Parameters#Overview]]

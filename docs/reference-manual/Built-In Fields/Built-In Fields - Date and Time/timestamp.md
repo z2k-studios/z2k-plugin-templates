@@ -19,7 +19,7 @@ To adjust the format of the built-in `{{timestamp}}` field, please use the [[for
 ## Example Output 
 Given a template snippet of:
 ```md title="Timestamp Example Template.md"
-{{field-info fileTitle default="{{timestamp}}" directives="finalize-default"}}
+{{field-info fileTitle suggest="{{timestamp}}" directives="finalize-suggest"}}
 {{field-info PreciseTimestamp type="string" value=(format-date "YYYYMMDDHHmmssSSS") directives="no-prompt"}}
 
 - Document Timestamp: {{timestamp}}   {{~! This uses the default formatting. }}

@@ -12,7 +12,7 @@ Wanting to up your game and use some of the more advanced features of [[README|Z
 - How to Organize your Template Folders to be Context Sensitive
 - How to Store Fields into YAML for Template Updates
 - How to make all files be preceded with a timestamp, true Zettelkasten style
-	- Define root level system block field call "fileTitlePostfix", and then redefine file title to be "`{{timetamp}} {{fileTitlePostfix}}`" with default and directives = finalize-default
+	- Define root level system block field call "fileTitlePostfix", and then redefine file title to be "`{{timetamp}} {{fileTitlePostfix}}`" with default and directives = finalize-suggest
 - How to create a variety of chat prompts to query chatgpt about the contents of a card
 	- Create a partial with a bunch of yaml settings (or set values on fields) that describe different chat prompts
 	- then use the [[chatgpt]] helper and reference the prompt

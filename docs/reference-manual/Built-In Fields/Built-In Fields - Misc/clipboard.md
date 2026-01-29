@@ -49,7 +49,7 @@ Check if the clipboard has content before including it:
 Set the clipboard content as a default for a field, allowing the user to modify it:
 
 ```handlebars
-{{field-info quote default=clipboard prompt="Quote text"}}
+{{field-info quote suggest=clipboard prompt="Quote text"}}
 
 > {{quote}}
 ```

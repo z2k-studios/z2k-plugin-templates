@@ -26,7 +26,7 @@ Every parameter in `field-info` has a name that you use to specify which paramet
 
 **Example:**
 ```md
-{{field-info fieldName=BookTitle type="text" prompt="Short title for this book?" default="Untitled" miss="" directives="required"}}
+{{field-info fieldName=BookTitle type="text" prompt="Short title for this book?" suggest="Untitled" fallback="" directives="required"}}
 ```
 
 **Notes:**
@@ -40,11 +40,11 @@ Every parameter in `field-info` has a name that you use to specify which paramet
 > Using Named Parameters makes your templates become more readable. There is no ambiguity what each parameter's value is. 
 
 ## Positional Parameters
-The most commonly used parameters (`fieldName`, `prompt`, `default`, and `type`) can also be specified without a name prefix, and instead identified through their position in which they are listed after the field name. 
+The most commonly used parameters (`fieldName`, `prompt`, `suggest`, and `type`) can also be specified without a name prefix, and instead identified through their position in which they are listed after the field name.
 
 Positional parameters are ordered in priority of importance and usage - thus allowing for shortened {{field-info}} entries. The order is as follows:
 
-> `{{field-info` *([[field-info fieldName|fieldName]])* *([[field-info prompt|prompt]])* *([[field-info default|default]])* *([[field-info type|type]])*`}}`
+> `{{field-info` *([[field-info fieldName|fieldName]])* *([[field-info prompt|prompt]])* *([[field-info suggest|suggest]])* *([[field-info type|type]])*`}}`
 
 **Examples:**
 ```md
@@ -65,7 +65,7 @@ You can use a hybrid approach that blends the two. You can start with positional
 
 **Examples:**
 ```md
-{{field-info BookTitle "Title for this book?" miss="Untitled" directives="required"}}
+{{field-info BookTitle "Title for this book?" fallback="Untitled" directives="required"}}
 {{field-info BookAuthor "Author for this book?" type="text" directives="required"}}
 ```
 

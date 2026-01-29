@@ -114,7 +114,7 @@ Define fields that should appear in every template:
 ---
 z2k_template_type: system-partial
 ---
-{{field-info author default="{{creator}}"}}
+{{field-info author suggest="{{creator}}"}}
 ```
 
 ## How System Block Templates Work

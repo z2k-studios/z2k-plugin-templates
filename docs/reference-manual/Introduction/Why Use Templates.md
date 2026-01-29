@@ -97,7 +97,7 @@ Templates can minimize duplicate errors and data input effort by using the same 
 –––
 Title: {{MeetingTitle}}
 –––
-{{field-info fileTitle default="Meeting Notes - {{MeetingTitle}"}}}
+{{field-info fileTitle suggest="Meeting Notes - {{MeetingTitle}"}}}
 # {{MeetingTitle}}
 ```
 

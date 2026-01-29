@@ -19,9 +19,9 @@ Z2K Templates YAML Configuration settings can be inserted into the yaml frontmat
 The following YAML configuration properties are recognized by the Z2K Templates plugin:
 
 - [[z2k_template_type]]
-- [[z2k_template_default_miss_handling]]
+- [[z2k_template_default_fallback_handling]]
 - [[z2k_template_default_prompt]]
-- [[z2k_template_default_title]]
+- [[z2k_template_suggested_title]]
 - [[z2k_template_name]]
 - [[z2k_template_author]]
 

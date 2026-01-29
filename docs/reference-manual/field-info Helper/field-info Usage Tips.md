@@ -22,7 +22,7 @@ For example, the following template uses a field-info block at the top of the fi
 
 ```md title="Book Template.md"
 {{! FIELD-INFO BLOCK -------------------------------------------------- }}
-{{field-info fileTitle default="{{BookTitle}} by {{BookAuthor}}"}}
+{{field-info fileTitle suggest="{{BookTitle}} by {{BookAuthor}}"}}
 {{field-info BookTitle "Enter the Book Title (without subtitle)" directives="required"}}
 {{field-info BookAuthor "Enter the Author name. If multiple authors, separate with semicolons"}}  
 {{field-info BookGenre "What Genre is {{BookTitle}}?" type="multiselect" opts="#Genre/Fiction, #Genre/Biography, #Genre/Non-Fiction, #Genre/Reference"}}  

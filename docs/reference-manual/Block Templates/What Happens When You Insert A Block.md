@@ -57,8 +57,8 @@ The Handlebars template is rendered with all resolved field values. Helper funct
 ### 6. YAML Cleanup
 Before merging, the plugin removes template-specific YAML properties from the block's frontmatter:
 - `z2k_template_type`
-- `z2k_template_default_title`
-- `z2k_template_default_miss_handling`
+- `z2k_template_suggested_title`
+- `z2k_template_default_fallback_handling`
 
 These properties are only relevant during template authoring and shouldn't appear in your content files.
 

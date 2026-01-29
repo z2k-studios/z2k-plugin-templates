@@ -31,7 +31,7 @@ aliases:
 2. [[Installation]] - How to install the plugin  
     - [[Prerequisites]] (Obsidian, dependencies)  
     - [[Installing the Plugin]]  
-    - [[Configuring Defaults]] (e.g., miss handling, date formats)  
+    - [[Configuring Defaults]] (e.g., fallback behavior, date formats)  
 
 ### Basics
 
@@ -110,7 +110,7 @@ aliases:
 	- [[Prompting Interface per Type]]
 	- [[Prompting Defaults]]
 	- [[Prompt Touching]]
-	- [[Miss Handling]]
+	- [[Fallback Behavior]]
 	- [[Built-in Helpers for Prompting]]
 
 ### Intermediate
@@ -137,9 +137,9 @@ aliases:
 	- [[field-info Output|Output]] - what does the `{{field-info}}` helper output?
 	- [[field-info Parameters|Parameters]] - steps through `{{field-info}}` (and `{{field-output}}`) parameters
 		- [[field-info prompt|prompt]] Parameter - the prompt message displayed to the user
-		- [[field-info default|default]] Parameter - the default value of the field
+		- [[field-info suggest|suggest]] Parameter - the suggested value to pre-fill in the prompt
 		- [[field-info type|type]] Parameter - the type of data associated with the field
-		- [[field-info miss|miss]] Parameter - the value assigned if the user never provides a value to a field
+		- [[field-info fallback|fallback]] Parameter - the value used if the user never provides a value
 		- [[field-info directives|directives]] Parameter - advanced control of prompting
 		- [[field-info opts|opts]] Parameter - possible field values for singleSelect and multiSelect fields
 		- [[field-info value|value]] Parameter - manually assign values to a field
@@ -210,8 +210,8 @@ aliases:
 	    - z2k_template_type
 	    - z2k_template_name
 	    - z2k_template_title: (still used?)
-	    - z2k_template_default_title
-	    - z2k_template_default_miss_handling
+	    - z2k_template_suggested_title
+	    - z2k_template_default_fallback_handling
 	    - author?
 	    - Version?
 

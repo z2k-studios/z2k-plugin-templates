@@ -18,7 +18,7 @@ Book-Genre: {{BookGenre}}
 Card-Created: {{today}}
 ---
 {{! FIELD-INFO BLOCK -------------------------------------------------- }}
-{{field-info fileTitle default="{{BookTitle}} by {{BookAuthor}}"}}
+{{field-info fileTitle suggest="{{BookTitle}} by {{BookAuthor}}"}}
 {{field-info BookTitle "Enter the Book Title (without subtitle)" directives="required"}}
 {{field-info BookAuthor "Enter the Author name. If multiple authors, separate with semicolons"}}  
 {{field-info BookGenre "What Genre is {{BookTitle}}?" type="multiselect" opts="#Genre/Fiction, #Genre/Biography, #Genre/Non-Fiction, #Genre/Reference"}}  
@@ -84,7 +84,7 @@ With the introduction of Bases, Obsidian offers some powerful database like opti
 
 ### 2g. Template Comments
 At the end of the file, notice that it has a `{{! comment }}` entry to remind the user to insider Quotation Block Templates at the end of the file. Unlike standard Obisidian `%% comments %%`
-, these comments are removed from the final file when it is [[Miss Handling|finalized]].
+, these comments are removed from the final file when it is [[Finalization|finalized]].
 - Learn More: [[Template Comments]]
 
 ### 2h. External Links
@@ -98,7 +98,7 @@ Now that we have a well-featured book template in our vault, let's create what i
 ## Quote:: {{Quotation Name}}
 > {{QuoteText}}
 {{%IF {{QuoteAuthor}} != "" }}
-> -- {{field-output QuoteAuthor default="{{BookAuthor}}"}}
+> -- {{field-output QuoteAuthor suggest="{{BookAuthor}}"}}
 {{%ENDIF}}
 - References: 
     - Tags: {{field-info Tags prompt="Please list out all Tags relevant to this quotation"}}
