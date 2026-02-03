@@ -540,6 +540,9 @@ textarea:focus {
 	flex-direction: column;
 	gap: 16px;
 }
+.z2k.confirmation-modal .modal-header {
+	margin: 0;
+}
 
 .z2k .confirmation-message {
 	font-size: 14px;
@@ -569,6 +572,12 @@ textarea:focus {
 	padding: 16px 20px;
 	display: flex;
 	flex-direction: column;
+	gap: 12px;
+}
+.z2k.error-modal .modal-header {
+	margin: 0; /* Obsidian default margin-bottom: 0.75em is redundant when flex gap controls spacing */
+}
+.z2k.error-modal .modal-content {
 	gap: 12px;
 }
 

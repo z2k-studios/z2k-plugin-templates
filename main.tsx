@@ -1859,7 +1859,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			fm = this.updateYamlOnCreate(fm, opts.templateFile.basename);
 			content = Z2KYamlDoc.joinFrontmatter(fm, body);
 			let systemBlocksContent = await this.GetSystemBlocksContent(opts.cardTypeFolder);
-			let state = await this.parseTemplate(content, systemBlocksContent, this.settings.globalBlock, opts.templateFile.parent as TFolder);
+			let state = await this.parseTemplate(content, systemBlocksContent, this.settings.globalBlock, opts.templateFile);
 			let hadSourceTextField = !!state.fieldInfos["sourceText"];
 			// Convert sourceText to string for addPluginBuiltIns (handles all VarValueType cases)
 			const sourceTextStr = opts.fieldOverrides.sourceText != null ? String(opts.fieldOverrides.sourceText) : undefined;
@@ -1917,7 +1917,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	}) {
 		try {
 			let content = await this.app.vault.read(opts.existingFile);
-			let state = await this.parseTemplate(content, "", "", opts.existingFile.parent as TFolder);
+			let state = await this.parseTemplate(content, "", "", opts.existingFile);
 			// Add global block and system blocks YAML for field values
 			let globalBlockYaml = Z2KYamlDoc.splitFrontmatter(this.settings.globalBlock).fm;
 			let systemBlocksContent = await this.GetSystemBlocksContent(opts.existingFile.parent as TFolder);
@@ -1973,7 +1973,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 
 			// Parse and resolve block
 			let content = await this.app.vault.read(opts.templateFile);
-			let state = await this.parseTemplate(content, "", "", opts.templateFile.parent as TFolder);
+			let state = await this.parseTemplate(content, "", "", opts.templateFile);
 			let hadSourceTextField = !!state.fieldInfos["sourceText"];
 			// Add global block, system blocks, and existing file YAML for field values
 			let globalBlockYaml = Z2KYamlDoc.splitFrontmatter(this.settings.globalBlock).fm;
@@ -2048,9 +2048,9 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	}
 
 	// de-duplication helper functions
-	async parseTemplate(content: string, systemBlocksContent: string, globalBlockContent: string, relativeFolder: TFolder): Promise<TemplateState> {
+	async parseTemplate(content: string, systemBlocksContent: string, globalBlockContent: string, templateFile: TFile): Promise<TemplateState> {
 		try {
-			return await Z2KTemplateEngine.parseTemplate(content, systemBlocksContent, globalBlockContent, relativeFolder.path, this.getBlockCallbackFunc());
+			return await Z2KTemplateEngine.parseTemplate(content, systemBlocksContent, globalBlockContent, templateFile.path, this.getBlockCallbackFunc());
 		} catch (error) {
 			rethrowWithMessage(error, "Error occurred while parsing the template");
 		}
@@ -2596,15 +2596,13 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		return false;
 	}
 	getBlockCallbackFunc(): (name: string, path: string) => Promise<[found: boolean, content: string, path: string]> {
-		// Includes all templates, not just blocks — partials can include document templates too
+		// Partials can include any file in the vault, not just templates
 		let allBlocks: [TFile, string][] = [];
-		for (const t of this.getAllTemplates()) {
-			allBlocks.push([t.file, normalizeFullPath(t.file.path)]);
+		for (const f of this.app.vault.getFiles()) {
+			allBlocks.push([f, normalizeFullPath(f.path)]);
 		}
-		// Helper to return a block's content (returns parent directory for nested block resolution)
 		const returnBlock = async (file: TFile): Promise<[true, string, string]> => {
-			const parentDir = file.parent?.path || '';
-			return [true, await this.app.vault.read(file), parentDir];
+			return [true, await this.app.vault.read(file), file.path];
 		};
 		// Helper for hierarchical resolution: prefer current folder → parents → first match
 		const resolveHierarchically = async (matches: [TFile, string][], currentPath: string): Promise<[boolean, string, string]> => {
@@ -2649,16 +2647,6 @@ export default class Z2KTemplatesPlugin extends Plugin {
 						`None of these files exist.`
 					);
 				}
-				const normPath = normalizeFullPath(file.path);
-				if (!allBlocks.some(([, p]) => p === normPath)) {
-					throw new Error(
-						`File exists but is not a template: '${file.path}'\n\n` +
-						`To use it as a block, either:\n` +
-						`  - Add 'z2k_template_type: block-template' or 'z2k_template_type: document-template' to frontmatter\n` +
-						`  - Use .block or .template file extension\n` +
-						`  - Place it inside a templates folder`
-					);
-				}
 				return returnBlock(file);
 			}
 			if (name.startsWith("./") || name.startsWith("../")) {
@@ -2672,16 +2660,6 @@ export default class Z2KTemplatesPlugin extends Plugin {
 						`Resolution mode: Relative path (from '${path}')\n\n` +
 						`Tried these paths:\n${triedPaths.map(p => `  - ${p}`).join('\n')}\n\n` +
 						`None of these files exist.`
-					);
-				}
-				const normPath = normalizeFullPath(file.path);
-				if (!allBlocks.some(([, p]) => p === normPath)) {
-					throw new Error(
-						`File exists but is not a template: '${file.path}'\n\n` +
-						`To use it as a block, either:\n` +
-						`  - Add 'z2k_template_type: block-template' or 'z2k_template_type: document-template' to frontmatter\n` +
-						`  - Use .block or .template file extension\n` +
-						`  - Place it inside a templates folder`
 					);
 				}
 				return returnBlock(file);
@@ -5028,7 +5006,8 @@ export class ErrorModal extends Modal {
 				<button
 					className="btn btn-secondary"
 					onClick={() => {
-						const text = this.error.stack ?? this.error.message;
+						const description = this.error instanceof TemplateError ? this.error.description : '';
+						const text = this.error.message + (description ? '\n\n' + description : '') + '\n\n' + (this.error.stack ?? '');
 						navigator.clipboard.writeText(text).then(() => {
 							new Notice("Copied!", 2000);
 						});
