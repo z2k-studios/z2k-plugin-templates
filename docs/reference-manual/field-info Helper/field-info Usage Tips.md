@@ -13,7 +13,6 @@ The `{{field-info}}` built-in helper function (and its [[field-info Variations|V
 ## field-info as decl / let
 If you are a developer, one way to mentally think of the `{{field-info}}` command is as a field declaration operator (like `decl` or `let`). This is the built-in helper that you use to define what a field is and how it behaves. You do not strictly need to declare a new field with `{{field-info}}`, but conceptually it is useful to think of `{{field-info}}` performing a declaration. 
 
-
 ## field-info Blocks
 If you have a number of prompting information for a number of fields, consider creating a "field-info Block" at the top or bottom of the file. Here, you have one `{{field-info}}` entry per line that specifies the prompting information for all of the primary fields in your template. 
 
@@ -59,6 +58,12 @@ The best practice for placement of field-info blocks:
 ## Readability
 To make your templates more readable, we encourage you to:
 - Use a [[field-info Syntax#Hybrid Parameters|Hybrid Parameter]] approach for inline `{{field-output}}` functions, and the longer [[field-info Syntax#Named Parameters|Named Parameter]] approach for `{{field-info}}` blocks.
+
+
+## field-info collisions
+It is possible to have multiple field-infos for the same field. In fact, doing so allows for some fancy vault work when used [[Template Folder Hierarchies]] in [[Intro to System Blocks|System Blocks]] - see  [[Using System Blocks and field-info]] for more information. 
+
+Defining different values to field-info parameters for the same field results in value "collisions". Please see [[Field Data Sources#Field Metadata Resolution|Field Info Metadata Collision Resolution]] for details on how collisions are resolved. 
 
 ## Pro-Users
 Once you have graduated to a power-user level, consider the following options:

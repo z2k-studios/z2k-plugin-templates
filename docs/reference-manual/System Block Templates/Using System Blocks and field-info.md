@@ -9,6 +9,10 @@ aliases:
 The [[field-info Helper]] Allows you to control how fields are prompted for and behave within [[Template Files]]. By moving your `{{field-info}}` helper function calls into system blocks, you allow for frequently used fields to be configured across many templates, and even adapted based on which folders they are in. It's a powerful combination. 
 
 
+> [!NOTE] Intentional Collisions
+> Using System Blocks with field-info will likely (and intentionally) cause metadata value collisions for fields. Collisions are by design made to result in useful resolution for hierarchical structures. Please see [[Field Data Sources#Field Metadata Resolution|Field Info Metadata Collision Resolution]] for more details.
+
+
 ## Use Case: Customized Field Prompting Across Templates
 Did you know that if a field was given a `{{field-info}}` specification, but was otherwise never used elsewhere, it will not be prompted for?  Knowing this tidbit, you can use a System Block template to pre-feed prompting instructions for a wide range of fields used in a folder and all of its subfolders. Then, any field that is not used in a template will just be ignored. Any field that is redefined by subsequent field infos inside actual template files will override these "default" prompting directives. 
 
