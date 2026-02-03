@@ -16,4 +16,4 @@ System Block Templates (or just "System Blocks") are an advanced feature of the 
 - [[Using System Blocks and YAML]]
 - [[Using System Blocks and field-info]]
 - [[Using System Blocks and Markdown]]
-
+- [[System Block Stops]]
