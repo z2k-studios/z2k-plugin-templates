@@ -25,4 +25,4 @@ The following YAML configuration properties are recognized by the Z2K Templates 
 - [[z2k_template_name]]
 - [[z2k_template_author]]
 
-==These YAML keys should be cleared out when finalized==
+==At least some of these YAML keys should be cleared out when finalized (all?)==

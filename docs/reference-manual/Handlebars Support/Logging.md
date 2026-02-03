@@ -1,9 +1,10 @@
 ---
 sidebar_position: 70
 aliases:
-- logging
-- log
-- debug logging
+  - logging
+  - log
+  - debug logging
+  - Handlebars Logging
 ---
 # Logging
 Handlebars provides a `{{log}}` helper for outputting values during template rendering. Z2K Templates passes this through to Handlebars without modification. The main thing to know is where to find the output.
@@ -51,3 +52,4 @@ Look for the logged values in the **Console** tab. They appear during the templa
 > - Z2K Templates does not register a custom `log` helper – this is pure Handlebars passthrough. Verified by searching `z2k-template-engine/src/main.ts` for any log-related helper registration.
 > - Handlebars supports log levels (`{{log "message" level="warn"}}`), but this has not been tested in the Obsidian/Electron environment. It may or may not map to `console.warn()`.
 > - Consider whether a future Z2K-specific debug helper that outputs to the template (rather than console) would be valuable – this could be noted as a potential enhancement.
+> - What happens when a URI command uses logging - anything different? Command lists?

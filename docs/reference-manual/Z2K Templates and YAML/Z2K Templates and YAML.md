@@ -14,9 +14,10 @@ Z2K Templates plays nicely with YAML settings. The tight integration of YAML fro
 Please see the following for more details:
 - [[Using Fields Inside YAML Metadata]] 
 	- How To Guide: [[How to Use Z2K Fields Inside YAML Metadata]]
-- [[Using YAML Metadata as Fields]]
-- [[YAML and Block Templates]]
-- [[Merging Multiple YAML Sources]]
-- [[Using System Blocks for Scoped YAML Fields]]
-- [[YAML Configuration Properties|YAML Fields the Z2K Template Plugin Uses]]
+- [[Using YAML Metadata as Fields]] - How YAML Properties can be used as Handlebars Fields
+- [[YAML and Block Templates]] - How YAML frontmatter is used with block templates
+- [[Merging Multiple YAML Sources]] - How frontmatter data is merged from multiple sources (e.g. block templates, system blocks)
+- [[Using System Blocks for Scoped YAML Fields]] - How to use system blocks to provide automated hierarchical and contextual YAML values
+- [[YAML Configuration Properties|YAML Fields the Z2K Template Plugin Uses]] - A section on pre-made YAML fields natively supported by Z2K Templates
+
 

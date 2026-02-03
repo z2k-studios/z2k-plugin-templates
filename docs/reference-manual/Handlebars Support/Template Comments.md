@@ -1,12 +1,14 @@
 ---
 sidebar_position: 20
 aliases:
-- template comments
-- comment
-- comments
+  - template comments
+  - comment
+  - comments
+  - Handlebars comments
+  - Handlebars Comments
 ---
 # Template Comments
-Template comments let you leave notes inside a template file that never appear in the [[Finalization|finalized]] content file. They use Handlebars comment syntax – anything inside the delimiters is invisible to the rendered result.
+Template comments let you leave notes inside a template file that never appear in the [[Finalization|finalized]] content file. They use Handlebars comment syntax – anything inside the delimiters is invisible to the rendered result. 
 
 > [!NOTE] Different than Markdown Comments
 > Markdown has its own syntax for writing comments, e.g. `%% Comment %%` . We recommend exclusively using the Handlebars comments to communicate guidance from the template to the generated files. When a content file is then [[Finalization|finalized]], these guidance comments are removed. Markdown `%%` comments, however, will persist forever until the vault owner removes them directly.

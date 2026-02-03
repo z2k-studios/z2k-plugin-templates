@@ -6,9 +6,11 @@ aliases:
 - partial
 ---
 # Partials
-In Handlebars, partials are reusable template fragments included with `{{> partialName}}`. In Z2K Templates, partials map to [[Block Templates]] – when you write `{{> my-block}}`, the plugin finds and inserts the corresponding block template. This page covers the Z2K-specific resolution rules, path conventions, and limitations.
+In Handlebars, partials are reusable template fragments included with `{{> partialName}}`. In Z2K Templates, partials map to [[Block Templates]] – when you write `{{> my-block}}`, the plugin finds and inserts the corresponding block template. For Handlebars partial syntax basics, see the [Handlebars Partials documentation](https://handlebarsjs.com/guide/partials.html).
 
-For Handlebars partial syntax basics, see the [Handlebars Partials documentation](https://handlebarsjs.com/guide/partials.html).
+
+> [!NOTE] Please see Block Templates for details
+> Please see [[Block Templates]] for more detail on how Z2K Templates implements block templates and how to use them. This page is intended for Handlebars experts to explain how Handlebars partials behave differently in Z2K Templates. 
 
 ## Contents
 - [[#Basic Syntax]]
@@ -37,7 +39,11 @@ The name can be specified with or without the file extension (`.md`, `.block`):
 Both forms work. If a collision exists between files with different extensions (e.g., both `.md` and `.block`), the priority order is: `.block` → `.template` → `.md`.
 
 ## Path Resolution
-When multiple block templates share the same name, Z2K Templates selects based on proximity to the calling template. The resolution order searches outward from the calling template's location:
+Z2K Templates exists in the larger space of Obsidian's approach to building your own wikilinked vault of files. In this style, determining the directory path to a file is considered to be the responsibility of the system, not the doc writer.
+
+Thus Z2K Templates makes a best effort at located a block within the vault automatically, similar to wikilinking without specifying a path.
+
+When multiple block templates share the same name, Z2K Templates selects the block template based on proximity to the calling template. The resolution order searches outward from the calling template's location:
 
 1. Same folder
 2. Parent folder
@@ -64,8 +70,8 @@ Z2K Templates supports several path formats for referencing block templates:
 ## Path Shortcuts
 When using [[Embedded Template Folders|embedded templates]], the `Templates` folder name can be omitted from the path:
 
-| Full Path | Shortcut |
-|-----------|----------|
+| Full Path                   | Shortcut          |
+| --------------------------- | ----------------- |
 | `folderA/Templates/partial` | `folderA/partial` |
 
 If omitting `Templates` creates ambiguity, use the full path.
@@ -139,3 +145,4 @@ The double brackets are stripped before resolution. This can be useful for maint
 > - Partial parameters are passed through to Handlebars and should work, but the interaction with Z2K Templates' field-info system (do parameters override field-info declarations in the block?) needs verification.
 > - The wikilink syntax support (`{{> [[name]]}}`) is confirmed in source at line 1077-1078.
 > - Related GitHub issue for relative path support: [#117](https://github.com/z2k-studios/z2k-plugin-templates/issues/117)
+> - Are relative paths still not supported ? (mentioned above)

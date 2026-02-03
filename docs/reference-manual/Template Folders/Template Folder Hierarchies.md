@@ -10,7 +10,7 @@ To address this, Z2K Templates supports the use of *hierarchical* template folde
 
 
 > [!INFO] Context Sensitive Templating
-> To emphasize, with this feature, your workflow for creating files becomes *context sensitive*. When creating a new file in your vault, you first give it the general context of the file you are creating (inferred by the destination folder) and then the template plugin will only present templates relevant to that context. 
+> To emphasize, your workflow for creating files becomes *context sensitive* with this feature. Think of the folder structure of your vault as different "contexts" for information. When creating a new file in your vault, you first give it the general context of the file you are creating (inferred by the destination folder) and then the template plugin will only present templates relevant to that context. 
 
 ## More Details
 Specifically, when a new file is created with the [[Create new note]] command, it will first ask for a [[Destination Context|destination context]] (folder). Once the plugin knows the destination, it can then step through the path and build a list of viable templates by looking within any template folders that exist along the way up the path, folder by folder, all the way to the [[Templates Root Folder]].
