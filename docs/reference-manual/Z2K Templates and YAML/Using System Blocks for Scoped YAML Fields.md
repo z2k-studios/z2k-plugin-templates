@@ -19,7 +19,7 @@ This page focuses specifically on how system blocks interact with YAML. For a ge
 ## How System Block YAML Works
 A system block is a `.system-block.md` file that can contain both YAML frontmatter and body content. The YAML frontmatter from system blocks is merged with the template's YAML during processing, providing default values that any template in that folder scope can use.
 
-Because YAML properties are automatically available as [[Using YAML Metadata as Fields|field values]], system block YAML effectively lets you set default field values for an entire subtree of your vault. A system block at your vault root might define `author: "Jane Doe"`, and every template in the vault would have `{{author}}` resolve to "Jane Doe" – unless a deeper system block or the template itself overrides it.
+Because YAML properties are automatically available as [[Using YAML Metadata as Fields|field values]], system block YAML effectively lets you set default field values for an entire subtree of your vault. A system block at your vault root might define `default-content-author: "Anthropic Claude"`, and every template in the vault would have `{{default-content-author}}` resolve to "Anthropic Claude" – unless a deeper system block or the template itself overrides it. You can imagine using this technique to signify that all new files created in that vault was created by Claude.
 
 ## Discovery and Inheritance
 The plugin discovers system blocks by walking **up** the folder tree from the template's location toward the [[Template Folder Hierarchies|Templates Root Folder]]. Every `.system-block.md` file encountered along this path is collected. The walk stops when it reaches the Templates Root, or when it encounters a `.system-block-stop` file (which prevents inheritance from parent folders).
@@ -47,12 +47,12 @@ Vault/
 ## Merge Order
 System block YAML is merged using the [[Merging Multiple YAML Sources|last-wins strategy]], in the following order:
 
-| Order | Source | Notes |
-| ----- | ------ | ----- |
-| 1 | Root-level system block | Most general – provides vault-wide defaults |
-| 2 | Intermediate system blocks | Each deeper folder can override the level above |
-| 3 | Deepest system block | Most specific – closest to the template |
-| 4 | Template's own YAML | The template itself overrides all system blocks |
+| Order | Source                     | Notes                                           |
+| ----- | -------------------------- | ----------------------------------------------- |
+| 1     | Root-level system block    | Most general – provides vault-wide defaults     |
+| 2     | Intermediate system blocks | Each deeper folder can override the level above |
+| 3     | Deepest system block       | Most specific – closest to the template         |
+| 4     | Template's own YAML        | The template itself overrides all system blocks |
 
 The result: system blocks form a cascade of defaults, with each layer able to override the one above. The template's own YAML always has the final say.
 
@@ -70,24 +70,26 @@ A root-level system block that sets a default author for all templates:
 
 ```yaml file="/.system-block.md"
 ---
-author: "Jane Doe"
+author: "John Hancock"
 created_by: "Z2K Templates"
 ---
 ```
 
-Every template in the vault now has `{{author}}` resolve to "Jane Doe" unless overridden.
+Every template in the vault now has `{{author}}` resolve to "John Hancock" unless overridden.
 
 ### Overriding for a Specific Folder
 A project folder that overrides the default author:
 
 ```yaml file="/Projects/ClientWork/.system-block.md"
 ---
-author: "Jane Doe, Consulting LLC"
+author: "John Hancock, Revolutionaries LLC"
 client: "{{ClientName}}"
 ---
 ```
 
 Templates in `/Projects/ClientWork/` get the consulting attribution. Templates elsewhere still get the plain name.
+
+Another folder, say `/Chats/ChatGPT` can set the default author to be `"ChatGPT"` and have a similar effect. 
 
 ### Providing field-info Defaults
 System blocks can also contain `{{field-info}}` declarations in their body to set prompts, types, or fallback behavior across all templates in scope:
@@ -102,8 +104,3 @@ status: draft
 
 Every template under `/Projects/` now gets a dropdown for `status` and `priority` – without repeating the `{{field-info}}` in each template.
 
-> [!DANGER] Notes
-> - System block discovery is implemented at plugin lines 2985-3010 (`GetSystemBlocksContent()`).
-> - The `.system-block-stop` file mechanism (plugin line 2998-3002) prevents inheritance. Verify whether the stop file needs to have any content, or if its mere existence is sufficient.
-> - System block bodies (not just YAML) are concatenated and included. This means `{{field-info}}` declarations in system block bodies are active. Verify whether body content from system blocks appears in the final rendered output or is treated as silent.
-> - The `.system-block.md` files are hidden in Obsidian due to the dot prefix. Users must use an external editor to modify them. Consider whether this should be noted more prominently.

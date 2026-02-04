@@ -18,7 +18,7 @@ This works across all YAML sources – the template's own frontmatter, [[Block T
 - [[#Priority Among Data Sources]]
 
 ## How It Works
-During template processing, the plugin collects YAML frontmatter from all relevant sources and merges them using a [[Merging Multiple YAML Sources|last-wins strategy]]. The merged YAML is then parsed into native JavaScript values, and each top-level key becomes a field value in the template state.
+During template processing, the plugin collects YAML frontmatter from all relevant sources (template file, inserted [[Block Templates]], [[Intro to System Blocks|System Blocks]], the [[Global Block]]) and merges the YAML properties using a [[Merging Multiple YAML Sources|last-wins strategy]]. The merged YAML is then parsed into native JavaScript values, and each top-level key becomes a field value in the template state.
 
 For example, given this template:
 
@@ -31,7 +31,7 @@ z2k_template_type: document-template
 # {{project}} – Status: {{status}}
 ```
 
-The engine sees `project` and `status` as YAML properties, makes them available as fields, and renders the body as:
+The engine sees `project` and `status` as YAML properties, makes them available as Z2K Templates fields, and renders the body as:
 
 ```md
 # Project Alpha – Status: active
@@ -74,6 +74,10 @@ YAML property values sit below several higher-priority sources in the [[Field Da
 - External overrides (URI, JSON) unconditionally override everything
 
 YAML values only fill in fields that don't already have a value from a higher-priority source. For the full resolution model, see [[Field Data Sources#How Field Values Are Resolved|How Field Values Are Resolved]].
+
+## Limitations
+- ==How does it handle property names with spaces?==
+- ==How does it handle nested YAML Objects?==
 
 > [!DANGER] Notes
 > - The `position` exclusion is hardcoded in the plugin at line 2927 of `main.tsx`. Verify whether other Obsidian-internal properties should also be excluded.

@@ -35,8 +35,10 @@ Before the block's YAML is merged, the plugin removes [[YAML Configuration Prope
 
 All other YAML properties in the block – including user-defined properties, tags, aliases, and any custom metadata – are merged into the target file.
 
+==IT SHOULD NOT MERGE TEMPLATE AUTHOR, VERSION AND NAME===
+
 ## Block YAML Can Provide Field Values
-Block template YAML properties are available as field values during rendering, just like any other YAML source (see [[Using YAML Metadata as Fields]]). This means a block template can carry its own default data in its YAML frontmatter, and `{{field}}` expressions in the block body can resolve from it.
+Block template YAML properties are available as field values during rendering, just like any other YAML source (see [[Using YAML Metadata as Fields]]). This means a block template can carry its own default data in its YAML frontmatter, and `{{field}}` expressions in the block body can 314144resolve from it.
 
 Combined with the existing file's YAML (see [[Storing Field Values in YAML]]), this creates a layered data model: the file provides stored values, the block provides its own defaults, and the merge combines them – with the block winning on conflicts.
 
@@ -84,8 +86,8 @@ source: "Neuromancer"
 
 > [!WARNING] Tags Were Overwritten
 > In the example above, the original `book` tag was lost because the block's `tags` array replaced the file's `tags` array. The merge operates at the top-level key only – it does not merge arrays or nested objects. If you need to preserve existing tags, avoid declaring `tags` in your block template's YAML.
+> ==Is this true? Are they not merged?==
 
 > [!DANGER] Notes
-> - The merge happens in `updateBlockYamlOnInsert()` at plugin lines 2967-2973, followed by `mergeLastWins()` at line 2008.
 > - Only top-level keys are merged. Nested objects and arrays are replaced wholesale – not recursively merged. This is a fundamental limitation of the `mergeLastWins()` algorithm.
 > - Verify whether block YAML properties that contain `{{field}}` expressions are rendered before or after merging. The code suggests rendering happens first (line 1997), then cleanup (line 1999), then merge (line 2008).

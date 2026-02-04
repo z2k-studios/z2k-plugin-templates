@@ -62,6 +62,11 @@ The merge operates strictly on **top-level keys**. Each key is treated as an ato
 
 This is a deliberate design choice that keeps the merge behavior predictable. If you need to build up a list from multiple sources, consider using a [[Helper Functions|helper function]] or structuring your YAML so each source uses a different key.
 
+
+> [!WARNING] Avoid merging tags and aliases properties
+> Unfortunately, with the current approach, the `tags` and `aliases` YAML properties used by Obsidian are at risk for being replaced in hierarchical merging. Contents are not additive, but rather replacing. For this reason, we recommend using these two properties only in your final document template. 
+
+
 ## Merge Sources and Order
 The merge order depends on the operation being performed. In all cases, sources listed later override earlier ones.
 
@@ -108,7 +113,9 @@ After all templates are rendered, the engine merges all rendered YAML fragments 
 - **Non-map roots ignored** – YAML documents that have a sequence or scalar as the root element (rather than a mapping) are silently ignored during merging.
 - **Comments are preserved** – YAML comments in individual sources are carried through the merge process where possible.
 
+
 > [!DANGER] Notes
 > - The `mergeLastWins()` implementation is at engine lines 1650-1686.
 > - The merge order during field value resolution (plugin line 2915-2918) places template YAML first and existing file YAML last. This means the existing file's YAML properties override the template's – verify this is the intended behavior for all scenarios.
 > - The "during final YAML assembly" order is based on engine line 1292. Verify this matches the actual rendered output ordering.
+> - Would be useful to support better `tags` and `aliases` merging (test to make sure it is an issue).

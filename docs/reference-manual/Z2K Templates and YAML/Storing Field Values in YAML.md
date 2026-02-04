@@ -6,14 +6,15 @@ aliases:
 - YAML Field Storage
 ---
 # Storing Field Values in YAML
-When a template is instantiated, field values are resolved and inserted into the document body – but by default, those values exist only as rendered text. The original field names and their associations are gone. If you later insert a [[Block Templates|block template]] that references one of those fields, the block has no way to know what value was used.
+When a template is [[Instantiation|instantiated]], field values are resolved and inserted into the document body – but by default, those values exist only as rendered text. The original field names and their associations are gone. If you later insert a [[Block Templates|block template]] that references one of those fields, the block has no way to know what field names were used during instantiation or finalization, nor even where they were used in the current file. 
 
 YAML frontmatter solves this. By echoing field values into identically named YAML properties, you create a persistent data layer that survives finalization and remains available to block templates inserted afterward.
 
 ## Contents
 - [[#The Pattern]]
-- [[#Why This Works]]
+- [[#Next - Insert a Block Template]]
 - [[#Example: Book Notes with Block Templates]]
+- [[#Example: Template Upgrade]]
 - [[#Best Practices]]
 
 ## The Pattern
@@ -31,6 +32,8 @@ z2k_template_type: document-template
 **Genre:** {{Genre}}
 ```
 
+Recursion you say? The above example may look awkward knowing that YAML Properties themselves are fields, and this you are presenting an endless loop. Luckily, the Templates Plugin is smart enough to recognize this situation and will not enter an endless loop. 
+
 When the user provides values during instantiation, both the YAML and the body resolve simultaneously. After finalization, the file looks like:
 
 ```yaml
@@ -47,11 +50,11 @@ z2k_template_type: finalized-content-file
 
 The field values are now stored as standard YAML properties – visible in Obsidian's Properties panel, queryable by Dataview, and available to any block template inserted later.
 
-## Why This Works
+## Next - Insert a Block Template
 When a block template is inserted into an existing file, the plugin collects YAML frontmatter from the file and makes all properties available as field values (see [[Using YAML Metadata as Fields]]). Because the YAML property names match the field names the block template expects, the block's `{{field}}` expressions resolve automatically – no prompting needed.
 
 This works because of two mechanisms acting together:
-- **YAML properties become field values** – the plugin's `addYamlFieldValues` function reads the existing file's YAML and injects each property into the template state
+- **YAML properties become field values** – the plugin reads the existing file's YAML and injects each property into the list of known Handlebars fields.
 - **Matching names unify** – a YAML property named `BookAuthor` and a template field named `{{BookAuthor}}` are treated as the same field. The YAML value fills the field.
 
 ## Example: Book Notes with Block Templates
@@ -79,11 +82,14 @@ The result:
 
 The block template pulled two of its three fields from stored YAML, and only prompted for the one value it didn't already have.
 
+## Example: Template Upgrade
+Another example of how storing your field values in YAML code becomes apparent when you attempt to "upgrade" a content file using a newer version of the template. If you automatically store your field values in the YAML section by having the source template explicitly save then, then you can use the [[Transform This File Using a Template]] command. When the new version of the template is used, the save copies of the fields' text values will be inserted directly in the new file. 
+
 ## Best Practices
-- **Quote your YAML field expressions** – use `BookTitle: "{{BookTitle}}"` rather than `BookTitle: {{BookTitle}}` to avoid [[Using Fields Inside YAML Metadata#Quoting and Type Safety|type coercion and special character issues]]
-- **Use identical names** – the YAML property name must exactly match the field name used in block templates. `BookAuthor` in YAML matches `{{BookAuthor}}` in the block; `book_author` would not.
+- **Quote your YAML field expressions** – use `BookTitle: "{{BookTitle}}"` rather than `BookTitle: {{BookTitle}}` to avoid [[Using Fields Inside YAML Metadata#Quoting and Type Safety|type coercion and special character issues]].
+- **Use identical names** – the YAML property name must exactly match the field name used in block templates. Above, `BookAuthor` in YAML matches `{{BookAuthor}}` in the block; `book_author` would not.
 - **Store only what you'll reuse** – there's no need to mirror every field into YAML. Focus on values that block templates or queries will need later.
-- **Combine with Dataview** – since the stored values are standard YAML properties, they're also available to Dataview queries, giving you the best of both worlds: template-powered creation and query-powered retrieval.
+- **Combine with Dataview** – since the stored values are standard YAML properties, they're also available to Dataview and Bases queries, giving you the best of both worlds: template-powered creation and query-powered retrieval.
 
 > [!DANGER] Notes
 > - This pattern relies on `addYamlFieldValues()` being called during block insertion with the existing file's YAML (plugin line 1984). Verify that this code path is stable and intentional.
