@@ -7,3 +7,9 @@ aliases:
 just have no output
 Behaves much like the ~ instruction
 Removes the empty line of the field 
+
+# Silent Helper Functions
+Known silent helper functions (or expressions):
+- [[field-info Helper|field-info]], [[fi Helper Variation|fi]]
+- [[Template Comments|Handlebars Comments]]
+- [[Logging|Handlebars Logging]]

@@ -7,7 +7,6 @@ aliases:
 - opts
 - field-info opts Parameter
 ---
-
 # field-info opts
 The optional `opts` parameter in the [[reference-manual/field-info Helper/field-info Helper]] specifies a list of values that can be selected by a field that has a [[field-info type|type]] of either `singleSelect` or `multiSelect`. 
 

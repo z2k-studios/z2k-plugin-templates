@@ -1,30 +1,43 @@
 ---
 sidebar_position: 20
 sidebar_class_name: z2k-code
+aliases:
+- z2k_template_default_prompt
 ---
-
 # z2k_template_default_prompt
-This [[YAML Configuration Properties|Z2K Templates YAML Configuration Setting]] specifies the default prompt to use for all fields in a file. ==This can use the built-in field `{{FieldName}}` to reference the field's name inside the specified prompt string.==
+This [[YAML Configuration Properties|Z2K Templates YAML Configuration Property]] would specify a default prompt string to display for all fields in a template file. When set, every field that does not have its own [[field-info prompt|prompt]] parameter would use this string as its prompt message.
 
-## Configuration Settings
+The property supports the built-in placeholder `{{FieldName}}`, which would be replaced with each field's name at prompt time – allowing a single prompt string to serve as a dynamic default across all fields.
 
-| Key                           | Key Value | Result                            |
-| ----------------------------- | --------- | --------------------------------- |
-| `z2k_template_default_prompt` | string    | Specifies a prompt string to use. |
+> [!WARNING] Not Yet Implemented
+> This property is **not yet implemented** in the Z2K Templates codebase. It is documented here as a planned feature. Setting this property in your YAML frontmatter will have no effect.
 
+## Planned Configuration
 
-> [!NOTE] Use field-info for specific field prompts
-> To specify a prompt for a specific field (as opposed to all fields in a template file), use the [[field-info Helper|field-info]] silent helper function. 
+| Key                           | Value Type | Planned Result |
+| ----------------------------- | ---------- | -------------- |
+| `z2k_template_default_prompt` | string     | Sets a default prompt string for all fields that lack an explicit [[field-info prompt\|prompt]] parameter |
 
+> [!NOTE] Use field-info for Specific Field Prompts
+> To specify a prompt for a specific field (as opposed to all fields in a template file), use the [[field-info prompt|prompt]] parameter of the [[reference-manual/field-info Helper/field-info Helper|field-info]] helper function.
 
-## Example
-This sets a custom default prompt for all fields in this file. 
+## Planned Example
+This would set a custom default prompt for all fields in the file:
 ```yaml
 ---
-z2k_template_default_prompt : "Please specify the value of {{FieldName)}}"
+z2k_template_default_prompt: "Please specify the value of {{FieldName}}"
 ---
 ```
 
+With this setting, a field named `{{ProjectName}}` would display the prompt: "Please specify the value of ProjectName" – unless that field has its own prompt set via `{{field-info}}`.
+
+## Lifecycle Behavior
+| Lifecycle Event                   | Expected Effect on `z2k_template_default_prompt` |
+| --------------------------------- | ------------------------------------------------ |
+| [[Instantiation]]                 | ==To be determined==                             |
+| [[Finalization]]                  | ==To be determined==                             |
+| [[Block Templates\|Block Insert]] | ==To be determined==                             |
 
 > [!DANGER] Notes
-> is `{{FieldName}}` allowable? If so, do we need to add it to the [[Built-In Fields]] section?
+> - This property is not implemented in either `main.tsx` or the template engine (`src/main.ts`). No code reads, processes, or removes it.
+> - The `{{FieldName}}` placeholder is not documented in [[Built-In Fields]]. If this feature is implemented, determine whether `{{FieldName}}` should be added there or treated as a special interpolation token specific to this property.

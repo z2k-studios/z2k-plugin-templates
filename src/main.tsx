@@ -2,6 +2,7 @@
 import { App, Plugin, Modal, Notice, TAbstractFile, TFolder, TFile, PluginSettingTab, Setting, MarkdownView, Editor, Command, ToggleComponent, setIcon } from 'obsidian';
 import * as obsidian from 'obsidian';
 import { Z2KTemplateEngine, Z2KYamlDoc, TemplateState, VarValueType, FieldInfo, TemplateError, Handlebars } from 'z2k-template-engine';
+import { PathFile, PathFolder, pathFileFrom, pathFolderFrom, pathFileFromTFile, pathFolderFromTFolder, normalizeFullPath, isSubPathOf, joinPath } from './paths';
 import React, { useState, useEffect, useRef, Component, ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import moment from 'moment';   // npm i moment
@@ -36,6 +37,7 @@ interface Z2KTemplatesPluginSettings {
 	templateExtensionsVisible: boolean; // Whether .template and .block files are currently visible in Obsidian
 	globalBlock: string; // Global field-info declarations (applied to all templates)
 	userHelpers: string; // Custom JavaScript helper functions
+	customHelpersEnabled: boolean; // Whether custom helpers are active (ACE risk)
 }
 
 const DEFAULT_SETTINGS: Z2KTemplatesPluginSettings = {
@@ -59,6 +61,7 @@ const DEFAULT_SETTINGS: Z2KTemplatesPluginSettings = {
 // Example:
 // registerHelper('shout', (value) => String(value).toUpperCase() + '!');
 `,
+	customHelpersEnabled: false,
 };
 
 // Command parameter interface for processCommand()
@@ -521,14 +524,55 @@ Example:
 		new Setting(containerEl)
 			.setName('Custom Helpers')
 			.setDesc('Register custom Handlebars helper functions using JavaScript.')
-			.addButton(button => button
-				.setButtonText('Edit Custom Helpers')
-				.onClick(() => {
-					new EditorModal(this.app, {
-						title: 'Edit Custom Helpers',
-						initialContent: this.plugin.settings.userHelpers,
-						language: 'javascript',
-						helpText: `Write JavaScript code to register custom Handlebars helpers.
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.customHelpersEnabled)
+				.onChange(async (value) => {
+					if (value) {
+						// Show ACE warning before enabling
+						const confirmed = await new Promise<boolean>((resolve) => {
+							new ConfirmationModal(this.app, {
+								title: 'Enable Custom Helpers?',
+								message: <>
+									<p>Custom helpers execute <strong>arbitrary JavaScript code</strong> with full access to your vault, files, and the Obsidian API.</p>
+									<p>Only enable this if you wrote the helper code yourself or fully trust its source.</p>
+								</>,
+								confirmText: 'I understand, enable',
+								cancelText: 'Cancel',
+							}, resolve).open();
+						});
+						if (confirmed) {
+							this.plugin.settings.customHelpersEnabled = true;
+							await this.plugin.saveData(this.plugin.settings);
+							// Load helpers now that feature is enabled
+							if (this.plugin.settings.userHelpers && this.plugin.settings.userHelpers.trim() !== "") {
+								const result = this.plugin.loadUserHelpers(this.plugin.settings.userHelpers);
+								if (!result.valid) {
+									new Notice('Failed to load custom helpers - check console');
+									console.error('Custom helpers error:', result.error);
+								}
+							}
+							this.display(); // Re-render to show editor button
+						} else {
+							toggle.setValue(false); // Reset toggle
+						}
+					} else {
+						this.plugin.settings.customHelpersEnabled = false;
+						await this.plugin.saveData(this.plugin.settings);
+						this.display(); // Re-render to hide editor button
+					}
+				})
+			);
+		if (this.plugin.settings.customHelpersEnabled) {
+			const editSetting = new Setting(containerEl)
+				.setName('Edit Custom Helpers')
+				.addButton(button => button
+					.setButtonText('Edit Custom Helpers')
+					.onClick(() => {
+						new EditorModal(this.app, {
+							title: 'Edit Custom Helpers',
+							initialContent: this.plugin.settings.userHelpers,
+							language: 'javascript',
+							helpText: `Write JavaScript code to register custom Handlebars helpers.
 These helpers can be used in any template with {{helperName ...}} syntax.
 
 Available Globals:
@@ -551,20 +595,27 @@ registerHelper('recentFiles', () => {
         .join(', ');
 });
 // Usage: {{recentFiles}} → Note A, Note B, ...`,
-						validate: (code) => this.plugin.validateUserHelpers(code),
-						onSave: async (content) => {
-							this.plugin.settings.userHelpers = content;
-							await this.plugin.saveData(this.plugin.settings);
-							// Reload helpers
-							const result = this.plugin.loadUserHelpers(content);
-							if (!result.valid) {
-								new Notice('Failed to load custom helpers - check console');
-								console.error('Custom helpers error:', result.error);
+							validate: (code) => this.plugin.validateUserHelpers(code),
+							onSave: async (content) => {
+								this.plugin.settings.userHelpers = content;
+								await this.plugin.saveData(this.plugin.settings);
+								// Reload helpers
+								const result = this.plugin.loadUserHelpers(content);
+								if (!result.valid) {
+									new Notice('Failed to load custom helpers - check console');
+									console.error('Custom helpers error:', result.error);
+								}
 							}
-						}
-					}).open();
-				})
-			);
+						}).open();
+					})
+				);
+			const warningDesc = createFragment(f => {
+				const warn = f.createSpan({ text: 'Warning: ' });
+				warn.style.color = 'var(--text-warning, #e0a530)';
+				f.appendText('Custom helpers execute arbitrary JavaScript with full access to your vault and Obsidian API.');
+			});
+			editSetting.setDesc(warningDesc);
+		}
 
 		this.applyDescs(); // Apply dynamic descriptions
 	}
@@ -776,6 +827,10 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	settings: Z2KTemplatesPluginSettings;
 	errorLogger: ErrorLogger;
 	userHelperFunctions: Record<string, Function> = {};
+	// Returns user helpers only when the feature is enabled; empty object otherwise
+	get activeHelpers(): Record<string, Function> {
+		return this.settings.customHelpersEnabled ? this.userHelperFunctions : {};
+	}
 	private _refreshTimer: number | null = null;
 	private _queueCheckInterval: number | null = null;
 	private _processingQueue: boolean = false;
@@ -864,8 +919,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
 		this.templateEngine = new Z2KTemplateEngine();
 		this.errorLogger = new ErrorLogger(this.app, this.settings);
-		// Load user-defined custom helpers
-		if (this.settings.userHelpers && this.settings.userHelpers.trim() !== "") {
+		// Load user-defined custom helpers (only when enabled)
+		if (this.settings.customHelpersEnabled && this.settings.userHelpers && this.settings.userHelpers.trim() !== "") {
 			const result = this.loadUserHelpers(this.settings.userHelpers);
 			if (!result.valid) {
 				new Notice('Failed to load custom helpers - check console for details');
@@ -989,7 +1044,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				name: "Convert to document template",
 				checkCallback: (checking) => {
 					let file = this.app.workspace.getActiveFile();
-					if (checking) { return !!file && this.getFileTemplateType(file) !== "document-template"; }
+					if (checking) { return !!file && this.getFileTemplateTypeSync(file) !== "document-template"; }
 					this.convertFileTemplateType(file as TFile, "document-template");
 				},
 			},
@@ -998,7 +1053,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				name: "Convert to block template",
 				checkCallback: (checking) => {
 					let file = this.app.workspace.getActiveFile();
-					if (checking) { return !!file && this.getFileTemplateType(file) !== "block-template"; }
+					if (checking) { return !!file && this.getFileTemplateTypeSync(file) !== "block-template"; }
 					this.convertFileTemplateType(file as TFile, "block-template");
 				},
 			},
@@ -1017,7 +1072,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				name: "Convert to content file",
 				checkCallback: (checking) => {
 					let file = this.app.workspace.getActiveFile();
-					if (checking) { return !!file && this.getFileTemplateType(file) !== "content-file"; }
+					if (checking) { return !!file && this.getFileTemplateTypeSync(file) !== "content-file"; }
 					this.convertFileTemplateType(file as TFile, "content-file");
 				},
 			},
@@ -1060,7 +1115,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 						await this.logWarn(`Target folder not found: ${cmd.targetFolder}`);
 						return;
 					}
-					await this.createCard({ cardTypeFolder: folder });
+					await this.createCard({ cardTypeFolder: pathFolderFromTFolder(folder) });
 				},
 			});
 		}
@@ -1096,7 +1151,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				if (!(folder instanceof TFolder)) return;
 				menu.addItem((item) => {
 					item.setTitle(`Z2K - Create new ${cardRefNameLower(this.settings)} here`)
-						.onClick(() => this.createCard({ cardTypeFolder: folder as TFolder }));
+						.onClick(() => this.createCard({ cardTypeFolder: pathFolderFromTFolder(folder as TFolder) }));
 				});
 			})
 		);
@@ -1181,7 +1236,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		// Template conversion context menu in file explorer
 		this.registerEvent(
 			this.app.workspace.on("file-menu", (menu, file) => {
-				if (!(file instanceof TFile) || this.getFileTemplateType(file) === "document-template") { return; }
+				if (!(file instanceof TFile) || this.getFileTemplateTypeSync(file) === "document-template") { return; }
 				menu.addItem((item) => {
 					item.setTitle("Z2K - Convert to document template")
 						.onClick(() => this.convertFileTemplateType(file as TFile, "document-template"));
@@ -1190,7 +1245,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		);
 		this.registerEvent(
 			this.app.workspace.on("file-menu", (menu, file) => {
-				if (!(file instanceof TFile) || this.getFileTemplateType(file) === "block-template") { return; }
+				if (!(file instanceof TFile) || this.getFileTemplateTypeSync(file) === "block-template") { return; }
 				menu.addItem((item) => {
 					item.setTitle("Z2K - Convert to block template")
 						.onClick(() => this.convertFileTemplateType(file as TFile, "block-template"));
@@ -1209,7 +1264,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		);
 		this.registerEvent(
 			this.app.workspace.on("file-menu", (menu, file) => {
-				if (!(file instanceof TFile) || this.getFileTemplateType(file) === "content-file") { return; }
+				if (!(file instanceof TFile) || this.getFileTemplateTypeSync(file) === "content-file") { return; }
 				menu.addItem((item) => {
 					item.setTitle("Z2K - Convert to content file")
 						.onClick(() => this.convertFileTemplateType(file as TFile, "content-file"));
@@ -1380,11 +1435,17 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		}
 
 		// Resolve template file (support both templatePath and blockPath)
-		let templateFile: TFile | undefined;
+		// Checks indexed files first, then falls back to adapter for hidden (dot-prefixed) paths
+		let templateFile: PathFile | undefined;
 		const templatePath = cps.templatePath || cps.blockPath;
 		if (templatePath) {
-			templateFile = this.getFile(templatePath) || undefined;
-			if (!templateFile) {
+			const normalizedPath = normalizeFullPath(templatePath);
+			const tFile = this.getFile(normalizedPath);
+			if (tFile) {
+				templateFile = pathFileFromTFile(tFile);
+			} else if (await this.app.vault.adapter.exists(normalizedPath)) {
+				templateFile = pathFileFrom(normalizedPath);
+			} else {
 				throw new TemplatePluginError(`Command: Template not found:\n${templatePath}`);
 			}
 		}
@@ -1399,11 +1460,11 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		}
 
 		// Resolve destination folder
-		let destDir: TFolder | undefined = templateFile
-			? (this.getTemplateCardType(templateFile) ?? templateFile.parent as TFolder)
+		let destDir: PathFolder | undefined = templateFile
+			? this.getTemplateCardType(templateFile)
 			: undefined;
 		if (cps.destDir) {
-			destDir = await this.createFolder(cps.destDir);
+			destDir = pathFolderFromTFolder(await this.createFolder(cps.destDir));
 		}
 
 		// Route commands
@@ -1411,7 +1472,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			if (!templateFile) {
 				throw new TemplatePluginError("Command: 'new' cmd requires 'templatePath'");
 			}
-			const cardTypeFolder = this.getTemplateCardType(templateFile) ?? templateFile.parent as TFolder;
+			const cardTypeFolder = this.getTemplateCardType(templateFile);
 			await this.createCard({
 				cardTypeFolder,
 				templateFile,
@@ -1823,13 +1884,13 @@ export default class Z2KTemplatesPlugin extends Plugin {
 
 	//// Functions called from [commands/context menu/uris/etc]
 	async createCard(opts?: {
-		cardTypeFolder?: TFolder,
-		templateFile?: TFile,
+		cardTypeFolder?: PathFolder,
+		templateFile?: PathFile,
 		fieldOverrides?: Record<string,VarValueType>,
 		uriKeys?: Set<string>,
 		promptMode?: "none"|"remaining"|"all",
-		destDir?: TFolder,
-		sourceFile?: TFile,
+		destDir?: PathFolder,
+		sourceFile?: TFile, // Always an indexed output file
 		fromSelection?: boolean,
 		finalize?: boolean,
 	}) {
@@ -1854,12 +1915,12 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				opts.destDir = opts.cardTypeFolder;
 			}
 
-			let content = await this.app.vault.read(opts.templateFile);
+			let content = await this.app.vault.adapter.read(opts.templateFile.path);
 			let { fm, body } = Z2KYamlDoc.splitFrontmatter(content);
 			fm = this.updateYamlOnCreate(fm, opts.templateFile.basename);
 			content = Z2KYamlDoc.joinFrontmatter(fm, body);
 			let systemBlocksContent = await this.GetSystemBlocksContent(opts.cardTypeFolder);
-			let state = await this.parseTemplate(content, systemBlocksContent, this.settings.globalBlock, opts.templateFile.parent as TFolder);
+			let state = await this.parseTemplate(content, systemBlocksContent, this.settings.globalBlock, opts.templateFile);
 			let hadSourceTextField = !!state.fieldInfos["sourceText"];
 			// Convert sourceText to string for addPluginBuiltIns (handles all VarValueType cases)
 			const sourceTextStr = opts.fieldOverrides.sourceText != null ? String(opts.fieldOverrides.sourceText) : undefined;
@@ -1882,7 +1943,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				this.resolveComputedFieldValues(state, opts.finalize ?? false);
 			}
 
-			let { fm: fmOut, body: bodyOut } = Z2KTemplateEngine.renderTemplate(state, opts.finalize ?? false, this.userHelperFunctions);
+			let { fm: fmOut, body: bodyOut } = Z2KTemplateEngine.renderTemplate(state, opts.finalize ?? false, this.activeHelpers);
 			if (opts.finalize) { fmOut = this.cleanupYamlAfterFinalize(fmOut); }
 			if (!hadSourceTextField && opts.fieldOverrides.sourceText != null) {
 				bodyOut += `\n\n${String(opts.fieldOverrides.sourceText)}\n`;
@@ -1917,10 +1978,10 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	}) {
 		try {
 			let content = await this.app.vault.read(opts.existingFile);
-			let state = await this.parseTemplate(content, "", "", opts.existingFile.parent as TFolder);
+			let state = await this.parseTemplate(content, "", "", pathFileFromTFile(opts.existingFile));
 			// Add global block and system blocks YAML for field values
 			let globalBlockYaml = Z2KYamlDoc.splitFrontmatter(this.settings.globalBlock).fm;
-			let systemBlocksContent = await this.GetSystemBlocksContent(opts.existingFile.parent as TFolder);
+			let systemBlocksContent = await this.GetSystemBlocksContent(pathFolderFromTFolder(opts.existingFile.parent as TFolder));
 			let systemBlocksYaml = Z2KYamlDoc.splitFrontmatter(systemBlocksContent).fm;
 			await this.addYamlFieldValues(state, [globalBlockYaml, systemBlocksYaml]);
 			await this.addPluginBuiltIns(state, { existingTitle: opts.existingFile.basename });
@@ -1937,7 +1998,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				this.resolveComputedFieldValues(state, opts.finalize ?? false);
 			}
 
-			let { fm, body } = Z2KTemplateEngine.renderTemplate(state, opts.finalize ?? false, this.userHelperFunctions);
+			let { fm, body } = Z2KTemplateEngine.renderTemplate(state, opts.finalize ?? false, this.activeHelpers);
 			if (opts.finalize) { fm = this.cleanupYamlAfterFinalize(fm); }
 			let contentOut = Z2KYamlDoc.joinFrontmatter(fm, body);
 			let title = this.getTitle(state.resolvedValues);
@@ -1945,8 +2006,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		} catch (error) { this.handleErrors(error); }
 	}
 	async insertBlock(opts?: {
-		templateFile?: TFile,
-		existingFile?: TFile,
+		templateFile?: PathFile,
+		existingFile?: TFile, // Always an indexed output file
 		destHeader?: string,
 		location?: "file-top"|"file-bottom"|"header-top"|"header-bottom"|number,
 		fieldOverrides?: Record<string,VarValueType>,
@@ -1960,7 +2021,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			if (!opts.fieldOverrides) { opts.fieldOverrides = {}; }
 			if (!opts.existingFile) { opts.existingFile = this.getOpenFileOrThrow(); }
 			if (!opts.templateFile) {
-				const currDir = this.getOpenFileOrThrow().parent as TFolder;
+				const currDir = pathFolderFromTFolder(this.getOpenFileOrThrow().parent as TFolder);
 				opts.templateFile = await this.promptForTemplateFile(currDir, "block-template");
 			}
 			let editor: Editor | null = null;
@@ -1972,12 +2033,12 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			}
 
 			// Parse and resolve block
-			let content = await this.app.vault.read(opts.templateFile);
-			let state = await this.parseTemplate(content, "", "", opts.templateFile.parent as TFolder);
+			let content = await this.app.vault.adapter.read(opts.templateFile.path);
+			let state = await this.parseTemplate(content, "", "", opts.templateFile);
 			let hadSourceTextField = !!state.fieldInfos["sourceText"];
 			// Add global block, system blocks, and existing file YAML for field values
 			let globalBlockYaml = Z2KYamlDoc.splitFrontmatter(this.settings.globalBlock).fm;
-			let systemBlocksContent = await this.GetSystemBlocksContent(opts.templateFile.parent as TFolder);
+			let systemBlocksContent = await this.GetSystemBlocksContent(pathFolderFrom(opts.templateFile.parentPath));
 			let systemBlocksYaml = Z2KYamlDoc.splitFrontmatter(systemBlocksContent).fm;
 			let existingFileContent = await this.app.vault.read(opts.existingFile);
 			let existingFileYaml = Z2KYamlDoc.splitFrontmatter(existingFileContent).fm;
@@ -1994,7 +2055,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				this.resolveComputedFieldValues(state, opts.finalize ?? false);
 			}
 
-			let { fm: blockFm, body: blockBody } = Z2KTemplateEngine.renderTemplate(state, opts.finalize ?? false, this.userHelperFunctions);
+			let { fm: blockFm, body: blockBody } = Z2KTemplateEngine.renderTemplate(state, opts.finalize ?? false, this.activeHelpers);
 			if (opts.finalize) { blockFm = this.cleanupYamlAfterFinalize(blockFm); }
 			blockFm = this.updateBlockYamlOnInsert(blockFm);
 			if (!hadSourceTextField && opts.fieldOverrides.sourceText != null) {
@@ -2048,9 +2109,9 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	}
 
 	// de-duplication helper functions
-	async parseTemplate(content: string, systemBlocksContent: string, globalBlockContent: string, relativeFolder: TFolder): Promise<TemplateState> {
+	async parseTemplate(content: string, systemBlocksContent: string, globalBlockContent: string, templateFile: PathFile): Promise<TemplateState> {
 		try {
-			return await Z2KTemplateEngine.parseTemplate(content, systemBlocksContent, globalBlockContent, relativeFolder.path, this.getBlockCallbackFunc());
+			return await Z2KTemplateEngine.parseTemplate(content, systemBlocksContent, globalBlockContent, templateFile.path, await this.getBlockCallbackFunc());
 		} catch (error) {
 			rethrowWithMessage(error, "Error occurred while parsing the template");
 		}
@@ -2058,7 +2119,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	getTitle(resolvedValues: Record<string, VarValueType>): string {
 		let fileTitle = resolvedValues["fileTitle"];
 		let title = fileTitle == null || fileTitle === "" ? "Untitled" : String(fileTitle);
-		return Z2KTemplateEngine.reducedRenderContent(title, resolvedValues, false, this.userHelperFunctions) as string;
+		return Z2KTemplateEngine.reducedRenderContent(title, resolvedValues, false, this.activeHelpers) as string;
 	}
 	async updateTitleAndContent(file: TFile, title: string, content: string) {
 		try {
@@ -2170,7 +2231,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				const valueDeps = Z2KTemplateEngine.reducedGetDependencies(fieldInfo.value);
 				const allDepsExist = valueDeps.every(dep => dep in context);
 				if (allDepsExist) {
-					const resolved = Z2KTemplateEngine.reducedRenderContent(fieldInfo.value, context, true, this.userHelperFunctions);
+					const resolved = Z2KTemplateEngine.reducedRenderContent(fieldInfo.value, context, true, this.activeHelpers);
 					if (resolved === undefined) {
 						delete state.resolvedValues[fieldName];
 					} else {
@@ -2185,7 +2246,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			// NOTE: Similar logic in handleSubmit() - keep in sync
 			const hasFinalizePreserve = fieldInfo.directives?.includes('finalize-preserve');
 			if (finalize && !(fieldName in state.resolvedValues) && !hasFinalizePreserve) {
-				const resolvedFallback = Z2KTemplateEngine.reducedRenderContent(fieldInfo.fallback || "", context, true, this.userHelperFunctions);
+				const resolvedFallback = Z2KTemplateEngine.reducedRenderContent(fieldInfo.fallback || "", context, true, this.activeHelpers);
 				if (resolvedFallback === undefined) {
 					delete state.resolvedValues[fieldName];
 				} else {
@@ -2198,7 +2259,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	// Template editing
 	async convertFileTemplateType(file: TFile, type: "content-file" | "document-template" | "block-template") {
 		try {
-			if (type === "content-file" && this.isInsideTemplatesFolder(file)) {
+			if (type === "content-file" && this.isInsideTemplatesFolder(pathFileFromTFile(file))) {
 				await this.logInfo("You will need to manually move the file outside of your templates folder (" + this.settings.templatesFolderName + ").");
 			}
 			let content = await this.app.vault.read(file);
@@ -2232,7 +2293,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	async convertToMarkdownTemplate(file: TFile) {
 		try {
 			// Determine the template type to preserve (or set based on current extension)
-			let currentType = this.getFileTemplateType(file);
+			let currentType = this.getFileTemplateTypeSync(file);
 			if (currentType === "content-file") {
 				// If it's a content file, determine type from extension
 				if (file.extension === "template") {
@@ -2290,7 +2351,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	// 			if (f instanceof TFolder && f.name === "." + this.settings.templatesFolderName) {
 	// 				this.unhideFolder(f);
 	// 			}
-	// 			if (f instanceof TFile && f.name.startsWith(".") && this.getFileTemplateType(f) !== "content-file") {
+	// 			if (f instanceof TFile && f.name.startsWith(".") && this.getFileTemplateTypeSync(f) !== "content-file") {
 	// 				this.unhideTemplateFile(f);
 	// 			}
 	// 		}
@@ -2307,7 +2368,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	// 			if (f instanceof TFolder && f.name === this.settings.templatesFolderName) {
 	// 				this.hideFolder(f);
 	// 			}
-	// 			if (f instanceof TFile && this.getFileTemplateType(f) !== "content-file") {
+	// 			if (f instanceof TFile && this.getFileTemplateTypeSync(f) !== "content-file") {
 	// 				this.hideTemplateFile(f);
 	// 			}
 	// 		}
@@ -2319,28 +2380,28 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	//// All other functions
 
 	// Prompts
-	async promptForCardTypeFolder(): Promise<TFolder> {
-		const cardTypes = this.getAllCardTypes("document-template");
+	async promptForCardTypeFolder(): Promise<PathFolder> {
+		const cardTypes = await this.getAllCardTypes("document-template");
 		if (cardTypes.length === 0) {
 			throw new Error(`No ${cardRefNameLower(this.settings)} types available. Please create a template folder first.`);
 		}
-		return new Promise<TFolder>((resolve, reject) => {
+		return new Promise<PathFolder>((resolve, reject) => {
 			new CardTypeSelectionModal(this.app, cardTypes, this.settings, resolve, reject).open();
 		});
 	}
-	async promptForTemplateFile(cardType: TFolder, type: "document-template" | "block-template"): Promise<TFile> {
-		const templates = this.getAssociatedTemplates(type, cardType);
+	async promptForTemplateFile(cardType: PathFolder, type: "document-template" | "block-template"): Promise<PathFile> {
+		const templates = await this.getAssociatedTemplates(type, cardType);
 		if (templates.length === 0) {
 			throw new Error(`No ${type === "document-template" ? "" : "block "}templates available in the selected ${cardRefNameLower(this.settings)} type folder.`);
 		}
-		return new Promise<TFile>((resolve, reject) => {
+		return new Promise<PathFile>((resolve, reject) => {
 			new TemplateSelectionModal(this.app, templates, this.settings, resolve, reject).open();
 		});
 	}
 	async promptForFieldCollection(templateState: TemplateState): Promise<boolean> {
 		// Errors (including circular dependency errors) propagate to caller for handling
 		return await new Promise<boolean>((resolve, reject) => {
-			new FieldCollectionModal(this.app, `Field Collection for ${cardRefNameUpper(this.settings)}`, templateState, this.userHelperFunctions, resolve, reject).open();
+			new FieldCollectionModal(this.app, `Field Collection for ${cardRefNameUpper(this.settings)}`, templateState, this.activeHelpers, resolve, reject).open();
 		});
 	}
 	// Helpers
@@ -2426,19 +2487,44 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		return rows.join("\n");
 	}
 
-	getFileTemplateType(file: TFile): "content-file" | "document-template" | "block-template" {
+	async getFileTemplateType(file: PathFile): Promise<"content-file" | "document-template" | "block-template"> {
+		// Extension takes priority — most explicit declaration
+		if (file.extension === "template") { return "document-template"; }
+		if (file.extension === "block") { return "block-template"; }
+		// YAML override — indexed files use metadata cache, hidden files use adapter
+		let yamlTemplateType: unknown;
+		const tFile = this.app.vault.getAbstractFileByPath(file.path);
+		if (tFile instanceof TFile) {
+			yamlTemplateType = this.app.metadataCache.getFileCache(tFile)?.frontmatter?.["z2k_template_type"];
+		} else {
+			try {
+				const content = await this.app.vault.adapter.read(file.path);
+				const { fm } = Z2KYamlDoc.splitFrontmatter(content);
+				if (fm) { yamlTemplateType = Z2KYamlDoc.fromString(fm).get("z2k_template_type"); }
+			} catch {} // File unreadable — fall through to location/default
+		}
+		if (yamlTemplateType === "document-template" || yamlTemplateType === "block-template") {
+			return yamlTemplateType;
+		}
+		// Location-based — .md files inside a templates folder
+		if (file.extension === "md" && this.isInsideTemplatesFolder(file)) {
+			return "document-template";
+		}
+		return "content-file";
+	}
+	// Sync version for contexts that only operate on indexed TFiles.
+	// Uses metadataCache (no adapter reads), so only works for Obsidian-indexed files.
+	getFileTemplateTypeSync(file: TFile): "content-file" | "document-template" | "block-template" {
+		if (file.extension === "template") { return "document-template"; }
+		if (file.extension === "block") { return "block-template"; }
 		const yamlTemplateType = this.app.metadataCache.getFileCache(file)?.frontmatter?.["z2k_template_type"];
 		if (yamlTemplateType === "document-template" || yamlTemplateType === "block-template") {
 			return yamlTemplateType;
-		} else if (this.isInsideTemplatesFolder(file)) {
-			return "document-template";
-		} else if (file.extension === "template") {
-			return "document-template";
-		} else if (file.extension === "block") {
-			return "block-template";
-		} else {
-			return "content-file";
 		}
+		if (file.extension === "md" && this.isInsideTemplatesFolder(pathFileFromTFile(file))) {
+			return "document-template";
+		}
+		return "content-file";
 	}
 	async renameFileExtension(file: TFile, newExtension: string): Promise<TFile | null> {
 		const currentExt = file.extension;
@@ -2493,62 +2579,82 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	// 	// @ts-expect-error: internal API
 	// 	this.app.viewRegistry.unregisterExtensions("template");
 	// }
-	getAllTemplates(): { file: TFile, type: "document-template" | "block-template" }[] {
-		let list = [];
-		for (const f of this.getAllTemplatesRootFiles()) {
-			if (!(f instanceof TFile)) { continue; }
-			const type = this.getFileTemplateType(f);
-			if (type === "content-file") { continue; }
-			list.push({ file: f, type });
-		}
+	async getAllTemplates(): Promise<{ file: PathFile, type: "document-template" | "block-template" }[]> {
+		let list: { file: PathFile, type: "document-template" | "block-template" }[] = [];
+		const adapter = this.app.vault.adapter;
+		const dotTfn = '.' + this.settings.templatesFolderName;
+		// Recursively list hidden (dot-prefixed) template folders via adapter
+		const collectHidden = async (folderPath: string) => {
+			const listing = await adapter.list(folderPath);
+			for (const filePath of listing.files) {
+				const pf = pathFileFrom(filePath);
+				const type = await this.getFileTemplateType(pf);
+				if (type !== "content-file") { list.push({ file: pf, type }); }
+			}
+			for (const subPath of listing.folders) {
+				await collectHidden(subPath);
+			}
+		};
+		// Walk indexed folders, also checking for dot-prefixed template subfolders
+		const collect = async (folder: TFolder) => {
+			for (const child of folder.children) {
+				if (child instanceof TFile) {
+					const pf = pathFileFromTFile(child);
+					const type = await this.getFileTemplateType(pf);
+					if (type !== "content-file") { list.push({ file: pf, type }); }
+				} else if (child instanceof TFolder) {
+					await collect(child);
+				}
+			}
+			// Check for hidden templates folder at this level
+			const hiddenPath = joinPath(folder.path, dotTfn);
+			if (await adapter.exists(hiddenPath)) {
+				await collectHidden(hiddenPath);
+			}
+		};
+		await collect(this.getTemplatesRootFolder());
 		return list;
 	}
-	getAllCardTypes(filter: "document-template" | "block-template"): TFolder[] {
-		let folders: TFolder[] = [];
-		for (const t of this.getAllTemplates()) {
+	async getAllCardTypes(filter: "document-template" | "block-template"): Promise<PathFolder[]> {
+		let seen = new Set<string>();
+		let folders: PathFolder[] = [];
+		for (const t of await this.getAllTemplates()) {
 			if (t.type !== filter) { continue; }
-			let folder = t.file.parent;
-			if (folder?.name === this.settings.templatesFolderName ||
-					folder?.name === '.' + this.settings.templatesFolderName) {
-				folder = folder.parent as TFolder; // templates are in the templates folder, so we want the parent folder
-			}
-			if (!folder || folders.includes(folder)) { continue; }
-			folders.push(folder);
+			const cardType = this.getTemplateCardType(t.file);
+			if (seen.has(cardType.path)) { continue; }
+			seen.add(cardType.path);
+			folders.push(cardType);
 		}
 		folders.sort((a, b) => a.path.localeCompare(b.path));
 		return folders;
 	}
-	getAssociatedTemplates(filter: "document-template" | "block-template", cardType: TFolder): TFile[] {
-		const templatesRootFolder = this.getTemplatesRootFolder();
-		if (!this.isSubPathOf(cardType.path, templatesRootFolder.path)) {
+	// Returns templates sorted by proximity: closest card type first, alphabetical within each level.
+	// Distance = how many path segments the template's card type is above the requested card type.
+	// e.g. for card type "a/b": templates with card type "a/b" → distance 0, "a" → 1, "" → 2.
+	async getAssociatedTemplates(filter: "document-template" | "block-template", cardType: PathFolder): Promise<PathFile[]> {
+		const templatesRootPath = this.getTemplatesRootFolder().path;
+		if (!isSubPathOf(cardType.path, templatesRootPath)) {
 			throw new Error(`The selected ${cardRefNameLower(this.settings)} type folder is not inside your templates root folder.`);
 		}
-		let currFolder: TFolder = cardType;
-		let templates: TFile[] = [];
-		while (true) {
-			for (const template of this.getAllTemplates()) {
-				if (template.type !== filter) { continue; }
-				if (this.isInThisFolderOrItsTemplatesFolder(template.file, currFolder)) {
-					if (!templates.includes(template.file)) {
-						templates.push(template.file);
-					}
-					continue;
-				}
-			}
-			if (currFolder === templatesRootFolder || !currFolder.parent) { break; }
-			currFolder = currFolder.parent as TFolder;
+		const segCount = (p: string) => p === '' ? 0 : p.split('/').length;
+		const targetSegCount = segCount(cardType.path);
+		let ranked: { file: PathFile, distance: number }[] = [];
+		for (const t of await this.getAllTemplates()) {
+			if (t.type !== filter) { continue; }
+			const tCardType = this.getTemplateCardType(t.file);
+			// Only include templates whose card type is an ancestor of (or equal to) the target
+			if (!isSubPathOf(cardType.path, tCardType.path)) { continue; }
+			ranked.push({ file: t.file, distance: targetSegCount - segCount(tCardType.path) });
 		}
-		templates.sort((a, b) => a.path.localeCompare(b.path));
-		return templates;
+		ranked.sort((a, b) => a.distance - b.distance || a.file.path.localeCompare(b.file.path));
+		return ranked.map(r => r.file);
 	}
-	getTemplateCardType(template: TFile): TFolder | null {
-		if (this.getFileTemplateType(template) === "content-file") { return null; } // not a template
-		let folder = template.parent;
-		if (folder?.name === this.settings.templatesFolderName ||
-				folder?.name === '.' + this.settings.templatesFolderName) {
-			folder = folder.parent as TFolder; // templates are in the templates folder, so we want the parent folder
-		}
-		return folder || null;
+	// Derives the card type folder from a template's path by stripping Templates/.Templates segments.
+	// Callers must ensure the file is actually a template — no type check is done here.
+	getTemplateCardType(template: PathFile): PathFolder {
+		const tfn = this.settings.templatesFolderName;
+		const segments = template.parentPath.split('/').filter(s => s !== tfn && s !== '.' + tfn);
+		return pathFolderFrom(segments.join('/'));
 	}
 	// Extension priority for block templates: more specific extensions win
 	static readonly BLOCK_EXTENSIONS = ['.block', '.template', '.md'];
@@ -2560,16 +2666,18 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		}
 		return Z2KTemplatesPlugin.BLOCK_EXTENSIONS.map(ext => basePath + ext);
 	}
-	// Try to resolve a file path, attempting extensions in priority order if none given
-	tryResolveWithExtensions(basePath: string): TFile | null {
+	// Try to resolve a file path, attempting extensions in priority order if none given.
+	// Checks both indexed files (vault) and hidden files (adapter).
+	async tryResolveWithExtensions(basePath: string): Promise<PathFile | null> {
 		for (const tryPath of this.getTriedPaths(basePath)) {
 			const file = this.getFile(tryPath);
-			if (file) { return file; }
+			if (file) { return pathFileFromTFile(file); }
+			if (await this.app.vault.adapter.exists(tryPath)) { return pathFileFrom(tryPath); }
 		}
 		return null;
 	}
 	// Sort blocks by extension priority (.block > .template > .md), unknown extensions last
-	sortByExtensionPriority(blocks: [TFile, string][]): [TFile, string][] {
+	sortByExtensionPriority(blocks: [PathFile, string][]): [PathFile, string][] {
 		return [...blocks].sort((a, b) => {
 			const aIdx = Z2KTemplatesPlugin.BLOCK_EXTENSIONS.findIndex(ext => a[0].path.endsWith(ext));
 			const bIdx = Z2KTemplatesPlugin.BLOCK_EXTENSIONS.findIndex(ext => b[0].path.endsWith(ext));
@@ -2595,34 +2703,58 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		}
 		return false;
 	}
-	getBlockCallbackFunc(): (name: string, path: string) => Promise<[found: boolean, content: string, path: string]> {
-		// Includes all templates, not just blocks — partials can include document templates too
-		let allBlocks: [TFile, string][] = [];
-		for (const t of this.getAllTemplates()) {
-			allBlocks.push([t.file, normalizeFullPath(t.file.path)]);
+	async getBlockCallbackFunc(): Promise<(name: string, path: string) => Promise<[found: boolean, content: string, path: string]>> {
+		// Partials can include any file in the vault, not just templates.
+		// Build list from indexed files + hidden files in dot-prefixed template folders.
+		let allBlocks: [PathFile, string][] = [];
+		for (const f of this.app.vault.getFiles()) {
+			allBlocks.push([pathFileFromTFile(f), normalizeFullPath(f.path)]);
 		}
-		// Helper to return a block's content (returns parent directory for nested block resolution)
-		const returnBlock = async (file: TFile): Promise<[true, string, string]> => {
-			const parentDir = file.parent?.path || '';
-			return [true, await this.app.vault.read(file), parentDir];
+		// Scan for hidden files in .Templates folders within templates root
+		const adapter = this.app.vault.adapter;
+		const dotTfn = '.' + this.settings.templatesFolderName;
+		const templatesRootPath = this.getTemplatesRootFolder().path;
+		const scanHidden = async (folderPath: string) => {
+			const listing = await adapter.list(folderPath);
+			for (const filePath of listing.files) {
+				const pf = pathFileFrom(filePath);
+				allBlocks.push([pf, normalizeFullPath(filePath)]);
+			}
+			for (const subPath of listing.folders) {
+				await scanHidden(subPath);
+			}
+		};
+		// Walk indexed folders to find dot-prefixed template subfolders
+		const findHiddenFolders = async (folder: TFolder) => {
+			const hiddenPath = joinPath(folder.path, dotTfn);
+			if (await adapter.exists(hiddenPath)) { await scanHidden(hiddenPath); }
+			for (const child of folder.children) {
+				if (child instanceof TFolder) { await findHiddenFolders(child); }
+			}
+		};
+		await findHiddenFolders(this.getTemplatesRootFolder());
+
+		const returnBlock = async (file: PathFile): Promise<[true, string, string]> => {
+			return [true, await adapter.read(file.path), file.path];
 		};
 		// Helper for hierarchical resolution: prefer current folder → parents → first match
-		const resolveHierarchically = async (matches: [TFile, string][], currentPath: string): Promise<[boolean, string, string]> => {
+		const resolveHierarchically = async (matches: [PathFile, string][], currentPath: string): Promise<[boolean, string, string]> => {
 			if (matches.length === 0) { return [false, "", ""]; }
 			const sortedMatches = this.sortByExtensionPriority(matches);
 			if (sortedMatches.length === 1) {
 				return returnBlock(sortedMatches[0][0]);
 			}
-			let currFolder = this.getFolder(currentPath);
-			if (!currFolder) { throw new Error(`Path '${currentPath}' does not point to a folder.`); }
+			let currPath = currentPath;
 			while (true) {
+				const currFolder = pathFolderFrom(currPath);
 				for (const match of sortedMatches) {
-					if (this.isInThisFolderOrItsTemplatesFolder(match[0], currFolder as TFolder)) {
+					if (this.isInThisFolderOrItsTemplatesFolder(match[0], currFolder)) {
 						return returnBlock(match[0]);
 					}
 				}
-				if (currFolder === this.getTemplatesRootFolder() || !currFolder.parent) { break; }
-				currFolder = currFolder.parent as TFolder;
+				if (currPath === templatesRootPath || !currPath) { break; }
+				const lastSlash = currPath.lastIndexOf('/');
+				currPath = lastSlash >= 0 ? currPath.substring(0, lastSlash) : '';
 			}
 			// No match in hierarchy, return first (highest priority by extension)
 			return returnBlock(sortedMatches[0][0]);
@@ -2635,36 +2767,25 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			// 3. Sub/Block - scoped name lookup (path suffix match, hierarchical)
 			// 4. Block - simple name lookup (hierarchical)
 			// All formats work with or without extension (.block > .template > .md priority)
-			const templatesRoot = this.getTemplatesRootFolder().path;
 			if (name.startsWith("/")) {
 				// Absolute path from templates root
-				const basePath = this.joinPath(templatesRoot, name.substring(1));
-				const file = this.tryResolveWithExtensions(basePath);
+				const basePath = joinPath(templatesRootPath, name.substring(1));
+				const file = await this.tryResolveWithExtensions(basePath);
 				if (!file) {
 					const triedPaths = this.getTriedPaths(basePath);
 					throw new Error(
 						`Block not found: '${name}'\n\n` +
-						`Resolution mode: Absolute path (from templates root '${templatesRoot}')\n\n` +
+						`Resolution mode: Absolute path (from templates root '${templatesRootPath}')\n\n` +
 						`Tried these paths:\n${triedPaths.map(p => `  - ${p}`).join('\n')}\n\n` +
 						`None of these files exist.`
-					);
-				}
-				const normPath = normalizeFullPath(file.path);
-				if (!allBlocks.some(([, p]) => p === normPath)) {
-					throw new Error(
-						`File exists but is not a template: '${file.path}'\n\n` +
-						`To use it as a block, either:\n` +
-						`  - Add 'z2k_template_type: block-template' or 'z2k_template_type: document-template' to frontmatter\n` +
-						`  - Use .block or .template file extension\n` +
-						`  - Place it inside a templates folder`
 					);
 				}
 				return returnBlock(file);
 			}
 			if (name.startsWith("./") || name.startsWith("../")) {
 				// Relative path from current template's folder
-				const basePath = this.joinPath(path, name);
-				const file = this.tryResolveWithExtensions(basePath);
+				const basePath = joinPath(path, name);
+				const file = await this.tryResolveWithExtensions(basePath);
 				if (!file) {
 					const triedPaths = this.getTriedPaths(basePath);
 					throw new Error(
@@ -2674,21 +2795,11 @@ export default class Z2KTemplatesPlugin extends Plugin {
 						`None of these files exist.`
 					);
 				}
-				const normPath = normalizeFullPath(file.path);
-				if (!allBlocks.some(([, p]) => p === normPath)) {
-					throw new Error(
-						`File exists but is not a template: '${file.path}'\n\n` +
-						`To use it as a block, either:\n` +
-						`  - Add 'z2k_template_type: block-template' or 'z2k_template_type: document-template' to frontmatter\n` +
-						`  - Use .block or .template file extension\n` +
-						`  - Place it inside a templates folder`
-					);
-				}
 				return returnBlock(file);
 			}
 			if (name.includes("/")) {
 				// Scoped name lookup - match blocks whose path ends with this suffix
-				let matches: [TFile, string][] = [];
+				let matches: [PathFile, string][] = [];
 				for (const block of allBlocks) {
 					if (this.pathMatchesSuffix(block[1], name)) {
 						matches.push(block);
@@ -2704,10 +2815,11 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				}
 				return resolveHierarchically(matches, path);
 			}
-			// Simple name lookup - match by basename (no ext) or name (with ext)
-			let matches: [TFile, string][] = [];
+			// Simple name lookup - match by basename or full filename
+			let matches: [PathFile, string][] = [];
 			for (const block of allBlocks) {
-				if (block[0].basename === name || block[0].name === name) {
+				const fileName = block[0].basename + (block[0].extension ? '.' + block[0].extension : '');
+				if (block[0].basename === name || fileName === name) {
 					matches.push(block);
 				}
 			}
@@ -2723,30 +2835,20 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		}
 	}
 
-	isInThisFolderOrItsTemplatesFolder(file: TFile, folder: TFolder): boolean {
-		if (file.parent === folder) { return true; }
-		if (this.isSubPathOf(file.path, this.joinPath(folder.path, this.settings.templatesFolderName))
-				|| this.isSubPathOf(file.path, this.joinPath(folder.path, '.' + this.settings.templatesFolderName))) {
+	isInThisFolderOrItsTemplatesFolder(file: PathFile, folder: PathFolder): boolean {
+		if (file.parentPath === folder.path) { return true; }
+		if (isSubPathOf(file.path, joinPath(folder.path, this.settings.templatesFolderName))
+				|| isSubPathOf(file.path, joinPath(folder.path, '.' + this.settings.templatesFolderName))) {
 			return true;
 		}
 		return false;
 	}
-	isInsideTemplatesFolder(file: TFile): boolean {
+	isInsideTemplatesFolder(file: PathFile): boolean {
 		const tfn = this.settings.templatesFolderName;
 		const templatesRoot = this.getTemplatesRootFolder();
-		if (!this.isSubPathOf(file.path, templatesRoot.path)) { return false; }
+		if (!isSubPathOf(file.path, templatesRoot.path)) { return false; }
 		const normPath = normalizeFullPath(file.path);
 		return normPath.includes(`/${tfn}/`) || normPath.includes(`/.${tfn}/`) || normPath.startsWith(`${tfn}/`) || normPath.startsWith(`.${tfn}/`);
-	}
-	getAllTemplatesRootFiles(): TAbstractFile[] {
-		let files: TAbstractFile[] = [];
-		const templatesRootPath = this.getTemplatesRootFolder().path;
-		for (const f of this.app.vault.getAllLoadedFiles()) {
-			if (this.isSubPathOf(f.path, templatesRootPath)) {
-				files.push(f);
-			}
-		}
-		return files;
 	}
 	getTemplatesRootFolder(): TFolder {
 		let templatesRoot = this.getFolder(this.settings.templatesRootFolder)
@@ -2778,10 +2880,10 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	generateUniqueFilePath(folderPath: string, basename: string): string {
 		basename = basename.replace(/\.md$/, '');
 		let filename = basename + '.md';
-		let fullPath = this.joinPath(folderPath, filename);
+		let fullPath = joinPath(folderPath, filename);
 		let counter = 1;
 		while (this.getFile(fullPath)) {
-			fullPath = this.joinPath(folderPath, `${basename} (${counter++}).md`);
+			fullPath = joinPath(folderPath, `${basename} (${counter++}).md`);
 		}
 		return fullPath;
 	}
@@ -2982,25 +3084,28 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		}
 	}
 
-	private async GetSystemBlocksContent(cardTypeFolder: TFolder): Promise<string> {
+	private async GetSystemBlocksContent(cardTypeFolder: PathFolder): Promise<string> {
 		// Get all the system block files between here and the root
-		const templatesRoot = this.getFolder(this.settings.templatesRootFolder);
-		let currentFolder: TFolder | null = cardTypeFolder;
+		const templatesRootPath = normalizeFullPath(this.settings.templatesRootFolder);
+		let currentPath = cardTypeFolder.path;
 		let systemBlocks: string[] = [];
+		const adapter = this.app.vault.adapter;
 
-		while (currentFolder) {
-			const filePath = this.joinPath(currentFolder.path, '.system-block.md');
+		while (true) {
+			const filePath = joinPath(currentPath, '.system-block.md');
 			try {
 				// Need to use adapter because the usual file read doesn't work for files that start with .
-				systemBlocks.push(await this.app.vault.adapter.read(filePath));
+				systemBlocks.push(await adapter.read(filePath));
 			} catch {} // Can't find/read the file
 
 			// Check for stop file - if present, don't continue to parent folders
-			const stopFilePath = this.joinPath(currentFolder.path, '.system-block-stop');
-			if (await this.app.vault.adapter.exists(stopFilePath)) break;
+			const stopFilePath = joinPath(currentPath, '.system-block-stop');
+			if (await adapter.exists(stopFilePath)) break;
 
-			if (currentFolder === templatesRoot) break; // Stop at the templates root
-			currentFolder = currentFolder.parent;
+			if (currentPath === templatesRootPath || !currentPath) break; // Stop at the templates root
+			// Walk up to parent
+			const lastSlash = currentPath.lastIndexOf('/');
+			currentPath = lastSlash >= 0 ? currentPath.substring(0, lastSlash) : '';
 		}
 		systemBlocks.reverse(); // So root is first
 		let yamls = systemBlocks.map(b => Z2KYamlDoc.splitFrontmatter(b).fm);
@@ -3070,8 +3175,12 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		const file = this.app.vault.getAbstractFileByPath(normalized);
 		return file instanceof TFile ? file : null;
 	}
-	async createFile(folder: TFolder, title: string, content: string): Promise<TFile> {
+	async createFile(folder: PathFolder, title: string, content: string): Promise<TFile> {
 		try {
+			// Ensure the folder exists (card type folder may be virtual, derived from (.)Templates path)
+			if (folder.path && !await this.app.vault.adapter.exists(folder.path)) {
+				await this.app.vault.createFolder(folder.path);
+			}
 			const filename = this.getValidFilename(title);
 			const newPath = this.generateUniqueFilePath(folder.path, filename);
 			const file = await this.app.vault.create(newPath, content);
@@ -3096,16 +3205,6 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			rethrowWithMessage(error, `Error occurred while creating the folder at path '${path}'`);
 		}
 	}
-	private isSubPathOf(child: string, parent: string): boolean {
-		const normParent = normalizeFullPath(parent);
-		const normChild = normalizeFullPath(child);
-		if (normParent === '') { return true; } // root is parent of everything
-		if (normChild === normParent) { return true; }
-		return normChild.startsWith(normParent + '/');
-	}
-	private joinPath(...parts: string[]): string {
-		return normalizeFullPath(parts.join('/'));
-	}
 	private getMarkdownFilesInFolder(folder: TFolder, recurse = false): TFile[] {
 		let files: TFile[] = [];
 
@@ -3128,26 +3227,6 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	}
 }
 
-function normalizeFullPath(path: string): string {
-	path = path
-		.trim()
-		.replace(/\\/g, '/')       // Normalize backslashes to '/'
-		.replace(/\/{2,}/g, '/')   // Collapse multiple slashes
-		.replace(/^\.\//, '')      // Remove leading "./"
-		.replace(/^\/+/, '')       // Remove leading slashes
-		.replace(/\/+$/, '');      // Remove trailing slashes
-	// Resolve ".." segments
-	const segments = path.split('/');
-	const resolved: string[] = [];
-	for (const seg of segments) {
-		if (seg === '..') {
-			resolved.pop(); // Go up one level
-		} else if (seg !== '.' && seg !== '') {
-			resolved.push(seg);
-		}
-	}
-	return resolved.join('/');
-}
 function escapeRegExp(s: string): string {
 	return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
@@ -3401,13 +3480,13 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 // Card Type Selection Modal
 // ------------------------------------------------------------------------------------------------
 export class CardTypeSelectionModal extends Modal {
-	cardTypes: TFolder[];
+	cardTypes: PathFolder[];
 	settings: Z2KTemplatesPluginSettings;
-	resolve: (cardType: TFolder) => void;
+	resolve: (cardType: PathFolder) => void;
 	reject: (error: Error) => void;
 	root: any; // For React root
 
-	constructor(app: App, cardTypes: TFolder[], settings: Z2KTemplatesPluginSettings, resolve: (cardType: TFolder) => void, reject: (error: Error) => void) {
+	constructor(app: App, cardTypes: PathFolder[], settings: Z2KTemplatesPluginSettings, resolve: (cardType: PathFolder) => void, reject: (error: Error) => void) {
 		super(app);
 		this.cardTypes = cardTypes;
 		this.settings = settings;
@@ -3426,7 +3505,7 @@ export class CardTypeSelectionModal extends Modal {
 				<CardTypeSelector
 					cardTypes={this.cardTypes}
 					settings={this.settings}
-					onConfirm={(cardType: TFolder) => {
+					onConfirm={(cardType: PathFolder) => {
 						this.resolve(cardType);
 						this.close();
 					}}
@@ -3446,9 +3525,9 @@ export class CardTypeSelectionModal extends Modal {
 }
 
 interface CardTypeSelectorProps {
-	cardTypes: TFolder[];
+	cardTypes: PathFolder[];
 	settings: Z2KTemplatesPluginSettings;
-	onConfirm: (cardType: TFolder) => void;
+	onConfirm: (cardType: PathFolder) => void;
 	onCancel: () => void;
 }
 
@@ -3514,7 +3593,7 @@ const CardTypeSelector = ({ cardTypes, settings, onConfirm, onCancel }: CardType
 							role="button"
 							aria-selected={selectedIndex === index}
 						>
-							<span className="selection-primary">{getPrettyPath(cardType.path)}</span>
+							<span className="selection-primary" title={cardType.path}>{getPrettyPath(cardType.path)}</span>
 							{/* <span className="selection-secondary">{cardType.}</span> */}
 						</div>
 					))
@@ -3534,13 +3613,13 @@ const CardTypeSelector = ({ cardTypes, settings, onConfirm, onCancel }: CardType
 // Template Selection Modal
 // ------------------------------------------------------------------------------------------------
 export class TemplateSelectionModal extends Modal {
-	templates: TFile[];
+	templates: PathFile[];
 	settings: Z2KTemplatesPluginSettings;
-	resolve: (template: TFile) => void;
+	resolve: (template: PathFile) => void;
 	reject: (error: Error) => void;
 	root: any; // For React root
 
-	constructor(app: App, templates: TFile[], settings: Z2KTemplatesPluginSettings, resolve: (template: TFile) => void, reject: (error: Error) => void){
+	constructor(app: App, templates: PathFile[], settings: Z2KTemplatesPluginSettings, resolve: (template: PathFile) => void, reject: (error: Error) => void){
 		super(app);
 		this.templates = templates;
 		this.settings = settings;
@@ -3559,7 +3638,7 @@ export class TemplateSelectionModal extends Modal {
 				<TemplateSelector
 					templates={this.templates}
 					settings={this.settings}
-					onConfirm={(template: TFile) => {
+					onConfirm={(template: PathFile) => {
 						this.resolve(template);
 						this.close();
 					}}
@@ -3579,36 +3658,39 @@ export class TemplateSelectionModal extends Modal {
 }
 
 interface TemplateSelectorProps {
-	templates: TFile[];
+	templates: PathFile[];
 	settings: Z2KTemplatesPluginSettings;
-	onConfirm: (template: TFile) => void;
+	onConfirm: (template: PathFile) => void;
 	onCancel: () => void;
 }
 
 // React component for the modal content
 const TemplateSelector = ({ templates, settings, onConfirm, onCancel }: TemplateSelectorProps) => {
-	const getItems = (): { file: TFile, name: string, cardType: string }[] => {
-		return templates.map((template: TFile) => {
-			let cardType = template.parent?.path;
-			if (template.parent?.name === settings.templatesFolderName || template.parent?.name === "." + settings.templatesFolderName) {
-				cardType = template.parent?.parent?.path;
+	const getItems = (): { file: PathFile, name: string, cardType: string }[] => {
+		const rootPath = normalizeFullPath(settings.templatesRootFolder);
+		return templates.map((template: PathFile) => {
+			let parentPath = normalizeFullPath(template.parentPath);
+			// Show path relative to templates root
+			if (rootPath && parentPath.startsWith(rootPath + '/')) {
+				parentPath = parentPath.slice(rootPath.length + 1);
+			} else if (parentPath === rootPath) {
+				parentPath = "";
 			}
-			cardType = normalizeFullPath(cardType ?? "");
-			return { file: template, name: template.basename, cardType: cardType }
+			return { file: template, name: template.basename, cardType: parentPath }
 		});
 	}
 
 	const [searchTerm, setSearchTerm] = useState<string>('');
-	const [filteredItems, setFilteredItems] = useState<{ file: TFile, name: string, cardType: string }[]>(getItems());
+	const [filteredItems, setFilteredItems] = useState<{ file: PathFile, name: string, cardType: string }[]>(getItems());
 	const [selectedIndex, setSelectedIndex] = useState<number>(0);
 	const searchInputRef = useRef<HTMLInputElement>(null);
 	const listRef = useRef<HTMLDivElement>(null);
 
 	// Filter templates when search term changes
 	useEffect(() => {
-		// const filtered = templates.filter((template: TFile) => {
+		// const filtered = templates.filter((template: PathFile) => {
 		// 	const nameMatch = template.basename.toLowerCase().includes(searchTerm.toLowerCase());
-		// 	const pathMatch = template.parent?.path.toLowerCase().includes(searchTerm.toLowerCase()) || false;
+		// 	const pathMatch = template.parentPath.toLowerCase().includes(searchTerm.toLowerCase()) || false;
 		// 	return nameMatch || pathMatch;
 		// });
 		setFilteredItems(
@@ -3702,7 +3784,7 @@ const TemplateSelector = ({ templates, settings, onConfirm, onCancel }: Template
 				{filteredItems.length === 0 ? (
 					<div className="selection-empty-state template-list-empty-state">No templates found</div>
 				) : (
-					filteredItems.map((item: { file: TFile, name: string, cardType: string }, index: number) => (
+					filteredItems.map((item: { file: PathFile, name: string, cardType: string }, index: number) => (
 						<div
 							key={item.file.path}
 							className={`selection-item ${selectedIndex === index ? 'selected' : ''}`}
@@ -3710,11 +3792,11 @@ const TemplateSelector = ({ templates, settings, onConfirm, onCancel }: Template
 							tabIndex={index + 2} // +2 because search is tabIndex 1
 						>
 							{/* <span className="selection-primary">{template.basename}</span>
-							<span className="selection-secondary">{template.parent?.path || ''}</span> */}
+							<span className="selection-secondary">{template.parentPath || ''}</span> */}
 							<span className="selection-primary">
 								{highlightMatch(item.name, searchTerm)}
 							</span>
-							<span className="selection-secondary">
+							<span className="selection-secondary" title={item.cardType}>
 								{highlightMatch(item.cardType, searchTerm)}
 							</span>
 						</div>
@@ -4955,6 +5037,7 @@ export class ConfirmationModal extends Modal {
 	options: ConfirmationModalOptions;
 	onConfirm: (confirmed: boolean) => void;
 	root: any;
+	private responded = false;
 
 	constructor(app: App, options: ConfirmationModalOptions, onConfirm: (confirmed: boolean) => void) {
 		super(app);
@@ -4978,6 +5061,7 @@ export class ConfirmationModal extends Modal {
 					<button
 						className="btn btn-secondary"
 						onClick={() => {
+							this.responded = true;
 							this.onConfirm(false);
 							this.close();
 						}}
@@ -4987,6 +5071,7 @@ export class ConfirmationModal extends Modal {
 					<button
 						className={`btn ${this.options.confirmClass ?? 'btn-warning'}`}
 						onClick={() => {
+							this.responded = true;
 							this.onConfirm(true);
 							this.close();
 						}}
@@ -4999,6 +5084,8 @@ export class ConfirmationModal extends Modal {
 	}
 
 	onClose() {
+		// Treat X/Escape as cancellation
+		if (!this.responded) { this.onConfirm(false); }
 		if (this.root) { this.root.unmount(); }
 		this.contentEl.empty();
 	}
@@ -5028,7 +5115,8 @@ export class ErrorModal extends Modal {
 				<button
 					className="btn btn-secondary"
 					onClick={() => {
-						const text = this.error.stack ?? this.error.message;
+						const description = this.error instanceof TemplateError ? this.error.description : '';
+						const text = this.error.message + (description ? '\n\n' + description : '') + '\n\n' + (this.error.stack ?? '');
 						navigator.clipboard.writeText(text).then(() => {
 							new Notice("Copied!", 2000);
 						});

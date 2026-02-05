@@ -30,7 +30,7 @@ This reference page steps through the different types of templates, how they are
 
 
 > [!NOTE] System Block Templates
-> In addition to standard block templates stored in the vault, there are also a special kind of block template called [[Intro to System Blocks|System Blocks]]. See the reference manual section on [[Block Templates]] and [[System Block Templates 2|System Blocks]] for more details. 
+> In addition to standard block templates stored in the vault, there are also a special kind of block template called [[Intro to System Blocks|System Blocks]]. See the reference manual section on [[Block Templates]] and [[System Block Templates|System Blocks]] for more details. 
 
 ## What is NOT a Template?
 ### Content Files

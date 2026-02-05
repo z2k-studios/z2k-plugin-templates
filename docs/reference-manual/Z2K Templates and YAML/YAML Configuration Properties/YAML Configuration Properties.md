@@ -10,19 +10,38 @@ aliases:
 - Z2K Templates YAML Configuration Properties
 ---
 # Z2K Templates' YAML Configuration Properties
-The Z2K Template plugin uses properties stored in the YAML frontmatter of a template file to control how the Template plugin behaves. This allows the template plugin to behave differently on a per-template file basis. All settings (yaml nodes) are prefaced with `z2k_template` to logically group them together and separate them from other YAML configuration settings
+The Z2K Templates plugin uses properties stored in the YAML frontmatter of a template file to control how the plugin behaves on a per-template basis. All property keys are prefixed with `z2k_template_` to separate them from other YAML frontmatter you may use.
 
 ## Using Z2K Templates YAML Configuration Properties
-Z2K Templates YAML Configuration settings can be inserted into the yaml frontmatter of the source template file directly. They are also allowed to be inserted into [[Intro to System Blocks|System Blocks]] to configure execution across a larger set of files as needed in [[Template Folder Hierarchies|hierarchically designed vaults]]. 
+Z2K Templates YAML Configuration Properties can be placed directly in the YAML frontmatter of a template file. They can also be placed in [[Intro to System Blocks|System Blocks]] to configure behavior across a larger set of files in [[Template Folder Hierarchies|hierarchically designed vaults]].
 
 ## Supported YAML Configuration Properties
 The following YAML configuration properties are recognized by the Z2K Templates plugin:
+- Properties set by Z2K Templates throughout the [[Lifecycle of a Template]]:
+	- [[z2k_template_type]] – declares how the plugin treats a file (template vs. content)
+	- [[z2k_template_name]] – overrides the template's display name
+- Properties set by Template Authors and never deleted:
+	- [[z2k_template_author]] – assigns an author attribution to the template
+	- [[z2k_template_version]] – assigns a version identifier to the template
+- Properties set by Template Authors and Removed after Instantiation:
+	- [[z2k_template_suggested_title]] – provides a suggested filename for new notes created from the template
+- Properties set by Template Authors and Removed after Finalization:
+	- [[z2k_template_default_fallback_handling]] – sets the default fallback behavior for fields without explicit fallback directives
+	- [[z2k_template_default_prompt]] – sets a default prompt string for all fields in the file
 
-- [[z2k_template_type]]
-- [[z2k_template_default_fallback_handling]]
-- [[z2k_template_default_prompt]]
-- [[z2k_template_suggested_title]]
-- [[z2k_template_name]]
-- [[z2k_template_author]]
+## Lifecycle Behavior
+Most configuration properties are cleaned up automatically as a file moves through the [[Lifecycle of a Template]]:
 
-==These YAML keys should be cleared out when finalized==
+| Property                                 | On [[Instantiation]]          | On [[Finalization]]             | On [[Block Templates |
+| ---------------------------------------- | ----------------------------- | ------------------------------- | -------------------- |
+| `z2k_template_type`                      | Set to `wip-content-file`     | Set to `finalized-content-file` | Deleted              |
+| `z2k_template_suggested_title`           | Deleted                       | –                               | Deleted              |
+| `z2k_template_default_fallback_handling` | Kept (engine needs it)        | Deleted                         | Deleted              |
+| `z2k_template_name`                      | Set to source template's name | Kept                            | –                    |
+| `z2k_template_version`                   | Kept                          | Kept                            | –                    |
+| `z2k_template_author`                    | Kept                          | Kept                            | –                    |
+| `z2k_template_default_prompt`            | –                             | –                               | –                    |
+
+> [!DANGER] Notes
+> - `z2k_template_default_prompt` is documented but not yet implemented in the codebase. The lifecycle behavior column is blank because there is no code that reads or removes it.
+> - Verify whether `z2k_template_name`, `z2k_template_version`, and `z2k_template_author` should be cleared on finalization – currently they persist into the finalized content file.

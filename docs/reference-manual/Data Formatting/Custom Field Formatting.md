@@ -1,7 +1,7 @@
 ---
 sidebar_position: 54
 ---
-
+# Custom Field Formatting
 When a Template's `{{field}}` is replaced with data, a template has the option to format the data in the process. There are several ways in which formatting can be done:
 
 1. [[#Default Formatting]] - All data has a small amount of default formatting applied

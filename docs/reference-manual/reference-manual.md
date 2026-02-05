@@ -192,7 +192,7 @@ aliases:
 	- [[Editing .template and .block Files]] - how to edit template files after they have been converted to custom file extensions
 	- [[File Extension Process Guide]] - Our recommendations for using these custom file extensions
 
-17. [[System Block Templates 2]]
+17. [[System Block Templates]]
 	- [[Intro to System Blocks]]
 	- [[Using System Blocks and YAML]]
 	- [[Using System Blocks and field-info]]

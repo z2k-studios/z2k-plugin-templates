@@ -1,47 +1,64 @@
 ---
 sidebar_position: 5
 sidebar_class_name: z2k-code
-doc_state: revised_ai_draft_1
+doc_state: revised_ai_draft_2
 ---
-
 # z2k_template_type
-The `z2k_template_type` property is a [[YAML Configuration Properties|Z2K Templates YAML Configuration Property]] that tells Z2K Templates how to treat a given file: as a normal content note, a full document template, or a reusable block template. These directly correspond to the different [[Types of Template Files|Template Types]]. 
+The `z2k_template_type` property is a [[YAML Configuration Properties|Z2K Templates YAML Configuration Property]] that tells Z2K Templates how to treat a given file: as a normal content note, a full document template, or a reusable block template. These directly correspond to the different [[Types of Template Files|Template Types]].
+
+This property is integral to the [[Lifecycle of a Template]]. It is the authoritative marker the plugin reads to determine a file's current stage – and the plugin updates it automatically as the file transitions between stages. If you need to debug why a file is being treated as a template (or not), `z2k_template_type` is the first place to look.
 
 This property works together with [[Template File Extensions]] but does not depend on it – you can use it even if you never change file extensions.
+
+## How Template Type Is Determined
+The `z2k_template_type` property is one of several ways the plugin identifies a file as a template. When this property is absent, the plugin falls back to other signals:
+- **Folder location** – any file inside a [[Template Folders|Template Folder]] is treated as a document template (see [[Template Requirements]])
+- **File extension** – files with `.template` or `.block` extensions are recognized automatically (see [[Template File Extensions]])
+- **Explicit partial reference** – any file referenced via Handlebars `{{> partial}}` syntax is treated as a block template for that invocation (see [[Block Template Requirements]])
+
+When `z2k_template_type` is present, it takes precedence. For full details on how these methods interact, see [[Template Requirements]] and [[Block Template Requirements]].
 
 ## Valid Settings
 The following values are supported by `z2k_template_type`:
 
-| Key Value           | Meaning                                                              |
-| ------------------- | -------------------------------------------------------------------- |
-| `content-file`      | This file is not a template; treat it as a normal note               |
-| `wip-content-file`  | This file is a WIP Content file; treat it as a normal note           |
-| `finalized-content-file`  | This file is a Finalized Content file; treat it as a normal note           |
-| `document-template` | This file is a whole-file (document) template                        |
-| `block-template`    | This file is a block-level template (i.e. a "partial" in Handlebars) |
+| Key Value                | Meaning                                                                                  |
+| ------------------------ | ---------------------------------------------------------------------------------------- |
+| `content-file`           | This file is not a template; treat it as a normal note                                   |
+| `wip-content-file`       | This file is a WIP Content file; treat it as a normal note but still may contain fields. |
+| `finalized-content-file` | This file is a Finalized Content file; treat it as a normal note                         |
+| `document-template`      | This file is a whole-file (document) template                                            |
+| `block-template`         | This file is a block-level template (i.e. a "partial" in Handlebars)                     |
 
 The property is the primary source to authoritatively declare the [[Types of Template Files|Template Type]] (see link for more details).
-- `content-file` – “This is data I care about reading and updating. Don't treat it as a template.”
-- `document-template` – “This defines the structure for creating new notes.”
-- `block-template` – “This is a reusable snippet that plugs into other templates.”
+- `content-file` – "This is data I care about reading and updating. Don't treat it as a template."
+- `wip-content-file` – "This is a real content file in my vault, but it still may have some fields that I am working on getting the data for. Treat it as [[WIP Stage|halfway done]] : half template, half content."
+- `document-template` – "This defines a whole file template - the structure for creating new notes."
+- `block-template` – "This is a reusable snippet that plugs into other templates or content files."
 
 ## Notices
 
-> [!NOTE] This Property Is Not Required 
-> Please note that this property is *not* required in order for a template to work as a template, or a content-file to work as a content file. It is useful only for over-specifying to the Templates Plugin how exactly it should perceive of a file. 
+> [!NOTE] This Property Is Not Required
+> This property is *not* required in order for a template to work as a template, or a content-file to work as a content file. It is one of several ways the plugin identifies template type – see [[#How Template Type Is Determined]] above.
 
 > [!WARNING] Let Z2K Templates Do The Work
-> We recommend that you use the [[Command Palette#Template Conversion Commands|Template Conversion Commands]] to facilitate updating this property instead of attempting to modify it yourself. 
+> We recommend that you use the [[Command Palette#Template Conversion Commands|Template Conversion Commands]] to facilitate updating this property instead of attempting to modify it yourself. A typo here can cause a template file to no longer be accessible.
 
 > [!NOTE] May Need to Move the File
-> If you change the `z2k_template_type` property, you will likely need to move the file in or out  of a [[Template Folders|Template Folder]] as a result.
+> When you change the `z2k_template_type` property, you may wish to also consider move the file in or out of a [[Template Folders|Template Folder]] as a result.
 
-> [!NOTE] z2k_template_type rules
-> If you ever need to debug why a file is treated as a template or not, `z2k_template_type` is the first place to look.
+## Lifecycle Behavior
+The `z2k_template_type` property transitions automatically as a file moves through the [[Lifecycle of a Template]]:
 
+| Lifecycle Event | Effect on `z2k_template_type` |
+| --------------- | ----------------------------- |
+| [[Instantiation]] | Set to `wip-content-file` (only if property was already present) |
+| [[Finalization]] | Set to `finalized-content-file` (only if property was already present) |
+| [[Block Templates|Block Insert]] | Deleted entirely from the block's YAML |
 
+> [!NOTE] Only Updated When Present
+> The plugin only transitions this property if it already exists in the file's frontmatter. If your template omits `z2k_template_type`, it will remain absent throughout the lifecycle.
 
-## value -- content-file
+## value – content-file
 A `content-file` is an ordinary note – a card, journal entry, project file, or any other piece of content you want to read and maintain.
 
 Use `content-file` when:
@@ -50,9 +67,8 @@ Use `content-file` when:
 - The file previously was a template, but you have retired it and want to keep it as a record.
 - You use the [[Convert to Content File]] command on a template (it will set this property for you)
 
-
 > [!NOTE] Use content-file For Manually Setting Files as Content
-> If you wish to explicitly label a file as having content data, use this field. The other two variations of content files ([[#value -- wip-content-file|wip-content-file]] and [[#value -- finalized-content-file|finalized-content-file]]) are used by the Z2K Templates plugin directly.
+> If you wish to explicitly label a file as having content data, use this value. The other two variations of content files ([[#value – wip-content-file|wip-content-file]] and [[#value – finalized-content-file|finalized-content-file]]) are used by the Z2K Templates plugin directly.
 
 Example:
 
@@ -65,23 +81,22 @@ tags:
 ---
 # Alice Johnson
 
-Summary of today’s meeting…
+Summary of today's meeting…
 ```
 
 In many cases you can omit `z2k_template_type` completely and let `content-file` be the implicit default. Use the explicit value when you want to be crystal-clear that a file is *not* part of the template layer.
 
+## value – wip-content-file
+A `wip-content-file` is a content file that is currently in the [[WIP Stage]] of the [[Lifecycle of a Template]]. It may have remaining fields waiting to be specified, and Helper Functions waiting on data to be performed.
 
-## value -- wip-content-file
-A `wip-content-file` is a content file that is currently in the [[WIP Stage]] of the [[Lifecycle of a Template]]. It may have remaining fields waiting to be specified, and Helper Functions waiting on data to be performed. 
+This value should not be set by end users directly (instead, use the [[#value – content-file|content-file]] value shown above). The Z2K Templates Plugin sets this value during [[Instantiation]].
 
-This value should not be set by end users directly (instead, use the [[#value -- content-file|content-file]] value shown above). The Z2K Templates Plugin sets this value during [[Instantiation]].
+## value – finalized-content-file
+A `finalized-content-file` is a content file that was derived from a template and has been finalized.
 
-## value -- finalized-content-file
-A `finalized-content-file` is a content file that was derived from a template and has been finalized.  
+This value should not be set by end users directly (instead, use the [[#value – content-file|content-file]] value shown above). The Z2K Templates Plugin sets this value during [[Finalization]].
 
-This value should not be set by end users directly (instead, use the [[#value -- content-file|content-file]] value shown above). The Z2K Templates Plugin sets this value during [[Finalization]].
-
-## value -- document-template
+## value – document-template
 A `document-template` is a whole-file [[Template Files|Template File]] used to create new notes. It typically contains fields such as `{{Name}}`, `{{Date}}`, or `{{Summary}}` and is often stored in a template folder.
 
 Use `document-template` when:
@@ -91,7 +106,7 @@ Use `document-template` when:
 
 Example:
 
-```yaml
+```handlebars
 ---
 title: "Person – Base Template"
 z2k_template_type: document-template
@@ -110,8 +125,7 @@ Document templates work well in combination with:
 - [[Template Folders]] – to keep them logically separated.
 - `.template` extensions – see [[Template File Extensions]] and [[File Extension Process Guide]].
 
-
-## value -- block-template
+## value – block-template
 A `block-template` is a smaller, reusable piece of structure that can be pulled into other templates or notes. It does not define a full document; instead, it captures a section or pattern you want to apply repeatedly. See [[Block Templates]] for more details.
 
 Use `block-template` when:
@@ -121,7 +135,7 @@ Use `block-template` when:
 
 Example:
 
-```yaml
+```handlebars
 ---
 title: "Person – Contact Info Block"
 z2k_template_type: block-template
@@ -137,3 +151,5 @@ This file is best stored as a `.block` file if you have [[Use Template File Exte
 
 See [[Convert to Block Template]] for the command that assigns this type and (optionally) renames the file.
 
+> [!DANGER] Notes
+> - Verify whether `z2k_template_type` should be set on instantiation even when the original template omits it. Currently the plugin only updates it if already present – is this intentional, or should instantiation always stamp the property?
