@@ -12,6 +12,7 @@ URI Actions let you trigger Z2K Templates commands from outside Obsidian — thr
 ## Contents
 For more information, please see:
 1. [[URI Syntax]] — The structure of a Z2K Templates URI and how parameters are encoded
-2. [[URI Action - new]] — Trigger the creation of a new note from a template
-3. [[URI Action - insertBlock]] — Insert a block template into an existing note
-4. [[json Command]] — The `json` meta-command for passing a full JSON Package as a single URI parameter
+2. [[URI Action - new]] — Create a new note from a template
+3. [[URI Action - continue]] — Continue filling fields in an existing note
+4. [[URI Action - insertBlock]] — Insert a block template into an existing note
+5. [[json Command]] — The `json` meta-command for passing a full JSON Package as a single URI parameter
