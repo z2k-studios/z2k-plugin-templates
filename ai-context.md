@@ -32,7 +32,7 @@ Z2K Templates sits between Core Templates (too simple) and Templater (requires J
 
 ## Code Structure
 
-- **Main file:** `main.tsx` - The Obsidian plugin (React-based UI, commands, settings, URI handling)
+- **Source:** `src/` — plugin source files
 - **Template engine:** Uses `z2k-template-engine` package (separate repo) for parsing/rendering
 - **Docs:** `docs/` folder contains full reference manual in Markdown (exported to Docusaurus site)
 - **Design notes:** `design-notes/` folder contains developer notes
