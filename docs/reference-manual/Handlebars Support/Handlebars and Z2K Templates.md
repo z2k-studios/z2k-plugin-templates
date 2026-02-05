@@ -56,7 +56,7 @@ The following Handlebars features are supported but have enhancements, behaviora
 ## Untested Handlebars Features
 The following Handlebars features have not been systematically tested with Z2K Templates. They may work, they may not – use at your discretion:
 
-- [Nested input objects](https://handlebarsjs.com/guide/#nested-input-objects) when passed external [[URI, JSON, Command Lists|JSON data packets]] – e.g. `{{person.lastname}}`
+- [Nested input objects](https://handlebarsjs.com/guide/#nested-input-objects) when passed external [[URI, JSON, Command Queues|JSON data packets]] – e.g. `{{person.lastname}}`
 - [Inline partials](https://handlebarsjs.com/guide/partials.html#inline-partials) (`{{#* inline "name"}}...{{/inline}}`)
 - [[Helper Functions#Z2K Custom Helper Functions|Custom Helper Functions]]
 - [[Helper Functions#Usage - Nested Helper Functions|Nested Helper Functions]]

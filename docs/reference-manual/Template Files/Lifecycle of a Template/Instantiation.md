@@ -26,7 +26,7 @@ There are many other more advanced ways to cause an instantiation:
 - Using other [[Command Palette]] comands
 - Using [[Quick Create Commands]]
 - Using [[URI Calls]]
-- Using [[Command Lists]]
+- Using [[Command Queues]]
 
 ## What Exactly Happens During Instantiation?
 Here are the specific actions taken during instantiation: 

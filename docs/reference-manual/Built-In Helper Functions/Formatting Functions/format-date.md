@@ -35,7 +35,7 @@ Please note that this helper function is the only way to format dates with Z2K T
 ## Using format-date with sourceTimes other than Now
 By default, the `{{format-date}}` helper uses the current date and time for the `sourceTime` parameter. 
 
-Because time strings can be truncated or ambiguous, we highly recommend using the built-in field `{{now}}` ([[now]] is the default value) as the `sourceTime` parameter to format. This will insure that there is no chance of information loss or ambiguity, as `{{now}}` is a fully explicit and unambiguous representation of the current moment in time. 
+Because time strings can be truncated or ambiguous, we highly recommend using the built-in field `{{now}}` ([[now]] is the default value) as the `sourceTime` parameter to format. This will insure that there is no chance of information loss or ambiguity, as `{{now}}` is a fully explicit and unambiguous representation of the current moment in time. This is a consequence of Z2K Templates' [[Field Types#Dates Are Strings — Handle with Care|loose typing]] — `date` and `datetime` fields are stored as strings, and parsing them back into date objects can lose time-of-day information.
 
 If you need to format a date other than the current moment, we encourage you to use a `{{date-add}}` function to adjust `{{now}}` to the correct date. 
 

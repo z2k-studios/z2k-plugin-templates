@@ -15,7 +15,7 @@ Here are the different ways in which data can be inserted into a template using 
 | **YAML Properties**        | The Vault   | YAML frontmatter properties from the file, system blocks, or block templates are automatically available as field values.                  | [[Using YAML Metadata as Fields]]                  |
 | **Existing Files**         | The Vault   | Other vault files can be fed into a template via the `{{sourceText}}` field, or through the use of block templates.                        | [[sourceText\|sourceText]], [[Block Templates]]    |
 | **3rd Party URI Calls**    | External    | Other applications (e.g. Apple Shortcuts, batch scripts) can insert data into templates to create new files via URI calls.                 | [[URI Calls\|URI]]                                 |
-| **3rd Party JSON packets** | External    | 3rd party applications (e.g. Apple Shortcuts) can create actions inside JSON files that will be read automatically by the Templates Plugin | [[Command Lists]], [[JSON Packages\|JSON]]         |
+| **3rd Party JSON packets** | External    | 3rd party applications (e.g. Apple Shortcuts) can create actions inside JSON files that will be read automatically by the Templates Plugin | [[Command Queues]], [[JSON Packages\|JSON]]         |
 
 ## How Field Values Are Resolved
 When multiple data sources provide a value for the same field, the plugin doesn't replace the field's text multiple times. Instead, it collects all field metadata into a single internal state, sets values through a sequence of steps, and renders the template **once** at the end.

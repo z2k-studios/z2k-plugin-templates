@@ -27,7 +27,7 @@ Every note should look and behave the same way when it represents the same type 
 
 And consistent notes are not just to make them *clean and pretty*, but far more importantly, to make them **quickly consumable**. When your notes are predictably structured, you can navigate and zero-in on the piece of information you need much more quickly. 
 
-Another example of a need for consistency: do you suffer from **#Tag bloat**? It is easy to end up with five different hashtag variations of the same concept because you can't remember this list of options to use. Z2K Templates allows you to specifically chose from a specific range of potential tags for a template type using the [[multiselect data type]].
+Another example of a need for consistency: do you suffer from **#Tag bloat**? It is easy to end up with five different hashtag variations of the same concept because you can't remember this list of options to use. Z2K Templates allows you to specifically chose from a specific range of potential tags for a template type using the [[Field Types|multiSelect field type]].
 
 Consistency also is essential for implementing [bases](https://help.obsidian.md/bases) and [dataview](https://blacksmithgu.github.io/obsidian-dataview/) databases in your vault. Define your data fields once in your templates and then you no longer need to worry missing data.
 

@@ -5,7 +5,7 @@ sidebar_position: 1
 sidebar_folder_position: 10
 ---
 # Z2K Templates JSON Packages
-Z2K Templates JSON Packages are the standard data format used by the Z2K Templates plugin to pass commands and field data into Z2K Templates from external sources — [[URI Actions]], [[Command Lists]], and other programmatic integrations. This section defines the structure of a Z2K Templates JSON Package, the formats it can take, and the rules governing how its data is interpreted.
+Z2K Templates JSON Packages are the standard data format used by the Z2K Templates plugin to pass commands and field data into Z2K Templates from external sources — [[URI Actions]], [[Command Queues]], and other programmatic integrations. This section defines the structure of a Z2K Templates JSON Package, the formats it can take, and the rules governing how its data is interpreted.
 
 ## Contents
 For more information, please see:

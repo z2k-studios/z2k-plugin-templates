@@ -215,10 +215,10 @@ aliases:
 	    - author?
 	    - Version?
 
-19. [[URI, JSON, Command Lists]] - Triggering template fields externally through URI and/or passing JSON packages 
+19. [[URI, JSON, Command Queues]] - Triggering template fields externally through URI and/or passing JSON packages 
 	- [[URI Actions]]
 	- [[JSON Packages]]
-	- [[Command Lists]]
+	- [[Command Queues]]
 	
 20. [[Z2K System Features|Z2K System Features]] - Additional features specific to the larger Z2K System  
 

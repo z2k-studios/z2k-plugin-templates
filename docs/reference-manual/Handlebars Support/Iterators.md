@@ -99,4 +99,4 @@ If `metadata` is `{ author: "Jane", version: "2.0" }`, this produces:
 > [!DANGER] Notes for Review
 > - The interaction between `{{#each}}` and partials needs testing. The engine renames partials to `block_N` during preprocessing (line 1083 of `z2k-template-engine/src/main.ts`), but it's unclear how this works when the same partial appears multiple times inside a loop.
 > - Data variables (`@index`, `@first`, `@last`, `@key`) are standard Handlebars and should work, but have not been explicitly verified in Z2K Templates.
-> - Consider whether `{{#each}}` works with JSON data passed via [[URI, JSON, Command Lists|URI or JSON packets]] – this is likely the most common source of array data for iteration.
+> - Consider whether `{{#each}}` works with JSON data passed via [[URI, JSON, Command Queues|URI or JSON packets]] – this is likely the most common source of array data for iteration.

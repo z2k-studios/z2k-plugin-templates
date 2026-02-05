@@ -6,104 +6,98 @@ aliases:
 - URI Structure
 ---
 # URI Syntax
-Z2K Templates registers its own Obsidian protocol handler, making every template command accessible as a clickable link. The URI follows Obsidian's standard protocol format — a scheme, an action identifier, and query parameters that encode a [[JSON Packages Overview|JSON Package]].
+Z2K Templates exposes a URI scheme that lets you trigger template commands from outside Obsidian. A URI consists of three parts: a **command** that says what to do, **directives** that configure how to do it, and **field data** that supplies values for the template.
 
 ## Contents
-- [[#Base URI Format]]
-- [[#Query Parameters]]
-- [[#URL Encoding]]
-- [[#Type Handling]]
-- [[#Building URIs]]
+- [[#Base Format]]
+- [[#URI Syntax Elements]]
+- [[#Quick URI Example]]
+- [[#Vault]]
+- [[#Commands]]
+- [[#Directives]]
 
-## Base URI Format
+## Base Format
 Every Z2K Templates URI follows this structure:
 
 ```
-obsidian://z2k-templates?cmd=<command>&<key>=<value>&<key>=<value>
+obsidian://z2k-templates?vault=<vault>&cmd=<command>&<directive>=<value>&<field>=<value>
 ```
 
-- `obsidian://` — Obsidian's registered protocol scheme. The operating system routes this to Obsidian.
-- `z2k-templates` — The action identifier registered by the Z2K Templates plugin. This tells Obsidian which plugin should handle the URI.
-- `?cmd=<command>&...` — Query parameters encoding the [[JSON Packages Overview|JSON Package]]. Each key-value pair becomes a directive or field data entry.
 
-The URI is routed to whichever vault is currently active in Obsidian. There is no vault-selection parameter — if you need to target a specific vault, make sure it is the active vault when the URI is opened.
+## URI Syntax Elements
+To break the above structure down:
 
-## Query Parameters
-Query parameters map directly to the keys of a [[JSON Packages Overview|JSON Package]]. The `cmd` parameter is always required — it tells the plugin which operation to perform.
+| URI Component         | Description                                                         | Required?            | See Also           |
+| --------------------- | ------------------------------------------------------------------- | -------------------- | ------------------ |
+| `obsidian://`         | Tells the operating system to open Obsidian                         | True                 |                    |
+| `z2k-templates`       | Routes the request to the Z2K Templates plugin                      | True                 |                    |
+| `vault`               | The name of the vault to target                                     | Optional             | [[#Vault]]         |
+| `cmd`                 | The command to execute: `new`, `continue`, `insertblock`, or `json` | True                 | [[URI Commands]]   |
+| `<directive>=<value>` | Directives that configure the command's behavior                    | (Conditional on cmd) | [[URI Directives]] |
+| `<field>=<value>`     | Values for template fields                                          | (Conditional on cmd) | [[URI Field Data]] |
 
-```
-obsidian://z2k-templates?cmd=new&templatePath=Templates/Meeting%20Notes.md&prompt=none&attendees=Alice%2C%20Bob
-```
+Parameters are separated by `&`. The first parameter is preceded by `?` – this is standard URI syntax, not specific to Z2K Templates.
 
-This is equivalent to the JSON Package:
 
-```json
-{
-  "cmd": "new",
-  "templatePath": "Templates/Meeting Notes.md",
-  "prompt": "none",
-  "attendees": "Alice, Bob"
-}
-```
-
-The plugin separates directive keys (`cmd`, `templatePath`, `prompt`) from field data keys (`attendees`) using the same rules as any other [[JSON Packages Overview|JSON Package]]. See [[JSON Directives]] for the full list of recognized directive keys.
-
-## URL Encoding
-URI query parameters cannot contain raw special characters — spaces, commas, slashes, and other reserved characters must be percent-encoded. The plugin applies `decodeURIComponent()` to every parameter value before processing.
-
-Common encodings:
-
-| Character | Encoded | Example |
-|-----------|---------|---------|
-| space | `%20` | `file%20name` |
-| `/` | `%2F` | `Templates%2FNote.md` |
-| `,` | `%2C` | `Alice%2C%20Bob` |
-| `"` | `%22` | (rarely needed in parameter values) |
-| `{` | `%7B` | (use [[json Command]] or [[JSON64 Format]] instead) |
-
-For complex data — nested objects, arrays, or many special characters — encoding every character as a percent sequence produces unreadable URIs. Two alternatives exist:
-- **[[templateJsonData]]** — Pass field data as a single JSON string in the `templateJsonData` parameter. The directives stay as normal query params; only the field data is encoded once.
-- **[[json Command]]** — Wrap the entire JSON Package as a single `json` parameter. The whole command travels as one encoded string.
-- **[[JSON64 Format]]** — Base64-encode the data to avoid percent-encoding entirely. Useful when automation tools generate the URI programmatically.
-
-## Type Handling
-Every value in a URI arrives as a string. The string `"5"` and the number `5` are indistinguishable in a URL query parameter. The plugin handles this through [[JSON Type Conversion]] — it consults the template's [[Field Types|field type]] declarations to determine whether `"5"` should become a number, `"true"` should become a boolean, and so on.
-
-If the template declares a field's type via [[field-info type|field-info]], the plugin converts the string to the declared type. If no type is declared, auto-conversion applies: `"true"` and `"false"` become booleans, numeric strings become numbers, and everything else stays as a string.
-
-For full conversion rules, see [[JSON Type Conversion#Conversion Rules for URI Strings]].
-
-> [!NOTE]
-> This is the key behavioral difference between URI transport and JSON file transport. In a `.json` file, `5` is already a number and `true` is already a boolean — no conversion is needed. In a URI, everything starts as text. Declare your field types to ensure values are interpreted correctly.
-
-## Building URIs
-In practice, most Z2K Templates URIs are generated by automation tools rather than written by hand. A few tips for constructing them:
-
-### From Apple Shortcuts
-Apple Shortcuts can build a URL by concatenating strings and using the "URL Encode" action for each parameter value. For a complete walkthrough, see [[How-to Pass Create Files from Templates in Apple Shortcuts]].
-
-### From a Shell Script
-```bash
-# Inigo Montoya demands a new note
-TEMPLATE="Templates/Character%20Profile.md"
-NAME="Inigo%20Montoya"
-QUEST="You%20killed%20my%20father.%20Prepare%20to%20die."
-
-open "obsidian://z2k-templates?cmd=new&templatePath=${TEMPLATE}&prompt=none&finalize=true&fileTitle=${NAME}&characterName=${NAME}&motivation=${QUEST}"
-```
-
-### From a Browser Bookmark
-A bookmark with a `obsidian://z2k-templates?...` URL works as a one-click template launcher. Useful for daily notes, meeting templates, or any note you create repeatedly with the same structure.
+## Quick URI Example
+Here is a simple example, shown pre-encoding for readability:
 
 ```
-obsidian://z2k-templates?cmd=new&templatePath=Templates%2FDaily%20Note.md
+obsidian://z2k-templates?
+  vault        = MyVault
+  cmd          = new
+  templatePath = Templates/Meeting Notes.md
+  prompt       = remaining
+  topic        = Budget
+  priority     = high
 ```
+
+This tells the plugin: open the vault "MyVault", create a new note from `Templates/Meeting Notes.md`, pre-fill `{{topic}}` with "Budget" and `{{priority}}` with "high", and prompt the user for any remaining fields.
+
+The actual URI, with values encoded for transport:
+
+```
+obsidian://z2k-templates?vault=MyVault&cmd=new&templatePath=Templates%2FMeeting%20Notes.md&prompt=remaining&topic=Budget&priority=high
+```
+
+See [[URI Encoding]] for how special characters like spaces and slashes are handled.
+
+## Vault
+The `vault` parameter specifies which vault Obsidian should target. Obsidian switches to this vault before executing the command.
+
+- If `vault` is omitted, the URI is routed to whichever vault was last active.
+- The value is the vault's display name (e.g., `My Vault`), URL-encoded if it contains spaces.
+- Make sure the destination vault actually has Z2K Templates installed, otherwise the URI call will go to deaf ears.
 
 > [!WARNING]
-> When constructing URIs by hand or through string concatenation, be careful with vault-relative paths. A path like `Templates/Sub Folder/Note.md` requires encoding both the spaces and the slashes: `Templates%2FSub%20Folder%2FNote.md`. Missing a single encoding can cause the plugin to receive a truncated path.
+> When a URI is triggered from outside Obsidian – a shell script, browser bookmark, Apple Shortcut – there is no guarantee which vault is active. We recommend that you always include `vault` in URIs intended for external use. Omitting it is safe only when you have a single vault - *and never will have more than one* to prevent it breaking in the future - and who wouldn't want more vaults?! 
+> 
+> For more critical command processing with debugging abilities, you may consider using [[Command Queues]] instead.
+
+## Commands
+The `cmd` parameter determines what the plugin does. Four commands are available:
+
+| Command       | Purpose                                                     |
+| ------------- | ----------------------------------------------------------- |
+| `new`         | Create a new note from a template                           |
+| `continue`    | Fill remaining fields in an existing WIP note               |
+| `insertblock` | Insert a block template into an existing note               |
+| `fromJson`    | Execute a full command packaged as a JSON string (advanced) |
+
+Each command has its own page with details and examples. See [[URI Commands]] for more details.
+
+## Directives
+Directives are parameters that control the command's behavior – which template to use, where to put the output, whether to prompt the user. They are distinct from field data.
+
+For example, `templatePath`, `prompt`, `finalize`, and `destDir` are all directives. The plugin recognizes a fixed set of directive keys; anything else is treated as field data.
+
+For the full list, see [[URI Directives]].
+
+## Field Data
+Any parameter that isn't a recognized directive is treated as **field data** – it fills a template field. For details on how to provide field data, see [[URI Field Data]].
+
+
 
 > [!DANGER] Internal Notes
-> - The plugin applies `decodeURIComponent()` to each parameter value (line 1227 of main.tsx), but does NOT decode parameter keys. Keys are expected to arrive unencoded. Obsidian's built-in URI parsing handles the initial splitting of `key=value` pairs.
-> - **Vault parameter** — The plugin does not explicitly handle a `vault` parameter. Obsidian's built-in URI actions (e.g., `obsidian://open`) support `vault` as a native parameter, and the Advanced URI plugin also uses it in its URIs (e.g., `obsidian://advanced-uri?vault=my-vault&...`). This suggests Obsidian may route plugin-registered protocol handlers to the correct vault automatically when `vault` is included in the URI. However, the Obsidian developer documentation does not explicitly confirm this for custom handlers registered via `registerObsidianProtocolHandler()`. **Action:** Test whether adding `vault=MyVault` to a Z2K Templates URI correctly routes to that vault. If it works, document it. If not, document that users must ensure the correct vault is active.
-> - The code at line 1229 passes `'user'` as the context parameter to `processCommand()`. This affects error handling — URI errors are displayed as user-facing notices rather than logged silently as in batch processing.
-> - **URI key casing risk** — The plugin normalizes directive keys (case-insensitive, strips non-alphanumeric), but field data keys preserve their original casing because they must match template field names exactly. If any platform or intermediary (browser, OS, URL handler) lowercases the entire URI before Obsidian receives it, field data keys like `meetingType` would arrive as `meetingtype` and fail to match the template field. The plugin has no protection against this — it trusts that keys arrive as written. **Action:** Test URI key casing on macOS, Windows, and iOS to confirm keys are passed through verbatim. If any platform mangles casing, this is a bug that needs a workaround (e.g., case-insensitive field matching as an option) or at minimum a documented limitation.
+> - **Vault parameter** – Obsidian handles `vault` at the app level before routing to plugin handlers via `registerObsidianProtocolHandler()`. The Advanced URI plugin confirms this pattern – it includes `vault` in its documented URI schema but has zero vault-handling code; Obsidian switches vaults before the plugin's handler fires. The Z2K Templates plugin likewise does not need to handle `vault`. **Needs manual testing:** confirm that `vault` is stripped from the params object before reaching the handler (or if it passes through, that it is harmlessly ignored as template field data). If it passes through, consider adding `'vault'` to `knownKeys` and discarding it.
+> - **URI key casing risk** – The plugin normalizes directive keys (case-insensitive, strips non-alphanumeric), but field data keys preserve their original casing because they must match template field names exactly. If any platform or intermediary lowercases the entire URI before Obsidian receives it, field data keys like `meetingType` would arrive as `meetingtype` and fail to match. **Action:** Test URI key casing on macOS, Windows, and iOS to confirm keys are passed through verbatim.
