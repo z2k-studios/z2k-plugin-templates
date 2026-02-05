@@ -36,6 +36,7 @@ interface Z2KTemplatesPluginSettings {
 	templateExtensionsVisible: boolean; // Whether .template and .block files are currently visible in Obsidian
 	globalBlock: string; // Global field-info declarations (applied to all templates)
 	userHelpers: string; // Custom JavaScript helper functions
+	customHelpersEnabled: boolean; // Whether custom helpers are active (ACE risk)
 }
 
 const DEFAULT_SETTINGS: Z2KTemplatesPluginSettings = {
@@ -59,6 +60,7 @@ const DEFAULT_SETTINGS: Z2KTemplatesPluginSettings = {
 // Example:
 // registerHelper('shout', (value) => String(value).toUpperCase() + '!');
 `,
+	customHelpersEnabled: false,
 };
 
 // Command parameter interface for processCommand()
@@ -521,14 +523,55 @@ Example:
 		new Setting(containerEl)
 			.setName('Custom Helpers')
 			.setDesc('Register custom Handlebars helper functions using JavaScript.')
-			.addButton(button => button
-				.setButtonText('Edit Custom Helpers')
-				.onClick(() => {
-					new EditorModal(this.app, {
-						title: 'Edit Custom Helpers',
-						initialContent: this.plugin.settings.userHelpers,
-						language: 'javascript',
-						helpText: `Write JavaScript code to register custom Handlebars helpers.
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.customHelpersEnabled)
+				.onChange(async (value) => {
+					if (value) {
+						// Show ACE warning before enabling
+						const confirmed = await new Promise<boolean>((resolve) => {
+							new ConfirmationModal(this.app, {
+								title: 'Enable Custom Helpers?',
+								message: <>
+									<p>Custom helpers execute <strong>arbitrary JavaScript code</strong> with full access to your vault, files, and the Obsidian API.</p>
+									<p>Only enable this if you wrote the helper code yourself or fully trust its source.</p>
+								</>,
+								confirmText: 'I understand, enable',
+								cancelText: 'Cancel',
+							}, resolve).open();
+						});
+						if (confirmed) {
+							this.plugin.settings.customHelpersEnabled = true;
+							await this.plugin.saveData(this.plugin.settings);
+							// Load helpers now that feature is enabled
+							if (this.plugin.settings.userHelpers && this.plugin.settings.userHelpers.trim() !== "") {
+								const result = this.plugin.loadUserHelpers(this.plugin.settings.userHelpers);
+								if (!result.valid) {
+									new Notice('Failed to load custom helpers - check console');
+									console.error('Custom helpers error:', result.error);
+								}
+							}
+							this.display(); // Re-render to show editor button
+						} else {
+							toggle.setValue(false); // Reset toggle
+						}
+					} else {
+						this.plugin.settings.customHelpersEnabled = false;
+						await this.plugin.saveData(this.plugin.settings);
+						this.display(); // Re-render to hide editor button
+					}
+				})
+			);
+		if (this.plugin.settings.customHelpersEnabled) {
+			const editSetting = new Setting(containerEl)
+				.setName('Edit Custom Helpers')
+				.addButton(button => button
+					.setButtonText('Edit Custom Helpers')
+					.onClick(() => {
+						new EditorModal(this.app, {
+							title: 'Edit Custom Helpers',
+							initialContent: this.plugin.settings.userHelpers,
+							language: 'javascript',
+							helpText: `Write JavaScript code to register custom Handlebars helpers.
 These helpers can be used in any template with {{helperName ...}} syntax.
 
 Available Globals:
@@ -551,20 +594,27 @@ registerHelper('recentFiles', () => {
         .join(', ');
 });
 // Usage: {{recentFiles}} → Note A, Note B, ...`,
-						validate: (code) => this.plugin.validateUserHelpers(code),
-						onSave: async (content) => {
-							this.plugin.settings.userHelpers = content;
-							await this.plugin.saveData(this.plugin.settings);
-							// Reload helpers
-							const result = this.plugin.loadUserHelpers(content);
-							if (!result.valid) {
-								new Notice('Failed to load custom helpers - check console');
-								console.error('Custom helpers error:', result.error);
+							validate: (code) => this.plugin.validateUserHelpers(code),
+							onSave: async (content) => {
+								this.plugin.settings.userHelpers = content;
+								await this.plugin.saveData(this.plugin.settings);
+								// Reload helpers
+								const result = this.plugin.loadUserHelpers(content);
+								if (!result.valid) {
+									new Notice('Failed to load custom helpers - check console');
+									console.error('Custom helpers error:', result.error);
+								}
 							}
-						}
-					}).open();
-				})
-			);
+						}).open();
+					})
+				);
+			const warningDesc = createFragment(f => {
+				const warn = f.createSpan({ text: 'Warning: ' });
+				warn.style.color = 'var(--text-warning, #e0a530)';
+				f.appendText('Custom helpers execute arbitrary JavaScript with full access to your vault and Obsidian API.');
+			});
+			editSetting.setDesc(warningDesc);
+		}
 
 		this.applyDescs(); // Apply dynamic descriptions
 	}
@@ -776,6 +826,10 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	settings: Z2KTemplatesPluginSettings;
 	errorLogger: ErrorLogger;
 	userHelperFunctions: Record<string, Function> = {};
+	// Returns user helpers only when the feature is enabled; empty object otherwise
+	get activeHelpers(): Record<string, Function> {
+		return this.settings.customHelpersEnabled ? this.userHelperFunctions : {};
+	}
 	private _refreshTimer: number | null = null;
 	private _queueCheckInterval: number | null = null;
 	private _processingQueue: boolean = false;
@@ -864,8 +918,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
 		this.templateEngine = new Z2KTemplateEngine();
 		this.errorLogger = new ErrorLogger(this.app, this.settings);
-		// Load user-defined custom helpers
-		if (this.settings.userHelpers && this.settings.userHelpers.trim() !== "") {
+		// Load user-defined custom helpers (only when enabled)
+		if (this.settings.customHelpersEnabled && this.settings.userHelpers && this.settings.userHelpers.trim() !== "") {
 			const result = this.loadUserHelpers(this.settings.userHelpers);
 			if (!result.valid) {
 				new Notice('Failed to load custom helpers - check console for details');
@@ -1882,7 +1936,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				this.resolveComputedFieldValues(state, opts.finalize ?? false);
 			}
 
-			let { fm: fmOut, body: bodyOut } = Z2KTemplateEngine.renderTemplate(state, opts.finalize ?? false, this.userHelperFunctions);
+			let { fm: fmOut, body: bodyOut } = Z2KTemplateEngine.renderTemplate(state, opts.finalize ?? false, this.activeHelpers);
 			if (opts.finalize) { fmOut = this.cleanupYamlAfterFinalize(fmOut); }
 			if (!hadSourceTextField && opts.fieldOverrides.sourceText != null) {
 				bodyOut += `\n\n${String(opts.fieldOverrides.sourceText)}\n`;
@@ -1937,7 +1991,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				this.resolveComputedFieldValues(state, opts.finalize ?? false);
 			}
 
-			let { fm, body } = Z2KTemplateEngine.renderTemplate(state, opts.finalize ?? false, this.userHelperFunctions);
+			let { fm, body } = Z2KTemplateEngine.renderTemplate(state, opts.finalize ?? false, this.activeHelpers);
 			if (opts.finalize) { fm = this.cleanupYamlAfterFinalize(fm); }
 			let contentOut = Z2KYamlDoc.joinFrontmatter(fm, body);
 			let title = this.getTitle(state.resolvedValues);
@@ -1994,7 +2048,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				this.resolveComputedFieldValues(state, opts.finalize ?? false);
 			}
 
-			let { fm: blockFm, body: blockBody } = Z2KTemplateEngine.renderTemplate(state, opts.finalize ?? false, this.userHelperFunctions);
+			let { fm: blockFm, body: blockBody } = Z2KTemplateEngine.renderTemplate(state, opts.finalize ?? false, this.activeHelpers);
 			if (opts.finalize) { blockFm = this.cleanupYamlAfterFinalize(blockFm); }
 			blockFm = this.updateBlockYamlOnInsert(blockFm);
 			if (!hadSourceTextField && opts.fieldOverrides.sourceText != null) {
@@ -2058,7 +2112,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	getTitle(resolvedValues: Record<string, VarValueType>): string {
 		let fileTitle = resolvedValues["fileTitle"];
 		let title = fileTitle == null || fileTitle === "" ? "Untitled" : String(fileTitle);
-		return Z2KTemplateEngine.reducedRenderContent(title, resolvedValues, false, this.userHelperFunctions) as string;
+		return Z2KTemplateEngine.reducedRenderContent(title, resolvedValues, false, this.activeHelpers) as string;
 	}
 	async updateTitleAndContent(file: TFile, title: string, content: string) {
 		try {
@@ -2170,7 +2224,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				const valueDeps = Z2KTemplateEngine.reducedGetDependencies(fieldInfo.value);
 				const allDepsExist = valueDeps.every(dep => dep in context);
 				if (allDepsExist) {
-					const resolved = Z2KTemplateEngine.reducedRenderContent(fieldInfo.value, context, true, this.userHelperFunctions);
+					const resolved = Z2KTemplateEngine.reducedRenderContent(fieldInfo.value, context, true, this.activeHelpers);
 					if (resolved === undefined) {
 						delete state.resolvedValues[fieldName];
 					} else {
@@ -2185,7 +2239,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			// NOTE: Similar logic in handleSubmit() - keep in sync
 			const hasFinalizePreserve = fieldInfo.directives?.includes('finalize-preserve');
 			if (finalize && !(fieldName in state.resolvedValues) && !hasFinalizePreserve) {
-				const resolvedFallback = Z2KTemplateEngine.reducedRenderContent(fieldInfo.fallback || "", context, true, this.userHelperFunctions);
+				const resolvedFallback = Z2KTemplateEngine.reducedRenderContent(fieldInfo.fallback || "", context, true, this.activeHelpers);
 				if (resolvedFallback === undefined) {
 					delete state.resolvedValues[fieldName];
 				} else {
@@ -2340,7 +2394,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	async promptForFieldCollection(templateState: TemplateState): Promise<boolean> {
 		// Errors (including circular dependency errors) propagate to caller for handling
 		return await new Promise<boolean>((resolve, reject) => {
-			new FieldCollectionModal(this.app, `Field Collection for ${cardRefNameUpper(this.settings)}`, templateState, this.userHelperFunctions, resolve, reject).open();
+			new FieldCollectionModal(this.app, `Field Collection for ${cardRefNameUpper(this.settings)}`, templateState, this.activeHelpers, resolve, reject).open();
 		});
 	}
 	// Helpers
@@ -2430,7 +2484,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		const yamlTemplateType = this.app.metadataCache.getFileCache(file)?.frontmatter?.["z2k_template_type"];
 		if (yamlTemplateType === "document-template" || yamlTemplateType === "block-template") {
 			return yamlTemplateType;
-		} else if (this.isInsideTemplatesFolder(file)) {
+		} else if (file.extension === "md" && this.isInsideTemplatesFolder(file)) {
 			return "document-template";
 		} else if (file.extension === "template") {
 			return "document-template";
@@ -2494,13 +2548,20 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	// 	this.app.viewRegistry.unregisterExtensions("template");
 	// }
 	getAllTemplates(): { file: TFile, type: "document-template" | "block-template" }[] {
-		let list = [];
-		for (const f of this.getAllTemplatesRootFiles()) {
-			if (!(f instanceof TFile)) { continue; }
-			const type = this.getFileTemplateType(f);
-			if (type === "content-file") { continue; }
-			list.push({ file: f, type });
-		}
+		let list: { file: TFile, type: "document-template" | "block-template" }[] = [];
+		const collect = (folder: TFolder) => {
+			for (const child of folder.children) {
+				if (child instanceof TFile) {
+					const type = this.getFileTemplateType(child);
+					if (type !== "content-file") {
+						list.push({ file: child, type });
+					}
+				} else if (child instanceof TFolder) {
+					collect(child);
+				}
+			}
+		};
+		collect(this.getTemplatesRootFolder());
 		return list;
 	}
 	getAllCardTypes(filter: "document-template" | "block-template"): TFolder[] {
@@ -2526,19 +2587,21 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		let currFolder: TFolder = cardType;
 		let templates: TFile[] = [];
 		while (true) {
+			// Collect templates at this level, sorted alphabetically
+			let levelTemplates: TFile[] = [];
 			for (const template of this.getAllTemplates()) {
 				if (template.type !== filter) { continue; }
 				if (this.isInThisFolderOrItsTemplatesFolder(template.file, currFolder)) {
 					if (!templates.includes(template.file)) {
-						templates.push(template.file);
+						levelTemplates.push(template.file);
 					}
-					continue;
 				}
 			}
+			levelTemplates.sort((a, b) => a.path.localeCompare(b.path));
+			templates.push(...levelTemplates);
 			if (currFolder === templatesRootFolder || !currFolder.parent) { break; }
 			currFolder = currFolder.parent as TFolder;
 		}
-		templates.sort((a, b) => a.path.localeCompare(b.path));
 		return templates;
 	}
 	getTemplateCardType(template: TFile): TFolder | null {
@@ -2715,16 +2778,6 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		if (!this.isSubPathOf(file.path, templatesRoot.path)) { return false; }
 		const normPath = normalizeFullPath(file.path);
 		return normPath.includes(`/${tfn}/`) || normPath.includes(`/.${tfn}/`) || normPath.startsWith(`${tfn}/`) || normPath.startsWith(`.${tfn}/`);
-	}
-	getAllTemplatesRootFiles(): TAbstractFile[] {
-		let files: TAbstractFile[] = [];
-		const templatesRootPath = this.getTemplatesRootFolder().path;
-		for (const f of this.app.vault.getAllLoadedFiles()) {
-			if (this.isSubPathOf(f.path, templatesRootPath)) {
-				files.push(f);
-			}
-		}
-		return files;
 	}
 	getTemplatesRootFolder(): TFolder {
 		let templatesRoot = this.getFolder(this.settings.templatesRootFolder)
@@ -3566,13 +3619,16 @@ interface TemplateSelectorProps {
 // React component for the modal content
 const TemplateSelector = ({ templates, settings, onConfirm, onCancel }: TemplateSelectorProps) => {
 	const getItems = (): { file: TFile, name: string, cardType: string }[] => {
+		const rootPath = normalizeFullPath(settings.templatesRootFolder);
 		return templates.map((template: TFile) => {
-			let cardType = template.parent?.path;
-			if (template.parent?.name === settings.templatesFolderName || template.parent?.name === "." + settings.templatesFolderName) {
-				cardType = template.parent?.parent?.path;
+			let parentPath = normalizeFullPath(template.parent?.path ?? "");
+			// Show path relative to templates root
+			if (rootPath && parentPath.startsWith(rootPath + '/')) {
+				parentPath = parentPath.slice(rootPath.length + 1);
+			} else if (parentPath === rootPath) {
+				parentPath = "";
 			}
-			cardType = normalizeFullPath(cardType ?? "");
-			return { file: template, name: template.basename, cardType: cardType }
+			return { file: template, name: template.basename, cardType: parentPath }
 		});
 	}
 
@@ -4933,6 +4989,7 @@ export class ConfirmationModal extends Modal {
 	options: ConfirmationModalOptions;
 	onConfirm: (confirmed: boolean) => void;
 	root: any;
+	private responded = false;
 
 	constructor(app: App, options: ConfirmationModalOptions, onConfirm: (confirmed: boolean) => void) {
 		super(app);
@@ -4956,6 +5013,7 @@ export class ConfirmationModal extends Modal {
 					<button
 						className="btn btn-secondary"
 						onClick={() => {
+							this.responded = true;
 							this.onConfirm(false);
 							this.close();
 						}}
@@ -4965,6 +5023,7 @@ export class ConfirmationModal extends Modal {
 					<button
 						className={`btn ${this.options.confirmClass ?? 'btn-warning'}`}
 						onClick={() => {
+							this.responded = true;
 							this.onConfirm(true);
 							this.close();
 						}}
@@ -4977,6 +5036,8 @@ export class ConfirmationModal extends Modal {
 	}
 
 	onClose() {
+		// Treat X/Escape as cancellation
+		if (!this.responded) { this.onConfirm(false); }
 		if (this.root) { this.root.unmount(); }
 		this.contentEl.empty();
 	}
