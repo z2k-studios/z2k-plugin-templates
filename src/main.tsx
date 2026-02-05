@@ -2,6 +2,7 @@
 import { App, Plugin, Modal, Notice, TAbstractFile, TFolder, TFile, PluginSettingTab, Setting, MarkdownView, Editor, Command, ToggleComponent, setIcon } from 'obsidian';
 import * as obsidian from 'obsidian';
 import { Z2KTemplateEngine, Z2KYamlDoc, TemplateState, VarValueType, FieldInfo, TemplateError, Handlebars } from 'z2k-template-engine';
+import { PathFile, PathFolder, pathFileFrom, pathFolderFrom, pathFileFromTFile, pathFolderFromTFolder, normalizeFullPath, isSubPathOf, joinPath } from './paths';
 import React, { useState, useEffect, useRef, Component, ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import moment from 'moment';   // npm i moment
@@ -2581,7 +2582,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	}
 	getAssociatedTemplates(filter: "document-template" | "block-template", cardType: TFolder): TFile[] {
 		const templatesRootFolder = this.getTemplatesRootFolder();
-		if (!this.isSubPathOf(cardType.path, templatesRootFolder.path)) {
+		if (!isSubPathOf(cardType.path, templatesRootFolder.path)) {
 			throw new Error(`The selected ${cardRefNameLower(this.settings)} type folder is not inside your templates root folder.`);
 		}
 		let currFolder: TFolder = cardType;
@@ -2699,7 +2700,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			const templatesRoot = this.getTemplatesRootFolder().path;
 			if (name.startsWith("/")) {
 				// Absolute path from templates root
-				const basePath = this.joinPath(templatesRoot, name.substring(1));
+				const basePath = joinPath(templatesRoot, name.substring(1));
 				const file = this.tryResolveWithExtensions(basePath);
 				if (!file) {
 					const triedPaths = this.getTriedPaths(basePath);
@@ -2714,7 +2715,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			}
 			if (name.startsWith("./") || name.startsWith("../")) {
 				// Relative path from current template's folder
-				const basePath = this.joinPath(path, name);
+				const basePath = joinPath(path, name);
 				const file = this.tryResolveWithExtensions(basePath);
 				if (!file) {
 					const triedPaths = this.getTriedPaths(basePath);
@@ -2766,8 +2767,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 
 	isInThisFolderOrItsTemplatesFolder(file: TFile, folder: TFolder): boolean {
 		if (file.parent === folder) { return true; }
-		if (this.isSubPathOf(file.path, this.joinPath(folder.path, this.settings.templatesFolderName))
-				|| this.isSubPathOf(file.path, this.joinPath(folder.path, '.' + this.settings.templatesFolderName))) {
+		if (isSubPathOf(file.path, joinPath(folder.path, this.settings.templatesFolderName))
+				|| isSubPathOf(file.path, joinPath(folder.path, '.' + this.settings.templatesFolderName))) {
 			return true;
 		}
 		return false;
@@ -2775,7 +2776,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	isInsideTemplatesFolder(file: TFile): boolean {
 		const tfn = this.settings.templatesFolderName;
 		const templatesRoot = this.getTemplatesRootFolder();
-		if (!this.isSubPathOf(file.path, templatesRoot.path)) { return false; }
+		if (!isSubPathOf(file.path, templatesRoot.path)) { return false; }
 		const normPath = normalizeFullPath(file.path);
 		return normPath.includes(`/${tfn}/`) || normPath.includes(`/.${tfn}/`) || normPath.startsWith(`${tfn}/`) || normPath.startsWith(`.${tfn}/`);
 	}
@@ -2809,10 +2810,10 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	generateUniqueFilePath(folderPath: string, basename: string): string {
 		basename = basename.replace(/\.md$/, '');
 		let filename = basename + '.md';
-		let fullPath = this.joinPath(folderPath, filename);
+		let fullPath = joinPath(folderPath, filename);
 		let counter = 1;
 		while (this.getFile(fullPath)) {
-			fullPath = this.joinPath(folderPath, `${basename} (${counter++}).md`);
+			fullPath = joinPath(folderPath, `${basename} (${counter++}).md`);
 		}
 		return fullPath;
 	}
@@ -3020,14 +3021,14 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		let systemBlocks: string[] = [];
 
 		while (currentFolder) {
-			const filePath = this.joinPath(currentFolder.path, '.system-block.md');
+			const filePath = joinPath(currentFolder.path, '.system-block.md');
 			try {
 				// Need to use adapter because the usual file read doesn't work for files that start with .
 				systemBlocks.push(await this.app.vault.adapter.read(filePath));
 			} catch {} // Can't find/read the file
 
 			// Check for stop file - if present, don't continue to parent folders
-			const stopFilePath = this.joinPath(currentFolder.path, '.system-block-stop');
+			const stopFilePath = joinPath(currentFolder.path, '.system-block-stop');
 			if (await this.app.vault.adapter.exists(stopFilePath)) break;
 
 			if (currentFolder === templatesRoot) break; // Stop at the templates root
@@ -3127,16 +3128,6 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			rethrowWithMessage(error, `Error occurred while creating the folder at path '${path}'`);
 		}
 	}
-	private isSubPathOf(child: string, parent: string): boolean {
-		const normParent = normalizeFullPath(parent);
-		const normChild = normalizeFullPath(child);
-		if (normParent === '') { return true; } // root is parent of everything
-		if (normChild === normParent) { return true; }
-		return normChild.startsWith(normParent + '/');
-	}
-	private joinPath(...parts: string[]): string {
-		return normalizeFullPath(parts.join('/'));
-	}
 	private getMarkdownFilesInFolder(folder: TFolder, recurse = false): TFile[] {
 		let files: TFile[] = [];
 
@@ -3159,26 +3150,6 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	}
 }
 
-function normalizeFullPath(path: string): string {
-	path = path
-		.trim()
-		.replace(/\\/g, '/')       // Normalize backslashes to '/'
-		.replace(/\/{2,}/g, '/')   // Collapse multiple slashes
-		.replace(/^\.\//, '')      // Remove leading "./"
-		.replace(/^\/+/, '')       // Remove leading slashes
-		.replace(/\/+$/, '');      // Remove trailing slashes
-	// Resolve ".." segments
-	const segments = path.split('/');
-	const resolved: string[] = [];
-	for (const seg of segments) {
-		if (seg === '..') {
-			resolved.pop(); // Go up one level
-		} else if (seg !== '.' && seg !== '') {
-			resolved.push(seg);
-		}
-	}
-	return resolved.join('/');
-}
 function escapeRegExp(s: string): string {
 	return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
