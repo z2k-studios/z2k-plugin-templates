@@ -4,7 +4,6 @@ sidebar_class_name: z2k-code
 sidebar_label: "{{eq}}, {{ne}}, {{lt}}, {{gt}}, ..."
 ---
 # Comparison Operators
-
 Z2K Templates includes a set of comparison helper functions for use in conditional logic. These helpers compare two values and return a boolean (`true` or `false`).
 
 ## Available Comparison Operators

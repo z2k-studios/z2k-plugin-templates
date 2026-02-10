@@ -1,62 +1,76 @@
 ---
 sidebar_position: 90
 sidebar_class_name: z2k-code
-doc_state: revised_ai_draft_1
+aliases:
+- convert to markdown template
 ---
 
-# Convert to Markdown Template
+# Convert to markdown template
+Changes a template file's extension back to `.md` while preserving its template status. Use this when you want a template to look like a normal markdown file but still function as a template.
 
-## Overview
-The **Convert to Markdown Template** converts a file to a template (if it isn't already) and sets its file extension to the standard `.md` extension. It is useful when you want to work on a template file that uses [[Template File Extensions]] but convert it back to a straight `.md` file extension. It is also useful when converting a normal content file into a [[Types of Template Files#Document Templates|Document Template]].
+## Availability
+Available in the Command Palette when the **active file has a `.template` or `.block` extension**. This command only appears for files using [[Template File Extensions]]. If your templates already use `.md`, this command won't be shown.
 
-## What the Command Does
-When you run **Convert to Markdown Template** on the active file's [[Types of Template Files|File Type]]:
-- If the existing file is a content file:
-	- It sets the [[z2k_template_type]] YAML property to `document-template`.
-- If the existing file is a document template or block template:
-	- It leaves the [[z2k_template_type]] YAML property as-is (`document-template` or `block-template`).
-	- If the file currently has a `.template` or `.block` extension, it renames the file to `.md`.
+## What It Does
+When you run this command:
 
-After the command is done, Z2K Templates will treat the file as a template, but it now looks like a normal Markdown note in your vault.
+**If the file is already a template (document or block):**
+- Keeps the [[z2k_template_type]] YAML property unchanged
+	- ==if the template type does not exist in the file, then it should add it with the appropriate version that reflects how the file was previously set.==
+- Renames the file from `.template` or `.block` to `.md`
 
+**If the file is a content file:**
+- Sets [[z2k_template_type]] to `document-template`
+- Ensures the file uses the `.md` extension
 
-### Notices
-
-> [!NOTE] May Need to Move into a Template Folder
-> If you are converting a content file into a Document Template, you will also need to move the file into a [[Template Folders|Template Folder]].
+After the command, Z2K Templates still treats the file as a template, but it looks like a normal markdown file in your vault.
 
 ### YAML Before and After
 
-**Before** (template with a template extension):
+**Before** (block template with `.block` extension):
 
 ```md
 ---
-title: "Project – Status Section"
+title: "Status Section"
 z2k_template_type: block-template
 ---
 ## Status
 {{Status}}
 ```
 
-File name: `Project – Status Section.block`
+File name: `Status Section.block`
 
-**After** running **Convert to Markdown Template**:
+**After** running the command:
 
 ```md
 ---
-title: "Project – Status Section"
+title: "Status Section"
 z2k_template_type: block-template
 ---
 ## Status
 {{Status}}
 ```
 
-File name: `Project – Status Section.md`
+File name: `Status Section.md`
 
 The YAML type remains `block-template`; only the extension changes.
 
 ## When to Use It
-Use **Convert to Markdown Template** when:
+Use this command when:
 
-- When a file is already a document or block template and you want it to remain a template, but you no longer want the `.template` or `.block` extension.
-- You have a content file that you would like to convert to a template, but be certain it is save with a `.md` extension. 
+- You have a `.template` or `.block` file but want it visible as a regular `.md` file
+- You're troubleshooting and need the file to appear in tools that only recognize `.md`
+- You prefer not to use custom file extensions but still want template functionality
+
+> [!NOTE] Move into a Template Folder
+> If you're converting a content file into a template via this command, you may need to move it into a [[Template Folders|template folder]] for it to appear in template pickers.
+
+## Related Commands
+
+- [[Convert to document template]] – Mark as document template with `.template` extension
+- [[Convert to block template]] – Mark as block template with `.block` extension
+
+
+> [!DANGER]
+> - Verify behavior when running on a content file – the code suggests it converts to document-template, but confirm this
+> - Check if there's a way to convert a content file to a block template with `.md` extension (or if that requires two commands)

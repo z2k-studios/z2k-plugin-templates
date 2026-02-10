@@ -4,7 +4,6 @@ sidebar_class_name: z2k-code
 sidebar_label: "{{wikipedia}}"
 ---
 # wikipedia Helper
-
 The `wikipedia` Helper function is a simple function that returns a markdown link that performs a wikipedia search.
 
 The format for the helper function is:

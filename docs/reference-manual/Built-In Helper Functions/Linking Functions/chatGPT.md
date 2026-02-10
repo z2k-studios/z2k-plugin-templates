@@ -4,7 +4,6 @@ sidebar_class_name: z2k-code
 sidebar_label: "{{chatGPT}}"
 ---
 # chatGPT Helper
-
 The `chatGPT` Helper function lets you create HTML links that will start a new chat using information in your template fields. 
 
 The format for the helper function is:

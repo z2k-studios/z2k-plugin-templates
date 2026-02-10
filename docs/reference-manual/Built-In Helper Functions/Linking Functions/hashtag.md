@@ -4,7 +4,6 @@ sidebar_class_name: z2k-code
 sidebar_label: "{{hashtag}}"
 ---
 # hashtag Helper
-
 The `hashtag` Helper function will construct a hashtag entry using `{{handlebars}}` expressions, without the template file [[Template Pollution|polluting]] your vault's content files. 
 
 Take for instance the template text:

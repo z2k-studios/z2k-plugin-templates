@@ -8,7 +8,7 @@ aliases:
 - field-info type Parameter
 ---
 # field-info type
-The optional `type` parameter in the [[reference-manual/field-info Helper/field-info Helper]] specifies what type of value should be associated with the field. The value can be one of a number of [[#Accepted Values]].
+The optional `type` parameter in the [[field-info Helper|field-info helper function]] specifies what type of value should be associated with the field. The value can be one of a number of [[#Accepted Values]].
 
 ## Syntax
 The `type` parameter can be specified with the `type` keyword for the [[field-info Syntax#Named Parameters|Named Parameter]]. For example:

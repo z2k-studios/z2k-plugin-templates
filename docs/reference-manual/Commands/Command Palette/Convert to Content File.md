@@ -1,29 +1,29 @@
 ---
 sidebar_position: 100
 sidebar_class_name: z2k-code
-doc_state: revised_ai_draft_1
+aliases:
+- convert to content file
 ---
-# Convert to Content File
+# Convert to content file
+Removes template status from a file, turning it into an ordinary content file. The file will no longer appear in template pickers or function as a template.
 
-## Overview
-The **Convert to Content File** command turns the current file into a normal [[Types of Template Files#Content Files|Content File]] in the vault. It remove the template role from the file; Z2K Templates will no longer treat the file as a template, and it ensures the file uses a standard `.md` extension where appropriate.
+## Availability
+Available in the Command Palette when the **active file is considered a template**. The command is visible when any of these conditions are true:
+- File has a `.template` or `.block` extension
+- File has [[z2k_template_type]] set to `document-template` or `block-template` in YAML
+- File is a `.md` file located inside a [[Template Folders|template folder]]
 
-Use this command when a file **used to be** a template (document or block) but you now want it to behave as an ordinary note in your vault.
+## What It Does
+When you run this command:
+- Removes the [[z2k_template_type]] YAML property (if present)
+- If the file has a `.template` or `.block` extension, renames it to `.md`
+- Z2K Templates stops treating the file as a template
 
-## What the Command Does
-When you run **Convert to Content File** on the active file:
-
-- It sets the [[z2k_template_type]] YAML property to `content-file` or removes it entirely.
-- If the file currently has a `.template` or `.block` extension, it renames the file to `.md`.
-- Z2K Templates stops treating the file as a template during card creation, block insertion, and related workflows.
-
-### Notices
-
-> [!NOTE] May Need to Move It Out of the Template Folder
-> If you are converting a template file to a content file, you will also need to move the file out of the [[Template Folders|Template Folder]]. See [[#Interaction with Template Folders]] discussion below
+This is a semantic reset – it tells Z2K Templates "this file is now ordinary content."
 
 ### YAML Before and After
-**Before** (template file):
+
+**Before** (document template):
 
 ```md
 ---
@@ -33,44 +33,45 @@ z2k_template_type: document-template
 # {{Name}}
 ```
 
-**After** running **Convert to Content File**:
+**After** running the command:
 
 ```md
 ---
 title: "Person – Base Template"
-z2k_template_type: content-file
 ---
 # {{Name}}
 ```
 
-If you also previously used `.template`, the file will be renamed, for example, from `Person – Base Template.template` to:
-
-- `Person – Base Template.md`
+If the file was `Person – Base Template.template`, it becomes `Person – Base Template.md`.
 
 ## When to Use It
-Use **Convert to Content File** when:
-- You promoted a note into a template for a while and now want it to stop acting as a template.
-- You accidentally converted a file into a template and want to revert that change.
-- You are refactoring a template into a new file and want the original to live on as a static note.
+Use this command when:
 
-This is a semantic reset – it tells Z2K Templates “this file is now ordinary content.”
+- You promoted a note into a template temporarily and now want to revert
+- You accidentally converted a file to a template
+- You're refactoring and want the original template to become a static note
 
-## Interaction with Template Folders
-If the converted file still lives inside a dedicated [[Template Folders|Template Folder]]:
-- It will have a `.md` extension and `content-file` semantics.
-- However, other folder-based logic (or your own organizational rules) might still treat it as a template-like file.
+## Move Out of Template Folder
+If the file lives in a [[Template Folders|template folder]], consider moving it elsewhere. While it won't function as a template, keeping it in a template folder may cause organizational confusion as it is now a content file interspersed with your template files.
 
-If your intention is to turn it into a fully normal note, you may also want to:
-- Move it to a non-template folder.
-- Update any references that previously treated it as a template.
+If the converted file still lives inside a [[Template Folders|template folder]]:
+- It will have `.md` extension with no `z2k_template_type` property
+- **However**, Z2K Templates will still treat it as a document template because of its location
+- The command will notify you that you need to manually move the file outside the template folder
+
+For a clean separation, be sure to move the file to a non-template location after converting.
 
 ## How It Interacts with File Extensions
-Behavior depends on whether [[Use Template File Extensions|Template File Extensions are Enabled]]:
 
-- **Extensions disabled**
-	- The file extension remains `.md`.
-	- The `z2k_template_type` field is set to `content-file` (or is removed).
+**Extensions disabled:**
+- File extension remains `.md`
+- `z2k_template_type` property is removed from YAML
 
-- **Extensions enabled**
-	- Files with `.template` or `.block` extensions are renamed to `.md`.
-	- The `z2k_template_type` field is set to `content-file` (or is removed).
+**Extensions enabled:**
+- `.template` or `.block` files are renamed to `.md`
+- `z2k_template_type` property is removed from YAML
+
+## Related Commands
+- [[Convert to document template]] – Make a file into a document template
+- [[Convert to block template]] – Make a file into a block template
+

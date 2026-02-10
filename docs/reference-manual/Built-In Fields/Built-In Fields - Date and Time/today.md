@@ -18,6 +18,16 @@ To adjust the format of the built-in `{{today}}` field, please use the [[format-
 > [!TIP] Best to use the now built-in field for format-date
 > When using `format-date` to alter the appearance of `{{today}}`, we recommend using the `{{now}}` built-in field instead. Please see the [[format-date#Using format-date with sourceTimes other than Now|comment in the format-date]] reference page.
 
+## Tip: Consider Using fileCreationDate Instead
+If your template might be used with [[Apply template to file]], consider `{{fileCreationDate}}` instead of `{{today}}` (see [[fileCreationDate]]).
+
+The difference:
+- `{{today}}` – Always returns the current date (when the template is applied)
+- `{{fileCreationDate}}` – Returns when the source file was originally created
+
+This matters for retroactive organization. If you jot down meeting notes on Monday and apply a template on Friday, `{{today}}` shows Friday. `{{fileCreationDate}}` shows Monday – preserving when the event actually happened.
+
+For [[Create new file]], both fields return the same value since the file is being created now.
 
 ## Example Output 
 Given a template snippet of:

@@ -4,7 +4,6 @@ sidebar_class_name: z2k-code
 sidebar_label: "{{google}}"
 ---
 # google Helper
-
 The `google` Helper function is a simple function that returns a markdown link that performs a google search.
 
 The format for the helper function is:
