@@ -80,11 +80,11 @@ interface CommandParams {
 	finalize?: boolean | string;  // Can be boolean (from JSON) or string "true"/"false" (from URI)
 	location?: "file-top" | "file-bottom" | "header-top" | "header-bottom" | number | string;  // Allow any string/number
 	// Additional field data - can be string (JSON) or already parsed object
-	templateJsonData?: string | Record<string, VarValueType>;
-	templateJsonData64?: string;
-	// For json command
-	json?: string;
-	json64?: string;
+	fieldData?: string | Record<string, VarValueType>;
+	fieldData64?: string;  // Base64-encoded JSON (standard or URL-safe)
+	// For fromJson command
+	jsonData?: string;
+	jsonData64?: string;  // Base64-encoded JSON (standard or URL-safe)
 	// Retry configuration
 	maxRetries?: number;  // Default 0
 	retryDelayMs?: number;  // Default 0
@@ -1286,6 +1286,12 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		});
 	}
 
+	// Decode base64, supporting both standard and URL-safe variants
+	private decodeBase64(str: string): string {
+		const normalized = str.replace(/-/g, '+').replace(/_/g, '/');
+		return atob(normalized);
+	}
+
 	// Main command processor - accepts typed parameters and routes to appropriate handlers
 	// Called by: registerURIHandler (from URI), processQueueFile (from offline queue)
 	// DOCS: Non-field parameters can be templatePath, TemplatePath, template-path, template_path, etc. for robustness
@@ -1296,7 +1302,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 
 		const knownKeys = ['cmd', 'templatePath', 'blockPath', 'existingFilePath',
 			'destDir', 'destHeader', 'prompt', 'finalize', 'location',
-			'templateJsonData', 'templateJsonData64', 'json', 'json64',
+			'fieldData', 'fieldData64', 'jsonData', 'jsonData64',
 			'maxRetries', 'retryDelayMs'];
 
 		// Separate command params from template data
@@ -1310,10 +1316,19 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			}
 		}
 
-		// Handle templateJsonData (can be string or object, but not array/null)
+		// Handle fieldData64 (base64-encoded JSON) - decoded into fieldData if fieldData not present
+		if (cps.fieldData64 && !cps.fieldData) {
+			try {
+				cps.fieldData = this.decodeBase64(cps.fieldData64);
+			} catch {
+				throw new TemplatePluginError("Command: Invalid fieldData64 (must be valid base64)");
+			}
+		}
+
+		// Handle fieldData (can be string or object, but not array/null)
 		let additionalFields: Record<string, VarValueType> = {};
-		if (cps.templateJsonData) {
-			let data = cps.templateJsonData;
+		if (cps.fieldData) {
+			let data = cps.fieldData;
 			// Parse if string
 			if (typeof data === 'string') {
 				// Check if it's a file path (doesn't start with '{')
@@ -1321,7 +1336,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 					// Try to load as vault-relative file path
 					const jsonFile = this.getFile(data);
 					if (!jsonFile) {
-						throw new TemplatePluginError(`Command: templateJsonData file not found: ${data}`);
+						throw new TemplatePluginError(`Command: fieldData file not found: ${data}`);
 					}
 					try {
 						const fileContents = await this.app.vault.read(jsonFile);
@@ -1334,20 +1349,20 @@ export default class Z2KTemplatesPlugin extends Plugin {
 					try {
 						data = JSON.parse(data);
 					} catch {
-						throw new TemplatePluginError("Command: Invalid templateJsonData (must be valid JSON or vault-relative file path)");
+						throw new TemplatePluginError("Command: Invalid fieldData (must be valid JSON or vault-relative file path)");
 					}
 				}
 			}
 			// Validate is plain object (not array/null)
 			if (!data || typeof data !== "object" || Array.isArray(data)) {
-				throw new TemplatePluginError("Command: templateJsonData must be an object (not array or null)");
+				throw new TemplatePluginError("Command: fieldData must be an object (not array or null)");
 			}
 			additionalFields = data;
 		}
 
 		// Merge field data
 		// DOCS: All params (except recognized command params) are treated as template data
-		// DOCS: Direct params override values in templateJsonData
+		// DOCS: Direct params override values in fieldData
 		const fieldOverrides: Record<string, VarValueType> = { ...additionalFields, ...templateData };
 		// Only convert URI string values, not JSON-sourced values (already typed)
 		const uriKeys: Set<string> = isJsonSource ? new Set() : new Set(Object.keys(templateData));
@@ -1361,21 +1376,30 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			throw new TemplatePluginError("Command: 'cmd' parameter cannot be empty");
 		}
 
-		// Handle 'json' command - parse JSON and recursively call processCommand
-		if (cmd === "json") {
-			if (!cps.json) {
-				throw new TemplatePluginError("Command: 'json' cmd requires 'json' parameter");
+		// Handle 'fromJson' command - parse JSON and recursively call processCommand
+		if (cmd === "fromjson") {
+			// Decode jsonData64 if jsonData not present
+			let jsonStr = cps.jsonData;
+			if (!jsonStr && cps.jsonData64) {
+				try {
+					jsonStr = this.decodeBase64(cps.jsonData64);
+				} catch {
+					throw new TemplatePluginError("Command: Invalid jsonData64 (must be valid base64)");
+				}
+			}
+			if (!jsonStr) {
+				throw new TemplatePluginError("Command: 'fromJson' cmd requires 'jsonData' or 'jsonData64' parameter");
 			}
 			try {
-				const parsedParams = JSON.parse(cps.json);
+				const parsedParams = JSON.parse(jsonStr);
 				if (!parsedParams || typeof parsedParams !== "object" || Array.isArray(parsedParams)) {
-					throw new TemplatePluginError("Command: 'json' parameter must be a valid JSON object (not array or null)");
+					throw new TemplatePluginError("Command: 'jsonData' must be a valid JSON object (not array or null)");
 				}
 				// Recursive call with parsed JSON (inherit context, mark as JSON source)
 				return await this.processCommand(parsedParams as CommandParams, context, true);
 			} catch (e) {
 				if (e instanceof TemplatePluginError) throw e;
-				throw new TemplatePluginError("Command: Invalid json parameter (must be valid JSON)");
+				throw new TemplatePluginError("Command: Invalid jsonData (must be valid JSON)");
 			}
 		}
 
