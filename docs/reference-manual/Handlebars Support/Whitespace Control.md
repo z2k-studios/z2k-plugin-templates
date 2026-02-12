@@ -17,7 +17,7 @@ Tildes placed inside expression delimiters trim whitespace on the corresponding 
 - `{{expression~}}` – trims all whitespace **after** the expression
 - `{{~expression~}}` – trims whitespace on **both** sides
 
-"Whitespace" here means spaces, tabs, and newlines between the expression and the nearest non-whitespace content.
+"Whitespace" here means spaces, tabs, *and newlines* between the expression and the nearest non-whitespace content.
 
 ## Example
 Given this template with intentional blank lines:
@@ -60,7 +60,7 @@ Tildes can be combined with any Handlebars expression type:
 | Partial | `{{~> blockName~}}` |
 
 ## Silent Helpers and Implicit Whitespace Handling
-Some Z2K Templates helpers – known as [[Silent Helper Functions|silent helpers]] – produce no visible output. The most common is `{{field-info}}` (and its abbreviation `{{fi}}`), which declares metadata about a field but renders as an empty string.
+Some Z2K Templates helpers – known as [[Silent Helper Functions|silent helpers]] – produce no visible output. The most common is `{{field-info}}` (and its abbreviation `{{fi}}`), which declares metadata about a field but renders as an empty string (see [[field-info Helper]]).
 
 Because these helpers output nothing, they can leave behind blank lines in your template. You might be tempted to use tildes to clean these up:
 
@@ -80,9 +80,8 @@ Due: {{dueDate}}
 ```
 
 > [!NOTE]
-> Tildes are still useful with silent helpers when they share a line with other content and you want precise control over spacing – but for standalone declarations, Z2K Templates' automatic line removal is simpler.
+> Tildes are still useful with silent helpers when they share a line with other content and you want precise control over spacing – but for standalone declarations on a single line, Z2K Templates' automatic line removal is simpler.
+
 
 > [!DANGER] Notes for Review
-> - Whitespace control is standard Handlebars behavior with no Z2K-specific modifications. This page exists primarily to document the interaction with silent helpers and line-aware removal.
 > - Verify that whitespace control tildes work correctly with `{{field-output}}` / `{{fo}}` as well.
-> - The [[Silent Helper Functions]] page should cross-reference this page for whitespace guidance.

@@ -12,5 +12,13 @@ Use the `format-string-to-lower` Helper function to format a Template Field into
 
 where:
 - `format-string-to-lower` is the predefined name of the helper function for formatting text to all lowercase
-- `fieldname` is the name of the field that will receive the data to be capitalized
+- `fieldname` is the name of the field that will receive the data to be converted to lowercase
+
+## Example
+
+```handlebars
+{{format-string-to-lower Greeting}}
+```
+
+If `Greeting` contains `"STOP YELLING AT ME"`, outputs `stop yelling at me`. Much calmer.
 

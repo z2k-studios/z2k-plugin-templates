@@ -32,9 +32,9 @@ There are a few subtle differences in the fundamental way in which Z2K Templates
 	- Z2K does not assume the output is HTML, but rather Markdown. Therefore the default escaping handling and "raw" output is implemented differently.
 2. **Interactive**:
 	- Because templating with the Z2K Templates plugin is usually interactively performed, Z2K Templates provides a prompting interface for obtaining data
-	- Handlebars, however assumes that all data is either known or not known at the point of processing, and thus does not have an interactive prompting usage model
+	- Handlebars, however assumes that all data is either known or not known at the point of processing, and thus does not have an interactive [[Prompting]] usage model
 3. **Deferred Resolution**:
-	- Because Z2K Templates are interactive, not all data may be initially known. In this instance, Z2K Templates supports [[Deferred Field Resolution]], resulting in [[WIP Stage|WIP Content Files]] that still have fields in them. See the [[Lifecycle of a Template]] for more details.
+	- Because Z2K Templates are interactive, not all data may be initially known. In this instance, Z2K Templates supports [[Deferred Field Resolution]], resulting in [[WIP Stage|WIP Content Files]] that still have fields in them waiting to be filled in. See the [[Lifecycle of a Template]] for more details.
 4. **Fallback Processing**:
 	- Because fields can be deferred, Z2K Templates provides a more customizable approach to how unspecified fields are handled when generated content files are [[Finalization|finalized]]. See [[Fallback Behavior]] for more details.
 5. **Library of Built-In Helpers and Fields**:
@@ -60,7 +60,6 @@ The following Handlebars features have not been systematically tested with Z2K T
 - [Inline partials](https://handlebarsjs.com/guide/partials.html#inline-partials) (`{{#* inline "name"}}...{{/inline}}`)
 - [[Helper Functions#Z2K Custom Helper Functions|Custom Helper Functions]]
 - [[Helper Functions#Usage - Nested Helper Functions|Nested Helper Functions]]
-- Raw fields with triple handlebars – `{{{rawField}}}`
 - [Context switching](https://handlebarsjs.com/guide/builtin-helpers.html#with) (`{{#with}}`)
 
 ## Subtle Changes from Handlebars Syntax
@@ -70,7 +69,8 @@ For details on specific behavioral differences, see the individual pages in the 
 - **Comment removal** – Z2K removes the entire line when a comment is the only content on it, rather than leaving a blank line. See [[Template Comments]].
 - **Field preservation** – unresolved fields remain in the output rather than being replaced with empty strings. See [[Deferred Field Resolution]].
 
+
+
 > [!DANGER] Notes for Review
 > - The "Untested" list should be pruned as features are verified. Consider adding a testing pass for each item.
-> - `{{{rawField}}}` is listed as untested here, but the source code does handle triple-mustache and `format-string-raw`. Once the [[Unescaped Expressions]] page is written and confirmed, move this to Supported.
 > - `{{#with}}` passes through to Handlebars and likely works, but no Z2K-specific testing has been done. If confirmed, move to Supported.

@@ -8,6 +8,8 @@ just have no output
 Behaves much like the ~ instruction
 Removes the empty line of the field 
 
+Reference [[Whitespace Control]] for white space removal
+
 # Silent Helper Functions
 Known silent helper functions (or expressions):
 - [[field-info Helper|field-info]], [[fi Helper Variation|fi]]

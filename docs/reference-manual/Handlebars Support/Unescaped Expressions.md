@@ -54,12 +54,6 @@ Handlebars' triple-mustache syntax `{{{variable}}}` tells the engine to skip esc
 
 In Z2K Templates, because HTML entities are unescaped automatically anyway, triple-mustache is rarely necessary. However, it remains available and functions correctly – it simply skips the escaping step that Z2K Templates would reverse regardless.
 
-Triple-mustache is compatible with [[Whitespace Control|whitespace control]]:
-
-```handlebars
-{{{~variable~}}}
-```
-
 ## The format-string-raw Helper
 The `format-string-raw` [[Helper Functions|helper]] provides an alternative way to output a value without escaping:
 
@@ -92,6 +86,9 @@ Because Z2K Templates reverses all HTML entity escaping, there is currently no b
 
 > [!WARNING]
 > If your template output is later processed by an HTML renderer (for example, through Docusaurus or a publish pipeline), be aware that raw `<` and `>` characters in your Markdown may be interpreted as HTML tags. In these cases, you may need to handle escaping at the publishing layer rather than in the template.
+
+
+
 
 > [!DANGER] Notes for Review
 > - ==Needs testing==: Confirm that all 7 Handlebars escapes are fully reversed in actual template output. Code analysis of `unescapeMostHtmlEntities()` (in `z2k-template-engine/src/main.ts`) shows they should be.

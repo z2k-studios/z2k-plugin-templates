@@ -12,8 +12,10 @@ The `{{format-date}}` built-in helper function is used to format your date and t
 
 where:
 - `format-date` is the predefined name of the helper function for formatting dates
-- `quoted-format-string` is a string specifying how the date or time should be formatted
-- (optional) `sourceTime` is the moment in time that is to be formatted. By default, it is `{{now}}` (see [[now]], and discussion [[#Using format-date with sourceTimes other than Now|below]] for using `sourceTimes`  other than `{{now}}`).
+- `quoted-format-string` is a string specifying how the date or time should be formatted. If omitted, defaults to `"YYYY-MM-DD"`.
+- (optional) `sourceTime` is the moment in time that is to be formatted. By default, it uses the current date and time (see [[now]], and discussion [[#Using format-date with sourceTimes other than Now|below]] for using `sourceTimes` other than the current time). If the provided value cannot be parsed as a valid date, the raw value is returned unchanged.
+
+Also supports named hash parameters: `{{format-date format="YYYY-MM-DD" value=sourceTime}}`
 
 ## Format String Specification
 The `{{format-date}}` Helper function uses [moment.js](https://momentjs.com/docs/#/displaying/format/) syntax for formatting dates. 

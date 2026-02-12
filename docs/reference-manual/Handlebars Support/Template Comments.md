@@ -11,10 +11,13 @@ aliases:
 Template comments let you leave notes inside a template file that never appear in the [[Finalization|finalized]] content file. They use Handlebars comment syntax – anything inside the delimiters is invisible to the rendered result. 
 
 > [!NOTE] Different than Markdown Comments
-> Markdown has its own syntax for writing comments, e.g. `%% Comment %%` . We recommend exclusively using the Handlebars comments to communicate guidance from the template to the generated files. When a content file is then [[Finalization|finalized]], these guidance comments are removed. Markdown `%%` comments, however, will persist forever until the vault owner removes them directly.
+> Markdown has its own syntax for writing comments, e.g. `%% Comment %%` . So when do you use which comment style?
+> 
+> We recommend using the Handlebars comments to communicate guidance from the template to the generated files. This is useful for, say, describing what a section of the template file is for. When a content file is then [[Finalization|finalized]], these guidance comments are removed. 
+> 
+> Markdown `%%` comments, however, will persist forever until the vault owner removes them directly. Thus we recommend using `%%` comments when it pertains to the actual content of the file. 
 
-
-Z2K supports two forms of comment syntax: short-form and long-form.
+Z2K Templates supports two forms of comment syntax: short-form and long-form.
 
 ## Short-Form Comments
 The short-form comment uses `{{!` and `}}` as delimiters:
@@ -23,7 +26,7 @@ The short-form comment uses `{{!` and `}}` as delimiters:
 {{! This is a short-form comment }}
 ```
 
-Short-form comments cannot contain `}}` inside the comment body – the parser treats the first `}}` it encounters as the closing delimiter.
+Short-form comments cannot contain `}}` inside the comment body – the parser treats the first `}}` it encounters as the closing delimiter. Therefore, you can not make reference to `{{fields}}` inside a short-form comment. 
 
 ## Long-Form Comments
 The long-form comment uses `{{!--` and `--}}` as delimiters:
@@ -49,7 +52,7 @@ Comments behave differently depending on where you are in the [[Lifecycle of a T
 ## Difference from Default Handlebars Behavior
 Standard Handlebars removes the comment text but leaves the line itself intact, which often results in stray blank lines. Z2K Templates handles this differently.
 
-When a comment is the only content on its line – meaning nothing but whitespace surrounds it between the preceding and following newlines – Z2K Templates removes the entire line, including the trailing line break. No blank line is left behind.
+When a comment is the only content on its line – meaning nothing but whitespace surrounds it between the preceding and following newlines – Z2K Templates removes the entire line, including the trailing line break. No blank line is left behind. This is true for all [[Silent Helper Functions]].
 
 For example, given this template:
 
@@ -125,6 +128,4 @@ tags: research
 ```
 
 > [!DANGER] Notes for Review
-> - Line-aware removal logic confirmed in `z2k-template-engine/src/main.ts` lines 1333-1338. The check is: if the character before the comment start is `\n` and the character after the comment end is `\n`, the trailing newline is also consumed.
-> - This same line-aware removal also applies to `{{field-info}}` / `{{fi}}` expressions, not just comments (lines 1306-1312). Consider whether to cross-reference this on the [[field-info Helper]] page.
 > - Verify whether comments inside YAML frontmatter are preserved or stripped differently – the engine has special YAML handling, but comment behavior in YAML was not explicitly tested.

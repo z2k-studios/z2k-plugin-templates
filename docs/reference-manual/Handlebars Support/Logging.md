@@ -46,7 +46,8 @@ Look for the logged values in the **Console** tab. They appear during the templa
 ## Limitations
 - `{{log}}` output is only visible in the developer console – there is no way to redirect it to the template output or to a file
 - Logging occurs at render time, so deferred fields will show as `undefined` in the log output
-- The log helper is a [[Silent Helper Functions|silent helper]] – it produces no output in the rendered template
+- The log helper is a [[Silent Helper Functions|silent helper]] – it produces no output in the rendered template and will follow the [[Whitespace Control]] rules for silent helper functions.
+
 
 > [!DANGER] Notes for Review
 > - Z2K Templates does not register a custom `log` helper – this is pure Handlebars passthrough. Verified by searching `z2k-template-engine/src/main.ts` for any log-related helper registration.

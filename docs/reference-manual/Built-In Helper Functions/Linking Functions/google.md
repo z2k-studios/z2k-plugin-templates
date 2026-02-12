@@ -32,5 +32,5 @@ Search for Article online: [AI and Intelligence: Effects of AI on the Size of In
 ## Shorthand
 Under the covers, the helper function `{{google searchtext displaytext}}` is shorthand for:
 
-`{{url "https://google.com/search?q={{format-string-sluggify searchtext}}" displaytext}}`
+`{{url "https://google.com/search?q={{format-string-slugify searchtext}}" displaytext}}`
 

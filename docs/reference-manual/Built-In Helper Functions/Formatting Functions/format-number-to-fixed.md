@@ -13,7 +13,17 @@ The nomenclature for the `format-number-to-fixed` is:
 where:
 	- `format-number-to-fixed` is the predefined name of the helper function for formatting numbers to a fixed number of decimal places
 	- `fieldname` is the name of the field that will receive the numeric data to be formatted
-	- `number-of-decimal-places` is a hard coded number that is the number of decimal places the number should be formatted to. 
+	- `number-of-decimal-places` is a hard coded number that is the number of decimal places the number should be formatted to. If omitted, defaults to `0` (no decimal places).
+
+## Null and Invalid Handling
+- If the value is null or undefined, the helper returns nothing
+- If the value cannot be converted to a number, the raw value is returned unchanged
 
 ## Examples
-- `{{format-number-to-fixed Weight 0}}` -- If the number 158.56 is passed in for the `Weight` field, then it will output `158`
+- `{{format-number-to-fixed TheAnswer 0}}` – If the number 42 is passed in for `TheAnswer`, outputs the ever correct `42`
+- `{{format-number-to-fixed Weight 0}}` – If the number 158.56 is passed in for the `Weight` field, then it will output `159` (rounded)
+- `{{format-number-to-fixed Pi 2}}` – If the number 3.14159 is passed in, outputs `3.14`
+- `{{format-number-to-fixed Price 2}}` – If the number 9.9 is passed in, outputs `9.90` (pads with trailing zeros)
+
+> [!WARNING]
+> The `number-of-decimal-places` must be between 0 and 100. Negative values (e.g., `-1` to round to the nearest ten) will cause a runtime error. Use [[calc]] for rounding to non-decimal positions.

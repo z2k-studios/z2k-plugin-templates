@@ -90,10 +90,10 @@ In this example:
 Both mechanisms can be combined as needed.
 
 ## Embedding in Surrounding Text
-The [[format-string]] helper inserts a field value into a format string using `{0}` as a placeholder:
+The [[format-string]] helper inserts a field value into a format string using `{{value}}` as a placeholder:
 
 ```handlebars
-{{format-string fieldName "format string with {0} inside"}}
+{{format-string fieldName "format string with {{value}} inside"}}
 ```
 
 The key benefit: the surrounding text only appears when the field has a value. If the field is empty or missing, the entire expression produces nothing – no orphaned prefixes, suffixes, or units left behind.
@@ -108,7 +108,7 @@ Consider a template that displays temperature data from an external source:
 If no temperature is provided, the output is `- Temperature::  degrees F` – an empty value with orphaned units. Using `format-string` keeps it clean:
 
 ```handlebars
-- Temperature:: {{format-string Temperature "{0} degrees F"}}
+- Temperature:: {{format-string Temperature "{{value}} degrees F"}}
 ```
 
 Now, if `Temperature` has no value, the entire expression is empty.
@@ -117,16 +117,16 @@ Now, if `Temperature` has no value, the entire expression is empty.
 
 ```handlebars
 {{!-- Bullet list item --}}
-{{format-string PassingIdea "- {0}"}}
+{{format-string PassingIdea "- {{value}}"}}
 
 {{!-- Wrap in brackets --}}
-{{format-string tagName "[{0}]"}}
+{{format-string tagName "[{{value}}]"}}
 
 {{!-- Create a wikilink --}}
-{{format-string noteName "[[{0}]]"}}
+{{format-string noteName "[[{{value}}]]"}}
 
 {{!-- Add units --}}
-{{format-string Distance "{0} km"}}
+{{format-string Distance "{{value}} km"}}
 ```
 
 For creating Obsidian wikilinks specifically, consider the [[wikilink]] helper which handles edge cases like display text.

@@ -68,7 +68,7 @@ Z2K Templates supports several path formats for referencing block templates:
 > Relative paths like `./subfolder/block-name` and `../block-name` are not currently supported.
 
 ## Path Shortcuts
-When using [[Embedded Template Folders|embedded templates]], the `Templates` folder name can be omitted from the path:
+When using [[Template Folders]] (the default mode), the `Templates` folder name can be omitted from the path:
 
 | Full Path                   | Shortcut          |
 | --------------------------- | ----------------- |
@@ -129,7 +129,7 @@ Z2K Templates also accepts Obsidian-style wikilinks in partial names:
 The double brackets are stripped before resolution. This can be useful for maintaining consistent linking conventions in your vault.
 
 ## Limitations
-- **No dynamic block names** – expressions like `{{> (helperName)}}` that compute the partial name at render time are not supported and will produce an error
+- **No dynamic block names** – expressions like `{{> (helperName)}}` that compute the partial name at render time are not supported and will produce an error. We sure would love to implement this one day, so cast a vote for it in our community pages.
 - **No relative paths** – `../partial` and `./partial` syntax is not yet supported
 - **No inline partials** – Handlebars' `{{#* inline "name"}}` syntax is untested. See the [[Handlebars and Z2K Templates#Untested Handlebars Features|untested features list]].
 - Block templates must be properly identified – see [[Block Templates]] for requirements
@@ -138,6 +138,7 @@ The double brackets are stripped before resolution. This can be useful for maint
 - [[Block Templates]] for fundamentals on block template files
 - [[Block Helpers]] for custom block-level helpers
 - [[Iterators]] for considerations when using partials inside `{{#each}}` loops
+
 
 > [!DANGER] Notes for Review
 > - The existing chicken scratch notes mentioned `{{> (random "BlockA.md" "BlockB.md")}}` as working for dynamic block selection. However, the source code at line 1073 of `z2k-template-engine/src/main.ts` explicitly throws an error for SubExpression-based partial names: "Dynamic block names are not supported." This is a **discrepancy** – either the code changed after the notes were written, or the notes were aspirational. Verify which is correct.
