@@ -14,12 +14,14 @@ Please see below for a complete list of built-in formatting helper functions.
 
 
 ## Date Formatting Helpers
+%% EMBEDDED: This section is embedded in [[Formatting Dates]] %%
 
 | Link            | Helper Function Name | Purpose                                       |
 | --------------- | -------------------- | --------------------------------------------- |
 | [[format-date]] | `{{format-date}}`    | Formats a date with a moment.js format string |
 
 ## Number Formatting Helpers
+%% EMBEDDED: This section is embedded in [[Formatting Numbers]] %%
 
 | Link                       | Helper Function Name         | Purpose                                              |
 | -------------------------- | ---------------------------- | ---------------------------------------------------- |
@@ -28,6 +30,7 @@ Please see below for a complete list of built-in formatting helper functions.
 
 
 ## String Formatting Helpers
+%% EMBEDDED: This section is embedded in [[Formatting Text]] %%
 
 | Link                            | Helper Function Name              | Purpose                                                                                                                                                                |
 | ------------------------------- | --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

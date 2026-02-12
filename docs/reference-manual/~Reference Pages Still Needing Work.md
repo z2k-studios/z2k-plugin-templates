@@ -3,7 +3,7 @@
 # Sections
 - Done, but needs review
 	- [[Handlebars Support]]
-	- [[Commands]]
+	- [[Quick Create Commands]]
 - Needs Creation
 	- [[Data Formatting]]
 	- [[Error Handling]]
