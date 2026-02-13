@@ -34,7 +34,7 @@ The following commands include your chosen term:
 | - | - | - |
 | Create new file | Create new note | Create new card |
 | Create file from selected text | Create note from selected text | Create card from selected text |
-| Convert existing file to templated file | Convert existing file to templated note | Convert existing file to templated card |
+| Apply template to file | Apply template to note | Apply template to card |
 | Continue filling file | Continue filling note | Continue filling card |
 
 Commands that don't reference content files – like [[Insert block template]] or [[Convert to document template]] – remain unchanged regardless of this setting.

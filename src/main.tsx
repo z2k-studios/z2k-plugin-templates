@@ -969,7 +969,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			},
 			{
 				id: 'z2k-convert-file-to-card',
-				name: `Convert existing file to templated ${cardRefNameLower(this.settings)}`,
+				name: `Apply template to ${cardRefNameLower(this.settings)}`,
 				checkCallback: (checking) => {
 					const activeFile = this.app.workspace.getActiveFile();
 					// Only enable if there's an active file and it's a markdown file
@@ -1949,7 +1949,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			// Convert sourceText to string for addPluginBuiltIns (handles all VarValueType cases)
 			const sourceTextStr = opts.fieldOverrides.sourceText != null ? String(opts.fieldOverrides.sourceText) : undefined;
 			await this.addYamlFieldValues(state); // System blocks already in state from parseTemplate
-			await this.addPluginBuiltIns(state, { sourceText: sourceTextStr, templateName: opts.templateFile.basename });
+			await this.addPluginBuiltIns(state, { sourceText: sourceTextStr, templateName: opts.templateFile.basename, fileCreationDate: opts.sourceFile?.stat.ctime });
 			this.setSuggestedTitleFromYaml(state);
 			// For sourceFile: use original filename as suggestion if template doesn't specify one
 			if (opts.sourceFile) {
@@ -2008,7 +2008,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			let systemBlocksContent = await this.GetSystemBlocksContent(pathFolderFromTFolder(opts.existingFile.parent as TFolder));
 			let systemBlocksYaml = Z2KYamlDoc.splitFrontmatter(systemBlocksContent).fm;
 			await this.addYamlFieldValues(state, [globalBlockYaml, systemBlocksYaml]);
-			await this.addPluginBuiltIns(state, { existingTitle: opts.existingFile.basename });
+			await this.addPluginBuiltIns(state, { existingTitle: opts.existingFile.basename, fileCreationDate: opts.existingFile.stat.ctime });
 			this.handleOverrides(state, opts.fieldOverrides, opts.uriKeys ?? new Set(), opts.promptMode || "all");
 			let hasFillableFields = this.hasFillableFields(state.fieldInfos);
 			// TODO: handle the case where fieldOverrides fills all fields and promptMode is "remaining"
@@ -2069,7 +2069,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			await this.addYamlFieldValues(state, [globalBlockYaml, systemBlocksYaml, existingFileYaml]);
 			// Convert sourceText to string for addPluginBuiltIns (handles all VarValueType cases)
 			const sourceTextStr = opts.fieldOverrides.sourceText != null ? String(opts.fieldOverrides.sourceText) : undefined;
-			await this.addPluginBuiltIns(state, { sourceText: sourceTextStr, existingTitle: opts.existingFile.basename });
+			await this.addPluginBuiltIns(state, { sourceText: sourceTextStr, existingTitle: opts.existingFile.basename, fileCreationDate: opts.existingFile.stat.ctime });
 			this.handleOverrides(state, opts.fieldOverrides, opts.uriKeys ?? new Set(), opts.promptMode || "all");
 
 			// if (this.hasFillableFields(state.fieldInfos) && opts.promptMode !== "none") {
@@ -2925,7 +2925,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			break; // take the first one we find
 		}
 	}
-	async addPluginBuiltIns(state: TemplateState, opts: { sourceText?: string, existingTitle?: string, templateName?: string, templateVersion?: string, templateAuthor?: string } = {}) {
+	async addPluginBuiltIns(state: TemplateState, opts: { sourceText?: string, existingTitle?: string, templateName?: string, templateVersion?: string, templateAuthor?: string, fileCreationDate?: number } = {}) {
 		// sourceText
 		state.fieldInfos["sourceText"] = {
 			fieldName: "sourceText",
@@ -3024,6 +3024,14 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			type: "text",
 			directives: ['no-prompt'],
 			value: await navigator.clipboard.readText(),
+		};
+
+		// fileCreationDate - creation date of the file being operated on
+		state.fieldInfos["fileCreationDate"] = {
+			fieldName: "fileCreationDate",
+			type: "text",
+			directives: ['no-prompt'],
+			value: moment(opts.fileCreationDate ?? Date.now()).format("YYYY-MM-DD"),
 		};
 	}
 
