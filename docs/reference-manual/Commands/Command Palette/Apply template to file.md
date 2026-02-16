@@ -6,7 +6,7 @@ aliases:
 - apply template to note
 - apply template to card
 ---
-# Apply template to file
+# Apply Template to File
 Applies a template to a file that already exists in your vault. The template wraps around or merges with the existing content, adding structure and prompting for additional fields.
 
 This command effectively applies a template *in-place* on an existing content file, and possibly then moving the file to a new folder if a new destination context was selected. 
@@ -154,8 +154,8 @@ You will still need to manually delete the portions of the old content file at t
 - Use Obsidian's file history features (available with Obsidian Sync) to restore a file if a template application fails. 
 
 ## Related Commands
-- [[Create new file]] – Create a new file from scratch with a template
-- [[Continue filling file]] – Resume filling deferred fields in any templated file
+- [[Create New File]] – Create a new file from scratch with a template
+- [[Continue Filling File]] – Resume filling deferred fields in any templated file
 
 
 > [!DANGER]

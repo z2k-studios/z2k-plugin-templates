@@ -49,7 +49,7 @@ These commands update both the YAML type and the file semantics.
 ### Step 3. Hide Template Files When Appropriate
 Once your templates use the correct extensions, you can hide them from the Obsidian file navigation bar using the following command:
 
-- [[Make .template and .block templates visible-hidden|Make .template and .block templates hidden]]
+- [[Make .template and .block Templates Visible-Hidden|Make .template and .block templates hidden]]
 
 This keeps the vault’s navigation pane focused on real content while still letting Z2K Template Engine access your template files.
 
@@ -69,10 +69,10 @@ This preserves full Markdown editing features during design, then switches the f
 Since hidden templates do not appear in the file navigation bar, editing requires three steps:
 
 1. Reveal them using  
-   [[Make .template and .block templates visible-hidden|Make .template and .block templates visible]]
+   [[Make .template and .block Templates Visible-Hidden|Make .template and .block templates visible]]
 2. Locate and edit the file as you would any `.md` document.
 3. Re-hide them with  
-   [[Make .template and .block templates visible-hidden|Make .template and .block templates hidden]]
+   [[Make .template and .block Templates Visible-Hidden|Make .template and .block templates hidden]]
 
 This keeps your workspace orderly but still gives you full control when making revisions.
 

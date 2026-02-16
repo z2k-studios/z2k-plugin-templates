@@ -5,7 +5,7 @@ aliases:
 - convert to markdown template
 ---
 
-# Convert to markdown template
+# Convert to Markdown Template
 Changes a template file's extension back to `.md` while preserving its template status. Use this when you want a template to look like a normal markdown file but still function as a template.
 
 ## Availability
@@ -67,8 +67,8 @@ Use this command when:
 
 ## Related Commands
 
-- [[Convert to document template]] – Mark as document template with `.template` extension
-- [[Convert to block template]] – Mark as block template with `.block` extension
+- [[Convert to Document Template]] – Mark as document template with `.template` extension
+- [[Convert to Block Template]] – Mark as block template with `.block` extension
 
 
 > [!DANGER]

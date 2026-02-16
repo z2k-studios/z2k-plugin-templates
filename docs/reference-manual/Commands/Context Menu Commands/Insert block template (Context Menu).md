@@ -16,7 +16,7 @@ Inserts a [[Block Templates|block template]] at the current cursor position.
 | - | - | - |
 | Editor context menu | Yes | No text selected, in a `.md` file |
 | File explorer menu | No | — |
-| Command Palette | Yes | See [[Insert block template]] |
+| Command Palette | Yes | See [[Insert Block Template]] |
 
 > [!TIP] See Command Palette Documentation
-> This is the context menu version of [[Insert block template]]. See that page for full details on how the command works, which templates appear, and usage examples.
+> This is the context menu version of [[Insert Block Template]]. See that page for full details on how the command works, which templates appear, and usage examples.

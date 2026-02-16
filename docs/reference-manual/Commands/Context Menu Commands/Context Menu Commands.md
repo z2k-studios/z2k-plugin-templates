@@ -20,20 +20,20 @@ These commands appear when you right-click inside a markdown file's editor.
 
 | Command                                                                                         | Appears When     | Description                                          |
 | ----------------------------------------------------------------------------------------------- | ---------------- | ---------------------------------------------------- |
-| [[Create file from selection (Context Menu)\|Create file from selection]]                       | Text is selected | Creates a new file using the selection as input      |
-| [[Insert block template (Context Menu)\|Insert block template]]                                 | No text selected | Inserts a block template at cursor                   |
-| [[Insert block template using selection (Context Menu)\|Insert block template using selection]] | Text is selected | Inserts a block template, passing selection as input |
+| [[Create File From Selection (Context Menu)\|Create File From Selection]]                       | Text is selected | Creates a new file using the selection as input      |
+| [[Insert Block Template (Context Menu)\|Insert Block Template]]                                 | No text selected | Inserts a block template at cursor                   |
+| [[Insert Block Template Using Selection (Context Menu)\|Insert Block Template Using Selection]] | Text is selected | Inserts a block template, passing selection as input |
 
 ## File Explorer Menu Commands
 These commands appear when you right-click on files or folders in the file explorer.
 
 | Command                                                                       | Appears When                               | Description                                 |
 | ----------------------------------------------------------------------------- | ------------------------------------------ | ------------------------------------------- |
-| [[Create new file here (Context Menu)\|Create new file here]]                 | Right-click on a folder                    | Creates a new templated file in that folder |
-| [[Convert to document template (Context Menu)\|Convert to document template]] | File is not a document template            | Marks file as a document template           |
-| [[Convert to block template (Context Menu)\|Convert to block template]]       | File is not a block template               | Marks file as a block template              |
-| [[Convert to markdown template (Context Menu)\|Convert to markdown template]] | File has `.template` or `.block` extension | Changes extension to `.md`                  |
-| [[Convert to content file (Context Menu)\|Convert to content file]]           | File is not a content file                 | Removes template status                     |
+| [[Create New File Here (Context Menu)\|Create New File Here]]                 | Right-click on a folder                    | Creates a new templated file in that folder |
+| [[Convert to Document Template (Context Menu)\|Convert to Document Template]] | File is not a document template            | Marks file as a document template           |
+| [[Convert to Block Template (Context Menu)\|Convert to Block Template]]       | File is not a block template               | Marks file as a block template              |
+| [[Convert to Markdown Template (Context Menu)\|Convert to Markdown Template]] | File has `.template` or `.block` extension | Changes extension to `.md`                  |
+| [[Convert to Content File (Context Menu)\|Convert to Content File]]           | File is not a content file                 | Removes template status                     |
 
 ## Context Menu vs. Command Palette
 Most context menu commands have Command Palette equivalents. The difference is how you access them:

@@ -6,7 +6,7 @@ aliases:
 - cmd insertblock
 ---
 # JSON Command: insertblock
-The `insertblock` command inserts a [[Block Templates|block template]] into an existing note at a specified position. It is the programmatic equivalent of the [[Insert block template]] command palette action.
+The `insertblock` command inserts a [[Block Templates|block template]] into an existing note at a specified position. It is the programmatic equivalent of the [[Insert Block Template]] command palette action.
 
 ## Directive Summary
 The following [[JSON Directives]] are relevant to the [[JSON Commands|JSON Command]] "`insertblock`":

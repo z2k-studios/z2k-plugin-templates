@@ -8,7 +8,7 @@ aliases:
 Quick Create Commands let you build custom commands tailored to your workflow. Instead of navigating through template selection dialogs each time, you define commands that pre-configure the action, destination, and template—then trigger them instantly from the Command Palette or via hotkey.
 
 ## Why Use Quick Create Commands
-The standard [[Create new file]] command works well for occasional use, but frequent template users often want:
+The standard [[Create New File]] command works well for occasional use, but frequent template users often want:
 - **Fewer prompts** — Skip the folder picker when you always create thoughts in `/Thoughts`
 - **Keyboard shortcuts** — Assign `Ctrl+Shift+T` to instantly create a new task
 - **Workflow-specific commands** — "New Meeting Note" that uses your meeting template in your meetings folder

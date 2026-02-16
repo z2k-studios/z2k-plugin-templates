@@ -6,7 +6,7 @@ aliases:
 - create new note
 - create new card
 ---
-# Create new file
+# Create New File
 Creates a new file in your vault using a [[Types of Template Files#Document Templates|document template]]. This is the primary command for generating templated content.
 
 > [!NOTE] Command Name
@@ -44,14 +44,14 @@ Here is a typical way to create a new file from a template
 ## Tips
 Here are some tips for making this most important command even easier to use:
 - Assign this command to `Ctrl/Cmd + N` to replace Obsidian's default new note behavior
-- You can also right click on a folder in the folder view and use the [[Create new file here]] command to skip the destination context query.
+- You can also right click on a folder in the folder view and use the [[Create New File Here]] command to skip the destination context query.
 - If no templates appear, check that you have [[Template Folders]] configured correctly
 - For frequently-used templates, consider setting up [[Quick Create Commands]] instead
 
 ## Related Commands
 
-- [[Create file from selected text]] – Same workflow, but passes selected text to the template
-- [[Apply template to file]] – Apply a template to a file that already exists
+- [[Create File From Selected Text]] – Same workflow, but passes selected text to the template
+- [[Apply Template to File]] – Apply a template to a file that already exists
 
 
 

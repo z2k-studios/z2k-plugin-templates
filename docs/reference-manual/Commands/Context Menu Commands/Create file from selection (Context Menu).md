@@ -18,7 +18,7 @@ Creates a new file from a template, using the currently selected text as input d
 | - | - | - |
 | Editor context menu | Yes | Text is selected |
 | File explorer menu | No | — |
-| Command Palette | Yes | See [[Create file from selected text]] |
+| Command Palette | Yes | See [[Create File From Selected Text]] |
 
 > [!TIP] See Command Palette Documentation
-> This is the context menu version of [[Create file from selected text]]. See that page for full details on how the command works, how selections are used, and example templates.
+> This is the context menu version of [[Create File From Selected Text]]. See that page for full details on how the command works, how selections are used, and example templates.

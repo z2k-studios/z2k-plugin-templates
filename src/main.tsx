@@ -298,7 +298,7 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 								new ConfirmationModal(this.app, {
 									title: 'Disable Template File Extensions?',
 									message: <>
-										<p>We recommend that you convert your existing .template and .block template files back to markdown before disabling Template File Extensions.</p>
+										<p>We recommend that you convert your existing .template and .block files back to markdown before disabling Template File Extensions.</p>
 										<p>If you do not convert them to markdown, then these templates will not be easily accessible inside Obsidian for updates and changes.</p>
 										<p><a href="https://z2k-studios.github.io/z2k-plugin-templates-docs/docs/reference-manual/Template%20File%20Extensions" target="_blank">See docs for more details.</a></p>
 									</>,
@@ -383,7 +383,7 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 						if (trimmed === '') return null; // Blank = manual only
 						try {
 							const ms = parseDuration(trimmed);
-							if (ms < 5000) return "Minimum is 5s";
+							if (ms < 5000) return "Minimum is 5 seconds";
 							return null;
 						} catch (e: any) {
 							return e.message;
@@ -955,12 +955,12 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		let mainCommands: Command[] = [
 			{
 				id: 'z2k-create-new-card',
-				name: `Create new ${cardRefNameLower(this.settings)}`,
+				name: `Create New ${cardRefNameUpper(this.settings)}`,
 				callback: () => this.createCard(),
 			},
 			{
 				id: 'z2k-create-card-from-selected-text',
-				name: `Create ${cardRefNameLower(this.settings)} from selected text`,
+				name: `Create ${cardRefNameUpper(this.settings)} From Selected Text`,
 				editorCheckCallback: (checking, editor) => {
 					const selectedText = editor.getSelection();
 					if (checking) { return selectedText.length > 0; } // Only enable if text is selected
@@ -968,8 +968,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				},
 			},
 			{
-				id: 'z2k-convert-file-to-card',
-				name: `Apply template to ${cardRefNameLower(this.settings)}`,
+				id: 'z2k-apply-template-to-file',
+				name: `Apply Template to ${cardRefNameUpper(this.settings)}`,
 				checkCallback: (checking) => {
 					const activeFile = this.app.workspace.getActiveFile();
 					// Only enable if there's an active file and it's a markdown file
@@ -979,7 +979,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			},
 			{
 				id: 'z2k-continue-filling-card',
-				name: `Continue filling ${cardRefNameLower(this.settings)}`,
+				name: `Continue Filling ${cardRefNameUpper(this.settings)}`,
 				editorCheckCallback: (checking, editor) => {
 					const activeFile = this.app.workspace.getActiveFile();
 					if (checking) { return !!activeFile && activeFile.extension === 'md'; }
@@ -988,7 +988,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			},
 			{
 				id: 'z2k-insert-block-template',
-				name: 'Insert block template',
+				name: 'Insert Block Template',
 				editorCheckCallback: (checking, editor) => {
 					const file = this.app.workspace.getActiveFile();
 					if (checking) {
@@ -1000,7 +1000,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			},
 			{
 				id: 'z2k-insert-block-template-from-selection',
-				name: 'Insert block template using selected text',
+				name: 'Insert Block Template Using Selected Text',
 				editorCheckCallback: (checking, editor) => {
 					const file = this.app.workspace.getActiveFile();
 					if (checking) {
@@ -1012,7 +1012,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			},
 			{
 				id: 'z2k-process-command-queue',
-				name: 'Process command queue now',
+				name: 'Process Command Queue Now',
 				checkCallback: (checking) => {
 					if (!this.settings.offlineCommandQueueEnabled) return false;
 					if (checking) return true;
@@ -1025,7 +1025,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			},
 			// {
 			// 	id: 'z2k-enable-template-editing',
-			// 	name: 'Enable template editing mode',
+			// 	name: 'Enable Template Editing Mode',
 			// 	checkCallback: (checking) => {
 			// 		if (checking) { return !this.settings.templateEditingEnabled; }
 			// 		this.enableTemplateEditing();
@@ -1033,7 +1033,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			// },
 			// {
 			// 	id: 'z2k-disable-template-editing',
-			// 	name: 'Disable template editing mode',
+			// 	name: 'Disable Template Editing Mode',
 			// 	checkCallback: (checking) => {
 			// 		if (checking) { return this.settings.templateEditingEnabled; }
 			// 		this.disableTemplateEditing();
@@ -1041,7 +1041,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			// },
 			{
 				id: "z2k-convert-file-to-template",
-				name: "Convert to document template",
+				name: "Convert to Document Template",
 				checkCallback: (checking) => {
 					let file = this.app.workspace.getActiveFile();
 					if (checking) { return !!file && this.getFileTemplateTypeSync(file) !== "document-template"; }
@@ -1050,7 +1050,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			},
 			{
 				id: "z2k-convert-file-to-block-template",
-				name: "Convert to block template",
+				name: "Convert to Block Template",
 				checkCallback: (checking) => {
 					let file = this.app.workspace.getActiveFile();
 					if (checking) { return !!file && this.getFileTemplateTypeSync(file) !== "block-template"; }
@@ -1059,7 +1059,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			},
 			{
 				id: "z2k-convert-file-to-md-template",
-				name: "Convert to markdown template",
+				name: "Convert to Markdown Template",
 				checkCallback: (checking) => {
 					let file = this.app.workspace.getActiveFile();
 					// Only show if file has .template or .block extension
@@ -1069,7 +1069,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			},
 			{
 				id: "z2k-convert-file-to-md",
-				name: "Convert to content file",
+				name: "Convert to Content File",
 				checkCallback: (checking) => {
 					let file = this.app.workspace.getActiveFile();
 					if (checking) { return !!file && this.getFileTemplateTypeSync(file) !== "content-file"; }
@@ -1078,7 +1078,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			},
 			{
 				id: "z2k-toggle-template-visibility",
-				name: this.settings.templateExtensionsVisible ? "Make .template and .block templates hidden" : "Make .template and .block templates visible",
+				name: this.settings.templateExtensionsVisible ? "Make .template and .block Templates Hidden" : "Make .template and .block Templates Visible",
 				checkCallback: (checking) => {
 					// Only show if useTemplateFileExtensions is enabled
 					if (checking) { return this.settings.useTemplateFileExtensions; }
@@ -1138,7 +1138,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				const selectedText = editor.getSelection();
 				if (selectedText.length === 0) return;
 				menu.addItem((item) => {
-					item.setTitle(`Z2K: Create ${cardRefNameLower(this.settings)} from selection...`)
+					item.setTitle(`Z2K: Create ${cardRefNameUpper(this.settings)} From Selection...`)
 						.onClick(() => {
 							this.createCard({ fromSelection: true });
 						});
@@ -1150,7 +1150,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			this.app.workspace.on("file-menu", (menu, folder) => {
 				if (!(folder instanceof TFolder)) return;
 				menu.addItem((item) => {
-					item.setTitle(`Z2K - Create new ${cardRefNameLower(this.settings)} here`)
+					item.setTitle(`Z2K: Create New ${cardRefNameUpper(this.settings)} Here...`)
 						.onClick(() => this.createCard({ cardTypeFolder: pathFolderFromTFolder(folder as TFolder) }));
 				});
 			})
@@ -1164,7 +1164,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				const selectedText = editor.getSelection();
 				if (selectedText.length > 0) return;
 				menu.addItem((item) => {
-					item.setTitle("Z2K: Insert block template...")
+					item.setTitle("Z2K: Insert Block Template...")
 						.onClick(() => {
 							this.insertBlock();
 						});
@@ -1180,7 +1180,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				const selectedText = editor.getSelection();
 				if (selectedText.length === 0) return;
 				menu.addItem((item) => {
-					item.setTitle("Z2K: Insert block template using selection...")
+					item.setTitle("Z2K: Insert Block Template Using Selection...")
 						.onClick(() => {
 							this.insertBlock({ fromSelection: true });
 						});
@@ -1192,7 +1192,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		// 	// Toggle command
 		// 	this.addCommand({
 		// 		id: 'z2k-enable-template-editing',
-		// 		name: 'Enable template editing mode',
+		// 		name: 'Enable Template Editing Mode',
 		// 		checkCallback: (checking) => {
 		// 			if (checking) { return !this.settings.templateEditingEnabled; }
 		// 			this.enableTemplateEditing();
@@ -1200,7 +1200,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		// 	});
 		// 	this.addCommand({
 		// 		id: 'z2k-disable-template-editing',
-		// 		name: 'Disable template editing mode',
+		// 		name: 'Disable Template Editing Mode',
 		// 		checkCallback: (checking) => {
 		// 			if (checking) { return this.settings.templateEditingEnabled; }
 		// 			this.disableTemplateEditing();
@@ -1210,10 +1210,10 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		// 	this.registerEvent(
 		// 		this.app.workspace.on('file-menu', (menu, file) => {
 		// 			if (this.settings.templateEditingEnabled) {
-		// 				menu.addItem(i => i.setTitle("Z2K - Disable template editing mode")
+		// 				menu.addItem(i => i.setTitle("Z2K: Disable Template Editing Mode")
 		// 					.onClick(() => this.disableTemplateEditing()));
 		// 			} else {
-		// 				menu.addItem(i => i.setTitle("Z2K - Enable template editing mode")
+		// 				menu.addItem(i => i.setTitle("Z2K: Enable Template Editing Mode")
 		// 					.onClick(() => this.enableTemplateEditing()));
 		// 			}
 		// 		})
@@ -1223,10 +1223,10 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		// 		// @ts-ignore
 		// 		this.app.workspace.on('folder-menu', (menu, folder) => {
 		// 			if (this.settings.templateEditingEnabled) {
-		// 				menu.addItem((i: any) => i.setTitle("Z2K - Disable template editing mode")
+		// 				menu.addItem((i: any) => i.setTitle("Z2K: Disable Template Editing Mode")
 		// 					.onClick(() => this.disableTemplateEditing()));
 		// 			} else {
-		// 				menu.addItem((i: any) => i.setTitle("Z2K - Enable template editing mode")
+		// 				menu.addItem((i: any) => i.setTitle("Z2K: Enable Template Editing Mode")
 		// 					.onClick(() => this.enableTemplateEditing()));
 		// 			}
 		// 		})
@@ -1238,7 +1238,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			this.app.workspace.on("file-menu", (menu, file) => {
 				if (!(file instanceof TFile) || this.getFileTemplateTypeSync(file) === "document-template") { return; }
 				menu.addItem((item) => {
-					item.setTitle("Z2K - Convert to document template")
+					item.setTitle("Z2K: Convert to Document Template")
 						.onClick(() => this.convertFileTemplateType(file as TFile, "document-template"));
 				});
 			})
@@ -1247,7 +1247,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			this.app.workspace.on("file-menu", (menu, file) => {
 				if (!(file instanceof TFile) || this.getFileTemplateTypeSync(file) === "block-template") { return; }
 				menu.addItem((item) => {
-					item.setTitle("Z2K - Convert to block template")
+					item.setTitle("Z2K: Convert to Block Template")
 						.onClick(() => this.convertFileTemplateType(file as TFile, "block-template"));
 				});
 			})
@@ -1257,7 +1257,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				// Only show for .template or .block files
 				if (!(file instanceof TFile) || (file.extension !== "template" && file.extension !== "block")) { return; }
 				menu.addItem((item) => {
-					item.setTitle("Z2K - Convert to markdown template")
+					item.setTitle("Z2K: Convert to Markdown Template")
 						.onClick(() => this.convertToMarkdownTemplate(file as TFile));
 				});
 			})
@@ -1266,7 +1266,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			this.app.workspace.on("file-menu", (menu, file) => {
 				if (!(file instanceof TFile) || this.getFileTemplateTypeSync(file) === "content-file") { return; }
 				menu.addItem((item) => {
-					item.setTitle("Z2K - Convert to content file")
+					item.setTitle("Z2K: Convert to Content File")
 						.onClick(() => this.convertFileTemplateType(file as TFile, "content-file"));
 				});
 			})
@@ -2003,11 +2003,9 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		try {
 			let content = await this.app.vault.read(opts.existingFile);
 			let state = await this.parseTemplate(content, "", "", pathFileFromTFile(opts.existingFile));
-			// Add global block and system blocks YAML for field values
+			// Add global block YAML for field values (system blocks already in note from creation)
 			let globalBlockYaml = Z2KYamlDoc.splitFrontmatter(this.settings.globalBlock).fm;
-			let systemBlocksContent = await this.GetSystemBlocksContent(pathFolderFromTFolder(opts.existingFile.parent as TFolder));
-			let systemBlocksYaml = Z2KYamlDoc.splitFrontmatter(systemBlocksContent).fm;
-			await this.addYamlFieldValues(state, [globalBlockYaml, systemBlocksYaml]);
+			await this.addYamlFieldValues(state, [globalBlockYaml]);
 			await this.addPluginBuiltIns(state, { existingTitle: opts.existingFile.basename, fileCreationDate: opts.existingFile.stat.ctime });
 			this.handleOverrides(state, opts.fieldOverrides, opts.uriKeys ?? new Set(), opts.promptMode || "all");
 			let hasFillableFields = this.hasFillableFields(state.fieldInfos);
@@ -2351,12 +2349,12 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			// Show: register extensions as markdown
 			// @ts-expect-error: internal API
 			this.app.viewRegistry.registerExtensions(["template", "block"], "markdown");
-			new Notice("Template files are now visible.");
+			new Notice("Template files are now visible");
 		} else {
 			// Hide: unregister extensions
 			// @ts-expect-error: internal API
 			this.app.viewRegistry.unregisterExtensions(["template", "block"]);
-			new Notice("Template files are now hidden.");
+			new Notice("Template files are now hidden");
 		}
 		this.settings.templateExtensionsVisible = visible;
 		await this.saveData(this.settings);

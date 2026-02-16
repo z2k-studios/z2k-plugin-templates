@@ -7,7 +7,7 @@ aliases:
 - create card from selected text
 ---
 
-# Create file from selected text
+# Create File From Selected Text
 Creates a new file from a template, passing the currently selected text as input data. Useful for quickly turning a phrase or paragraph into a fully-formed templated file.
 
 > [!NOTE] Command Name
@@ -16,7 +16,7 @@ Creates a new file from a template, passing the currently selected text as input
 ## Availability
 Available in the Command Palette when **text is selected** in the active editor.
 
-If no text is selected, this command won't appear in the Command Palette. Use [[Create new file]] instead.
+If no text is selected, this command won't appear in the Command Palette. Use [[Create New File]] instead.
 
 ## What It Does
 When you run this command:
@@ -61,9 +61,9 @@ created: {{date}}
 ## Tips
 A few tips for making this command even more powerful:
 - Works well for "clip and file" workflows – select interesting text, immediately create a dedicated note
-- See the tip [[#Create file from selected text|above]] on using the selected text to fill in fields for the template.
+- See the tip [[#Create File From Selected Text|above]] on using the selected text to fill in fields for the template.
 
 ## Related Commands
 Siblings:
-- [[Create new file]] – Same workflow without selection
-- [[Insert block template using selected text]] – Insert a block using selection, rather than creating a new file
+- [[Create New File]] – Same workflow without selection
+- [[Insert Block Template Using Selected Text]] – Insert a block using selection, rather than creating a new file

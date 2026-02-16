@@ -16,7 +16,7 @@ Just starting out and need some tutorials on how to use [[Z2K Templates]]? These
 - How to add Temporary Comments into Your Templates To Guide Their Use
 - How to Use Z2K Fields Inside YAML Metadata
 - How to create a callout hotkey
-	- [[Insert block template using selected text#Example Block Template|insert block template from selection]]
+	- [[Insert Block Template Using Selected Text#Example Block Template|insert block template from selection]]
 	- Use the insert block for selected text function
 	- Make a variant without selected text 
 	- Add a [[User Defined Helper Functions|Custom Helper Functions]] to format a string to have every line have a preceeding "> " to it from the selection

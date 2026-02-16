@@ -16,7 +16,7 @@ Inserts a [[Block Templates|block template]], using the currently selected text 
 | - | - | - |
 | Editor context menu | Yes | Text is selected, in a `.md` file |
 | File explorer menu | No | — |
-| Command Palette | Yes | See [[Insert block template using selected text]] |
+| Command Palette | Yes | See [[Insert Block Template Using Selected Text]] |
 
 > [!TIP] See Command Palette Documentation
-> This is the context menu version of [[Insert block template using selected text]]. See that page for full details on how the command works, how selections are used, and example templates.
+> This is the context menu version of [[Insert Block Template Using Selected Text]]. See that page for full details on how the command works, how selections are used, and example templates.

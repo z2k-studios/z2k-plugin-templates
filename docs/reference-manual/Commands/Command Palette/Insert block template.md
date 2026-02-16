@@ -4,7 +4,7 @@ sidebar_class_name: z2k-code
 aliases:
 - insert block template
 ---
-# Insert block template
+# Insert Block Template
 Inserts a [[Block Templates|block template]] at the current cursor position. Block templates are reusable content fragments – checklists, sections, boilerplate – that you can drop into any file.
 
 ## Availability
@@ -12,7 +12,7 @@ Available in the Command Palette when:
 - The **active file is a markdown file** (`.md`)
 - **No text is selected** in the editor
 
-If text is selected, use [[Insert block template using selected text]] instead.
+If text is selected, use [[Insert Block Template Using Selected Text]] instead.
 
 ## What It Does
 When you run this command:
@@ -43,7 +43,7 @@ You have a block template called "Status Update" containing:
 ```
 
 1. Open any project file and place your cursor where you want the status section
-2. Run **Insert block template**
+2. Run **Insert Block Template**
 3. Select "Status Update"
 4. Fill in the prompted fields
 5. The completed status section appears at your cursor
@@ -53,13 +53,13 @@ You have a block template called "Status Update" containing:
 - Keep block templates focused – one section or component per template
 - Use `{{field-info}}` in block templates to customize prompts for each field
 - Use [[Storing Field Values in YAML|YAML Field Storage]] techniques to re-use document-level fields inside the inserted blocks - see the [[Storing Field Values in YAML#Example Book Quotes with Block Templates]]
-- For text-selected insertion, see [[Insert block template using selected text]]
+- For text-selected insertion, see [[Insert Block Template Using Selected Text]]
 - To automatically insert blocks in your document templates, use the handlebars [[Partials]] syntax (see also [[How Do You Use Block Templates]]).
 
 ## Related Commands
-- [[Insert block template using selected text]] – Same but passes selection to the block
-- [[Create new file]] – For creating entire files from templates
-- [[Convert to block template]] – To turn existing content into a reusable block
+- [[Insert Block Template Using Selected Text]] – Same but passes selection to the block
+- [[Create New File]] – For creating entire files from templates
+- [[Convert to Block Template]] – To turn existing content into a reusable block
 
 
 

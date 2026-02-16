@@ -4,7 +4,7 @@ sidebar_class_name: z2k-code
 aliases:
 - convert to content file
 ---
-# Convert to content file
+# Convert to Content File
 Removes template status from a file, turning it into an ordinary content file. The file will no longer appear in template pickers or function as a template.
 
 ## Availability
@@ -72,6 +72,6 @@ For a clean separation, be sure to move the file to a non-template location afte
 - `z2k_template_type` property is removed from YAML
 
 ## Related Commands
-- [[Convert to document template]] – Make a file into a document template
-- [[Convert to block template]] – Make a file into a block template
+- [[Convert to Document Template]] – Make a file into a document template
+- [[Convert to Block Template]] – Make a file into a block template
 

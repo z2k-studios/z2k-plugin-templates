@@ -6,7 +6,7 @@ aliases:
 - make .template and .block templates hidden
 - toggle template visibility
 ---
-# Make .template and .block templates visible-hidden
+# Make .template and .block Templates Visible-Hidden
 Toggles whether `.template` and `.block` files appear in Obsidian's file explorer. This is a visibility switch – it doesn't change the files themselves, only whether you see them while working.
 
 > [!NOTE] Advanced Feature
@@ -15,8 +15,8 @@ Toggles whether `.template` and `.block` files appear in Obsidian's file explore
 ## What It Does
 This is a toggle command. Its name changes based on current state:
 
-- **Make .template and .block templates visible** – Shows template files in the file explorer
-- **Make .template and .block templates hidden** – Hides template files from the file explorer
+- **Make .template and .block Templates Visible** – Shows template files in the file explorer
+- **Make .template and .block Templates Hidden** – Hides template files from the file explorer
 
 When **visible:**
 - `.template` and `.block` files appear in the file explorer
@@ -49,9 +49,9 @@ Hidden mode is a good default for mature systems where templates change infreque
 
 ## Typical Workflow
 
-1. **Reveal templates** – Run **Make .template and .block templates visible**
+1. **Reveal templates** – Run **Make .template and .block Templates Visible**
 2. **Edit or refactor** – Find and modify your `.template` and `.block` files
-3. **Hide templates again** – Run **Make .template and .block templates hidden**
+3. **Hide templates again** – Run **Make .template and .block Templates Hidden**
 
 This keeps template maintenance explicit and bounded.
 
@@ -68,17 +68,17 @@ It only controls whether these files appear in Obsidian's navigation UI.
 ## Practical Example
 You need to update templates for your person cards:
 
-1. Run **Make .template and .block templates visible**
+1. Run **Make .template and .block Templates Visible**
 2. Navigate to your [[Template Folders]] and open:
    - `Person – Base.template`
    - `Person – Contact Info.block`
 3. Make your changes, test them
-4. Run **Make .template and .block templates hidden** to return to a content-focused workspace
+4. Run **Make .template and .block Templates Hidden** to return to a content-focused workspace
 
 ## Related Commands
 
-- [[Convert to document template]] – Create or convert to `.template` files
-- [[Convert to block template]] – Create or convert to `.block` files
+- [[Convert to Document Template]] – Create or convert to `.template` files
+- [[Convert to Block Template]] – Create or convert to `.block` files
 
 
 > [!DANGER]

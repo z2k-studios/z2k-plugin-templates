@@ -5,7 +5,7 @@ aliases:
 - convert to block template
 ---
 
-# Convert to block template
+# Convert to Block Template
 Turns the current file into a [[Block Templates|block template]] – a reusable content fragment that can be inserted into other files. The command marks the file as a block template and optionally changes its file extension.
 
 ## Availability
@@ -17,7 +17,7 @@ When you run this command:
 - Sets the [[z2k_template_type]] YAML property to `block-template`
 - If [[Use Template File Extensions|template file extensions are enabled]], changes the file extension to `.block`
 
-The file becomes a building block – a reusable piece of structure that can be embedded via [[Insert block template]].
+The file becomes a building block – a reusable piece of structure that can be embedded via [[Insert Block Template]].
 
 ### YAML Before and After
 
@@ -68,12 +68,12 @@ Behavior depends on whether [[Use Template File Extensions|template file extensi
 **Extensions enabled:**
 - File is renamed to `.block`
 - YAML type is set to `block-template`
-- If templates are [[Make .template and .block templates visible-hidden|hidden]], the file disappears from navigation
+- If templates are [[Make .template and .block Templates Visible-Hidden|hidden]], the file disappears from navigation
 - Tools ignoring non-`.md` files will exclude it, reducing [[Template Pollution]]
 
 ## Related Commands
-- [[Convert to document template]] – Mark as a document template instead
-- [[Convert to markdown template]] – Revert a `.block` file back to `.md`
-- [[Convert to content file]] – Remove template status entirely
-- [[Insert block template]] – Use block templates in your files
+- [[Convert to Document Template]] – Mark as a document template instead
+- [[Convert to Markdown Template]] – Revert a `.block` file back to `.md`
+- [[Convert to Content File]] – Remove template status entirely
+- [[Insert Block Template]] – Use block templates in your files
 

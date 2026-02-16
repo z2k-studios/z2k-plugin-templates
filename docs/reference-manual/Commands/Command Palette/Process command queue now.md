@@ -5,7 +5,7 @@ aliases:
 - process command queue now
 - process queue
 ---
-# Process command queue now
+# Process Command Queue Now
 Immediately processes any pending commands in the offline [[Command Queues|command queue]]. This is an advanced command for users who have enabled command queuing for external integrations.
 
 ## Availability

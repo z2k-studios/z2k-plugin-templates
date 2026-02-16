@@ -31,7 +31,7 @@ The system operates on a simple loop:
 5. Some commands may be marked for reattempts and will be retried on the next cycle
 6. Failed commands are either retried or moved to a `failed/` subfolder
 
-The queue is also available on-demand through the **[[Process command queue now]]** command in the Command Palette.
+The queue is also available on-demand through the **[[Process Command Queue Now]]** command in the Command Palette.
 
 ## Example
 Suppose you have a template at `Templates/Reading Note.md` with fields for `{{bookTitle}}`, `{{author}}`, and `{{genre}}`. You can create a note without opening Obsidian's UI by writing this file into the queue directory:

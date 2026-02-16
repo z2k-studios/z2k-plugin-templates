@@ -5,7 +5,7 @@ aliases:
 - insert block template using selected text
 - insert block template from selection
 ---
-# Insert block template using selected text
+# Insert Block Template Using Selected Text
 Inserts a [[Block Templates|block template]] at the current cursor position, passing the selected text as input data. The selection can be used within the block template as a field value.
 
 ## Availability
@@ -13,7 +13,7 @@ Available in the Command Palette when:
 - The **active file is a markdown file** (`.md`)
 - **Text is selected** in the editor
 
-If no text is selected, use [[Insert block template]] instead.
+If no text is selected, use [[Insert Block Template]] instead.
 
 ## What It Does
 When you run this command:
@@ -40,7 +40,7 @@ A "Callout" block template that wraps selected text:
 
 ### Example Usage
 1. Select the text: "Remember to update the API keys before deploying"
-2. Run **Insert block template using selected text**
+2. Run **Insert Block Template Using Selected Text**
 3. Select the "Callout" block template
 4. Enter callout type: "warning", title: "Deployment Reminder"
 5. Confirm that the selected text is what you wish to use for the calloutText field by touch the input box.
@@ -58,8 +58,8 @@ A "Callout" block template that wraps selected text:
 - Combine with [[field-info Helper|field-info]] to offer the selection as a suggestion rather than forcing its use
 
 ## Related Commands
-- [[Insert block template]] – Insert a block without using a selection
-- [[Create file from selected text]] – Create a new file from selected text instead of inserting a block
+- [[Insert Block Template]] – Insert a block without using a selection
+- [[Create File From Selected Text]] – Create a new file from selected text instead of inserting a block
 
 > [!DANGER]
 > - Check if multi-line selections work correctly, especially with indentation

@@ -41,7 +41,7 @@ Once a block template is stable, you can convert it from `.md` to `.block` to hi
 
 ## Disadvantages of using .block file extensions
 - The .block file disappears from Obsidian and is not longer directly editable
-	- Although, you can use the [[Make .template and .block templates visible-hidden]] command to re-enable them 
+	- Although, you can use the [[Make .template and .block Templates Visible-Hidden]] command to re-enable them 
 - Some Obsidian tools ignore non-.md files
     - Core properties panel will not show up.
     - Some plugins (especially Dataview, calendar tools, content dashboards) may skip reading .template files altogether.

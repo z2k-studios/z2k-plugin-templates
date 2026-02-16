@@ -32,12 +32,12 @@ The following commands include your chosen term:
 
 | Default (File) | With "Note" | With "Card" |
 | - | - | - |
-| Create new file | Create new note | Create new card |
-| Create file from selected text | Create note from selected text | Create card from selected text |
-| Apply template to file | Apply template to note | Apply template to card |
-| Continue filling file | Continue filling note | Continue filling card |
+| Create New File | Create New Note | Create New Card |
+| Create File From Selected Text | Create Note From Selected Text | Create Card From Selected Text |
+| Apply Template to File | Apply Template to Note | Apply Template to Card |
+| Continue Filling File | Continue Filling Note | Continue Filling Card |
 
-Commands that don't reference content files – like [[Insert block template]] or [[Convert to document template]] – remain unchanged regardless of this setting.
+Commands that don't reference content files – like [[Insert Block Template]] or [[Convert to Document Template]] – remain unchanged regardless of this setting.
 
 ## Changing the Setting
 

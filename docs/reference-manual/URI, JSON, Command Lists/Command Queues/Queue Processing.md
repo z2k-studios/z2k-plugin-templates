@@ -29,7 +29,7 @@ On plugin load, the first scan is deliberately delayed by one full frequency int
 ## Manual Processing
 The Command Palette includes a dedicated command:
 
-**[[Process command queue now]]**
+**[[Process Command Queue Now]]**
 
 This triggers an immediate scan regardless of the timer. It's useful for:
 - Testing a command you just placed in the queue

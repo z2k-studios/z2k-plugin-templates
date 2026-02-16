@@ -33,7 +33,7 @@ A simple block template for adding a task to a file:
 ```
 
 Insert it via:
-- The [[Insert block template]] command in Obsidian
+- The [[Insert Block Template]] command in Obsidian
 - Inside another template using the handlebars [[Partials|partial]] command, e.g.`{{> task-block}}`
 
 

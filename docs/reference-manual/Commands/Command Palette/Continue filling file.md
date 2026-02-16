@@ -6,7 +6,7 @@ aliases:
 - continue filling note
 - continue filling card
 ---
-# Continue filling file
+# Continue Filling File
 Resumes the prompting process for a file that has unfilled [[Template Fields]]. Use this when you [[Deferred Field Resolution|deferred]] fields during initial creation or when you want to complete a partially-filled template.
 
 > [!NOTE] Command Name
@@ -34,9 +34,9 @@ When you run this command:
 
 ## Example Workflow
 An example of a workflow for tracking tasks:
-1. Create a new file for a task using [[Create new file]]
+1. Create a new file for a task using [[Create New File]]
 2. When prompted for `{{dueDate}}`, click **Skip** – the field remains as `{{dueDate}}`
-3. Later, open the file and run **Continue filling file**
+3. Later, open the file and run **Continue Filling File**
 4. You're prompted for `{{dueDate}}` again – this time enter "2024-02-01"
 5. The file now shows "2024-02-01" where `{{dueDate}}` was
 
@@ -47,8 +47,8 @@ An example of a workflow for tracking tasks:
 - If you are done, use the [[Finalization|Finalize]] command to remove all remaining fields.
 
 ## Related Commands
-- [[Create new file]] – Initial file creation where deferral begins
+- [[Create New File]] – Initial file creation where deferral begins
 - [[Finalize file]] – Finalizes a file to remove all remaining unknown fields
-- [[Insert block template]] – Block templates can also have deferred fields
+- [[Insert Block Template]] – Block templates can also have deferred fields
 
 

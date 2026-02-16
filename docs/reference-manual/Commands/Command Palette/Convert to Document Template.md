@@ -4,7 +4,7 @@ sidebar_class_name: z2k-code
 aliases:
 - convert to document template
 ---
-# Convert to document template
+# Convert to Document Template
 Turns the current file into a [[Types of Template Files#Document Templates|document template]] – a reusable pattern for creating new files. The command marks the file as a document template and optionally changes its file extension.
 
 ## Availability
@@ -47,13 +47,13 @@ Use this command when:
 - You're ready to treat a file as the canonical pattern for a file type
 - You want to convert a `.md` template to use the `.template` extension
 
-Document templates typically live in [[Template Folders]] and are used by [[Create new file]] and related commands.
+Document templates typically live in [[Template Folders]] and are used by [[Create New File]] and related commands.
 
 > [!NOTE] Move into a Template Folder
 > If you're converting a content file into a document template and not using [[Template File Extensions]], then you'll also need to move it into a [[Template Folders|template folder]] for it to appear in template pickers.
 
 > [!WARNING] Template Disappeared?
-> If your file vanishes from the file explorer after this command, you likely have [[Use Template File Extensions|template extensions enabled]] and templates are currently [[Make .template and .block templates visible-hidden|hidden]]. Run **Make .template and .block templates visible** to see it again.
+> If your file vanishes from the file explorer after this command, you likely have [[Use Template File Extensions|template extensions enabled]] and templates are currently [[Make .template and .block Templates Visible-Hidden|hidden]]. Run **Make .template and .block Templates Visible** to see it again.
 
 ## How It Interacts with File Extensions
 Behavior depends on whether [[Use Template File Extensions|template file extensions are enabled]]:
@@ -66,11 +66,11 @@ Behavior depends on whether [[Use Template File Extensions|template file extensi
 **File Extensions enabled:**
 - File is renamed to `.template`
 - YAML type is set to `document-template`
-- If templates are [[Make .template and .block templates visible-hidden|hidden]], the file disappears from navigation
+- If templates are [[Make .template and .block Templates Visible-Hidden|hidden]], the file disappears from navigation
 - Tools focused on `.md` files will exclude it from content views
 
 ## Related Commands
-- [[Convert to block template]] – Mark as a block template instead
-- [[Convert to markdown template]] – Revert a `.template` file back to `.md`
-- [[Convert to content file]] – Remove template status entirely
+- [[Convert to Block Template]] – Mark as a block template instead
+- [[Convert to Markdown Template]] – Revert a `.template` file back to `.md`
+- [[Convert to Content File]] – Remove template status entirely
 
