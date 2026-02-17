@@ -981,7 +981,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			},
 			{
 				id: "z2k-convert-file-to-md-template",
-				name: "Convert to Markdown Template",
+				name: "Switch to .md Extension",
 				checkCallback: (checking) => {
 					let file = this.app.workspace.getActiveFile();
 					// Only show if file has .template or .block extension
@@ -1214,7 +1214,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				// Only show for .template or .block files
 				if (!(file instanceof TFile) || (file.extension !== "template" && file.extension !== "block")) { return; }
 				menu.addItem((item) => {
-					item.setTitle("Z2K: Convert to Markdown Template")
+					item.setTitle("Z2K: Switch to .md Extension")
 						.onClick(() => this.convertToMarkdownTemplate(file as TFile));
 				});
 			})
