@@ -29,37 +29,69 @@
 	width: 100%;
 }
 
-/* Quick Create Commands */
-.z2k-settings .setting-item:has(.quick-create-rows) {
-	flex-direction: column;
-	align-items: stretch;
+/* Quick Commands Modal */
+.quick-commands-modal {
+	width: 700px;
+	max-width: 90vw;
 }
-.z2k-settings .quick-create-rows {
+.quick-commands-editor {
 	display: flex;
 	flex-direction: column;
-	gap: 8px;
-	margin-top: 12px;
+	gap: 12px;
 }
-.z2k-settings .command-row {
+.quick-commands-empty {
+	color: var(--text-muted);
+	padding: 16px 0;
+	text-align: center;
+}
+.quick-command-card {
+	display: flex;
+	gap: 12px;
+	align-items: flex-start;
+	padding: 12px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 8px;
+	background: var(--setting-items-background);
+}
+.quick-command-fields {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+.quick-command-fields label {
 	display: flex;
 	align-items: center;
 	gap: 8px;
+	font-size: var(--font-ui-small);
+	color: var(--text-muted);
+	white-space: nowrap;
 }
-.z2k-settings .command-row input[type="text"] {
+.quick-command-fields label input[type="text"],
+.quick-command-fields label select {
 	flex: 1;
 	min-width: 0;
+	padding: 4px 8px;
 }
-.z2k-settings .command-buttons {
+.quick-command-controls {
 	display: flex;
-	gap: 4px;
+	flex-direction: column;
+	gap: 2px;
 }
-.z2k-settings .command-buttons .is-disabled {
+.quick-command-controls button:disabled {
 	opacity: 0.3;
 	pointer-events: none;
 }
-.z2k-settings .quick-create-rows > button {
-	align-self: flex-end;
-	margin-top: 4px;
+.quick-commands-actions {
+	display: flex;
+	justify-content: flex-end;
+}
+.quick-commands-footer {
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
+	padding-top: 12px;
+	border-top: 1px solid var(--background-modifier-border);
 }
 
 

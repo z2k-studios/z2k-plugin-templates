@@ -21,10 +21,13 @@ interface Z2KTemplatesPluginSettings {
 	creator: string;
 	templatesFolderName: string;
 	cardReferenceName: string;
-	dynamicCardCommands: Array<{
+	quickCommands: Array<{
 		id: string; // stable id (to retain keyboard shortcuts)
 		name: string; // display name
-		targetFolder: string; // vault-relative path to folder
+		action: "create" | "insert"; // create file or insert block
+		targetFolder: string; // vault-relative path to folder, empty = prompt
+		templateFile: string; // vault-relative path to template, empty = prompt
+		sourceText: "none" | "selection" | "clipboard"; // source text to pass to template
 	}>;
 	offlineCommandQueueEnabled: boolean; // Whether offline command queue processing is enabled
 	offlineCommandQueueDir: string; // Directory for offline command queue (JSON/JSONL files)
@@ -46,7 +49,7 @@ const DEFAULT_SETTINGS: Z2KTemplatesPluginSettings = {
 	creator: '',
 	templatesFolderName: 'Templates',
 	cardReferenceName: 'note',
-	dynamicCardCommands: [],
+	quickCommands: [],
 	offlineCommandQueueEnabled: true,
 	offlineCommandQueueDir: '.obsidian/plugins/z2k-plugin-templates/command-queue',
 	offlineCommandQueueFrequency: '60s',
@@ -152,8 +155,6 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 	private refs = {
 		descTemplatesRootFolder: null as Setting | null,
 		descEmbeddedTemplatesFolderName: null as Setting | null,
-		quickCreateDesc: null as HTMLElement | null,
-		commandsContainer: null as HTMLElement | null,
 	}
 
 	constructor(app: App, plugin: Z2KTemplatesPlugin) {
@@ -170,7 +171,6 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 				href: 'https://z2k-studios.github.io/z2k-plugin-templates-docs/docs/reference-manual/Template%20Folders',
 			});
 		}));
-		this.refs.quickCreateDesc?.setText(`You can create custom commands to quickly create ${cardRefNameLowerPlural(this.plugin.settings)} in specific folders. These commands will appear in the command palette and can be assigned keyboard shortcuts.`);
 	}
 
 	display(): void {
@@ -480,11 +480,16 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 					await this.plugin.saveData(this.plugin.settings);
 				}));
 
-		containerEl.createEl('h3', {text: 'Quick Create Commands'});
-		const commandsWrapper = containerEl.createDiv({cls: 'setting-item'});
-		this.refs.quickCreateDesc = commandsWrapper.createDiv({cls: 'setting-item-description'});
-		this.refs.commandsContainer = commandsWrapper.createDiv({cls: 'quick-create-rows'});
-		this.renderCommandRows();
+		containerEl.createEl('h3', {text: 'Quick Commands'});
+		new Setting(containerEl)
+			.setName('Quick Commands')
+			.setDesc('Commands for quickly creating files or inserting blocks from the command palette.')
+			.addButton(button => button
+				.setButtonText('Edit Quick Commands')
+				.onClick(() => {
+					new QuickCommandsModal(this.app, this.plugin).open();
+				})
+			);
 
 		containerEl.createEl('h3', {text: 'Advanced'});
 
@@ -620,89 +625,6 @@ registerHelper('recentFiles', () => {
 		this.applyDescs(); // Apply dynamic descriptions
 	}
 
-	private renderCommandRows(): void {
-		const container = this.refs.commandsContainer;
-		if (!container) { return; }
-		container.empty();
-		const dyn = this.plugin.settings.dynamicCardCommands;
-		for (let i = 0; i < dyn.length; i++) {
-			const row = container.createDiv({cls: 'command-row'});
-			// Name input
-			const nameInput = row.createEl('input', {type: 'text', placeholder: 'New Thought'});
-			nameInput.value = dyn[i].name || '';
-			nameInput.addEventListener('change', async () => {
-				const nv = nameInput.value.trim();
-				if (nv === dyn[i].name) { return; }
-				dyn[i].name = nv;
-				await this.plugin.saveData(this.plugin.settings);
-				this.plugin.queueRefreshCommands();
-			});
-			// Folder input
-			const folderInput = row.createEl('input', {type: 'text', placeholder: '/Thoughts'});
-			folderInput.value = dyn[i].targetFolder || '';
-			folderInput.addEventListener('change', async () => {
-				const nv = folderInput.value.trim();
-				if (nv === dyn[i].targetFolder) { return; }
-				dyn[i].targetFolder = nv;
-				await this.plugin.saveData(this.plugin.settings);
-				this.plugin.queueRefreshCommands();
-			});
-			// Buttons container
-			const buttons = row.createDiv({cls: 'command-buttons'});
-			// Move up
-			const upBtn = buttons.createEl('button', {cls: 'clickable-icon', attr: {'aria-label': 'Move up'}});
-			setIcon(upBtn, 'arrow-up');
-			if (i === 0) { upBtn.addClass('is-disabled'); }
-			upBtn.addEventListener('click', async () => {
-				if (i <= 0) { return; }
-				[dyn[i - 1], dyn[i]] = [dyn[i], dyn[i - 1]];
-				await this.plugin.saveData(this.plugin.settings);
-				this.plugin.queueRefreshCommands();
-				this.renderCommandRows();
-			});
-			// Move down
-			const downBtn = buttons.createEl('button', {cls: 'clickable-icon', attr: {'aria-label': 'Move down'}});
-			setIcon(downBtn, 'arrow-down');
-			if (i >= dyn.length - 1) { downBtn.addClass('is-disabled'); }
-			downBtn.addEventListener('click', async () => {
-				if (i >= dyn.length - 1) { return; }
-				[dyn[i + 1], dyn[i]] = [dyn[i], dyn[i + 1]];
-				await this.plugin.saveData(this.plugin.settings);
-				this.plugin.queueRefreshCommands();
-				this.renderCommandRows();
-			});
-			// Insert below
-			const insertBtn = buttons.createEl('button', {cls: 'clickable-icon', attr: {'aria-label': 'Insert below'}});
-			setIcon(insertBtn, 'plus');
-			insertBtn.addEventListener('click', async () => {
-				const id = Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
-				dyn.splice(i + 1, 0, {id, name: '', targetFolder: ''});
-				await this.plugin.saveData(this.plugin.settings);
-				this.plugin.queueRefreshCommands();
-				this.renderCommandRows();
-			});
-			// Delete
-			const deleteBtn = buttons.createEl('button', {cls: 'clickable-icon', attr: {'aria-label': 'Delete'}});
-			setIcon(deleteBtn, 'trash');
-			deleteBtn.addEventListener('click', async () => {
-				const id = dyn[i]?.id;
-				if (id) { this.plugin.removeCommand(id); }
-				dyn.splice(i, 1);
-				await this.plugin.saveData(this.plugin.settings);
-				this.plugin.queueRefreshCommands();
-				this.renderCommandRows();
-			});
-		}
-		// Add Command button
-		const addBtn = container.createEl('button', {cls: 'mod-cta', text: 'Add Command'});
-		addBtn.addEventListener('click', async () => {
-			const id = Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
-			dyn.push({id, name: '', targetFolder: ''});
-			await this.plugin.saveData(this.plugin.settings);
-			this.plugin.queueRefreshCommands();
-			this.renderCommandRows();
-		});
-	}
 
 	validateTextInput(
 		el: HTMLInputElement,
@@ -1098,27 +1020,62 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	}
 
 	refreshDynamicCommands(deleteExisting: boolean = true) {
-		for (const cmd of this.settings.dynamicCardCommands) {
+		for (const cmd of this.settings.quickCommands) {
 			if (deleteExisting) {
 				this.removeCommand(cmd.id); // Just returns if not found
 			}
 		}
-		// Dynamic commands for creating cards in specific folders
-		for (const cmd of this.settings.dynamicCardCommands) {
-			if (!cmd.id || !cmd.name || !cmd.targetFolder) { continue; }
+		// Quick Commands for creating cards or inserting blocks
+		for (const cmd of this.settings.quickCommands) {
+			if (!cmd.id || !cmd.name) { continue; }
 			this.addCommand({
 				id: cmd.id,
 				name: cmd.name,
-				callback: async () => {
-					const folder = this.getFolder(cmd.targetFolder);
-					if (!folder) {
-						await this.logWarn(`Target folder not found: ${cmd.targetFolder}`);
-						return;
-					}
-					await this.createCard({ cardTypeFolder: pathFolderFromTFolder(folder) });
-				},
+				callback: () => this.executeQuickCommand(cmd),
 			});
 		}
+	}
+	async executeQuickCommand(cmd: Z2KTemplatesPluginSettings["quickCommands"][number]) {
+		try {
+			// Resolve folder (empty = prompt via createCard/insertBlock defaults)
+			let folder: PathFolder | undefined;
+			if (cmd.targetFolder) {
+				const tf = this.getFolder(cmd.targetFolder);
+				if (!tf) {
+					await this.logWarn(`Target folder not found: ${cmd.targetFolder}`);
+					return;
+				}
+				folder = pathFolderFromTFolder(tf);
+			}
+			// Resolve template (empty = prompt via createCard/insertBlock defaults)
+			let template: PathFile | undefined;
+			if (cmd.templateFile) {
+				template = pathFileFrom(cmd.templateFile);
+			}
+			// Resolve source text
+			let fieldOverrides: Record<string, VarValueType> = {};
+			let fromSelection = false;
+			if (cmd.sourceText === "selection") {
+				fromSelection = true;
+			} else if (cmd.sourceText === "clipboard") {
+				fieldOverrides.sourceText = await navigator.clipboard.readText();
+			}
+			if (cmd.action === "insert") {
+				await this.insertBlock({
+					templateFile: template,
+					blockTypeFolder: folder,
+					fieldOverrides,
+					fromSelection,
+				});
+			} else {
+				await this.createCard({
+					cardTypeFolder: folder,
+					templateFile: template,
+					fieldOverrides,
+					fromSelection,
+				});
+			}
+		} catch (error) { this.handleErrors(error); }
 	}
 
 	queueRefreshCommands(delay=1000) {
@@ -2029,6 +1986,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	}
 	async insertBlock(opts?: {
 		templateFile?: PathFile,
+		blockTypeFolder?: PathFolder, // scopes which block templates are shown in the picker
 		existingFile?: TFile, // Always an indexed output file
 		destHeader?: string,
 		location?: "file-top"|"file-bottom"|"header-top"|"header-bottom"|number,
@@ -2043,8 +2001,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			if (!opts.fieldOverrides) { opts.fieldOverrides = {}; }
 			if (!opts.existingFile) { opts.existingFile = this.getOpenFileOrThrow(); }
 			if (!opts.templateFile) {
-				const currDir = pathFolderFromTFolder(this.getOpenFileOrThrow().parent as TFolder);
-				opts.templateFile = await this.promptForTemplateFile(currDir, "block-template");
+				const scopeDir = opts.blockTypeFolder ?? pathFolderFromTFolder(this.getOpenFileOrThrow().parent as TFolder);
+				opts.templateFile = await this.promptForTemplateFile(scopeDir, "block-template");
 			}
 			let editor: Editor | null = null;
 			if (!opts.location && !opts.destHeader) {
@@ -5056,6 +5014,182 @@ function EditorModalContent({
 			</div>
 		</div>
 	);
+}
+
+// ------------------------------------------------------------------------------------------------
+// Quick Commands Modal
+// ------------------------------------------------------------------------------------------------
+type QuickCommand = Z2KTemplatesPluginSettings["quickCommands"][number];
+function newQuickCommand(): QuickCommand {
+	return {
+		id: Math.random().toString(36).slice(2, 10) + Date.now().toString(36),
+		name: '',
+		action: 'create',
+		targetFolder: '',
+		templateFile: '',
+		sourceText: 'none',
+	};
+}
+function QuickCommandsModalContent({ initialCommands, onSave, onCancel }: {
+	initialCommands: QuickCommand[];
+	onSave: (commands: QuickCommand[]) => void;
+	onCancel: () => void;
+}) {
+	const [commands, setCommands] = useState<QuickCommand[]>(() =>
+		initialCommands.map(c => ({...c}))
+	);
+	const updateCommand = (index: number, updates: Partial<QuickCommand>) => {
+		setCommands(prev => prev.map((c, i) => i === index ? {...c, ...updates} : c));
+	};
+	const removeCommand = (index: number) => {
+		setCommands(prev => prev.filter((_, i) => i !== index));
+	};
+	const moveCommand = (index: number, direction: -1 | 1) => {
+		const target = index + direction;
+		if (target < 0 || target >= commands.length) { return; }
+		setCommands(prev => {
+			const next = [...prev];
+			[next[index], next[target]] = [next[target], next[index]];
+			return next;
+		});
+	};
+	const insertCommand = (afterIndex: number) => {
+		setCommands(prev => {
+			const next = [...prev];
+			next.splice(afterIndex + 1, 0, newQuickCommand());
+			return next;
+		});
+	};
+	return (
+		<div className="quick-commands-editor">
+			{commands.length === 0 && (
+				<div className="quick-commands-empty">No quick commands configured.</div>
+			)}
+			{commands.map((cmd, i) => (
+				<div key={cmd.id} className="quick-command-card">
+					<div className="quick-command-fields">
+						<label>
+							Name
+							<input
+								type="text"
+								value={cmd.name}
+								placeholder="New Thought"
+								onChange={e => updateCommand(i, {name: e.target.value})}
+							/>
+						</label>
+						<label>
+							Action
+							<select
+								value={cmd.action}
+								onChange={e => updateCommand(i, {action: e.target.value as QuickCommand["action"]})}
+							>
+								<option value="create">Create New File</option>
+								<option value="insert">Insert Block</option>
+							</select>
+						</label>
+						<label>
+							Target Folder
+							<input
+								type="text"
+								value={cmd.targetFolder}
+								placeholder="Leave empty to prompt each time"
+								onChange={e => updateCommand(i, {targetFolder: e.target.value})}
+							/>
+						</label>
+						<label>
+							Template File
+							<input
+								type="text"
+								value={cmd.templateFile}
+								placeholder="Leave empty to prompt each time"
+								onChange={e => updateCommand(i, {templateFile: e.target.value})}
+							/>
+						</label>
+						<label>
+							Source Text
+							<select
+								value={cmd.sourceText}
+								onChange={e => updateCommand(i, {sourceText: e.target.value as QuickCommand["sourceText"]})}
+							>
+								<option value="none">None</option>
+								<option value="selection">Selection</option>
+								<option value="clipboard">Clipboard</option>
+							</select>
+						</label>
+					</div>
+					<div className="quick-command-controls">
+						<button
+							className="clickable-icon"
+							aria-label="Move up"
+							disabled={i === 0}
+							onClick={() => moveCommand(i, -1)}
+						>↑</button>
+						<button
+							className="clickable-icon"
+							aria-label="Move down"
+							disabled={i === commands.length - 1}
+							onClick={() => moveCommand(i, 1)}
+						>↓</button>
+						<button
+							className="clickable-icon"
+							aria-label="Insert below"
+							onClick={() => insertCommand(i)}
+						>+</button>
+						<button
+							className="clickable-icon"
+							aria-label="Delete"
+							onClick={() => removeCommand(i)}
+						>×</button>
+					</div>
+				</div>
+			))}
+			<div className="quick-commands-actions">
+				<button
+					className="mod-cta"
+					onClick={() => setCommands(prev => [...prev, newQuickCommand()])}
+				>
+					Add Command
+				</button>
+			</div>
+			<div className="quick-commands-footer">
+				<button className="btn btn-secondary" onClick={onCancel}>Cancel</button>
+				<button className="btn btn-primary" onClick={() => onSave(commands)}>Save</button>
+			</div>
+		</div>
+	);
+}
+export class QuickCommandsModal extends Modal {
+	plugin: Z2KTemplatesPlugin;
+	root: any;
+	constructor(app: App, plugin: Z2KTemplatesPlugin) {
+		super(app);
+		this.plugin = plugin;
+	}
+	onOpen() {
+		this.modalEl.addClass('z2k', 'quick-commands-modal');
+		this.titleEl.setText('Quick Commands');
+		this.contentEl.empty();
+		this.contentEl.addClass('modal-content');
+		this.root = createRoot(this.contentEl);
+		this.root.render(
+			<ErrorBoundary onError={(error) => { new Notice(`Quick Commands error: ${error.message}`); this.close(); }}>
+				<QuickCommandsModalContent
+					initialCommands={this.plugin.settings.quickCommands}
+					onCancel={() => this.close()}
+					onSave={async (commands) => {
+						this.plugin.settings.quickCommands = commands;
+						await this.plugin.saveData(this.plugin.settings);
+						this.plugin.queueRefreshCommands();
+						this.close();
+					}}
+				/>
+			</ErrorBoundary>
+		);
+	}
+	onClose() {
+		if (this.root) { this.root.unmount(); }
+		this.contentEl.empty();
+	}
 }
 
 export class EditorModal extends Modal {
