@@ -909,6 +909,15 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				},
 			},
 			{
+				id: 'z2k-finalize-card',
+				name: `Finalize ${cardRefNameUpper(this.settings)}`,
+				checkCallback: (checking) => {
+					const activeFile = this.app.workspace.getActiveFile();
+					if (checking) { return !!activeFile && activeFile.extension === 'md'; }
+					this.continueCard({ existingFile: activeFile as TFile, promptMode: "none", finalize: true });
+				},
+			},
+			{
 				id: 'z2k-insert-block-template',
 				name: 'Insert Block Template',
 				editorCheckCallback: (checking, editor) => {
@@ -1225,6 +1234,25 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				menu.addItem((item) => {
 					item.setTitle("Z2K: Convert to Content File")
 						.onClick(() => this.convertFileTemplateType(file as TFile, "content-file"));
+				});
+			})
+		);
+		// Continue filling / Finalize context menu items
+		this.registerEvent(
+			this.app.workspace.on("file-menu", (menu, file) => {
+				if (!(file instanceof TFile) || file.extension !== "md") { return; }
+				menu.addItem((item) => {
+					item.setTitle(`Z2K: Continue Filling This ${cardRefNameUpper(this.settings)}`)
+						.onClick(() => this.continueCard({ existingFile: file as TFile }));
+				});
+			})
+		);
+		this.registerEvent(
+			this.app.workspace.on("file-menu", (menu, file) => {
+				if (!(file instanceof TFile) || file.extension !== "md") { return; }
+				menu.addItem((item) => {
+					item.setTitle(`Z2K: Finalize This ${cardRefNameUpper(this.settings)}`)
+						.onClick(() => this.continueCard({ existingFile: file as TFile, promptMode: "none", finalize: true }));
 				});
 			})
 		);
@@ -2285,6 +2313,11 @@ export default class Z2KTemplatesPlugin extends Plugin {
 					currentType = "document-template";
 				}
 			}
+			// Rename to .md first so the subsequent modify triggers a metadata cache update on a .md file
+			if (file.extension === "template" || file.extension === "block") {
+				const renamedFile = await this.renameFileExtension(file, "md");
+				if (renamedFile) { file = renamedFile; }
+			}
 			// Update YAML to ensure type is set
 			let content = await this.app.vault.read(file);
 			let { fm, body } = Z2KYamlDoc.splitFrontmatter(content);
@@ -2293,10 +2326,6 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			fm = doc.toString();
 			content = Z2KYamlDoc.joinFrontmatter(fm, body);
 			await this.app.vault.modify(file, content);
-			// Rename to .md if currently .template or .block
-			if (file.extension === "template" || file.extension === "block") {
-				await this.renameFileExtension(file, "md");
-			}
 		} catch (error) { this.handleErrors(error); }
 	}
 	async setTemplateExtensionsVisible(visible: boolean) {
