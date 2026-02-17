@@ -1,5 +1,5 @@
 
-import { App, Plugin, Modal, Notice, TAbstractFile, TFolder, TFile, PluginSettingTab, Setting, MarkdownView, Editor, Command, ToggleComponent, setIcon } from 'obsidian';
+import { App, Plugin, Modal, Notice, TAbstractFile, TFolder, TFile, PluginSettingTab, Setting, MarkdownView, Editor, Command, ToggleComponent, setIcon, DataAdapter } from 'obsidian';
 import * as obsidian from 'obsidian';
 import { Z2KTemplateEngine, Z2KYamlDoc, TemplateState, VarValueType, FieldInfo, TemplateError, Handlebars } from 'z2k-template-engine';
 import { PathFile, PathFolder, pathFileFrom, pathFolderFrom, pathFileFromTFile, pathFolderFromTFolder, normalizeFullPath, isSubPathOf, joinPath } from './paths';
@@ -2060,7 +2060,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			let hadSourceTextField = !!state.fieldInfos["sourceText"];
 			// Add global block, system blocks, and existing file YAML for field values
 			let globalBlockYaml = Z2KYamlDoc.splitFrontmatter(this.settings.globalBlock).fm;
-			let systemBlocksContent = await this.GetSystemBlocksContent(pathFolderFrom(opts.templateFile.parentPath));
+			let systemBlocksContent = await this.GetSystemBlocksContent(this.getTemplateCardType(opts.templateFile));
 			let systemBlocksYaml = Z2KYamlDoc.splitFrontmatter(systemBlocksContent).fm;
 			let existingFileContent = await this.app.vault.read(opts.existingFile);
 			let existingFileYaml = Z2KYamlDoc.splitFrontmatter(existingFileContent).fm;
@@ -2671,12 +2671,32 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		ranked.sort((a, b) => a.distance - b.distance || a.file.path.localeCompare(b.file.path));
 		return ranked.map(r => r.file);
 	}
-	// Derives the card type folder from a template's path by stripping Templates/.Templates segments.
+	// Derives the card type folder from a template's path by stripping the templates root prefix
+	// and at most one templates-named subfolder segment. Only one level of templates subfolder
+	// is supported (no templates-inside-templates); additional segments with the same name are
+	// treated as literal folder names.
 	// Callers must ensure the file is actually a template — no type check is done here.
 	getTemplateCardType(template: PathFile): PathFolder {
 		const tfn = this.settings.templatesFolderName;
-		const segments = template.parentPath.split('/').filter(s => s !== tfn && s !== '.' + tfn);
-		return pathFolderFrom(segments.join('/'));
+		const root = this.settings.templatesRootFolder;
+		let path = template.parentPath;
+		// Strip the configured templates root prefix
+		if (root && path.startsWith(root + '/')) {
+			path = path.substring(root.length + 1);
+		} else if (root && path === root) {
+			path = '';
+		}
+		// Strip at most one templates-named segment
+		const segments = path.split('/');
+		let stripped = false;
+		const result = segments.filter(s => {
+			if (!stripped && (s === tfn || s === '.' + tfn)) {
+				stripped = true;
+				return false;
+			}
+			return true;
+		});
+		return pathFolderFrom(result.join('/'));
 	}
 	// Extension priority for block templates: more specific extensions win
 	static readonly BLOCK_EXTENSIONS = ['.block', '.template', '.md'];
@@ -3114,35 +3134,61 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		}
 	}
 
+	// Walks upward from cardTypeFolder to the vault root, collecting .system-block.md files.
+	// At each ancestor level, also checks for Templates/.Templates subfolders and walks down
+	// through the corresponding path structure inside them. Each block gets a depth integer
+	// (0 = card type folder level, higher = more general). Stop files remove all blocks with
+	// depth greater than the stop's depth.
 	private async GetSystemBlocksContent(cardTypeFolder: PathFolder): Promise<string> {
-		// Get all the system block files between here and the root
-		const templatesRootPath = normalizeFullPath(this.settings.templatesRootFolder);
-		let currentPath = cardTypeFolder.path;
-		let systemBlocks: string[] = [];
+		const tfn = this.settings.templatesFolderName;
 		const adapter = this.app.vault.adapter;
-
-		while (true) {
-			const filePath = joinPath(currentPath, '.system-block.md');
-			try {
-				// Need to use adapter because the usual file read doesn't work for files that start with .
-				systemBlocks.push(await adapter.read(filePath));
-			} catch {} // Can't find/read the file
-
-			// Check for stop file - if present, don't continue to parent folders
-			const stopFilePath = joinPath(currentPath, '.system-block-stop');
-			if (await adapter.exists(stopFilePath)) break;
-
-			if (currentPath === templatesRootPath || !currentPath) break; // Stop at the templates root
-			// Walk up to parent
-			const lastSlash = currentPath.lastIndexOf('/');
-			currentPath = lastSlash >= 0 ? currentPath.substring(0, lastSlash) : '';
+		const segments = cardTypeFolder.path ? cardTypeFolder.path.split('/') : [];
+		let blocks: { content: string, depth: number }[] = [];
+		let stopDepths: number[] = [];
+		// Walk from card type folder (depth 0) up to vault root (depth = segments.length)
+		for (let level = 0; level <= segments.length; level++) {
+			const currentPath = segments.slice(0, segments.length - level).join('/');
+			const depth = level;
+			const relativeSegments = segments.slice(segments.length - level);
+			// Direct check at this ancestor
+			await this.collectSystemBlock(adapter, currentPath, depth, blocks, stopDepths);
+			// Check for templates subfolders and walk down through the relative path inside them
+			for (const variant of [tfn, '.' + tfn]) {
+				const templatesPath = joinPath(currentPath, variant);
+				if (await adapter.exists(templatesPath)) {
+					await this.collectSystemBlock(adapter, templatesPath, depth, blocks, stopDepths);
+					let walkPath = templatesPath;
+					for (let i = 0; i < relativeSegments.length; i++) {
+						walkPath = joinPath(walkPath, relativeSegments[i]);
+						await this.collectSystemBlock(adapter, walkPath, depth - (i + 1), blocks, stopDepths);
+					}
+				}
+			}
 		}
-		systemBlocks.reverse(); // So root is first
-		let yamls = systemBlocks.map(b => Z2KYamlDoc.splitFrontmatter(b).fm);
-		let bodies = systemBlocks.map(b => Z2KYamlDoc.splitFrontmatter(b).body).filter(body => body.trim() !== '');
+		// Apply stop files: remove all blocks more general than the most restrictive stop
+		if (stopDepths.length > 0) {
+			const cutoff = Math.min(...stopDepths);
+			blocks = blocks.filter(b => b.depth <= cutoff);
+		}
+		// Sort by depth descending (most general first) so last-wins favors more specific
+		blocks.sort((a, b) => b.depth - a.depth);
+		let yamls = blocks.map(b => Z2KYamlDoc.splitFrontmatter(b.content).fm);
+		let bodies = blocks.map(b => Z2KYamlDoc.splitFrontmatter(b.content).body).filter(body => body.trim() !== '');
 		let mergedFm = Z2KYamlDoc.mergeLastWins(yamls);
 		let combinedBody = bodies.join('');
 		return Z2KYamlDoc.joinFrontmatter(mergedFm, combinedBody);
+	}
+	private async collectSystemBlock(
+		adapter: DataAdapter, folderPath: string, depth: number,
+		blocks: { content: string, depth: number }[], stopDepths: number[]
+	) {
+		const blockFile = joinPath(folderPath, '.system-block.md');
+		try {
+			// Need to use adapter because the usual file read doesn't work for files that start with .
+			blocks.push({ content: await adapter.read(blockFile), depth });
+		} catch {} // Can't find/read the file
+		const stopFile = joinPath(folderPath, '.system-block-stop');
+		if (await adapter.exists(stopFile)) { stopDepths.push(depth); }
 	}
 
 	// Logging and error handling
