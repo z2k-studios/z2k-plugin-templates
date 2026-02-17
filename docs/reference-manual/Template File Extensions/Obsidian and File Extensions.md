@@ -12,7 +12,7 @@ In short, when a file's extension is changed to an unknown file type, **Obsidian
 While it may seem strange, this is exactly why we use custom [[Template File Extensions|File Extensions]]: to hide the template files from Obsidian so that the templates will no longer [[Template Pollution|pollute]] the data in our vault. 
 
 ## Making the Templates Visible Again
-Luckily, there is a way to quickly turn on and off the visibility of [[Extension .template|.template]] and [[Extension .block|.block]] files inside the file navigation so that you can actively edit and organize them. Simply use the [[Make .template and .block templates visible-hidden]] command to toggle the visibility on and off. 
+Luckily, there is a way to quickly turn on and off the visibility of [[Extension .template|.template]] and [[Extension .block|.block]] files inside the file navigation so that you can actively edit and organize them. Simply use the [[Make .template and .block Templates Visible-Hidden]] command to toggle the visibility on and off. 
 
 
 > [!NOTE] Remember To Turn Off Visibility When Done

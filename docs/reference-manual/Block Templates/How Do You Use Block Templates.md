@@ -9,8 +9,8 @@ There are two primary methods for inserting Block Templates into your documents.
 
 ### Insert Block Template Commands
 Use the command palette or right-click context menu to run:
-- **[[Insert block template]]** - Opens a picker to select from available block templates
-- **[[Insert block template using selection]]** - Uses selected text as context for the block
+- **[[Insert Block Template]]** - Opens a picker to select from available block templates
+- **[[Insert Block Template Using Selection]]** - Uses selected text as context for the block
 
 When you run these commands, the plugin:
 1. Determines the current note's [[Destination Context|destination context]]
@@ -20,7 +20,7 @@ When you run these commands, the plugin:
 
 This method is useful for interactive block insertions, for example, sections that are repeated frequently. 
 
-For more information, please see the [[Insert block template]] command's documentation.
+For more information, please see the [[Insert Block Template]] command's documentation.
 
 ## Method 2: Handlebars Partial Syntax
 Block templates can also be inserted by using Handlebars [[Partials]] syntax:

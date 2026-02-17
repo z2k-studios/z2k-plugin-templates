@@ -28,7 +28,7 @@ In addition, there are other ways that finalization can occur, including :
 - Using other [[Command Palette]] comands
 - Using [[Quick Create Commands]]
 - Using [[URI Calls]]
-- Using [[Command Lists]]
+- Using [[Command Queues]]
 
 ## What Exactly Happens During Finalization?
 The following is a list of actions performed by the Templates Plugin during finalization:

@@ -22,7 +22,7 @@ This action removes all(\*)  signs of handlebars templated fields and helpers fr
 ## Once Finalized, Can You Add New Template Information?
 There is nothing strictly prohibiting adding new `{{fields}}` into a finalized content file, and then performing a [[Continue filling note]] command on the file. For instance, you can write `{{yesterday}}` and then perform a keyboard shortcut to [[Finalization|Finalize]] the current file to have it replaced automatically. 
 
-Similarly, if you use a [[Insert block template]] into a finalized content file, you will effectively be resetting the file back into a [[WIP Stage]] if any of the fields are not specified. 
+Similarly, if you use a [[Insert Block Template]] into a finalized content file, you will effectively be resetting the file back into a [[WIP Stage]] if any of the fields are not specified. 
 
 ## How to Map the Lifecycle into a Workflow
 Knowing the [[Lifecycle of a Template]], now let's make it real and map it into a [[Typical Templates Workflow]]. 

@@ -12,7 +12,7 @@ So if you have been reading the reference manual linearly (you have our complime
 
 For instance, when issuing a [[Create new note]] command, you are prompted to select a template to use:
 
-![[CreateNewNote-SelectTemplate.png|Select Template Dialog]]
+![[CreateNewFile-SelectTemplate.png|Select Template Dialog]]
 
 This documentation page steps through how to make templates be visible in this list.
 

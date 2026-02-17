@@ -6,7 +6,7 @@ aliases:
 - cmd insertblock
 ---
 # JSON Command: insertblock
-The `insertblock` command inserts a [[Block Templates|block template]] into an existing note at a specified position. It is the programmatic equivalent of the [[Insert block template]] command palette action.
+The `insertblock` command inserts a [[Block Templates|block template]] into an existing note at a specified position. It is the programmatic equivalent of the [[Insert Block Template]] command palette action.
 
 ## Directive Summary
 The following [[JSON Directives]] are relevant to the [[JSON Commands|JSON Command]] "`insertblock`":
@@ -39,7 +39,7 @@ The `location` and `destHeader` directives work together to determine where the 
 | omitted           | omitted      | Falls through to **editor mode** — inserts at the cursor position. Only meaningful for interactive use. |
 
 > [!WARNING]
-> When using `insertblock` from a [[Command Lists|Command List]] (batch processing), always specify `location` or `destHeader` explicitly. Editor mode requires an active editor and cursor position, which is not available in batch context.
+> When using `insertblock` from a [[Command Queues|Command List]] (batch processing), always specify `location` or `destHeader` explicitly. Editor mode requires an active editor and cursor position, which is not available in batch context.
 
 ### destHeader Matching
 The `destHeader` value is matched against headers in the target file. For full matching rules (case sensitivity, header level, multiple matches), see [[JSON Directives#destHeader Matching]].

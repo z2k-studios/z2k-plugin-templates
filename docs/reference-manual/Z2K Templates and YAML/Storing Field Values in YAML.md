@@ -13,7 +13,7 @@ YAML frontmatter solves this. By echoing field values into identically named YAM
 ## Contents
 - [[#The Pattern]]
 - [[#Next - Insert a Block Template]]
-- [[#Example: Book Notes with Block Templates]]
+- [[#Example Book Quotes with Block Templates]]
 - [[#Example: Template Upgrade]]
 - [[#Best Practices]]
 
@@ -57,10 +57,10 @@ This works because of two mechanisms acting together:
 - **YAML properties become field values** – the plugin reads the existing file's YAML and injects each property into the list of known Handlebars fields.
 - **Matching names unify** – a YAML property named `BookAuthor` and a template field named `{{BookAuthor}}` are treated as the same field. The YAML value fills the field.
 
-## Example: Book Notes with Block Templates
-Consider a book note template that stores field values in YAML as shown above. After creating a note for "Neuromancer," you later want to insert a block template for a book quote:
+## Example: Book Quotes with Block Templates
+Consider a book template that stores field values in YAML as [[#The Pattern|shown above]]. After creating a file for the book "Neuromancer," you later want to insert a quote block inside the content file:
 
-```handlebars
+```handlebars file="Block Template - Book Quote.md"
 ---
 z2k_template_type: block-template
 ---
@@ -83,7 +83,7 @@ The result:
 The block template pulled two of its three fields from stored YAML, and only prompted for the one value it didn't already have.
 
 ## Example: Template Upgrade
-Another example of how storing your field values in YAML code becomes apparent when you attempt to "upgrade" a content file using a newer version of the template. If you automatically store your field values in the YAML section by having the source template explicitly save then, then you can use the [[Transform This File Using a Template]] command. When the new version of the template is used, the save copies of the fields' text values will be inserted directly in the new file. 
+Another example of how storing your field values in YAML code becomes apparent when you attempt to "upgrade" a content file using a newer version of the template. If you automatically store your field values in the YAML section by having the source template explicitly save then, then you can use the ==NEEDS FIXING== [[Transform This File Using a Template]] command. When the new version of the template is used, the save copies of the fields' text values will be inserted directly in the new file. 
 
 ## Best Practices
 - **Quote your YAML field expressions** – use `BookTitle: "{{BookTitle}}"` rather than `BookTitle: {{BookTitle}}` to avoid [[Using Fields Inside YAML Metadata#Quoting and Type Safety|type coercion and special character issues]].

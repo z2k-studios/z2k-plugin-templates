@@ -39,7 +39,7 @@ In this example, `cmd`, `templatePath`, and `prompt` are directives. `attendees`
 ## Where Z2K Templates JSON Packages Are Used
 JSON Packages are the shared language across three integration points:
 - **[[URI Actions]]** — A JSON Package is encoded as URL query parameters in an Obsidian URI. Each key-value pair becomes a query param. Because URIs are flat strings, all values arrive as text and are converted to their appropriate types based on the template's field definitions. See [[JSON Type Conversion]] for details. URIs also support the [[json Command]], which wraps an entire JSON Package as a single string parameter for cases where encoding nested data as individual query params would be unwieldy.
-- **[[Command Lists]]** — A JSON Package is written directly as a `.json` file (one command) or as a line in a `.jsonl` file (one command per line). Values preserve their native JSON types — numbers stay numbers, booleans stay booleans. The [[Command Queue]] processes these files automatically.
+- **[[Command Queues]]** — A JSON Package is written directly as a `.json` file (one command) or as a line in a `.jsonl` file (one command per line). Values preserve their native JSON types — numbers stay numbers, booleans stay booleans. The [[Command Queue]] processes these files automatically.
 
 ## What Happens Next
 Once a Z2K Templates JSON Package reaches the plugin — whether through a URI, a command file, or the `json` command — the same processing pipeline handles it:

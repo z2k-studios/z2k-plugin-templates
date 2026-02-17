@@ -14,7 +14,7 @@ The `{{date-add}}` helper uses the following syntax:
 
 Where:
 - `date-add` -- the name of the Helper Function
-- `unitsInDays` -- the numeric number of days to forward adjust a day by (where 1 = 1 Day). Can be negative to go backwards in time. 
+- `unitsInDays` -- the numeric number of days to adjust by (where 1 = 1 Day). Can be negative to go backwards in time. Supports fractional values (e.g., `1/24` for one hour, `1/1440` for one minute).
 - `sourceTime` -- the optional name of the date field to modify. 
 	- By default, this parameter is `{{now}}` - see [[now]]. Besides being the default value for `sourceTime`, we highly recommend to only use the built-in `{{now}}` field under most circumstances. 
 	- See [[#Using Other Date-Time Values for sourceTime]] section below for more details.

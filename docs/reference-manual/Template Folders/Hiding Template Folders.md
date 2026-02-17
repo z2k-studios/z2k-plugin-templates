@@ -30,7 +30,7 @@ One option is to move your [[Template Files]] out of the [[Template Folders|Temp
 - Use [[Template File Extensions]]
 - Use [[YAML Configuration Properties]]
 
-The difficulty with this approach, however, is that you can easily trade one problem for another.  now, instead of having a proliferation of template folders, your template files will be proliferated within your content files. If you use the [[Template File Extensions]]  approach, you are able to hide  the template files from Obsidian using the [[Make .template and .block templates visible-hidden|Make .template and .block templates hidden]] command.
+The difficulty with this approach, however, is that you can easily trade one problem for another.  now, instead of having a proliferation of template folders, your template files will be proliferated within your content files. If you use the [[Template File Extensions]]  approach, you are able to hide  the template files from Obsidian using the [[Make .template and .block Templates Visible-Hidden|Make .template and .block templates hidden]] command.
 
 ## Method 3 - Hide the Templates Folders
 Another approach is to rename your template folders to be prefixed with a period. This will cause Obsidian to treat the folder as a system folder and not display it to the user. The Z2K Templates plugin, however, will always look for a `.` prefixed version of the template folder's name and support looking in that folder for templates as well. (This is even the case in the event you change the default name for a Templates Folder).

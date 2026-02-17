@@ -4,22 +4,18 @@ sidebar_class_name: z2k-code
 sidebar_label: "{{weekNum}}"
 ---
 # weekNum Built-In Field
-
 The `{{weekNum}}` built-in field returns the current ISO week number as a two-digit value.
 
 ## Default Format
 The default format for the `{{weekNum}}` built-in field is `WW`. This returns just the week number without the year, zero-padded to two digits.
 
 ## Syntax
-
 ```handlebars
 {{weekNum}}
 ```
 
 ## Example Output
-
 Given today's date is January 27, 2026:
-
 ```
 05
 ```
@@ -64,15 +60,13 @@ Week {{weekNum}} of {{year}}
 
 ## Difference from yearWeek
 
-| Field | Format | Example |
-| ----- | ------ | ------- |
-| `{{weekNum}}` | `WW` | `05` |
+| Field          | Format       | Example    |
+| -------------- | ------------ | ---------- |
+| `{{weekNum}}`  | `WW`         | `05`       |
 | `{{yearWeek}}` | `YYYY-[w]WW` | `2026-w05` |
-
 Use `weekNum` when you only need the week number; use `yearWeek` when you need the full year-week identifier for sorting or unique identification.
 
 ## See Also
-
 - [[yearWeek]] for the full year and week identifier
 - [[year]] for just the year
 - [[format-date]] for custom date formatting

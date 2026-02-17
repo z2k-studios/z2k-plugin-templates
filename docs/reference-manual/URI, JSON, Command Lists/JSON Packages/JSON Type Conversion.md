@@ -22,8 +22,11 @@ The plugin tracks whether each field value came from a **URI source** or a **JSO
 
 This distinction matters because the same data can produce different results depending on how it's delivered.
 
+> [!IMPORTANT] First a Primer
+> If you want to travel down the rabbit hole of Field Types, please make sure you first understand how Z2K Templates understand them by reading the [[Field Types]] page.
+
 ## URI Sources — String Coercion
-When a [[JSON Packages Overview|JSON Package]] arrives through a [[URI Actions|URI]], every parameter value is a string. The plugin must infer the intended type. It does this by consulting the template's field definitions — specifically, the `type` set via [[field-info type|field-info]].
+When a [[JSON Packages Overview|JSON Package]] arrives through a [[URI Actions|URI]], every parameter value is a string. The plugin must infer the intended type. It does this by consulting the template's field definitions — specifically, the `type` set via [[field-info type|field-info]]. 
 
 For example, if the URI contains `rating=5`:
 - If the template declares `rating` as type `number` → the value becomes the number `5`
@@ -90,11 +93,13 @@ The [[templateJsonData]] parameter adds nuance. When used inside a URI:
 - But they are still marked as coming from a URI source if the outer transport is a URI
 
 When used inside a `.json` or `.jsonl` file:
-- If `templateJsonData` is a nested object (form 3), its values are natively typed and marked as a JSON source
-- If `templateJsonData` is a file path string (form 2), the loaded file's values are natively typed
+- If `templateJsonData` is a nested object, its values are natively typed and marked as a JSON source
+- If `templateJsonData` is a file path string, the loaded file's values are natively typed
 
 > [!INFO]
 > When in doubt about type behavior, use the [[json Command]] or a `.json` command file. These guarantee that your values arrive exactly as you wrote them — no conversion, no surprises.
+
+
 
 > [!DANGER] Internal Notes
 > - The `templateJsonData` exception described above needs verification. The code at line 1296 creates `fieldOverrides` by spreading `additionalFields` (from `templateJsonData`) with `templateData` (top-level non-directive keys). The `uriKeys` set at line 1298 only contains keys from `templateData`, not from `additionalFields`. This means `templateJsonData` values are *never* subject to URI string conversion, even when the outer transport is a URI. This is arguably correct (the JSON was parsed, so types are preserved), but should be confirmed as intentional.

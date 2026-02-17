@@ -4,10 +4,10 @@ sidebar_class_name: z2k-code
 sidebar_label: "Arithmetic Operators"
 ---
 # Arithmetic Operators
-
 Z2K Templates includes basic arithmetic helper functions for performing simple math operations on numeric values.
 
 ## Available Arithmetic Operators
+The following basic arithmetic operators are available:
 
 | Helper | Operation | Description |
 | ------ | --------- | ----------- |
@@ -92,7 +92,6 @@ Next version: {{add version 1}}
 ```
 
 ## When to Use calc Instead
-
 For complex mathematical expressions, consider using [[calc]] instead:
 
 ```handlebars

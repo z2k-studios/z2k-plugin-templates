@@ -4,11 +4,37 @@ aliases:
 - Custom Helper Functions
 ---
 # User Defined Helper Functions
-Currently, the Z2K Templates plugin does not support registering custom functions (i.e. functions defined by the user). Stay tuned - it's coming.
+Z2K Templates supports custom helper functions written in JavaScript. Custom helpers can perform any transformation you need and have full access to the Obsidian API.
 
-%% WHEN WE DO SUPPORT IT:
+For complete documentation on writing custom helpers, see [[Writing Custom Formatting Functions]].
 
-- Emphasize that any helper functions with dates should expect that dates be passed as strings. Further, you should encourage the use of the `{{now}}` built-in to represent the current moment in time, as this is a fully qualified, unambiguous representation of a date + time moment. See the tip inside [[date-add]] as an example.
-- 
+## Quick Start
 
-%%
+1. Open **Settings → Z2K Templates**
+2. Enable the **Custom Helpers** toggle
+3. Click **Edit Custom Helpers**
+4. Register helpers using `registerHelper(name, fn)`
+
+## Example
+```javascript
+registerHelper('shout', (value) => {
+    return String(value).toUpperCase() + '!';
+});
+```
+
+Usage: `{{shout "hello"}}` → `HELLO!`
+
+## Available Globals
+Inside the custom helpers editor:
+- `app` – Obsidian App instance
+- `obsidian` – Obsidian module (Notice, Modal, TFile, etc.)
+- `moment` – Moment.js for dates
+- `Handlebars` – The Handlebars instance
+- `registerHelper` – Function to register helpers
+
+> [!WARNING]
+> Custom helpers execute arbitrary JavaScript with full access to your vault. Only enable if you trust the code.
+
+> [!DANGER] Notes for Review
+> - This page is now a redirect/summary. Full documentation is in [[Writing Custom Formatting Functions]].
+> - Consider whether this page should remain or be removed entirely (with redirects).

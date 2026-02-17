@@ -4,10 +4,10 @@ sidebar_class_name: z2k-code
 sidebar_label: "{{arr}}"
 ---
 # arr Helper
-
 The `{{arr}}` helper creates an array from its arguments. This is useful for constructing arrays inline within templates, particularly for use with other helpers that expect array inputs.
 
 ## Syntax
+`arr` has the following syntax:
 
 ```handlebars
 {{arr item1 item2 item3 ...}}
@@ -21,18 +21,16 @@ Or as a subexpression:
 
 ## Parameters
 
-| Parameter | Description |
-| --------- | ----------- |
+| Parameter             | Description                                                                                    |
+| --------------------- | ---------------------------------------------------------------------------------------------- |
 | `item1`, `item2`, ... | The items to include in the array. Can be strings, numbers, field references, or other values. |
 
 ## Return Value
-
 Returns an array containing all the provided arguments.
 
 ## Examples
 
 ### Creating an Options List for field-info
-
 The most common use of `arr` is to create options for `singleSelect` or `multiSelect` fields:
 
 ```handlebars
@@ -71,7 +69,6 @@ Output:
 ```
 
 ## See Also
-
 - [[obj]] for creating objects
 - [[random]] for selecting a random item from an array
 - [[format-string-bulletize]] for formatting arrays as bulleted lists

@@ -9,4 +9,4 @@ aliases:
 # Impact:
 
 The "Convert to XXX Template" functions now will change the file extension as well. 
-Enables the "[[Make .template and .block templates visible-hidden]]" command
+Enables the "[[Make .template and .block Templates Visible-Hidden]]" command

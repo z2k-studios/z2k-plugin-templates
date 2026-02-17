@@ -14,4 +14,4 @@ That said, storing them in your Templates folder is recommended for organization
 > [!NOTE] The Plugin Filters Block Templates from Document Template Pick Lists
 > If you are worried about block templates making your document template [[Create new note#Select Template|Select Template pick lists]] cluttered, rest easy. The plugin automatically excludes block templates when building document template selection lists, so they won't clutter your template picker.
 >  
-> This also works vice versa - document templates will not appear in block template pick lists for the [[Insert block template]] command. 
+> This also works vice versa - document templates will not appear in block template pick lists for the [[Insert Block Template]] command. 

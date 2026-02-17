@@ -49,7 +49,7 @@ Current project status: **{{Status}}**
 
 A **[[Template Fields|field]]** is the heart of a template — a placeholder enclosed in double curly braces like `{{ProjectName}}` in the above example. Fields can:
 
-- Pull in values from automatic [[Built-In Fields|built-in data sources]], from [[URI, JSON, Command Lists|external sources]] via [[JSON Packages|JSON]] or [[URI Calls|URI]], or from the user via a rich [[Prompting|prompting interface]].
+- Pull in values from automatic [[Built-In Fields|built-in data sources]], from [[URI, JSON, Command Queues|external sources]] via [[JSON Packages|JSON]] or [[URI Calls|URI]], or from the user via a rich [[Prompting|prompting interface]].
 - Can have different input types, like `text`, `number`, or `multiSelect`
 - Read More: [[Template Fields]]
 

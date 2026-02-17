@@ -17,7 +17,7 @@ A `.jsonl` file packs multiple [[JSON Packages Overview|JSON Package]] commands 
 - [[#Examples]]
 
 ## Purpose
-A `.jsonl` file is used exclusively by [[Command Lists]]. Unlike a [[JSON Structure|.json file]] which holds a single command, a `.jsonl` file holds multiple commands — one per line — enabling batch operations. When a `.jsonl` file is placed in the [[Command Queue]] directory, the plugin processes every line in sequence, executing each as an independent [[JSON Packages Overview|JSON Package]].
+A `.jsonl` file is used exclusively by [[Command Queues]]. Unlike a [[JSON Structure|.json file]] which holds a single command, a `.jsonl` file holds multiple commands — one per line — enabling batch operations. When a `.jsonl` file is placed in the [[Command Queue]] directory, the plugin processes every line in sequence, executing each as an independent [[JSON Packages Overview|JSON Package]].
 
 ## File Structure
 A `.jsonl` (JSON Lines) file contains one JSON object per line. Each line is a complete [[JSON Packages Overview|JSON Package]] — it must be valid JSON and must be a single object (not an array or primitive).
@@ -35,7 +35,7 @@ Rules:
 - Each line is parsed and executed independently
 
 ## Processing Behavior
-When the [[Command Queue]] picks up a `.jsonl` file, it follows this sequence:
+When the [[Command Queues]] picks up a `.jsonl` file, it follows this sequence:
 1. The file is renamed from `.jsonl` to `.processing.jsonl` — this prevents re-processing if the plugin restarts mid-batch, and serves as a crash-recovery mechanism
 2. Each non-empty line is parsed as a JSON object and passed through the same command processing pipeline as a `.json` file
 3. Lines are processed in order, top to bottom
@@ -55,7 +55,7 @@ Errors in a `.jsonl` file are handled per-line, not per-file. A single bad line 
   - If `maxRetries` is 0 or absent, the line is added to the failed lines list
 - **After processing** — if any lines failed, they are written to a new file in the `failed/` subdirectory as `<original-name>.<timestamp>.failed.jsonl`
 
-For full details on retry behavior and failure states, see the [[Retry and Error Handling]] page under [[Command Lists]].
+For full details on retry behavior and failure states, see the [[Retry and Error Handling]] page under [[Command Queues]].
 
 ## Examples
 

@@ -4,36 +4,54 @@ sidebar_class_name: z2k-code
 sidebar_label: "{{format-string-encode-URI}}"
 ---
 # format-string-encode-URI Helper
+The `format-string-encode-URI` helper percent-encodes a string so it can be safely embedded inside a URI. It uses JavaScript's `encodeURIComponent()` function, which preserves the original text with full fidelity – the encoded string can be decoded back to the exact original.
 
-==needs updating. Rough check scratch below ==
+## Syntax
 
-uses encodeURIComponent
+```
+{{format-string-encode-URI fieldname}}
+```
 
-**Purpose:** Make an arbitrary string safe to embed inside a URI **without changing its meaning**.
+where:
+- `format-string-encode-URI` is the predefined helper name for URI encoding
+- `fieldname` is the name of the field containing the string to encode
 
-It does this by percent-encoding reserved characters:
-
+## What It Does
+Replaces reserved and unsafe URI characters with their percent-encoded equivalents:
+- space → `%20`
 - `:` → `%3A`
-    
-- `{` → `%7B`
-    
+- `?` → `%3F`
 - `"` → `%22`
-    
-- space → `%20`  
-    …etc.
-    
+- `{` → `%7B`
+- ...and all other characters not in the unreserved set (`A-Z a-z 0-9 - _ . ~`)
 
 Key properties:
+- **Reversible** – the string decodes back to the original with full fidelity
+- **Lossless** – no information is removed
+- Use for query parameters, JSON payloads, or any value embedded in a URL
 
-- Reversible.
-    
-- Lossless.
-    
-- The string **decodes back to the original** with absolute fidelity.
-    
-- Used for query parameters, JSON payloads, Base64 strings, etc.
-    
+## Null Handling
+If the value is null or undefined, the helper returns nothing.
 
-Example:
+## Examples
+- `{{format-string-encode-URI "Hello world?"}}` → `Hello%20world%3F`
+- `{{format-string-encode-URI "price=100&tax=8%"}}` → `price%3D100%26tax%3D8%25`
 
-`encodeURIComponent("Hello world?") → "Hello%20world%3F"`
+## Common Use Case
+Building URLs with dynamic query parameters:
+```handlebars
+{{field-info searchQuery prompt="Enter search term"}}
+[Search](https://example.com/search?q={{format-string-encode-URI searchQuery}})
+```
+
+## Slugify vs. Encode-URI
+| | [[format-string-slugify]] | `format-string-encode-URI` |
+|--|--|--|
+| **Reversible** | No | Yes |
+| **Changes case** | Yes (lowercases) | No |
+| **Spaces** | Converted to hyphens | Converted to `%20` |
+| **Use for** | Clean URL paths, identifiers | Query parameters, data in URLs |
+
+## See Also
+- [[format-string-slugify]] for URL-safe slugs (lossy, human-readable)
+- [[format-string-encode-base64]] for Base64 encoding

@@ -144,7 +144,7 @@ Dinner: {{Dinner}}
 Weight: {{Weight}}
 Mood: {{Mood}}
 ```
-Use **Continue filling file** during the day; and then a **Finalize** step applies miss-handling for anything left unresolved at the end of the day.
+Use **Continue Filling File** during the day; and then a **Finalize** step applies miss-handling for anything left unresolved at the end of the day.
 
 ---
 

@@ -105,7 +105,7 @@ The `"not-required"` directive overrides a `"required"` directive and resets it 
 The `"no-prompt"` directive instructs the [[Prompting Interface]] to skip presenting a user interface query for this field. This effectively hides the field from the user, causing the field to only be filled in through some other means.
 
 **When this is useful**: Suppressing prompting can be useful in these types of situations:
-- When fields are being filled in through some other means, like through separate automated [[URI Calls]] or [[Command Lists]].
+- When fields are being filled in through some other means, like through separate automated [[URI Calls]] or [[Command Queues]].
 - Sometimes it is helpful to use [[System Blocks]] to define a field and its value, so that any templates lower in the [[Template Folder Hierarchies]] can use the values as if they were user-entered fields. In this case, you will want to suppress prompting for them.
 
 ## yes-prompt

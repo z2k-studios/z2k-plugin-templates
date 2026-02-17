@@ -6,7 +6,7 @@ aliases:
 - custom block helpers
 ---
 # Block Helpers
-Handlebars block helpers wrap a section of template content and control how it renders. Z2K Templates supports block helpers, but with a limitation on where they can be used.
+Handlebars block helpers (not to be confused with Z2K Templates' [[Block Templates]]) wrap a section of template content and control how it renders. Z2K Templates supports block helpers, but with a limitation on where they can be used.
 
 For complete syntax details, see the [Handlebars Block Helpers documentation](https://handlebarsjs.com/guide/block-helpers.html).
 
@@ -61,14 +61,15 @@ No value provided.
 
 Inside the helper, call `options.inverse(this)` to render the else branch.
 
-## Limitation: Reduced-Set Contexts
-Block helpers are **not supported** inside reduced-set template contexts. These are places where Z2K Templates evaluates expressions with a limited feature set:
+## Limitation: Restricted Functionality Mode
+Block helpers are **not supported** while in a [[Restricted Functionality Mode]]. These are contexts where Z2K Templates evaluates expressions with a limited feature set, for instance:
 
 - `prompt` parameters in `{{field-info}}`
 - `suggest` parameters in `{{field-info}}`
 - `fallback` parameters in `{{field-info}}`
+- YAML frontmatter values
 
-In these contexts, only simple expressions and inline helpers work. Attempting to use a block helper will not produce the expected result.
+In these contexts, only simple expressions and inline helpers work. Attempting to use a block helper will not produce the expected result. See [[Restricted Functionality Mode]] for the full list of what is and isn't supported.
 
 For example, this will **not** work as intended:
 
@@ -82,7 +83,8 @@ Instead, use inline helpers to achieve conditional logic in these contexts.
 Like [[Conditionals]] and [[Iterators]], block helpers are block statements – they are not preserved by Z2K Templates' [[Deferred Field Resolution]] logic. If a block helper references an unresolved field, the field will be `undefined` during evaluation.
 
 > [!DANGER] Notes for Review
-> - The reduced-set limitation is documented in a code comment at line 366 of `z2k-template-engine/src/main.ts`: "field-infos and blocks are not supported in reduced-set templates."
+> - **Deferred field bug**: Custom block helpers are affected by the same [[Conditionals#Known Issue|block statement preservation bug]] as `{{#if}}` and `{{#each}}`. Block statements referencing unresolved fields are not preserved — they evaluate immediately with `undefined` values. See that page for root cause and desired behavior options.
+> - The restricted functionality mode limitation is documented in a code comment at line 366 of `z2k-template-engine/src/main.ts`: "field-infos and blocks are not supported in reduced-set templates." The section now links to [[Restricted Functionality Mode]].
 > - The `spoiler` example uses raw HTML, which works in Obsidian's live preview and reading mode. Consider whether a more Markdown-native example would be preferable.
 > - User-defined block helpers are registered via the same `registerHelper` mechanism as inline helpers (lines 801-820 of `z2k-plugin-templates/main.tsx`). The distinction is purely in how the helper function uses `options.fn()`.
 > - It's unclear whether Z2K Templates' built-in helpers (like `field-info`) can be used as block helpers. This should be tested and documented if relevant.

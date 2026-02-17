@@ -2,7 +2,6 @@
 sidebar_folder_position: 50
 sidebar_position: 1
 ---
-
 # Misc Helper Functions
 
 ## Overview

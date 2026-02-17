@@ -1,5 +1,5 @@
 
-import { App, Plugin, Modal, Notice, TAbstractFile, TFolder, TFile, PluginSettingTab, Setting, MarkdownView, Editor, Command, ToggleComponent, setIcon } from 'obsidian';
+import { App, Plugin, Modal, Notice, TAbstractFile, TFolder, TFile, PluginSettingTab, Setting, MarkdownView, Editor, Command, ToggleComponent, setIcon, DataAdapter } from 'obsidian';
 import * as obsidian from 'obsidian';
 import { Z2KTemplateEngine, Z2KYamlDoc, TemplateState, VarValueType, FieldInfo, TemplateError, Handlebars } from 'z2k-template-engine';
 import { PathFile, PathFolder, pathFileFrom, pathFolderFrom, pathFileFromTFile, pathFolderFromTFolder, normalizeFullPath, isSubPathOf, joinPath } from './paths';
@@ -21,10 +21,13 @@ interface Z2KTemplatesPluginSettings {
 	creator: string;
 	templatesFolderName: string;
 	cardReferenceName: string;
-	dynamicCardCommands: Array<{
+	quickCommands: Array<{
 		id: string; // stable id (to retain keyboard shortcuts)
 		name: string; // display name
-		targetFolder: string; // vault-relative path to folder
+		action: "create" | "insert"; // create file or insert block
+		targetFolder: string; // vault-relative path to folder, empty = prompt
+		templateFile: string; // vault-relative path to template, empty = prompt
+		sourceText: "none" | "selection" | "clipboard"; // source text to pass to template
 	}>;
 	offlineCommandQueueEnabled: boolean; // Whether offline command queue processing is enabled
 	offlineCommandQueueDir: string; // Directory for offline command queue (JSON/JSONL files)
@@ -46,7 +49,7 @@ const DEFAULT_SETTINGS: Z2KTemplatesPluginSettings = {
 	creator: '',
 	templatesFolderName: 'Templates',
 	cardReferenceName: 'note',
-	dynamicCardCommands: [],
+	quickCommands: [],
 	offlineCommandQueueEnabled: true,
 	offlineCommandQueueDir: '.obsidian/plugins/z2k-plugin-templates/command-queue',
 	offlineCommandQueueFrequency: '60s',
@@ -80,11 +83,11 @@ interface CommandParams {
 	finalize?: boolean | string;  // Can be boolean (from JSON) or string "true"/"false" (from URI)
 	location?: "file-top" | "file-bottom" | "header-top" | "header-bottom" | number | string;  // Allow any string/number
 	// Additional field data - can be string (JSON) or already parsed object
-	templateJsonData?: string | Record<string, VarValueType>;
-	templateJsonData64?: string;
-	// For json command
-	json?: string;
-	json64?: string;
+	fieldData?: string | Record<string, VarValueType>;
+	fieldData64?: string;  // Base64-encoded JSON (standard or URL-safe)
+	// For fromJson command
+	jsonData?: string;
+	jsonData64?: string;  // Base64-encoded JSON (standard or URL-safe)
 	// Retry configuration
 	maxRetries?: number;  // Default 0
 	retryDelayMs?: number;  // Default 0
@@ -152,8 +155,6 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 	private refs = {
 		descTemplatesRootFolder: null as Setting | null,
 		descEmbeddedTemplatesFolderName: null as Setting | null,
-		quickCreateDesc: null as HTMLElement | null,
-		commandsContainer: null as HTMLElement | null,
 	}
 
 	constructor(app: App, plugin: Z2KTemplatesPlugin) {
@@ -170,7 +171,6 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 				href: 'https://z2k-studios.github.io/z2k-plugin-templates-docs/docs/reference-manual/Template%20Folders',
 			});
 		}));
-		this.refs.quickCreateDesc?.setText(`You can create custom commands to quickly create ${cardRefNameLowerPlural(this.plugin.settings)} in specific folders. These commands will appear in the command palette and can be assigned keyboard shortcuts.`);
 	}
 
 	display(): void {
@@ -298,7 +298,7 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 								new ConfirmationModal(this.app, {
 									title: 'Disable Template File Extensions?',
 									message: <>
-										<p>We recommend that you convert your existing .template and .block template files back to markdown before disabling Template File Extensions.</p>
+										<p>We recommend that you convert your existing .template and .block files back to markdown before disabling Template File Extensions.</p>
 										<p>If you do not convert them to markdown, then these templates will not be easily accessible inside Obsidian for updates and changes.</p>
 										<p><a href="https://z2k-studios.github.io/z2k-plugin-templates-docs/docs/reference-manual/Template%20File%20Extensions" target="_blank">See docs for more details.</a></p>
 									</>,
@@ -383,7 +383,7 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 						if (trimmed === '') return null; // Blank = manual only
 						try {
 							const ms = parseDuration(trimmed);
-							if (ms < 5000) return "Minimum is 5s";
+							if (ms < 5000) return "Minimum is 5 seconds";
 							return null;
 						} catch (e: any) {
 							return e.message;
@@ -480,11 +480,16 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 					await this.plugin.saveData(this.plugin.settings);
 				}));
 
-		containerEl.createEl('h3', {text: 'Quick Create Commands'});
-		const commandsWrapper = containerEl.createDiv({cls: 'setting-item'});
-		this.refs.quickCreateDesc = commandsWrapper.createDiv({cls: 'setting-item-description'});
-		this.refs.commandsContainer = commandsWrapper.createDiv({cls: 'quick-create-rows'});
-		this.renderCommandRows();
+		containerEl.createEl('h3', {text: 'Quick Commands'});
+		new Setting(containerEl)
+			.setName('Quick Commands')
+			.setDesc('Commands for quickly creating files or inserting blocks from the command palette.')
+			.addButton(button => button
+				.setButtonText('Edit Quick Commands')
+				.onClick(() => {
+					new QuickCommandsModal(this.app, this.plugin).open();
+				})
+			);
 
 		containerEl.createEl('h3', {text: 'Advanced'});
 
@@ -620,89 +625,6 @@ registerHelper('recentFiles', () => {
 		this.applyDescs(); // Apply dynamic descriptions
 	}
 
-	private renderCommandRows(): void {
-		const container = this.refs.commandsContainer;
-		if (!container) { return; }
-		container.empty();
-		const dyn = this.plugin.settings.dynamicCardCommands;
-		for (let i = 0; i < dyn.length; i++) {
-			const row = container.createDiv({cls: 'command-row'});
-			// Name input
-			const nameInput = row.createEl('input', {type: 'text', placeholder: 'New Thought'});
-			nameInput.value = dyn[i].name || '';
-			nameInput.addEventListener('change', async () => {
-				const nv = nameInput.value.trim();
-				if (nv === dyn[i].name) { return; }
-				dyn[i].name = nv;
-				await this.plugin.saveData(this.plugin.settings);
-				this.plugin.queueRefreshCommands();
-			});
-			// Folder input
-			const folderInput = row.createEl('input', {type: 'text', placeholder: '/Thoughts'});
-			folderInput.value = dyn[i].targetFolder || '';
-			folderInput.addEventListener('change', async () => {
-				const nv = folderInput.value.trim();
-				if (nv === dyn[i].targetFolder) { return; }
-				dyn[i].targetFolder = nv;
-				await this.plugin.saveData(this.plugin.settings);
-				this.plugin.queueRefreshCommands();
-			});
-			// Buttons container
-			const buttons = row.createDiv({cls: 'command-buttons'});
-			// Move up
-			const upBtn = buttons.createEl('button', {cls: 'clickable-icon', attr: {'aria-label': 'Move up'}});
-			setIcon(upBtn, 'arrow-up');
-			if (i === 0) { upBtn.addClass('is-disabled'); }
-			upBtn.addEventListener('click', async () => {
-				if (i <= 0) { return; }
-				[dyn[i - 1], dyn[i]] = [dyn[i], dyn[i - 1]];
-				await this.plugin.saveData(this.plugin.settings);
-				this.plugin.queueRefreshCommands();
-				this.renderCommandRows();
-			});
-			// Move down
-			const downBtn = buttons.createEl('button', {cls: 'clickable-icon', attr: {'aria-label': 'Move down'}});
-			setIcon(downBtn, 'arrow-down');
-			if (i >= dyn.length - 1) { downBtn.addClass('is-disabled'); }
-			downBtn.addEventListener('click', async () => {
-				if (i >= dyn.length - 1) { return; }
-				[dyn[i + 1], dyn[i]] = [dyn[i], dyn[i + 1]];
-				await this.plugin.saveData(this.plugin.settings);
-				this.plugin.queueRefreshCommands();
-				this.renderCommandRows();
-			});
-			// Insert below
-			const insertBtn = buttons.createEl('button', {cls: 'clickable-icon', attr: {'aria-label': 'Insert below'}});
-			setIcon(insertBtn, 'plus');
-			insertBtn.addEventListener('click', async () => {
-				const id = Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
-				dyn.splice(i + 1, 0, {id, name: '', targetFolder: ''});
-				await this.plugin.saveData(this.plugin.settings);
-				this.plugin.queueRefreshCommands();
-				this.renderCommandRows();
-			});
-			// Delete
-			const deleteBtn = buttons.createEl('button', {cls: 'clickable-icon', attr: {'aria-label': 'Delete'}});
-			setIcon(deleteBtn, 'trash');
-			deleteBtn.addEventListener('click', async () => {
-				const id = dyn[i]?.id;
-				if (id) { this.plugin.removeCommand(id); }
-				dyn.splice(i, 1);
-				await this.plugin.saveData(this.plugin.settings);
-				this.plugin.queueRefreshCommands();
-				this.renderCommandRows();
-			});
-		}
-		// Add Command button
-		const addBtn = container.createEl('button', {cls: 'mod-cta', text: 'Add Command'});
-		addBtn.addEventListener('click', async () => {
-			const id = Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
-			dyn.push({id, name: '', targetFolder: ''});
-			await this.plugin.saveData(this.plugin.settings);
-			this.plugin.queueRefreshCommands();
-			this.renderCommandRows();
-		});
-	}
 
 	validateTextInput(
 		el: HTMLInputElement,
@@ -955,12 +877,12 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		let mainCommands: Command[] = [
 			{
 				id: 'z2k-create-new-card',
-				name: `Create new ${cardRefNameLower(this.settings)}`,
+				name: `Create New ${cardRefNameUpper(this.settings)}`,
 				callback: () => this.createCard(),
 			},
 			{
 				id: 'z2k-create-card-from-selected-text',
-				name: `Create ${cardRefNameLower(this.settings)} from selected text`,
+				name: `Create ${cardRefNameUpper(this.settings)} From Selected Text`,
 				editorCheckCallback: (checking, editor) => {
 					const selectedText = editor.getSelection();
 					if (checking) { return selectedText.length > 0; } // Only enable if text is selected
@@ -968,8 +890,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				},
 			},
 			{
-				id: 'z2k-convert-file-to-card',
-				name: `Convert existing file to templated ${cardRefNameLower(this.settings)}`,
+				id: 'z2k-apply-template-to-file',
+				name: `Apply Template to ${cardRefNameUpper(this.settings)}`,
 				checkCallback: (checking) => {
 					const activeFile = this.app.workspace.getActiveFile();
 					// Only enable if there's an active file and it's a markdown file
@@ -979,7 +901,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			},
 			{
 				id: 'z2k-continue-filling-card',
-				name: `Continue filling ${cardRefNameLower(this.settings)}`,
+				name: `Continue Filling ${cardRefNameUpper(this.settings)}`,
 				editorCheckCallback: (checking, editor) => {
 					const activeFile = this.app.workspace.getActiveFile();
 					if (checking) { return !!activeFile && activeFile.extension === 'md'; }
@@ -987,8 +909,17 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				},
 			},
 			{
+				id: 'z2k-finalize-card',
+				name: `Finalize ${cardRefNameUpper(this.settings)}`,
+				checkCallback: (checking) => {
+					const activeFile = this.app.workspace.getActiveFile();
+					if (checking) { return !!activeFile && activeFile.extension === 'md'; }
+					this.continueCard({ existingFile: activeFile as TFile, promptMode: "none", finalize: true });
+				},
+			},
+			{
 				id: 'z2k-insert-block-template',
-				name: 'Insert block template',
+				name: 'Insert Block Template',
 				editorCheckCallback: (checking, editor) => {
 					const file = this.app.workspace.getActiveFile();
 					if (checking) {
@@ -1000,7 +931,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			},
 			{
 				id: 'z2k-insert-block-template-from-selection',
-				name: 'Insert block template using selected text',
+				name: 'Insert Block Template Using Selected Text',
 				editorCheckCallback: (checking, editor) => {
 					const file = this.app.workspace.getActiveFile();
 					if (checking) {
@@ -1012,7 +943,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			},
 			{
 				id: 'z2k-process-command-queue',
-				name: 'Process command queue now',
+				name: 'Process Command Queue Now',
 				checkCallback: (checking) => {
 					if (!this.settings.offlineCommandQueueEnabled) return false;
 					if (checking) return true;
@@ -1025,7 +956,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			},
 			// {
 			// 	id: 'z2k-enable-template-editing',
-			// 	name: 'Enable template editing mode',
+			// 	name: 'Enable Template Editing Mode',
 			// 	checkCallback: (checking) => {
 			// 		if (checking) { return !this.settings.templateEditingEnabled; }
 			// 		this.enableTemplateEditing();
@@ -1033,7 +964,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			// },
 			// {
 			// 	id: 'z2k-disable-template-editing',
-			// 	name: 'Disable template editing mode',
+			// 	name: 'Disable Template Editing Mode',
 			// 	checkCallback: (checking) => {
 			// 		if (checking) { return this.settings.templateEditingEnabled; }
 			// 		this.disableTemplateEditing();
@@ -1041,7 +972,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			// },
 			{
 				id: "z2k-convert-file-to-template",
-				name: "Convert to document template",
+				name: "Convert to Document Template",
 				checkCallback: (checking) => {
 					let file = this.app.workspace.getActiveFile();
 					if (checking) { return !!file && this.getFileTemplateTypeSync(file) !== "document-template"; }
@@ -1050,7 +981,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			},
 			{
 				id: "z2k-convert-file-to-block-template",
-				name: "Convert to block template",
+				name: "Convert to Block Template",
 				checkCallback: (checking) => {
 					let file = this.app.workspace.getActiveFile();
 					if (checking) { return !!file && this.getFileTemplateTypeSync(file) !== "block-template"; }
@@ -1059,7 +990,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			},
 			{
 				id: "z2k-convert-file-to-md-template",
-				name: "Convert to markdown template",
+				name: "Switch to .md Extension",
 				checkCallback: (checking) => {
 					let file = this.app.workspace.getActiveFile();
 					// Only show if file has .template or .block extension
@@ -1069,7 +1000,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			},
 			{
 				id: "z2k-convert-file-to-md",
-				name: "Convert to content file",
+				name: "Convert to Content File",
 				checkCallback: (checking) => {
 					let file = this.app.workspace.getActiveFile();
 					if (checking) { return !!file && this.getFileTemplateTypeSync(file) !== "content-file"; }
@@ -1078,7 +1009,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			},
 			{
 				id: "z2k-toggle-template-visibility",
-				name: this.settings.templateExtensionsVisible ? "Make .template and .block templates hidden" : "Make .template and .block templates visible",
+				name: this.settings.templateExtensionsVisible ? "Make .template and .block Templates Hidden" : "Make .template and .block Templates Visible",
 				checkCallback: (checking) => {
 					// Only show if useTemplateFileExtensions is enabled
 					if (checking) { return this.settings.useTemplateFileExtensions; }
@@ -1098,27 +1029,62 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	}
 
 	refreshDynamicCommands(deleteExisting: boolean = true) {
-		for (const cmd of this.settings.dynamicCardCommands) {
+		for (const cmd of this.settings.quickCommands) {
 			if (deleteExisting) {
 				this.removeCommand(cmd.id); // Just returns if not found
 			}
 		}
-		// Dynamic commands for creating cards in specific folders
-		for (const cmd of this.settings.dynamicCardCommands) {
-			if (!cmd.id || !cmd.name || !cmd.targetFolder) { continue; }
+		// Quick Commands for creating cards or inserting blocks
+		for (const cmd of this.settings.quickCommands) {
+			if (!cmd.id || !cmd.name) { continue; }
 			this.addCommand({
 				id: cmd.id,
 				name: cmd.name,
-				callback: async () => {
-					const folder = this.getFolder(cmd.targetFolder);
-					if (!folder) {
-						await this.logWarn(`Target folder not found: ${cmd.targetFolder}`);
-						return;
-					}
-					await this.createCard({ cardTypeFolder: pathFolderFromTFolder(folder) });
-				},
+				callback: () => this.executeQuickCommand(cmd),
 			});
 		}
+	}
+	async executeQuickCommand(cmd: Z2KTemplatesPluginSettings["quickCommands"][number]) {
+		try {
+			// Resolve folder (empty = prompt via createCard/insertBlock defaults)
+			let folder: PathFolder | undefined;
+			if (cmd.targetFolder) {
+				const tf = this.getFolder(cmd.targetFolder);
+				if (!tf) {
+					await this.logWarn(`Target folder not found: ${cmd.targetFolder}`);
+					return;
+				}
+				folder = pathFolderFromTFolder(tf);
+			}
+			// Resolve template (empty = prompt via createCard/insertBlock defaults)
+			let template: PathFile | undefined;
+			if (cmd.templateFile) {
+				template = pathFileFrom(cmd.templateFile);
+			}
+			// Resolve source text
+			let fieldOverrides: Record<string, VarValueType> = {};
+			let fromSelection = false;
+			if (cmd.sourceText === "selection") {
+				fromSelection = true;
+			} else if (cmd.sourceText === "clipboard") {
+				fieldOverrides.sourceText = await navigator.clipboard.readText();
+			}
+			if (cmd.action === "insert") {
+				await this.insertBlock({
+					templateFile: template,
+					blockTypeFolder: folder,
+					fieldOverrides,
+					fromSelection,
+				});
+			} else {
+				await this.createCard({
+					cardTypeFolder: folder,
+					templateFile: template,
+					fieldOverrides,
+					fromSelection,
+				});
+			}
+		} catch (error) { this.handleErrors(error); }
 	}
 
 	queueRefreshCommands(delay=1000) {
@@ -1138,7 +1104,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				const selectedText = editor.getSelection();
 				if (selectedText.length === 0) return;
 				menu.addItem((item) => {
-					item.setTitle(`Z2K: Create ${cardRefNameLower(this.settings)} from selection...`)
+					item.setTitle(`Z2K: Create ${cardRefNameUpper(this.settings)} From Selection...`)
 						.onClick(() => {
 							this.createCard({ fromSelection: true });
 						});
@@ -1150,7 +1116,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			this.app.workspace.on("file-menu", (menu, folder) => {
 				if (!(folder instanceof TFolder)) return;
 				menu.addItem((item) => {
-					item.setTitle(`Z2K - Create new ${cardRefNameLower(this.settings)} here`)
+					item.setTitle(`Z2K: Create New ${cardRefNameUpper(this.settings)} Here...`)
 						.onClick(() => this.createCard({ cardTypeFolder: pathFolderFromTFolder(folder as TFolder) }));
 				});
 			})
@@ -1164,7 +1130,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				const selectedText = editor.getSelection();
 				if (selectedText.length > 0) return;
 				menu.addItem((item) => {
-					item.setTitle("Z2K: Insert block template...")
+					item.setTitle("Z2K: Insert Block Template...")
 						.onClick(() => {
 							this.insertBlock();
 						});
@@ -1180,7 +1146,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				const selectedText = editor.getSelection();
 				if (selectedText.length === 0) return;
 				menu.addItem((item) => {
-					item.setTitle("Z2K: Insert block template using selection...")
+					item.setTitle("Z2K: Insert Block Template Using Selection...")
 						.onClick(() => {
 							this.insertBlock({ fromSelection: true });
 						});
@@ -1192,7 +1158,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		// 	// Toggle command
 		// 	this.addCommand({
 		// 		id: 'z2k-enable-template-editing',
-		// 		name: 'Enable template editing mode',
+		// 		name: 'Enable Template Editing Mode',
 		// 		checkCallback: (checking) => {
 		// 			if (checking) { return !this.settings.templateEditingEnabled; }
 		// 			this.enableTemplateEditing();
@@ -1200,7 +1166,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		// 	});
 		// 	this.addCommand({
 		// 		id: 'z2k-disable-template-editing',
-		// 		name: 'Disable template editing mode',
+		// 		name: 'Disable Template Editing Mode',
 		// 		checkCallback: (checking) => {
 		// 			if (checking) { return this.settings.templateEditingEnabled; }
 		// 			this.disableTemplateEditing();
@@ -1210,10 +1176,10 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		// 	this.registerEvent(
 		// 		this.app.workspace.on('file-menu', (menu, file) => {
 		// 			if (this.settings.templateEditingEnabled) {
-		// 				menu.addItem(i => i.setTitle("Z2K - Disable template editing mode")
+		// 				menu.addItem(i => i.setTitle("Z2K: Disable Template Editing Mode")
 		// 					.onClick(() => this.disableTemplateEditing()));
 		// 			} else {
-		// 				menu.addItem(i => i.setTitle("Z2K - Enable template editing mode")
+		// 				menu.addItem(i => i.setTitle("Z2K: Enable Template Editing Mode")
 		// 					.onClick(() => this.enableTemplateEditing()));
 		// 			}
 		// 		})
@@ -1223,10 +1189,10 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		// 		// @ts-ignore
 		// 		this.app.workspace.on('folder-menu', (menu, folder) => {
 		// 			if (this.settings.templateEditingEnabled) {
-		// 				menu.addItem((i: any) => i.setTitle("Z2K - Disable template editing mode")
+		// 				menu.addItem((i: any) => i.setTitle("Z2K: Disable Template Editing Mode")
 		// 					.onClick(() => this.disableTemplateEditing()));
 		// 			} else {
-		// 				menu.addItem((i: any) => i.setTitle("Z2K - Enable template editing mode")
+		// 				menu.addItem((i: any) => i.setTitle("Z2K: Enable Template Editing Mode")
 		// 					.onClick(() => this.enableTemplateEditing()));
 		// 			}
 		// 		})
@@ -1238,7 +1204,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			this.app.workspace.on("file-menu", (menu, file) => {
 				if (!(file instanceof TFile) || this.getFileTemplateTypeSync(file) === "document-template") { return; }
 				menu.addItem((item) => {
-					item.setTitle("Z2K - Convert to document template")
+					item.setTitle("Z2K: Convert to Document Template")
 						.onClick(() => this.convertFileTemplateType(file as TFile, "document-template"));
 				});
 			})
@@ -1247,7 +1213,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			this.app.workspace.on("file-menu", (menu, file) => {
 				if (!(file instanceof TFile) || this.getFileTemplateTypeSync(file) === "block-template") { return; }
 				menu.addItem((item) => {
-					item.setTitle("Z2K - Convert to block template")
+					item.setTitle("Z2K: Convert to Block Template")
 						.onClick(() => this.convertFileTemplateType(file as TFile, "block-template"));
 				});
 			})
@@ -1257,7 +1223,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				// Only show for .template or .block files
 				if (!(file instanceof TFile) || (file.extension !== "template" && file.extension !== "block")) { return; }
 				menu.addItem((item) => {
-					item.setTitle("Z2K - Convert to markdown template")
+					item.setTitle("Z2K: Switch to .md Extension")
 						.onClick(() => this.convertToMarkdownTemplate(file as TFile));
 				});
 			})
@@ -1266,8 +1232,27 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			this.app.workspace.on("file-menu", (menu, file) => {
 				if (!(file instanceof TFile) || this.getFileTemplateTypeSync(file) === "content-file") { return; }
 				menu.addItem((item) => {
-					item.setTitle("Z2K - Convert to content file")
+					item.setTitle("Z2K: Convert to Content File")
 						.onClick(() => this.convertFileTemplateType(file as TFile, "content-file"));
+				});
+			})
+		);
+		// Continue filling / Finalize context menu items
+		this.registerEvent(
+			this.app.workspace.on("file-menu", (menu, file) => {
+				if (!(file instanceof TFile) || file.extension !== "md") { return; }
+				menu.addItem((item) => {
+					item.setTitle(`Z2K: Continue Filling This ${cardRefNameUpper(this.settings)}`)
+						.onClick(() => this.continueCard({ existingFile: file as TFile }));
+				});
+			})
+		);
+		this.registerEvent(
+			this.app.workspace.on("file-menu", (menu, file) => {
+				if (!(file instanceof TFile) || file.extension !== "md") { return; }
+				menu.addItem((item) => {
+					item.setTitle(`Z2K: Finalize This ${cardRefNameUpper(this.settings)}`)
+						.onClick(() => this.continueCard({ existingFile: file as TFile, promptMode: "none", finalize: true }));
 				});
 			})
 		);
@@ -1286,6 +1271,12 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		});
 	}
 
+	// Decode base64, supporting both standard and URL-safe variants
+	private decodeBase64(str: string): string {
+		const normalized = str.replace(/-/g, '+').replace(/_/g, '/');
+		return atob(normalized);
+	}
+
 	// Main command processor - accepts typed parameters and routes to appropriate handlers
 	// Called by: registerURIHandler (from URI), processQueueFile (from offline queue)
 	// DOCS: Non-field parameters can be templatePath, TemplatePath, template-path, template_path, etc. for robustness
@@ -1296,7 +1287,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 
 		const knownKeys = ['cmd', 'templatePath', 'blockPath', 'existingFilePath',
 			'destDir', 'destHeader', 'prompt', 'finalize', 'location',
-			'templateJsonData', 'templateJsonData64', 'json', 'json64',
+			'fieldData', 'fieldData64', 'jsonData', 'jsonData64',
 			'maxRetries', 'retryDelayMs'];
 
 		// Separate command params from template data
@@ -1310,10 +1301,19 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			}
 		}
 
-		// Handle templateJsonData (can be string or object, but not array/null)
+		// Handle fieldData64 (base64-encoded JSON) - decoded into fieldData if fieldData not present
+		if (cps.fieldData64 && !cps.fieldData) {
+			try {
+				cps.fieldData = this.decodeBase64(cps.fieldData64);
+			} catch {
+				throw new TemplatePluginError("Command: Invalid fieldData64 (must be valid base64)");
+			}
+		}
+
+		// Handle fieldData (can be string or object, but not array/null)
 		let additionalFields: Record<string, VarValueType> = {};
-		if (cps.templateJsonData) {
-			let data = cps.templateJsonData;
+		if (cps.fieldData) {
+			let data = cps.fieldData;
 			// Parse if string
 			if (typeof data === 'string') {
 				// Check if it's a file path (doesn't start with '{')
@@ -1321,7 +1321,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 					// Try to load as vault-relative file path
 					const jsonFile = this.getFile(data);
 					if (!jsonFile) {
-						throw new TemplatePluginError(`Command: templateJsonData file not found: ${data}`);
+						throw new TemplatePluginError(`Command: fieldData file not found: ${data}`);
 					}
 					try {
 						const fileContents = await this.app.vault.read(jsonFile);
@@ -1334,20 +1334,20 @@ export default class Z2KTemplatesPlugin extends Plugin {
 					try {
 						data = JSON.parse(data);
 					} catch {
-						throw new TemplatePluginError("Command: Invalid templateJsonData (must be valid JSON or vault-relative file path)");
+						throw new TemplatePluginError("Command: Invalid fieldData (must be valid JSON or vault-relative file path)");
 					}
 				}
 			}
 			// Validate is plain object (not array/null)
 			if (!data || typeof data !== "object" || Array.isArray(data)) {
-				throw new TemplatePluginError("Command: templateJsonData must be an object (not array or null)");
+				throw new TemplatePluginError("Command: fieldData must be an object (not array or null)");
 			}
 			additionalFields = data;
 		}
 
 		// Merge field data
 		// DOCS: All params (except recognized command params) are treated as template data
-		// DOCS: Direct params override values in templateJsonData
+		// DOCS: Direct params override values in fieldData
 		const fieldOverrides: Record<string, VarValueType> = { ...additionalFields, ...templateData };
 		// Only convert URI string values, not JSON-sourced values (already typed)
 		const uriKeys: Set<string> = isJsonSource ? new Set() : new Set(Object.keys(templateData));
@@ -1361,21 +1361,30 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			throw new TemplatePluginError("Command: 'cmd' parameter cannot be empty");
 		}
 
-		// Handle 'json' command - parse JSON and recursively call processCommand
-		if (cmd === "json") {
-			if (!cps.json) {
-				throw new TemplatePluginError("Command: 'json' cmd requires 'json' parameter");
+		// Handle 'fromJson' command - parse JSON and recursively call processCommand
+		if (cmd === "fromjson") {
+			// Decode jsonData64 if jsonData not present
+			let jsonStr = cps.jsonData;
+			if (!jsonStr && cps.jsonData64) {
+				try {
+					jsonStr = this.decodeBase64(cps.jsonData64);
+				} catch {
+					throw new TemplatePluginError("Command: Invalid jsonData64 (must be valid base64)");
+				}
+			}
+			if (!jsonStr) {
+				throw new TemplatePluginError("Command: 'fromJson' cmd requires 'jsonData' or 'jsonData64' parameter");
 			}
 			try {
-				const parsedParams = JSON.parse(cps.json);
+				const parsedParams = JSON.parse(jsonStr);
 				if (!parsedParams || typeof parsedParams !== "object" || Array.isArray(parsedParams)) {
-					throw new TemplatePluginError("Command: 'json' parameter must be a valid JSON object (not array or null)");
+					throw new TemplatePluginError("Command: 'jsonData' must be a valid JSON object (not array or null)");
 				}
 				// Recursive call with parsed JSON (inherit context, mark as JSON source)
 				return await this.processCommand(parsedParams as CommandParams, context, true);
 			} catch (e) {
 				if (e instanceof TemplatePluginError) throw e;
-				throw new TemplatePluginError("Command: Invalid json parameter (must be valid JSON)");
+				throw new TemplatePluginError("Command: Invalid jsonData (must be valid JSON)");
 			}
 		}
 
@@ -1925,7 +1934,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			// Convert sourceText to string for addPluginBuiltIns (handles all VarValueType cases)
 			const sourceTextStr = opts.fieldOverrides.sourceText != null ? String(opts.fieldOverrides.sourceText) : undefined;
 			await this.addYamlFieldValues(state); // System blocks already in state from parseTemplate
-			await this.addPluginBuiltIns(state, { sourceText: sourceTextStr, templateName: opts.templateFile.basename });
+			await this.addPluginBuiltIns(state, { sourceText: sourceTextStr, templateName: opts.templateFile.basename, fileCreationDate: opts.sourceFile?.stat.ctime });
 			this.setSuggestedTitleFromYaml(state);
 			// For sourceFile: use original filename as suggestion if template doesn't specify one
 			if (opts.sourceFile) {
@@ -1979,12 +1988,10 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		try {
 			let content = await this.app.vault.read(opts.existingFile);
 			let state = await this.parseTemplate(content, "", "", pathFileFromTFile(opts.existingFile));
-			// Add global block and system blocks YAML for field values
+			// Add global block YAML for field values (system blocks already in note from creation)
 			let globalBlockYaml = Z2KYamlDoc.splitFrontmatter(this.settings.globalBlock).fm;
-			let systemBlocksContent = await this.GetSystemBlocksContent(pathFolderFromTFolder(opts.existingFile.parent as TFolder));
-			let systemBlocksYaml = Z2KYamlDoc.splitFrontmatter(systemBlocksContent).fm;
-			await this.addYamlFieldValues(state, [globalBlockYaml, systemBlocksYaml]);
-			await this.addPluginBuiltIns(state, { existingTitle: opts.existingFile.basename });
+			await this.addYamlFieldValues(state, [globalBlockYaml]);
+			await this.addPluginBuiltIns(state, { existingTitle: opts.existingFile.basename, fileCreationDate: opts.existingFile.stat.ctime });
 			this.handleOverrides(state, opts.fieldOverrides, opts.uriKeys ?? new Set(), opts.promptMode || "all");
 			let hasFillableFields = this.hasFillableFields(state.fieldInfos);
 			// TODO: handle the case where fieldOverrides fills all fields and promptMode is "remaining"
@@ -2007,6 +2014,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	}
 	async insertBlock(opts?: {
 		templateFile?: PathFile,
+		blockTypeFolder?: PathFolder, // scopes which block templates are shown in the picker
 		existingFile?: TFile, // Always an indexed output file
 		destHeader?: string,
 		location?: "file-top"|"file-bottom"|"header-top"|"header-bottom"|number,
@@ -2021,8 +2029,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			if (!opts.fieldOverrides) { opts.fieldOverrides = {}; }
 			if (!opts.existingFile) { opts.existingFile = this.getOpenFileOrThrow(); }
 			if (!opts.templateFile) {
-				const currDir = pathFolderFromTFolder(this.getOpenFileOrThrow().parent as TFolder);
-				opts.templateFile = await this.promptForTemplateFile(currDir, "block-template");
+				const scopeDir = opts.blockTypeFolder ?? pathFolderFromTFolder(this.getOpenFileOrThrow().parent as TFolder);
+				opts.templateFile = await this.promptForTemplateFile(scopeDir, "block-template");
 			}
 			let editor: Editor | null = null;
 			if (!opts.location && !opts.destHeader) {
@@ -2038,14 +2046,14 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			let hadSourceTextField = !!state.fieldInfos["sourceText"];
 			// Add global block, system blocks, and existing file YAML for field values
 			let globalBlockYaml = Z2KYamlDoc.splitFrontmatter(this.settings.globalBlock).fm;
-			let systemBlocksContent = await this.GetSystemBlocksContent(pathFolderFrom(opts.templateFile.parentPath));
+			let systemBlocksContent = await this.GetSystemBlocksContent(this.getTemplateCardType(opts.templateFile));
 			let systemBlocksYaml = Z2KYamlDoc.splitFrontmatter(systemBlocksContent).fm;
 			let existingFileContent = await this.app.vault.read(opts.existingFile);
 			let existingFileYaml = Z2KYamlDoc.splitFrontmatter(existingFileContent).fm;
 			await this.addYamlFieldValues(state, [globalBlockYaml, systemBlocksYaml, existingFileYaml]);
 			// Convert sourceText to string for addPluginBuiltIns (handles all VarValueType cases)
 			const sourceTextStr = opts.fieldOverrides.sourceText != null ? String(opts.fieldOverrides.sourceText) : undefined;
-			await this.addPluginBuiltIns(state, { sourceText: sourceTextStr, existingTitle: opts.existingFile.basename });
+			await this.addPluginBuiltIns(state, { sourceText: sourceTextStr, existingTitle: opts.existingFile.basename, fileCreationDate: opts.existingFile.stat.ctime });
 			this.handleOverrides(state, opts.fieldOverrides, opts.uriKeys ?? new Set(), opts.promptMode || "all");
 
 			// if (this.hasFillableFields(state.fieldInfos) && opts.promptMode !== "none") {
@@ -2305,6 +2313,11 @@ export default class Z2KTemplatesPlugin extends Plugin {
 					currentType = "document-template";
 				}
 			}
+			// Rename to .md first so the subsequent modify triggers a metadata cache update on a .md file
+			if (file.extension === "template" || file.extension === "block") {
+				const renamedFile = await this.renameFileExtension(file, "md");
+				if (renamedFile) { file = renamedFile; }
+			}
 			// Update YAML to ensure type is set
 			let content = await this.app.vault.read(file);
 			let { fm, body } = Z2KYamlDoc.splitFrontmatter(content);
@@ -2313,10 +2326,6 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			fm = doc.toString();
 			content = Z2KYamlDoc.joinFrontmatter(fm, body);
 			await this.app.vault.modify(file, content);
-			// Rename to .md if currently .template or .block
-			if (file.extension === "template" || file.extension === "block") {
-				await this.renameFileExtension(file, "md");
-			}
 		} catch (error) { this.handleErrors(error); }
 	}
 	async setTemplateExtensionsVisible(visible: boolean) {
@@ -2327,12 +2336,12 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			// Show: register extensions as markdown
 			// @ts-expect-error: internal API
 			this.app.viewRegistry.registerExtensions(["template", "block"], "markdown");
-			new Notice("Template files are now visible.");
+			new Notice("Template files are now visible");
 		} else {
 			// Hide: unregister extensions
 			// @ts-expect-error: internal API
 			this.app.viewRegistry.unregisterExtensions(["template", "block"]);
-			new Notice("Template files are now hidden.");
+			new Notice("Template files are now hidden");
 		}
 		this.settings.templateExtensionsVisible = visible;
 		await this.saveData(this.settings);
@@ -2649,12 +2658,32 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		ranked.sort((a, b) => a.distance - b.distance || a.file.path.localeCompare(b.file.path));
 		return ranked.map(r => r.file);
 	}
-	// Derives the card type folder from a template's path by stripping Templates/.Templates segments.
+	// Derives the card type folder from a template's path by stripping the templates root prefix
+	// and at most one templates-named subfolder segment. Only one level of templates subfolder
+	// is supported (no templates-inside-templates); additional segments with the same name are
+	// treated as literal folder names.
 	// Callers must ensure the file is actually a template — no type check is done here.
 	getTemplateCardType(template: PathFile): PathFolder {
 		const tfn = this.settings.templatesFolderName;
-		const segments = template.parentPath.split('/').filter(s => s !== tfn && s !== '.' + tfn);
-		return pathFolderFrom(segments.join('/'));
+		const root = this.settings.templatesRootFolder;
+		let path = template.parentPath;
+		// Strip the configured templates root prefix
+		if (root && path.startsWith(root + '/')) {
+			path = path.substring(root.length + 1);
+		} else if (root && path === root) {
+			path = '';
+		}
+		// Strip at most one templates-named segment
+		const segments = path.split('/');
+		let stripped = false;
+		const result = segments.filter(s => {
+			if (!stripped && (s === tfn || s === '.' + tfn)) {
+				stripped = true;
+				return false;
+			}
+			return true;
+		});
+		return pathFolderFrom(result.join('/'));
 	}
 	// Extension priority for block templates: more specific extensions win
 	static readonly BLOCK_EXTENSIONS = ['.block', '.template', '.md'];
@@ -2901,7 +2930,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			break; // take the first one we find
 		}
 	}
-	async addPluginBuiltIns(state: TemplateState, opts: { sourceText?: string, existingTitle?: string, templateName?: string, templateVersion?: string, templateAuthor?: string } = {}) {
+	async addPluginBuiltIns(state: TemplateState, opts: { sourceText?: string, existingTitle?: string, templateName?: string, templateVersion?: string, templateAuthor?: string, fileCreationDate?: number } = {}) {
 		// sourceText
 		state.fieldInfos["sourceText"] = {
 			fieldName: "sourceText",
@@ -3001,6 +3030,14 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			directives: ['no-prompt'],
 			value: await navigator.clipboard.readText(),
 		};
+
+		// fileCreationDate - creation date of the file being operated on
+		state.fieldInfos["fileCreationDate"] = {
+			fieldName: "fileCreationDate",
+			type: "text",
+			directives: ['no-prompt'],
+			value: moment(opts.fileCreationDate ?? Date.now()).format("YYYY-MM-DD"),
+		};
 	}
 
 	async addYamlFieldValues(state: TemplateState, additionalYamlSources?: string[]): Promise<void> {
@@ -3084,35 +3121,61 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		}
 	}
 
+	// Walks upward from cardTypeFolder to the vault root, collecting .system-block.md files.
+	// At each ancestor level, also checks for Templates/.Templates subfolders and walks down
+	// through the corresponding path structure inside them. Each block gets a depth integer
+	// (0 = card type folder level, higher = more general). Stop files remove all blocks with
+	// depth greater than the stop's depth.
 	private async GetSystemBlocksContent(cardTypeFolder: PathFolder): Promise<string> {
-		// Get all the system block files between here and the root
-		const templatesRootPath = normalizeFullPath(this.settings.templatesRootFolder);
-		let currentPath = cardTypeFolder.path;
-		let systemBlocks: string[] = [];
+		const tfn = this.settings.templatesFolderName;
 		const adapter = this.app.vault.adapter;
-
-		while (true) {
-			const filePath = joinPath(currentPath, '.system-block.md');
-			try {
-				// Need to use adapter because the usual file read doesn't work for files that start with .
-				systemBlocks.push(await adapter.read(filePath));
-			} catch {} // Can't find/read the file
-
-			// Check for stop file - if present, don't continue to parent folders
-			const stopFilePath = joinPath(currentPath, '.system-block-stop');
-			if (await adapter.exists(stopFilePath)) break;
-
-			if (currentPath === templatesRootPath || !currentPath) break; // Stop at the templates root
-			// Walk up to parent
-			const lastSlash = currentPath.lastIndexOf('/');
-			currentPath = lastSlash >= 0 ? currentPath.substring(0, lastSlash) : '';
+		const segments = cardTypeFolder.path ? cardTypeFolder.path.split('/') : [];
+		let blocks: { content: string, depth: number }[] = [];
+		let stopDepths: number[] = [];
+		// Walk from card type folder (depth 0) up to vault root (depth = segments.length)
+		for (let level = 0; level <= segments.length; level++) {
+			const currentPath = segments.slice(0, segments.length - level).join('/');
+			const depth = level;
+			const relativeSegments = segments.slice(segments.length - level);
+			// Direct check at this ancestor
+			await this.collectSystemBlock(adapter, currentPath, depth, blocks, stopDepths);
+			// Check for templates subfolders and walk down through the relative path inside them
+			for (const variant of [tfn, '.' + tfn]) {
+				const templatesPath = joinPath(currentPath, variant);
+				if (await adapter.exists(templatesPath)) {
+					await this.collectSystemBlock(adapter, templatesPath, depth, blocks, stopDepths);
+					let walkPath = templatesPath;
+					for (let i = 0; i < relativeSegments.length; i++) {
+						walkPath = joinPath(walkPath, relativeSegments[i]);
+						await this.collectSystemBlock(adapter, walkPath, depth - (i + 1), blocks, stopDepths);
+					}
+				}
+			}
 		}
-		systemBlocks.reverse(); // So root is first
-		let yamls = systemBlocks.map(b => Z2KYamlDoc.splitFrontmatter(b).fm);
-		let bodies = systemBlocks.map(b => Z2KYamlDoc.splitFrontmatter(b).body).filter(body => body.trim() !== '');
+		// Apply stop files: remove all blocks more general than the most restrictive stop
+		if (stopDepths.length > 0) {
+			const cutoff = Math.min(...stopDepths);
+			blocks = blocks.filter(b => b.depth <= cutoff);
+		}
+		// Sort by depth descending (most general first) so last-wins favors more specific
+		blocks.sort((a, b) => b.depth - a.depth);
+		let yamls = blocks.map(b => Z2KYamlDoc.splitFrontmatter(b.content).fm);
+		let bodies = blocks.map(b => Z2KYamlDoc.splitFrontmatter(b.content).body).filter(body => body.trim() !== '');
 		let mergedFm = Z2KYamlDoc.mergeLastWins(yamls);
 		let combinedBody = bodies.join('');
 		return Z2KYamlDoc.joinFrontmatter(mergedFm, combinedBody);
+	}
+	private async collectSystemBlock(
+		adapter: DataAdapter, folderPath: string, depth: number,
+		blocks: { content: string, depth: number }[], stopDepths: number[]
+	) {
+		const blockFile = joinPath(folderPath, '.system-block.md');
+		try {
+			// Need to use adapter because the usual file read doesn't work for files that start with .
+			blocks.push({ content: await adapter.read(blockFile), depth });
+		} catch {} // Can't find/read the file
+		const stopFile = joinPath(folderPath, '.system-block-stop');
+		if (await adapter.exists(stopFile)) { stopDepths.push(depth); }
 	}
 
 	// Logging and error handling
@@ -4980,6 +5043,184 @@ function EditorModalContent({
 			</div>
 		</div>
 	);
+}
+
+// ------------------------------------------------------------------------------------------------
+// Quick Commands Modal
+// ------------------------------------------------------------------------------------------------
+type QuickCommand = Z2KTemplatesPluginSettings["quickCommands"][number];
+function newQuickCommand(): QuickCommand {
+	return {
+		id: Math.random().toString(36).slice(2, 10) + Date.now().toString(36),
+		name: '',
+		action: 'create',
+		targetFolder: '',
+		templateFile: '',
+		sourceText: 'none',
+	};
+}
+function QuickCommandsModalContent({ initialCommands, onSave, onCancel }: {
+	initialCommands: QuickCommand[];
+	onSave: (commands: QuickCommand[]) => void;
+	onCancel: () => void;
+}) {
+	const [commands, setCommands] = useState<QuickCommand[]>(() =>
+		initialCommands.map(c => ({...c}))
+	);
+	const updateCommand = (index: number, updates: Partial<QuickCommand>) => {
+		setCommands(prev => prev.map((c, i) => i === index ? {...c, ...updates} : c));
+	};
+	const removeCommand = (index: number) => {
+		setCommands(prev => prev.filter((_, i) => i !== index));
+	};
+	const moveCommand = (index: number, direction: -1 | 1) => {
+		const target = index + direction;
+		if (target < 0 || target >= commands.length) { return; }
+		setCommands(prev => {
+			const next = [...prev];
+			[next[index], next[target]] = [next[target], next[index]];
+			return next;
+		});
+	};
+	const insertCommand = (afterIndex: number) => {
+		setCommands(prev => {
+			const next = [...prev];
+			next.splice(afterIndex + 1, 0, newQuickCommand());
+			return next;
+		});
+	};
+	return (
+		<div className="quick-commands-editor">
+			{commands.length === 0 && (
+				<div className="quick-commands-empty">No quick commands configured.</div>
+			)}
+			{commands.map((cmd, i) => (
+				<div key={cmd.id} className="quick-command-card">
+					<div className="quick-command-fields">
+						<label>
+							Name
+							<input
+								type="text"
+								value={cmd.name}
+								placeholder="New Thought"
+								onChange={e => updateCommand(i, {name: e.target.value})}
+							/>
+						</label>
+						<label>
+							Action
+							<select
+								className="dropdown"
+								value={cmd.action}
+								onChange={e => updateCommand(i, {action: e.target.value as QuickCommand["action"]})}
+							>
+								<option value="create">Create New File</option>
+								<option value="insert">Insert Block</option>
+							</select>
+						</label>
+						<label>
+							Target Folder
+							<input
+								type="text"
+								value={cmd.targetFolder}
+								placeholder="Leave empty to prompt, / for vault root"
+								onChange={e => updateCommand(i, {targetFolder: e.target.value})}
+							/>
+						</label>
+						<label>
+							Template File
+							<input
+								type="text"
+								value={cmd.templateFile}
+								placeholder="Leave empty to prompt"
+								onChange={e => updateCommand(i, {templateFile: e.target.value})}
+							/>
+						</label>
+						<label>
+							Source Text
+							<select
+								className="dropdown"
+								value={cmd.sourceText}
+								onChange={e => updateCommand(i, {sourceText: e.target.value as QuickCommand["sourceText"]})}
+							>
+								<option value="none">None</option>
+								<option value="selection">Selection</option>
+								<option value="clipboard">Clipboard</option>
+							</select>
+						</label>
+					</div>
+					<div className="quick-command-controls">
+						<button
+							className="clickable-icon"
+							aria-label="Move up"
+							disabled={i === 0}
+							onClick={() => moveCommand(i, -1)}
+						>↑</button>
+						<button
+							className="clickable-icon"
+							aria-label="Move down"
+							disabled={i === commands.length - 1}
+							onClick={() => moveCommand(i, 1)}
+						>↓</button>
+						<button
+							className="clickable-icon"
+							aria-label="Insert below"
+							onClick={() => insertCommand(i)}
+						>+</button>
+						<button
+							className="clickable-icon"
+							aria-label="Delete"
+							onClick={() => removeCommand(i)}
+						>×</button>
+					</div>
+				</div>
+			))}
+			<div className="quick-commands-actions">
+				<button
+					className="mod-cta"
+					onClick={() => setCommands(prev => [...prev, newQuickCommand()])}
+				>
+					Add Command
+				</button>
+			</div>
+			<div className="quick-commands-footer">
+				<button className="btn btn-secondary" onClick={onCancel}>Cancel</button>
+				<button className="btn btn-primary" onClick={() => onSave(commands)}>Save</button>
+			</div>
+		</div>
+	);
+}
+export class QuickCommandsModal extends Modal {
+	plugin: Z2KTemplatesPlugin;
+	root: any;
+	constructor(app: App, plugin: Z2KTemplatesPlugin) {
+		super(app);
+		this.plugin = plugin;
+	}
+	onOpen() {
+		this.modalEl.addClass('z2k', 'quick-commands-modal');
+		this.titleEl.setText('Quick Commands');
+		this.contentEl.empty();
+		this.contentEl.addClass('modal-content');
+		this.root = createRoot(this.contentEl);
+		this.root.render(
+			<ErrorBoundary onError={(error) => { new Notice(`Quick Commands error: ${error.message}`); this.close(); }}>
+				<QuickCommandsModalContent
+					initialCommands={this.plugin.settings.quickCommands}
+					onCancel={() => this.close()}
+					onSave={async (commands) => {
+						this.plugin.settings.quickCommands = commands;
+						await this.plugin.saveData(this.plugin.settings);
+						this.plugin.queueRefreshCommands();
+						this.close();
+					}}
+				/>
+			</ErrorBoundary>
+		);
+	}
+	onClose() {
+		if (this.root) { this.root.unmount(); }
+		this.contentEl.empty();
+	}
 }
 
 export class EditorModal extends Modal {

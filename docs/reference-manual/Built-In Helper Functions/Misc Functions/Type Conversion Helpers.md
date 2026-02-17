@@ -82,11 +82,16 @@ Returns `false` for:
 {{toBool "yes"}}           {{! Returns: true }}
 {{toBool "YES"}}           {{! Returns: true }}
 {{toBool "1"}}             {{! Returns: true }}
+{{toBool 1}}               {{! Returns: true (numeric 1 is converted to "1") }}
 {{toBool "enabled"}}       {{! Returns: true }}
 {{toBool "no"}}            {{! Returns: false }}
 {{toBool "0"}}             {{! Returns: false }}
+{{toBool 0}}               {{! Returns: false (numeric 0 is converted to "0") }}
 {{toBool ""}}              {{! Returns: false }}
 ```
+
+> [!NOTE]
+> Non-boolean values are converted to strings before matching. This means numeric `1` returns `true` (because `String(1)` produces `"1"`, which is in the truthy list), while numeric `0` returns `false`.
 
 ### Use Case: Handling User Input
 

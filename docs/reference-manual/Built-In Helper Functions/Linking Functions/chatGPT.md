@@ -4,8 +4,7 @@ sidebar_class_name: z2k-code
 sidebar_label: "{{chatGPT}}"
 ---
 # chatGPT Helper
-
-The `chatGPT` Helper function lets you create HTML links that will start a new chat using information in your template fields. 
+The `chatGPT` Helper function lets you create markdown links that will start a new chat using information in your template fields.
 
 The format for the helper function is:
 ```
@@ -15,7 +14,7 @@ The format for the helper function is:
 where:
 - `chatGPT` is the predefined helper name used for starting a chatGPT Conversation
 - `chattext` is a text string that will be passed to chatGPT to start a conversation. 
-	- Note: this text will be "slugified" automatically, so there is no need to first perform [[format-string-slugify]] on the chat text.
+	- Note: this text will be URL-encoded (percent-encoded) automatically, so there is no need to manually encode the chat text.
 - `displaytext` is the optional parameter of the text to display for the chatgpt link. If not specified, then it will display the chattext.
 
 ## Examples
@@ -33,5 +32,5 @@ Here is an example of adding ChatGPT discussion prompts directly into a book's n
 ## Shorthand
 Under the covers, the helper function `{{chatGPT chattext displaytext}}` is shorthand for:
 
-`{{url "https://chatgpt.com/?prompt={{format-string-sluggify chattext}}" displaytext}}`
+`{{url "https://chatgpt.com/?prompt={{format-string-encode-URI chattext}}" displaytext}}`
 

@@ -5,7 +5,6 @@ sidebar_label: "{{clipboard}}"
 title: "{{clipboard}}"
 ---
 # clipboard Built-In Field
-
 The `{{clipboard}}` built-in field returns the current contents of your system clipboard at the moment the template is rendered.
 
 ## Syntax
@@ -20,7 +19,6 @@ Returns the text content currently stored in the system clipboard. If the clipbo
 ## Use Cases
 
 ### Quick Capture from Clipboard
-
 Automatically include clipboard content when creating a new note:
 
 ```handlebars
@@ -33,7 +31,6 @@ created: {{date}}
 ```
 
 ### Conditional Clipboard Usage
-
 Check if the clipboard has content before including it:
 
 ```handlebars
@@ -44,18 +41,16 @@ Check if the clipboard has content before including it:
 {{/if}}
 ```
 
-### Using Clipboard as Default Value
-
-Set the clipboard content as a default for a field, allowing the user to modify it:
+### Using Clipboard as a Suggested Value
+Set the clipboard content as a prompt suggestion for a field, allowing the user to modify it:
 
 ```handlebars
-{{field-info quote suggest=clipboard prompt="Quote text"}}
+{{field-info quote suggest=clipboard prompt="Enter the text you wish to quote:"}}
 
 > {{quote}}
 ```
 
 ### Combining with Other Fields
-
 Use clipboard content alongside other template data:
 
 ```handlebars
@@ -72,7 +67,7 @@ Captured: {{date}}
 
 ## Notes
 A few things of note:
-- The clipboard content is captured at template render time, not at prompt time
+- The clipboard content is captured at template render time, not at prompt time, unless a prompt uses the clipboard. 
 - Only text content is supported; binary data (images, files) will result in an empty value
 - Clipboard access requires the appropriate browser/system permissions
 - The field is automatically set to `no-prompt` (you cannot be prompted to enter clipboard content)

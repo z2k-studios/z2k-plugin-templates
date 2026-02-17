@@ -5,21 +5,10 @@ sidebar_metacategory: "Basics"
 ---
 
 # Commands
-
-## Overview
-
+Z2K Templates provides commands through Obsidian's Command Palette and context menus. These commands let you create files from templates, insert block templates, and manage template file types.
 
 ## Contents
-- [[Command Palette]] - Commands available through the Command Palette
-	- [[Create new note]]                           
-	- [[Create note from selected text]]           
-	- [[Convert existing note to templated note]]  
-	- [[Continue filling note]]                     
-	- [[Insert block template]]                     
-	- [[Insert block template using selected text]] 
-	- [[Convert to Document Template]]            
-	- [[Convert to Content File]]                  
-	- [[Convert to Block Template]]            
-- [[Quick Create Commands]]
-- [[Context Menu Commands]]
+- [[Command Palette]] – Commands available via `Ctrl/Cmd + P`
+- [[Context Menu Commands]] – Commands available via right-click
+- [[Quick Create Commands]] – How to make custom commands for specific templates
 

@@ -4,7 +4,6 @@ sidebar_class_name: z2k-code
 sidebar_label: "{{wikipedia}}"
 ---
 # wikipedia Helper
-
 The `wikipedia` Helper function is a simple function that returns a markdown link that performs a wikipedia search.
 
 The format for the helper function is:
@@ -27,11 +26,11 @@ Author on Wikipedia: {{wikipedia BookAuthor "(wikipedia)"}}
 Then if the user provided "Ludwig Wittgenstein" as the BookAuthor, then it would output:
 
 ```
-Author on Wikipedia: [(wikipedia)](https://en.wikipedia.org/w/index.php?search=Ludwig-Wittgenstein)
+Author on Wikipedia: [(wikipedia)](https://en.wikipedia.org/w/index.php?search=ludwig-wittgenstein)
 ```
 
 ## Shorthand
 Under the covers, the helper function `{{wikipedia searchtext displaytext}}` is shorthand for:
 
-`{{url "https://en.wikipedia.org/w/index.php?search={{format-string-sluggify searchtext}}" displaytext}}`
+`{{url "https://en.wikipedia.org/w/index.php?search={{format-string-slugify searchtext}}" displaytext}}`
 

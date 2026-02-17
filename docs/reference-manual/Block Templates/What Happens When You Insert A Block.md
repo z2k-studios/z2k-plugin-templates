@@ -20,7 +20,7 @@ When you insert a block template, the plugin performs several steps to parse, re
 
 ### 1. Template Selection
 
-If you are inserting a block template interactively via the [[Insert block template]] command, the plugin:
+If you are inserting a block template interactively via the [[Insert Block Template]] command, the plugin:
 - Determines your current note's location (the [[Destination Context]])
 - Gathers block templates relevant to that context (e.g. exists within the path)
 - Presents a selection modal for you to choose from
@@ -109,7 +109,7 @@ Note that `status` was replaced (not merged), and `tags` was completely replaced
 
 ### Source Text Handling
 
-When using **[[Insert block template using selection]]**:
+When using **[[Insert Block Template Using Selection]]**:
 - The selected text is captured and made available as `{{sourceText}}`
 - If your block template uses `{{sourceText}}`, it will be replaced with the selection
 - If your block template does NOT reference `{{sourceText}}`, the selection is appended to the end of the inserted content

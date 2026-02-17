@@ -4,7 +4,6 @@ sidebar_class_name: z2k-code
 sidebar_label: "{{url}}"
 ---
 # url Helper
-
 The `url` Helper function converts a text URL string into a markdown formatted link. 
 
 The format for the helper function is:
@@ -48,12 +47,10 @@ If the user the supplies the following data:
 It then will output
 
 ```md title="Leaves of Grass.md"
-
-# Links to More Information
+# Links to More Information:
 - Book URL :: [Leaves of Grass](https://whitmanarchive.org/published-writings/leaves-of-grass/1855)
 - Author URL :: [Link to Walt Whitman](https://en.wikipedia.org/wiki/Walt_Whitman)
 - ISBN URL :: [978-1-59853-097-1](https://isbnsearch.org/isbn/978-1-59853-097-1)
-
 ```
 
 ## Uses

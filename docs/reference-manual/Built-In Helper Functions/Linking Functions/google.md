@@ -4,7 +4,6 @@ sidebar_class_name: z2k-code
 sidebar_label: "{{google}}"
 ---
 # google Helper
-
 The `google` Helper function is a simple function that returns a markdown link that performs a google search.
 
 The format for the helper function is:
@@ -33,5 +32,5 @@ Search for Article online: [AI and Intelligence: Effects of AI on the Size of In
 ## Shorthand
 Under the covers, the helper function `{{google searchtext displaytext}}` is shorthand for:
 
-`{{url "https://google.com/search?q={{format-string-sluggify searchtext}}" displaytext}}`
+`{{url "https://google.com/search?q={{format-string-slugify searchtext}}" displaytext}}`
 
