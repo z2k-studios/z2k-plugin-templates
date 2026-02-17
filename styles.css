@@ -67,11 +67,24 @@
 	color: var(--text-muted);
 	white-space: nowrap;
 }
-.quick-command-fields label input[type="text"],
+.quick-command-fields label input[type="text"] {
+	flex: 1;
+	min-width: 0;
+	height: var(--input-height);
+	background: var(--background-modifier-form-field);
+	border: var(--input-border-width) solid var(--background-modifier-border);
+	padding: var(--input-padding);
+	font-size: var(--font-ui-small);
+	border-radius: var(--input-radius);
+	font-family: inherit;
+}
 .quick-command-fields label select {
 	flex: 1;
 	min-width: 0;
-	padding: 4px 8px;
+	background-color: var(--dropdown-background);
+	border: 0;
+	box-shadow: var(--input-shadow);
+	padding: var(--dropdown-padding);
 }
 .quick-command-controls {
 	display: flex;
@@ -456,15 +469,12 @@
 }
 
 
-/* TODO: These look global, not field collection modal-specific */
-
 /* Basic input styling */
-.z2k
-input[type="text"],
-input[type="number"],
-input[type="date"],
-select,
-textarea {
+.z2k input[type="text"],
+.z2k input[type="number"],
+.z2k input[type="date"],
+.z2k select,
+.z2k textarea {
 	width: 100%;
 	padding: 8px 10px;
 	background-color: var(--background-secondary);
@@ -483,12 +493,11 @@ textarea {
 	/* max-width: 100%; */
 }
 
-.z2k
-input[type="text"]:focus,
-input[type="number"]:focus,
-input[type="date"]:focus,
-select:focus,
-textarea:focus {
+.z2k input[type="text"]:focus,
+.z2k input[type="number"]:focus,
+.z2k input[type="date"]:focus,
+.z2k select:focus,
+.z2k textarea:focus {
 	border-color: var(--interactive-accent);
 	box-shadow: 0 0 0 2px rgba(var(--interactive-accent-rgb), 0.2);
 	outline: none;

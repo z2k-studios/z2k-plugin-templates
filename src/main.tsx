@@ -5080,6 +5080,7 @@ function QuickCommandsModalContent({ initialCommands, onSave, onCancel }: {
 						<label>
 							Action
 							<select
+								className="dropdown"
 								value={cmd.action}
 								onChange={e => updateCommand(i, {action: e.target.value as QuickCommand["action"]})}
 							>
@@ -5092,7 +5093,7 @@ function QuickCommandsModalContent({ initialCommands, onSave, onCancel }: {
 							<input
 								type="text"
 								value={cmd.targetFolder}
-								placeholder="Leave empty to prompt each time"
+								placeholder="Leave empty to prompt, / for vault root"
 								onChange={e => updateCommand(i, {targetFolder: e.target.value})}
 							/>
 						</label>
@@ -5101,13 +5102,14 @@ function QuickCommandsModalContent({ initialCommands, onSave, onCancel }: {
 							<input
 								type="text"
 								value={cmd.templateFile}
-								placeholder="Leave empty to prompt each time"
+								placeholder="Leave empty to prompt"
 								onChange={e => updateCommand(i, {templateFile: e.target.value})}
 							/>
 						</label>
 						<label>
 							Source Text
 							<select
+								className="dropdown"
 								value={cmd.sourceText}
 								onChange={e => updateCommand(i, {sourceText: e.target.value as QuickCommand["sourceText"]})}
 							>
