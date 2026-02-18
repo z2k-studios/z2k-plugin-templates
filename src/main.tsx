@@ -1754,6 +1754,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			const lines = content.split('\n').filter(line => line.trim());
 			const pauseMs = parseDuration(this.settings.offlineCommandQueuePause, 0);
 			const failedLines: string[] = [];
+			const succeededLines: string[] = [];
 			// Process each line
 			for (let i = 0; i < lines.length; i++) {
 				const line = lines[i];
@@ -1768,6 +1769,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				}
 				try {
 					await this.processCommand(cmdParams, 'batch', true);
+					succeededLines.push(line);
 				} catch (e) {
 					// Command execution failed - check if it has retry config
 					const maxRetries = cmdParams.maxRetries || 0;
@@ -1787,6 +1789,14 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				// Pause between commands (but not after the last one)
 				if (pauseMs > 0 && i < lines.length - 1) {
 					await sleep(pauseMs);
+				}
+			}
+			// Archive succeeded lines if archiving is enabled
+			if (succeededLines.length > 0) {
+				const archiveDurationMs = parseDuration(this.settings.offlineCommandQueueArchiveDuration, 0);
+				if (archiveDurationMs > 0) {
+					const archivePath = await this.getArchivePath(filePath);
+					await adapter.write(archivePath, succeededLines.join('\n'));
 				}
 			}
 			// Write failed lines to .failed.jsonl if any
