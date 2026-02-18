@@ -23,5 +23,5 @@ A collection of general-purpose helper functions included with Z2K Templates.
 ## infinity field Helper
 
 ==infinity-field helper==
-`{{infinity-field expression="- {{CurrentMood}} at {{format-date "HH:MM"}}}}"}}`
+`{{infinity-field expression="- {{CurrentMood}} at {{formatDate "HH:MM"}}}}"}}`
 

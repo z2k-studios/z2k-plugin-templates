@@ -22,10 +22,10 @@ For a complete reference on all field types and their internal representations, 
 ### Whitespace Preservation
 All leading and trailing whitespace in text data is **preserved** by default. If you enter `"  hello world  "` into a text prompt, that's exactly what appears in the output.
 
-To remove this whitespace, use the [[format-string-trim]] helper.
+To remove this whitespace, use the [[formatStringTrim]] helper.
 
 ```handlebars
-{{format-string-trim UserInput}}
+{{formatStringTrim UserInput}}
 ```
 
 > [!NOTE]
@@ -60,7 +60,7 @@ For more information on how to format dates, please see the [[Formatting Dates]]
 ## Number Fields
 Numeric values are passed through without formatting by default. The number `1234.5678` renders as `1234.5678`.
 
-To apply number formatting – thousands separators, fixed decimal places, currency symbols – use the [[format-number]] or [[format-number-to-fixed]] helpers. 
+To apply number formatting – thousands separators, fixed decimal places, currency symbols – use the [[formatNumber]] or [[formatNumberToFixed]] helpers. 
 
 See [[Formatting Numbers]] for details.
 
@@ -69,7 +69,7 @@ See [[Formatting Numbers]] for details.
 Boolean fields render as the literal strings `true` or `false`. No additional formatting is applied.
 
 ```handlebars
-{{field-info isActive type="boolean" prompt="Is this active?"}}
+{{fieldInfo isActive type="boolean" prompt="Is this active?"}}
 Active: {{isActive}}
 ```
 
@@ -85,7 +85,7 @@ To display something other than `true`/`false`, use a [[Conditionals|conditional
 `singleSelect` fields render as the selected option's text value – no transformation applied.
 
 ```handlebars
-{{field-info priority type="singleSelect" options="High,Medium,Low"}}
+{{fieldInfo priority type="singleSelect" options="High,Medium,Low"}}
 Priority: {{priority}}
 ```
 
@@ -94,7 +94,7 @@ Output: `Priority: Medium`
 `multiSelect` fields produce an array. By default, the array renders as a comma-separated string without spaces:
 
 ```handlebars
-{{field-info tags type="multiSelect" options="Work,Personal,Urgent,Later"}}
+{{fieldInfo tags type="multiSelect" options="Work,Personal,Urgent,Later"}}
 Tags: {{tags}}
 ```
 
@@ -109,5 +109,5 @@ The value renders as-is with the same whitespace and escaping rules as [[#Text F
 
 
 > [!DANGER] Notes for Review
-> - The `format-string-escape-markdown` enhancement is tracked as GitHub issue #141 (milestone 2.0).
+> - The `formatString-escape-markdown` enhancement is tracked as GitHub issue #141 (milestone 2.0).
 > - Verify that user-provided date fields truly pass through as-is vs. having any parsing applied.

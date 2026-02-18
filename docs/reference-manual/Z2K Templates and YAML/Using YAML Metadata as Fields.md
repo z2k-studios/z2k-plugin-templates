@@ -37,7 +37,7 @@ The engine sees `project` and `status` as YAML properties, makes them available 
 # Project Alpha – Status: active
 ```
 
-No `{{field-info}}` declaration is needed. No prompting occurs. The values come directly from the YAML.
+No `{{fieldInfo}}` declaration is needed. No prompting occurs. The values come directly from the YAML.
 
 ## Which YAML Properties Are Included
 All top-level YAML properties are included as field values, with one exception:
@@ -60,16 +60,16 @@ This matters when using fields inside [[Conditionals|conditional expressions]] (
 ## The Prompting Implication
 Here's a detail that can surprise you: when a YAML property provides a value for a field, **that field is not prompted for**.
 
-The plugin automatically adds the `no-prompt` [[field-info directives|directive]] to any field whose value comes from YAML. This makes sense – if the data is already present in the frontmatter, there's no reason to ask the user for it again. But it means that a YAML property can silently suppress a prompt you might have expected to see.
+The plugin automatically adds the `no-prompt` [[fieldInfo directives|directive]] to any field whose value comes from YAML. This makes sense – if the data is already present in the frontmatter, there's no reason to ask the user for it again. But it means that a YAML property can silently suppress a prompt you might have expected to see.
 
-If a field has both a YAML value and a `{{field-info}}` declaration with a `value` parameter, the `{{field-info}}` value takes priority (see [[#Priority Among Data Sources]] below). But both will suppress prompting.
+If a field has both a YAML value and a `{{fieldInfo}}` declaration with a `value` parameter, the `{{fieldInfo}}` value takes priority (see [[#Priority Among Data Sources]] below). But both will suppress prompting.
 
 > [!NOTE] Debugging Missing Prompts
 > If a field you expected to be prompted for is being skipped, check whether a YAML property with the same name exists in any of the merged YAML sources – including [[Intro to System Blocks|System Blocks]] and [[Block Templates|block template]] frontmatter. The field may be receiving its value from YAML without your realizing it.
 
 ## Priority Among Data Sources
 YAML property values sit below several higher-priority sources in the [[Field Data Sources#Field Value Priority|field value priority]] system. In practice:
-- A `{{field-info}}` declaration with an explicit [[field-info value|value]] parameter takes priority over YAML – the YAML value is skipped because the field already has a value when YAML processing runs
+- A `{{fieldInfo}}` declaration with an explicit [[fieldInfo value|value]] parameter takes priority over YAML – the YAML value is skipped because the field already has a value when YAML processing runs
 - Plugin-managed built-ins (`{{templateName}}`, `{{templateVersion}}`, etc.) unconditionally override YAML
 - External overrides (URI, JSON) unconditionally override everything
 

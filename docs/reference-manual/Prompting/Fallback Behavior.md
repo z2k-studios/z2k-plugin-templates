@@ -78,8 +78,8 @@ Please note that the `fallback` parameter overrules both the `finalize-clear` an
 Move the following to Fallback Behavior and ! include it here.
 
 Order of precedence:
-- Any `fallback` `{{field-info}}` parameter takes highest precedence. If there are multiple `fallback` values specified for a field (across all [[field-info Variations]]), then the latest fallback value is used.
-- If there is not a `fallback` value, then the plugin checks to see if a `finalize-xxx` [[field-info directives|directive]] has been specified. If multiple have been specified, again, it uses the most recent.
+- Any `fallback` `{{fieldInfo}}` parameter takes highest precedence. If there are multiple `fallback` values specified for a field (across all [[fieldInfo Variations]]), then the latest fallback value is used.
+- If there is not a `fallback` value, then the plugin checks to see if a `finalize-xxx` [[fieldInfo directives|directive]] has been specified. If multiple have been specified, again, it uses the most recent.
 - If there is not a `fallback` nor a `finalize-xxx` directive, then the plugin will use the [[Fallback Handling YAML fields]] to determine the default fallback behavior.
 - If none of the above were found, then the field is cleared.
 

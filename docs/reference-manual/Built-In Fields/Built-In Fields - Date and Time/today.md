@@ -13,10 +13,10 @@ The default format for the `{{today}}` built-in field is `YYYY-MM-DD`.
 The `{{today}}` built-in field is functionally identical to `{{date}}`, which is supported to maintain consistency with [Obsidian's implementation](https://help.obsidian.md/plugins/templates#Template+variables). By using `{{today}}` instead of `{{date}}`, your templates will be more logically consistent with the other [[Built-In Fields - Date and Time|Date and Time]] built-in fields.
 
 ## Customizing the Format of today
-To adjust the format of the built-in `{{today}}` field, please use the [[format-date]] built-in Helper function. 
+To adjust the format of the built-in `{{today}}` field, please use the [[formatDate]] built-in Helper function. 
 
-> [!TIP] Best to use the now built-in field for format-date
-> When using `format-date` to alter the appearance of `{{today}}`, we recommend using the `{{now}}` built-in field instead. Please see the [[format-date#Using format-date with sourceTimes other than Now|comment in the format-date]] reference page.
+> [!TIP] Best to use the now built-in field for formatDate
+> When using `formatDate` to alter the appearance of `{{today}}`, we recommend using the `{{now}}` built-in field instead. Please see the [[formatDate#Using formatDate with sourceTimes other than Now|comment in the formatDate]] reference page.
 
 ## Tip: Consider Using fileCreationDate Instead
 If your template might be used with [[Apply Template to File]], consider `{{fileCreationDate}}` instead of `{{today}}` (see [[fileCreationDate]]).
@@ -33,8 +33,8 @@ For [[Create New File]], both fields return the same value since the file is bei
 Given a template snippet of:
 ```md title="Today Example Template.md"
 - Today's Date: {{today}}           {{~! This uses the default formatting.    }}
-- Today's Month: {{format-date "YYYY-MM" now}} {{~! use "now", not "today"    }}
-- Today's Year: {{format-date "YYYY" now}}     {{~! use "now", not "today"    }}
+- Today's Month: {{formatDate "YYYY-MM" now}} {{~! use "now", not "today"    }}
+- Today's Year: {{formatDate "YYYY" now}}     {{~! use "now", not "today"    }}
 - Link to Today's Daily Note: {{wikilink today}}
 ```
 

@@ -31,7 +31,7 @@ The following built-in date and time template fields can be used in templates:
 
 
 ## Date Formatting
-If one of the premade date + formats above is insufficient for your needs, you can use the [[format-date]] built-in Helper function to specify an alternative format string for the date. This is more consistent with the general Handlebars.js approach. 
+If one of the premade date + formats above is insufficient for your needs, you can use the [[formatDate]] built-in Helper function to specify an alternative format string for the date. This is more consistent with the general Handlebars.js approach. 
 
 ## Obsidian Style Date Formatting
 Please note that Obsidian introduced a formatting style in which a date was followed by a colon and then an unquoted string of [Moment.js format tokens](https://momentjs.com/docs/#/displaying/format/). We have elected to NOT support this format style inside Z2K Templates, as it is not valid [[Handlebars Support|Handlebars]] syntax.

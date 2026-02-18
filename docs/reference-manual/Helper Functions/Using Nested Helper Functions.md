@@ -8,7 +8,7 @@ Please note that Helper functions can be nested using parenthesis. This allows y
 For instance, using the following field expression in a template:
 
 ```
-{{url Book.URL (format-string-allcaps Book.Title)}}
+{{url Book.URL (formatString-allcaps Book.Title)}}
 ```
 
 will result in first capitalizing a field `{{Book.Title}}`, and then constructing a named URL using `{{Book.URL}}`. If the input data was:

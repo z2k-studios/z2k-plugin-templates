@@ -52,8 +52,8 @@ Several methods for minimizing template pollution are presented below. First a s
 | ----------------- | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | Wikilinks         | `[[{{BookAuthor}}]]`                         | `{{wikilink BookAuthor}}`                                                                                                         |
 | Hashtags          | `#Book/Genre/{{ChosenGenre}}`                | `{{hashtag "Book/Genre/{{ChosenGenre}}"}}`                                                                                        |
-| YAML Properties   | in yaml: `created :: {{today}}`              | Use [[field-info directives\|require directive]] to handle WIP Content File pollution, [[Template File Extensions]] for templates |
-| DataView Searches | `BookTitle :: {{BookTitle}}`                 | Use [[field-info directives\|require directive]] to handle WIP Content File pollution, [[Template File Extensions]] for templates |
+| YAML Properties   | in yaml: `created :: {{today}}`              | Use [[fieldInfo directives\|require directive]] to handle WIP Content File pollution, [[Template File Extensions]] for templates |
+| DataView Searches | `BookTitle :: {{BookTitle}}`                 | Use [[fieldInfo directives\|require directive]] to handle WIP Content File pollution, [[Template File Extensions]] for templates |
 | Searches          | a search for "Daily Note" will show template | Use [[Template File Extensions]] for templates                                                                                    |
 | Bases             | `Created By :: {{creator}}`                  | Use [[Template File Extensions]] for templates                                                                                    |
 
@@ -67,7 +67,7 @@ Another simple solution that is highly recommended is to use the [[wikilink]] an
 > We highly recommend that you always use the [[wikilink]] and [[hashtag]] Helper functions, even if you use the advanced file extensions solution. If you share your templates with others, you never know if the other users are making use of that advanced feature. 
 
 ### Simple Solution - Required Directives
-Another solution to minimizing pollution from your [[WIP Stage|WIP Content Files]] is to use the [[field-info directives#required|require directive]] for a field. This forces the field to be specified in order to even [[Instantiation|instantiate]] the initial content file from a template. If the data is present, then no pollution can occur. 
+Another solution to minimizing pollution from your [[WIP Stage|WIP Content Files]] is to use the [[fieldInfo directives#required|require directive]] for a field. This forces the field to be specified in order to even [[Instantiation|instantiate]] the initial content file from a template. If the data is present, then no pollution can occur. 
 
 Note: This does *not* solve the pollution from the template files themselves, but it does remove pollution from any [[WIP Stage|WIP Content Files]].
 

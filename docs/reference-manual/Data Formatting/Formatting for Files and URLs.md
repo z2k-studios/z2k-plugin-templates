@@ -21,16 +21,16 @@ When generating filenames, URLs, or identifiers from user input, text often need
 
 | Helper | Purpose | Reversible? |
 |--------|---------|-------------|
-| `format-string-slugify` | URL-friendly identifiers | No |
-| `format-string-file-friendly` | Safe filenames | No |
-| `format-string-encode-URI` | URL parameter encoding | Yes |
-| `format-string-encode-base64` | Base64 encoding | Yes |
+| `formatStringSlugify` | URL-friendly identifiers | No |
+| `formatStringFileFriendly` | Safe filenames | No |
+| `formatStringEncodeURI` | URL parameter encoding | Yes |
+| `formatStringEncodeBase64` | Base64 encoding | Yes |
 
 ## Creating URL Slugs
-The [[format-string-slugify]] helper converts human-readable text into URL-safe slugs:
+The [[formatStringSlugify]] helper converts human-readable text into URL-safe slugs:
 
 ```handlebars
-{{format-string-slugify title}}
+{{formatStringSlugify title}}
 ```
 
 The transformation:
@@ -49,23 +49,23 @@ The transformation:
 ### Use Cases
 ```handlebars
 {{!-- Blog post URL --}}
-[Read more](/posts/{{format-string-slugify title}})
+[Read more](/posts/{{formatStringSlugify title}})
 
 {{!-- Anchor link --}}
-See [[#{{format-string-slugify sectionName}}|{{sectionName}}]]
+See [[#{{formatStringSlugify sectionName}}|{{sectionName}}]]
 
 {{!-- CSS class name --}}
-<div class="card-{{format-string-slugify category}}">
+<div class="card-{{formatStringSlugify category}}">
 ```
 
 > [!WARNING]
 > Slugification is **not reversible**. `"Hello World!"` and `"hello-world"` both produce the same slug. Don't use slugs as unique identifiers if the original text might vary.
 
 ## Safe Filenames
-The [[format-string-file-friendly]] helper removes characters that are invalid or problematic in filenames:
+The [[formatStringFileFriendly]] helper removes characters that are invalid or problematic in filenames:
 
 ```handlebars
-{{format-string-file-friendly noteName}}
+{{formatStringFileFriendly noteName}}
 ```
 
 Characters removed or replaced:
@@ -84,14 +84,14 @@ Characters removed or replaced:
 ### Use Cases
 ```handlebars
 {{!-- Generated filename --}}
-{{field-info fileName type="text" value=(format-string-file-friendly projectName)}}
+{{fieldInfo fileName type="text" value=(formatStringFileFriendly projectName)}}
 
 {{!-- Wikilink with clean target --}}
-[[{{format-string-file-friendly linkTarget}}]]
+[[{{formatStringFileFriendly linkTarget}}]]
 ```
 
 ### Difference from Slugify
-`format-string-file-friendly` preserves more of the original text:
+`formatStringFileFriendly` preserves more of the original text:
 - Keeps original case
 - Keeps spaces
 - Only removes truly unsafe characters
@@ -99,10 +99,10 @@ Characters removed or replaced:
 Use `slugify` for URLs, `file-friendly` for filenames.
 
 ## URL Encoding
-The [[format-string-encode-URI]] helper encodes text for safe inclusion in URLs:
+The [[formatStringEncodeURI]] helper encodes text for safe inclusion in URLs:
 
 ```handlebars
-{{format-string-encode-URI searchQuery}}
+{{formatStringEncodeURI searchQuery}}
 ```
 
 This uses standard [percent-encoding](https://developer.mozilla.org/en-US/docs/Glossary/Percent-encoding):
@@ -116,23 +116,23 @@ This uses standard [percent-encoding](https://developer.mozilla.org/en-US/docs/G
 ### Use Cases
 ```handlebars
 {{!-- Search URL --}}
-[Search Google](https://www.google.com/search?q={{format-string-encode-URI query}})
+[Search Google](https://www.google.com/search?q={{formatStringEncodeURI query}})
 
 {{!-- Obsidian URI with parameters --}}
-[Open note](obsidian://open?vault={{format-string-encode-URI vaultName}}&file={{format-string-encode-URI fileName}})
+[Open note](obsidian://open?vault={{formatStringEncodeURI vaultName}}&file={{formatStringEncodeURI fileName}})
 
 {{!-- API endpoint --}}
-{{format-string-encode-URI apiEndpoint}}?filter={{format-string-encode-URI filterValue}}
+{{formatStringEncodeURI apiEndpoint}}?filter={{formatStringEncodeURI filterValue}}
 ```
 
 > [!NOTE]
 > URI encoding is **reversible**. The original text can be recovered by decoding the percent-encoded values.
 
 ## Base64 Encoding
-The [[format-string-encode-base64]] helper converts text to Base64:
+The [[formatStringEncodeBase64]] helper converts text to Base64:
 
 ```handlebars
-{{format-string-encode-base64 content}}
+{{formatStringEncodeBase64 content}}
 ```
 
 | Input | Output |
@@ -148,24 +148,24 @@ Base64 encoding is less common in templates, but useful for:
 
 ```handlebars
 {{!-- Basic auth header value --}}
-Authorization: Basic {{format-string-encode-base64 (format-string credentials ":" "")}}
+Authorization: Basic {{formatStringEncodeBase64 (formatString credentials ":" "")}}
 ```
 
 ## Choosing the Right Helper
 
 | Scenario | Helper | Why |
 |----------|--------|-----|
-| URL path segment | `format-string-slugify` | Clean, readable URLs |
-| URL query parameter | `format-string-encode-URI` | Preserves exact value |
-| Filename | `format-string-file-friendly` | Removes unsafe chars only |
-| Anchor/ID | `format-string-slugify` | Valid HTML identifiers |
-| API data | `format-string-encode-URI` or `base64` | Depends on API requirements |
+| URL path segment | `formatStringSlugify` | Clean, readable URLs |
+| URL query parameter | `formatStringEncodeURI` | Preserves exact value |
+| Filename | `formatStringFileFriendly` | Removes unsafe chars only |
+| Anchor/ID | `formatStringSlugify` | Valid HTML identifiers |
+| API data | `formatStringEncodeURI` or `base64` | Depends on API requirements |
 
 ### Example: Dynamic Link Generation
 ```handlebars
-{{field-info projectName type="text" prompt="Project name?"}}
-{{field-info projectSlug type="text" value=(format-string-slugify projectName) directives="no-prompt"}}
-{{field-info projectFile type="text" value=(format-string-file-friendly projectName) directives="no-prompt"}}
+{{fieldInfo projectName type="text" prompt="Project name?"}}
+{{fieldInfo projectSlug type="text" value=(formatStringSlugify projectName) directives="no-prompt"}}
+{{fieldInfo projectFile type="text" value=(formatStringFileFriendly projectName) directives="no-prompt"}}
 
 ## {{projectName}}
 - File: [[Projects/{{projectFile}}]]
@@ -173,6 +173,6 @@ Authorization: Basic {{format-string-encode-base64 (format-string credentials ":
 ```
 
 > [!DANGER] Notes for Review
-> - Verify the exact characters removed by `format-string-file-friendly` – the list may be incomplete.
-> - Test `format-string-slugify` with non-ASCII characters (accents, CJK, emoji).
-> - The Basic auth example assumes a `format-string` with empty suffix – verify this syntax works.
+> - Verify the exact characters removed by `formatStringFileFriendly` – the list may be incomplete.
+> - Test `formatStringSlugify` with non-ASCII characters (accents, CJK, emoji).
+> - The Basic auth example assumes a `formatString` with empty suffix – verify this syntax works.

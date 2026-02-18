@@ -30,7 +30,7 @@ If the block template is being inserted directly using the [[Partials|partial sy
 ### 2. Template Parsing
 The block template file is read and parsed:
 - YAML frontmatter is extracted separately from body content
-- [[field-info]] declarations are identified
+- [[fieldInfo]] declarations are identified
 - Handlebars syntax is validated
 
 ### 3. Field Value Gathering
@@ -47,7 +47,7 @@ Field values are collected from multiple sources, in this priority order (lowest
 This means that if a field already exists in your target document's YAML as YAML properties, that value will be used rather than prompting you again.
 
 ### 4. Field Prompting
-If there are fields without values (and prompting is [[field-info directives#no-prompt|enabled]]), you'll see the field prompt modal. Fields marked with `no-prompt` directive are skipped.
+If there are fields without values (and prompting is [[fieldInfo directives#no-prompt|enabled]]), you'll see the field prompt modal. Fields marked with `no-prompt` directive are skipped.
 
 If the block template is being inserted using [[Partials]] syntax, prompting will defer until the end when prompting is performed at the document template level. 
 
@@ -123,5 +123,5 @@ When a block template includes other block templates via `{{> nested-block}}`:
 ## See Also
 - [[How Do You Use Block Templates]] for insertion methods
 - [[Block Template File Structure]] for template organization
-- [[field-info]] for configuring field prompts
+- [[fieldInfo]] for configuring field prompts
 - [[System Block Templates]] for vault-wide blocks

@@ -111,7 +111,7 @@ Crucially, these scenarios do **not** cause a failure:
 If the template has a field `{{authorName}}` but the JSON Package doesn't provide `authorName`, this is **not an error**. The plugin's fallback behavior applies:
 - By default, the placeholder `{{authorName}}` is preserved in the output
 - The `finalize-clear` option removes the placeholder instead
-- Per-field fallbacks can be specified via the [[field-info Helper]]
+- Per-field fallbacks can be specified via the [[fieldInfo Helper]]
 
 This design supports deferred resolution – fields can be left unfilled for later completion via the [[JSON Command - continue|continue command]].
 

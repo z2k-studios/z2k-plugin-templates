@@ -12,6 +12,6 @@ Reference [[Whitespace Control]] for white space removal
 
 # Silent Helper Functions
 Known silent helper functions (or expressions):
-- [[field-info Helper|field-info]], [[fi Helper Variation|fi]]
+- [[fieldInfo Helper|fieldInfo]], [[fi Helper Variation|fi]]
 - [[Template Comments|Handlebars Comments]]
 - [[Logging|Handlebars Logging]]

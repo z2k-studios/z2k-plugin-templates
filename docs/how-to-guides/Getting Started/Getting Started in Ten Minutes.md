@@ -18,11 +18,11 @@ Book-Genre: {{BookGenre}}
 Card-Created: {{today}}
 ---
 {{! FIELD-INFO BLOCK -------------------------------------------------- }}
-{{field-info fileTitle suggest="{{BookTitle}} by {{BookAuthor}}"}}
-{{field-info BookTitle "Enter the Book Title (without subtitle)" directives="required"}}
-{{field-info BookAuthor "Enter the Author name. If multiple authors, separate with semicolons"}}  
-{{field-info BookGenre "What Genre is {{BookTitle}}?" type="multiselect" opts="#Genre/Fiction, #Genre/Biography, #Genre/Non-Fiction, #Genre/Reference"}}  
-{{field-info Summary "Give a brief summary of {{BookTitle}}" }}
+{{fieldInfo fileTitle suggest="{{BookTitle}} by {{BookAuthor}}"}}
+{{fieldInfo BookTitle "Enter the Book Title (without subtitle)" directives="required"}}
+{{fieldInfo BookAuthor "Enter the Author name. If multiple authors, separate with semicolons"}}  
+{{fieldInfo BookGenre "What Genre is {{BookTitle}}?" type="multiselect" opts="#Genre/Fiction, #Genre/Biography, #Genre/Non-Fiction, #Genre/Reference"}}  
+{{fieldInfo Summary "Give a brief summary of {{BookTitle}}" }}
 {{! ------------------------------------------------------------------- ~}}
   
 My Book Review - {{BookTitle}} by {{BookAuthor}}
@@ -36,9 +36,9 @@ My Book Review - {{BookTitle}} by {{BookAuthor}}
 - Month I Read the Book: {{yearMonth}}
 
 # Links
-- Author Card: {{wikilink (format-string-file-friendly BookAuthor)}}
+- Author Card: {{wikilink (formatStringFileFriendly BookAuthor)}}
 - Book on Wikipedia : {{wikipedia BookTitle}}
-- Amazon Link: [Amazon Search](https://amazon.com?s={{format-string-slugify BookTitle}})
+- Amazon Link: [Amazon Search](https://amazon.com?s={{formatStringSlugify BookTitle}})
 
 # Book Discussion Prompts
 - {{chatGPT "Given all that you know about me, if you were to imagine me as a character in {{BookTitle}}, which one would most challenge my worldview, and why?" "Mirror Test"}}
@@ -56,27 +56,27 @@ Here's what's new:
 
 ### 2a. MultiSelect Fields
 This new version introduces a field that allows the user to select from a variety of Tags to describe the `{{BookGenre}}` field. The prompting interface smartly changes its dialog box to accommodate a multiple-select item.
-- Learn More: [[field-info type|field-info types]]
+- Learn More: [[fieldInfo type|fieldInfo types]]
 
 ### 2b. Built-In Field - `{{yearMonth}}`
 The new template file now includes a "`Built-in Field`", in this case `{{yearMonth}}`. Built-in fields are fields that are recognized and handled automatically by the Z2K Template Plugin. In [[Built-In Fields - Date and Time#Date and Time|this case]], when the Template is used to create a new file, the current year and month will be inserted automatically into the file. 
 - Learn More: [[Built-In Fields]]
 
 ### 2c. Field Formatting
-Next, notice the Amazon Link: entry. Here it is construct a link to an Amazon search using the entered title. Because the title will be embedded in a URL, it makes use of a [[Helper Functions|Helper Function]] called `format-string-slugify` that converts the value of a field into a sluggified (i.e. URL friendly) text. 
+Next, notice the Amazon Link: entry. Here it is construct a link to an Amazon search using the entered title. Because the title will be embedded in a URL, it makes use of a [[Helper Functions|Helper Function]] called `formatStringSlugify` that converts the value of a field into a sluggified (i.e. URL friendly) text. 
 
 Similarly, the entry for "Author Card" will build a `[[`wikilink`]]` to an Author note.  Before doing so it will make sure that any characters in the Author's name that are not safe for filenames be removed.
 - Learn More: [[Built-In Helper Functions]]
 
 ### 2d. Prompting information
-Finally, notice how the template includes more information inside the `{{BookAuthor}}` and `{{BookTitle}}` fields. In this instance, they are using a [[Built-In Helper Functions|Built-In Helper Function]] called `field-output` that can, among other things, allow you to control how a field is prompted to the user. Note that the `{{BookTitle}}` was also flagged as required - meaning that you will have to type a value into the book title entry in order to create the file. 
+Finally, notice how the template includes more information inside the `{{BookAuthor}}` and `{{BookTitle}}` fields. In this instance, they are using a [[Built-In Helper Functions|Built-In Helper Function]] called `fieldOutput` that can, among other things, allow you to control how a field is prompted to the user. Note that the `{{BookTitle}}` was also flagged as required - meaning that you will have to type a value into the book title entry in order to create the file. 
 
 Notice further that the prompt for the `{{BookGenre}}` variable actually references other fields. Yes, you can use `{{fields}}` inside the prompting interface!
-- Learn More: [[Prompting]], [[field-output Helper Variation]]
+- Learn More: [[Prompting]], [[fieldOutput Helper Variation]]
 
 ### 2e. Default File Naming
-The template uses "silent helper function" called `{{field-info}}` that references a built-in field called `{{fileTitle}}` that represents the filename of the card. Using `{{field-info}}` we are able to specify that the default title of the card should be "*Book Name* by *Author Name*". With this, we have just reduced yet another duplication effort by making the file name for a card also use `{{fields}}` in them. 
-- Learn More: [[field-info Usage Tips]]
+The template uses "silent helper function" called `{{fieldInfo}}` that references a built-in field called `{{fileTitle}}` that represents the filename of the card. Using `{{fieldInfo}}` we are able to specify that the default title of the card should be "*Book Name* by *Author Name*". With this, we have just reduced yet another duplication effort by making the file name for a card also use `{{fields}}` in them. 
+- Learn More: [[fieldInfo Usage Tips]]
 
 ### 2f. YAML Properties
 With the introduction of Bases, Obsidian offers some powerful database like options using YAML fields. You can use YAML frontmatter text directly in your template to make copies of entered data directly into yaml field specifiers. In this example, we save the `BookTitle` and `BookAuthor` entries into YAML fields for easy access by Bases and Dataview.
@@ -98,10 +98,10 @@ Now that we have a well-featured book template in our vault, let's create what i
 ## Quote:: {{Quotation Name}}
 > {{QuoteText}}
 {{%IF {{QuoteAuthor}} != "" }}
-> -- {{field-output QuoteAuthor suggest="{{BookAuthor}}"}}
+> -- {{fieldOutput QuoteAuthor suggest="{{BookAuthor}}"}}
 {{%ENDIF}}
 - References: 
-    - Tags: {{field-info Tags prompt="Please list out all Tags relevant to this quotation"}}
+    - Tags: {{fieldInfo Tags prompt="Please list out all Tags relevant to this quotation"}}
 
 ```
 

@@ -69,5 +69,5 @@ Use `weekNum` when you only need the week number; use `yearWeek` when you need t
 ## See Also
 - [[yearWeek]] for the full year and week identifier
 - [[year]] for just the year
-- [[format-date]] for custom date formatting
+- [[formatDate]] for custom date formatting
 - [[Built-In Fields - Date and Time]] for all date/time fields

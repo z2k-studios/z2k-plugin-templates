@@ -9,7 +9,7 @@ aliases:
 Every value in a URI arrives as a string. The string `"5"` and the number `5` are indistinguishable in a URI parameter. The plugin resolves this ambiguity by consulting the template's [[Field Types|field type]] declarations.
 
 ## How Conversion Works
-When the plugin receives field data from a URI, it checks whether the template declares a type for that field via [[field-info type|field-info]]:
+When the plugin receives field data from a URI, it checks whether the template declares a type for that field via [[fieldInfo type|fieldInfo]]:
 - **Declared type exists** – the plugin converts the string to the declared type. `"5"` becomes the number `5`, `"true"` becomes the boolean `true`, etc.
 - **No declared type** – auto-conversion applies: `"true"` and `"false"` become booleans, numeric strings become numbers, everything else stays as a string.
 

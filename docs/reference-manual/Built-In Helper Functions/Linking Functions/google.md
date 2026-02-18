@@ -14,7 +14,7 @@ The format for the helper function is:
 where:
 - `google` is the predefined helper name used for making google search links
 - `searchtext` is a text string that will be passed to google for searching. 
-	- Note: this text will be "slugified" automatically, so there is no need to first perform [[format-string-slugify]] on the search text.
+	- Note: this text will be "slugified" automatically, so there is no need to first perform [[formatStringSlugify]] on the search text.
 - `displaytext` is the optional parameter of the text to display for the google search link. If not specified, then it will display the google searchtext URL
 
 ## Examples
@@ -32,5 +32,5 @@ Search for Article online: [AI and Intelligence: Effects of AI on the Size of In
 ## Shorthand
 Under the covers, the helper function `{{google searchtext displaytext}}` is shorthand for:
 
-`{{url "https://google.com/search?q={{format-string-slugify searchtext}}" displaytext}}`
+`{{url "https://google.com/search?q={{formatStringSlugify searchtext}}" displaytext}}`
 

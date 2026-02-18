@@ -10,7 +10,7 @@ When a template's `{{field}}` is replaced with data, you have several options fo
 Here are the different ways in which [[Field Data Sources|Field Data]] can be formatted:
 1. **[[Default Formatting Rules|Default Formatting]]** – All data has a small amount of formatting applied automatically. This includes trimming behavior for text, default date formats, and character handling.
 2. **[[Native Handlebars Formatting|Handlebars Syntax Features]]** – Handlebars provides built-in formatting capabilities like [[Whitespace Control|whitespace control]] with tildes, [[Unescaped Expressions|raw output]] with triple-mustache, and [[Conditionals|conditional rendering]].
-3. **[[Formatting Functions|Z2K Helper Functions]]** – Z2K Templates ships with a library of helper functions for specific formatting tasks: `format-date`, `format-number`, `format-string-*`, and more.
+3. **[[Formatting Functions|Z2K Helper Functions]]** – Z2K Templates ships with a library of helper functions for specific formatting tasks: `formatDate`, `formatNumber`, `formatString-*`, and more.
 4. **[[User Defined Helper Functions|Custom Helper Functions]]** – For the most advanced users, you can also provide custom helper function to do advanced formatting techniques. .
 
 ## Where Data Comes From
@@ -26,12 +26,12 @@ If a field uses [[Deferred Field Resolution|deferred resolution]], formatting oc
 A single field value can pass through multiple formatting layers:
 
 ```handlebars
-{{~format-date "dddd, MMMM Do" now~}}
+{{~formatDate "dddd, MMMM Do" now~}}
 ```
 
 This expression:
 
 1. Uses `~` tildes to trim surrounding whitespace (Handlebars feature)
-2. Applies `format-date` to convert the `now` timestamp into "Tuesday, January 14th"
+2. Applies `formatDate` to convert the `now` timestamp into "Tuesday, January 14th"
 3. The output replaces the entire expression in the final document
 

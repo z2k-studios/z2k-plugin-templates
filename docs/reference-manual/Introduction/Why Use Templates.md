@@ -54,7 +54,7 @@ This shift in energy from process-focus to content-focus sounds like a small adv
 Sometimes we need just a little nudge. With Z2K templates, you can provide a customized prompt for a field. These prompts can be laden with suggestions or instigations.  And since these prompts are stored only in the template, they do not proliferate in pollute your actual notes with `<% Reminder Comments%>`.
 
 ```md title="Template Daily Journal.md"
-{{field-info TopMemory prompt="What is the one thing that happened today that you most want to remember? Ideas: joy, surprise, challenge, connection, beauty, insight, gratitude, laughter, discomfort, victory, lesson"}}
+{{fieldInfo TopMemory prompt="What is the one thing that happened today that you most want to remember? Ideas: joy, surprise, challenge, connection, beauty, insight, gratitude, laughter, discomfort, victory, lesson"}}
 (...)
 Memories:
 - Top Memory:: {{TopMemory}}
@@ -97,7 +97,7 @@ Templates can minimize duplicate errors and data input effort by using the same 
 –––
 Title: {{MeetingTitle}}
 –––
-{{field-info fileTitle suggest="Meeting Notes - {{MeetingTitle}"}}}
+{{fieldInfo fileTitle suggest="Meeting Notes - {{MeetingTitle}"}}}
 # {{MeetingTitle}}
 ```
 
@@ -117,5 +117,5 @@ And extra note on AI: building your own AI systems work best when your source da
 > - Add screenshot examples showing hierarchical and modular template menus.
 > - Consider adding example comparing untemplated vs templated creation times.
 > - Evaluate whether this section overlaps with user guide intro material.
-> - Update to field-info?
+> - Update to fieldInfo?
 

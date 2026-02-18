@@ -32,5 +32,5 @@ Here is an example of adding ChatGPT discussion prompts directly into a book's n
 ## Shorthand
 Under the covers, the helper function `{{chatGPT chattext displaytext}}` is shorthand for:
 
-`{{url "https://chatgpt.com/?prompt={{format-string-encode-URI chattext}}" displaytext}}`
+`{{url "https://chatgpt.com/?prompt={{formatStringEncodeURI chattext}}" displaytext}}`
 

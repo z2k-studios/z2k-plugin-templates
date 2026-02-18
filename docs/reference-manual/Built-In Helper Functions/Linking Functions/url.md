@@ -27,8 +27,8 @@ When the plugin replaces the Helper function in the final outputted file, it wil
 Suppose the following template file excerpt:
 
 ```md title="Book Template.md"
-{{field-info fileTitle suggest="{{format-string-file-friendly BookTitle}}"}}
-{{field-info ISBN-URL value="https://isbnsearch.org/isbn/{{format-string-sluggify ISBN}}"}}
+{{fieldInfo fileTitle suggest="{{formatStringFileFriendly BookTitle}}"}}
+{{fieldInfo ISBN-URL value="https://isbnsearch.org/isbn/{{formatString-sluggify ISBN}}"}}
 
 # Links to More Information
 - Book URL :: {{url BookURL BookTitle}}
@@ -68,12 +68,12 @@ In general, it is best to ask for data from the user without the use of wikilink
 ## Tips
 
 > [!TIP] Sluggify Unstructured Data
-> If you are building a URL using generic user inputted data, it is best to [[format-string-slugify|slugify]] the data before building a URL from it. This will ensure that any characters that are not URL friendly will get properly escaped.
+> If you are building a URL using generic user inputted data, it is best to [[formatStringSlugify|slugify]] the data before building a URL from it. This will ensure that any characters that are not URL friendly will get properly escaped.
 > 
-> For instance, suppose you want to make an automatic link to a Book Title at Powell's Books for purchase. You can construct a search URL with the structure `https://www.powells.com/books/search?query={{BookTitle}}`. But simply using `{{BookTitle}}` inside the URL will result in an issue for any spaces in the field data (or colons, etc.). By using the [[format-string-slugify]] helper function, you can fix this issue. Here is the full fix:
+> For instance, suppose you want to make an automatic link to a Book Title at Powell's Books for purchase. You can construct a search URL with the structure `https://www.powells.com/books/search?query={{BookTitle}}`. But simply using `{{BookTitle}}` inside the URL will result in an issue for any spaces in the field data (or colons, etc.). By using the [[formatStringSlugify]] helper function, you can fix this issue. Here is the full fix:
 > 
 > ```md title="Book Template.md"
->- Book Purchase Link: {{url "https://www.powells.com/books/search?query={{format-string-slugify BookTitle}} "{{BookTitle}}"}}
+>- Book Purchase Link: {{url "https://www.powells.com/books/search?query={{formatStringSlugify BookTitle}} "{{BookTitle}}"}}
 > ```
 
 

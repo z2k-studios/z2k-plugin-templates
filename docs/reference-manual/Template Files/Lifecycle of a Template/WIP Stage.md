@@ -24,7 +24,7 @@ That said, there is no requirement to use [[WIP Stage|WIP Content Files]] - simp
 While a content file exists in a WIP state, you can continue to iterate on the file with new data. Simply issue the [[Continue Filling in Data]] command and then selecting the "Save for now" button in the [[Prompting Interface|prompting dialog box]] to close out the current iteration.
 
 ## How are WIP Content Files Named?
-WIP Content files are created with a filename that is specified by the user during the initial prompting interface. More advanced templates can assist in the naming of the content file through the use of the [[z2k_template_suggested_title]] [[YAML Configuration Properties|YAML Configuration Setting]] or the [[fileTitle and Variations|fileTitle]] built in field using [[field-info Helper|field-info]].
+WIP Content files are created with a filename that is specified by the user during the initial prompting interface. More advanced templates can assist in the naming of the content file through the use of the [[z2k_template_suggested_title]] [[YAML Configuration Properties|YAML Configuration Setting]] or the [[fileTitle and Variations|fileTitle]] built in field using [[fieldInfo Helper|fieldInfo]].
 
 ## Can I Add New Fields into WIP Content Files?
 Definitely. For instance, it is common to insert new [[Block Templates]] into WIP Content files. With each insertion, a new set of fields will potentially be placed into the WIP file. 
@@ -40,7 +40,7 @@ Because WIP content files exist inside the content area of the vault, it is impo
 ## Can Any Field Be Deferred?
 In short, no. For example:
 - The built-in [[fileTitle and Variations|fileTitle field and its variations]] must be specified in order to [[Instantiation|instantiate]] a file. 
-- And fields marked with the [[field-info directives#required|required directive]] must be entered upon [[instantiation]].
+- And fields marked with the [[fieldInfo directives#required|required directive]] must be entered upon [[instantiation]].
 
 ## Next Step: Finalize into a Finalized Content File
 Once a WIP content file is ready to remove all signs of being from a template, the next step is to [[Finalization|Finalize]] the WIP content file into a [[Finalization Stage|finalized content file]]. 

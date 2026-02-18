@@ -51,7 +51,7 @@ You have a block template called "Status Update" containing:
 ## Tips
 - Block templates are great for repeating structures you use across many files
 - Keep block templates focused – one section or component per template
-- Use `{{field-info}}` in block templates to customize prompts for each field
+- Use `{{fieldInfo}}` in block templates to customize prompts for each field
 - Use [[Storing Field Values in YAML|YAML Field Storage]] techniques to re-use document-level fields inside the inserted blocks - see the [[Storing Field Values in YAML#Example Book Quotes with Block Templates]]
 - For text-selected insertion, see [[Insert Block Template Using Selected Text]]
 - To automatically insert blocks in your document templates, use the handlebars [[Partials]] syntax (see also [[How Do You Use Block Templates]]).

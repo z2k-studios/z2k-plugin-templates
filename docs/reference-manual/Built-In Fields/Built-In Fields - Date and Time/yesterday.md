@@ -10,18 +10,18 @@ The `{{yesterday}}` built-in field returns the date for yesterday.
 The default format for the `{{yesterday}}` built-in field is `YYYY-MM-DD`. 
 
 ## Customizing the Format of yesterday
-To adjust the format of the built-in `{{yesterday}}` field, please use the [[format-date]] built-in Helper function. 
+To adjust the format of the built-in `{{yesterday}}` field, please use the [[formatDate]] built-in Helper function. 
 
-> [!TIP] Best to use the now built-in field for format-date
-> When using `format-date` to alter the appearance of `{{yesterday}}`, we recommend using the `{{now}}` built-in field instead. Please see the [[format-date#Using format-date with sourceTimes other than Now|comment in the format-date]] reference page.
+> [!TIP] Best to use the now built-in field for formatDate
+> When using `formatDate` to alter the appearance of `{{yesterday}}`, we recommend using the `{{now}}` built-in field instead. Please see the [[formatDate#Using formatDate with sourceTimes other than Now|comment in the formatDate]] reference page.
 
 
 ## Example Output 
 Given a template snippet of:
 ```md title="Yesterday Example Template.md"
 - Yesterday's Date: {{yesterday}}   {{~! This uses the default formatting. }}
-- Yesterday's Month: {{format-date "MMMM" yesterday}}  {{~! Works, but with truncation for other format strings }}
-- Yesterday's Month - Preferred: {{format-date "MMMM" (date-add -1 now)}} {{~! Unambigious method}} 
+- Yesterday's Month: {{formatDate "MMMM" yesterday}}  {{~! Works, but with truncation for other format strings }}
+- Yesterday's Month - Preferred: {{formatDate "MMMM" (dateAdd -1 now)}} {{~! Unambigious method}} 
 - Link to Yesterday's Daily Note: {{wikilink yesterday "yesterday"}}
 ```
 

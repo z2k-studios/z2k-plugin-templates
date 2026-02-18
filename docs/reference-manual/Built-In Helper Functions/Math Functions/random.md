@@ -31,22 +31,22 @@ This outputs one of `Alpha`, `Bravo`, or `Charlie` at random each time the templ
 
 ### Random Default Value
 ```handlebars
-{{field-info greeting value=(random (arr "Hello" "Salutations" "Greetings" "Good day"))}}
+{{fieldInfo greeting value=(random (arr "Hello" "Salutations" "Greetings" "Good day"))}}
 {{greeting}}, and welcome to today's note.
 ```
 
 ### Using with Field Values
 ```handlebars
-{{field-info reviewer1 prompt="First reviewer"}}
-{{field-info reviewer2 prompt="Second reviewer"}}
-{{field-info reviewer3 prompt="Third reviewer"}}
+{{fieldInfo reviewer1 prompt="First reviewer"}}
+{{fieldInfo reviewer2 prompt="Second reviewer"}}
+{{fieldInfo reviewer3 prompt="Third reviewer"}}
 
 Selected reviewer: {{random (arr reviewer1 reviewer2 reviewer3)}}
 ```
 
 ### Random with Fallback
 ```handlebars
-{{field-info mood suggest=(random (arr "contemplative" "energetic" "curious" "serene"))}}
+{{fieldInfo mood suggest=(random (arr "contemplative" "energetic" "curious" "serene"))}}
 Current mood: {{mood}}
 ```
 
@@ -54,4 +54,4 @@ The user sees the randomly selected suggestion in the prompt but can change it.
 
 ## See Also
 - [[arr]] for constructing arrays
-- [[field-info suggest|suggest parameter]] for pre-filling prompts with suggested values
+- [[fieldInfo suggest|suggest parameter]] for pre-filling prompts with suggested values

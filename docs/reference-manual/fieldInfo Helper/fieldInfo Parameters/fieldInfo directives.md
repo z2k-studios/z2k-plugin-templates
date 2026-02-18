@@ -1,0 +1,117 @@
+---
+sidebar_position: 70
+doc_state: initial_ai_draft
+title: fieldInfo directives Parameter
+sidebar_label: directives
+aliases:
+- directive
+- directives
+- fieldInfo directives Parameter
+---
+# fieldInfo directives Parameter
+
+%% This next section is included in the [[fieldInfo Cheat Sheet]] through a direct include %%
+## Overview
+The [[fieldInfo directives|directives]] parameter is a list of strings, with each string being one of the following directives:
+
+- **Fallback Behavior Special Cases**:
+	- '**[[#finalize-suggest|finalize-suggest]]**' :: Instructs the plugin to use the value of the [[fieldInfo suggest|suggest]] string as the resultant value of the field if the user has not provided an answer
+	- '**[[fieldInfo directives#finalize-preserve|finalize-preserve]]**' :: Instructs the plugin to preserve the `{{field}}` entry in the final generated file if the user does not specify a value
+	- '**[[fieldInfo directives#finalize-clear|finalize-clear]]**' :: Directs the plugin to clear out the value of this field if no value is provided
+- **Required**: 
+	- '**[[fieldInfo directives#required|required]]**' :: Tells the [[Prompting Interface]] that a field requires a value in order to finalize the card
+	- '**[[fieldInfo directives#not-required|not-required]]**' :: Tells the [[Prompting Interface]] that a field does not require a value in order to finalize the card
+- **Prompting**:
+	- '**[[fieldInfo directives#no-prompt|no-prompt]]**' :: Directs the [[Prompting Interface]] to skip prompting the user for a field
+	- '**[[fieldInfo directives#yes-prompt|yes-prompt]]**' :: Directs the [[Prompting Interface]] to force the prompting of a user for a field
+
+## Syntax
+The `directives` parameter *must* be specified with the `directives` keyword as it is only a [[fieldInfo Syntax#Named Parameters|Named Parameter]]. Example usage:
+
+```md title="Sample directives parameter"
+{{fieldInfo NoteTitle directives="required"}}
+```
+
+The directives parameter is a string of comma separated entries. Spaces are ignored. The entries in the directives list must be one of the ones listed above. Other entries are simply ignored. For instance:
+
+```md title="Sample multiple directives parameter"
+{{fieldInfo YourName "Your Name?" "[[Me]]" directives="required, finalize-suggest"}}
+```
+
+## Accepted Values
+The `directives` value must be a string contain a comma-separated list of directives, with the directives being one of the ones listed [[#Overview|above]].
+
+## Default directives Value
+If omitted, the default `directives` for a user defined field is:
+
+> `"yes-prompt, not-required, finalize-clear"`
+
+**Details:**
+- While `finalize-clear` is the default directive for finalizing, please note that there are additional forces to control [[Fallback Behavior]]
+- Please note that if you are using `{{fieldInfo}}` with [[Built-In Fields]], they may have alternatives default directives.
+
+## Directives
+For more details on each directive, see below:
+
+## finalize-suggest
+The `"finalize-suggest"` directive specifies that, if the user has not provided a value for the field upon [[Finalization|finalization]], the plug-in will use the value of the [[fieldInfo suggest|suggest]] parameter.
+
+**Notes**:
+- Please see [[Fallback Behavior]] for more details. It works hand in hand with the [[YAML Configuration Properties]].
+- This is likely the most commonly used directive.
+- If no suggest value is given then it will use the empty string.
+
+**When this is useful**:
+- If you have specified a field with a suggest value, you can use this directive to cause the suggest value to be the [[fieldInfo fallback|fallback]] value as well. This saves data entry time and prevents errors.
+
+## finalize-preserve
+The `"finalize-preserve"` specifies that, upon [[Finalization|finalization]], if the user has not provide a value for the field, the plug-in will "preserve" this field in the final output. That is, it will keep the existing `{{fieldName}}` entry in the final output. Please see [[Fallback Behavior]] for more details.
+
+This is similar to setting the [[fieldInfo fallback|fallback]] parameter to be that of its own field name - but this method is much preferred, as it is less ambiguous. 
+
+Note: this will force all `{{fieldInfo}}` (and variants) referencing the field to also be preserved during finalization.
+
+**When this is useful**: 
+- When you have fields that you want to persist long after finalization. 
+- ==Would be good to give an example==
+
+## finalize-clear
+The `"finalize-clear"` specifies that, upon [[Finalization|finalization]], if the user has not provide a value for the field, the plug-in will "clear" this field in the final output. All references to the `{{fieldName}}` will be cleared out with an empty string. Please see [[Fallback Behavior]] for more details.
+
+**Notes**:
+- This is the default setting for user defined fields
+- This is similar to setting the [[fieldInfo fallback|fallback]] parameter to be `fallback=""`.
+
+**When this is useful**: 
+- If you have specified a field with a different "finalize" directive, setting it back to `"finalize-clear"` resets it back to the default. 
+
+## required
+The `"required"` directive is a useful tool for forcing a field to be filled in by a user in the [[Prompting Interface]] before the new file can be [[Finalization|Finalized]].
+
+Important note: the `"required"` directive only makes a field required at the [[Finalization|finalization]] step, and not the initial "submit" stages. See [[Deferred Field Resolution]] for more details. 
+
+**When this is useful**: Required fields are great for:
+- Ensuring that the minimal, most important fields for a template are filled out.
+- Notifying the user which fields are most important. 
+- If some fields are needed for others, then these fields can be marked as required to force the dependencies to be populated. 
+- It is extremely useful for minimizing [[Template Pollution]] by requiring potential polluting fields from ever existing past [[Instantiation]].
+
+## not-required
+The `"not-required"` directive overrides a `"required"` directive and resets it back to the "not required" default. 
+
+**When this is useful**: This is useful for when a `required` directive has been used on a field in a [[Block Templates|Block Template]] (or [[Intro to System Blocks|System Block]]) and you would like to over-rule it in your template file to force it to be optional once again.
+
+## no-prompt
+The `"no-prompt"` directive instructs the [[Prompting Interface]] to skip presenting a user interface query for this field. This effectively hides the field from the user, causing the field to only be filled in through some other means.
+
+**When this is useful**: Suppressing prompting can be useful in these types of situations:
+- When fields are being filled in through some other means, like through separate automated [[URI Calls]] or [[Command Queues]].
+- Sometimes it is helpful to use [[System Blocks]] to define a field and its value, so that any templates lower in the [[Template Folder Hierarchies]] can use the values as if they were user-entered fields. In this case, you will want to suppress prompting for them.
+
+## yes-prompt
+The `"yes-prompt"` directive instructs the [[Prompting Interface]] to present the field in the user interface. This is the default mode, and as such, this directive is rarely used. 
+
+**When this is useful**: This is useful for when a `no-prompt` directive has been used on a field in a [[Block Templates|Block Template]] (or [[Intro to System Blocks|System Block]]) and you would like to over-rule it in your template file to force it to still be made visible. 
+
+
+

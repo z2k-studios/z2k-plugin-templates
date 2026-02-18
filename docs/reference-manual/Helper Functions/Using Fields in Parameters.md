@@ -20,7 +20,7 @@ For example,
 ```md file="Template.md"
 These are example uses of passing a field by name to a Helper Function:
 - {{wikilink today}}
-- {{format-string-bulletize KeyPoints}}
+- {{formatStringBulletize KeyPoints}}
 ```  
 
 It may take some getting use to see fields be referenced by Helper Functions without their curly braces. This was a design decision made by the original handlebars.js spec. 
@@ -34,7 +34,7 @@ These are example uses of passing a field by name to a Helper Function:
 - {{google "{{BookTitle}} by {{BookAuthor}}"}}
   - This constructs a string with the BookTitle and BookAuthor fields, and then builds an internet link to a google search with them combined together.
 
-- {{format-string-bulletize "{{KeyPoints}}"}}
+- {{formatStringBulletize "{{KeyPoints}}"}}
   - This is functionally equivalent to the version above that does not use curly braces.
 ```  
 

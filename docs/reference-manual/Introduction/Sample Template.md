@@ -15,10 +15,10 @@ Some times it is just best to dive into a real-life example. Say for instance yo
 ```md title="Template - Book Review.md"
 –––
 # YAML Text 
-Title: {{field-output BookTitle directives="required"}}
+Title: {{fieldOutput BookTitle directives="required"}}
 Date: {{date}}
-Author: {{field-output AuthorName prompt="What is the full name of the author?"}}
-Genre: {{field-output Genre type="singleSelect" opts="Fiction, Nonfiction, Poetry"}}
+Author: {{fieldOutput AuthorName prompt="What is the full name of the author?"}}
+Genre: {{fieldOutput Genre type="singleSelect" opts="Fiction, Nonfiction, Poetry"}}
 –––
 
 # {{BookTitle}}
@@ -29,12 +29,12 @@ Genre: {{field-output Genre type="singleSelect" opts="Fiction, Nonfiction, Poetr
 {{! - AuthorName will be prompted for and then formatted into a wikilink.    }}
 {{! - date is a built-in field that will be automatically filled in.         }}
 {{! ------------------------------------------------------------------------ }}
-I started reading a {{format-string-to-lower Genre}} book titled *{{BookTitle}}* by {{wikilink (format-string-file-friendly AuthorName)}} on {{today}}.
+I started reading a {{formatStringToLower Genre}} book titled *{{BookTitle}}* by {{wikilink (formatStringFileFriendly AuthorName)}} on {{today}}.
 
 {{! Below, we have conditional section that only renders if a review exists.    }}
 {{#if Review}}
 ## Review Summary
-{{field-info Review "Enter a One Sentence summary review:"}}
+{{fieldInfo Review "Enter a One Sentence summary review:"}}
 {{/if}}
 ```
 

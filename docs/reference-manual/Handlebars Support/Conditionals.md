@@ -75,16 +75,16 @@ Lead: {{projectLead}}
 Here, `{{projectLead}}` would be preserved as-is in the WIP content file, waiting for future resolution.
 
 ### Workaround: Use the `required` Directive
-Until this bug is fixed, you can ensure fields used in conditionals are always resolved before the conditional is evaluated by marking them as [[field-info directives#required|required]]:
+Until this bug is fixed, you can ensure fields used in conditionals are always resolved before the conditional is evaluated by marking them as [[fieldInfo directives#required|required]]:
 
 ```handlebars
-{{field-info projectLead directives="required"}}
+{{fieldInfo projectLead directives="required"}}
 {{#if projectLead}}
 Lead: {{projectLead}}
 {{/if}}
 ```
 
-The `required` directive forces the user to provide a value before [[Finalization]], ensuring the conditional always has data to work with. See [[field-info directives]] for details.
+The `required` directive forces the user to provide a value before [[Finalization]], ensuring the conditional always has data to work with. See [[fieldInfo directives]] for details.
 
 > [!WARNING]
 > Until the deferred-conditional bug is fixed, ensure fields used in conditionals are resolved at the time the conditional is evaluated. The safest approach is to mark these fields as `required`.
@@ -125,7 +125,7 @@ Each level evaluates independently. If `projectName` is truthy but `projectLead`
 > **Desired behavior (options)**:
 > 1. **(Preferred)** Preserve the entire block statement (including body and inverse) when it references unresolved fields. Re-evaluate when the field becomes defined or at finalization.
 > 2. **(Stopgap)** Still perform field replacement inside block statements, but defer all conditional/iterator evaluation to finalization only.
-> 3. **(Minimum)** Document that fields used in block statements must be marked `required` via [[field-info directives]].
+> 3. **(Minimum)** Document that fields used in block statements must be marked `required` via [[fieldInfo directives]].
 >
 > **`{{#unless}}` note**: An unresolved field is `undefined` (falsy), so `{{#unless}}` would incorrectly render its content for unresolved fields. This could act as a misleading "field not yet filled" indicator.
 >

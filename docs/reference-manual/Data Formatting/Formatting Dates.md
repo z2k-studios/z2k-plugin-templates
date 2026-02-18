@@ -10,10 +10,10 @@ Dates in Z2K Templates are stored as strings – not as JavaScript Date objects.
 
 ## Contents
 - [[#How Dates Work in Z2K Templates]]
-- [[#Customizing Date Formats with format-date]]
+- [[#Customizing Date Formats with formatDate]]
 - [[#Common Format Patterns]]
 - [[#Working with Date Sources]]
-- [[#Date Arithmetic with date-add]]
+- [[#Date Arithmetic with dateAdd]]
 - [[#Important: Time Truncation Pitfalls]]
 - [[#Obsidian Date Syntax Not Supported]]
 
@@ -26,22 +26,22 @@ This means:
 - User-provided dates pass through as-is from the source data
 - The `{{now}}` field is a fully qualified ISO timestamp with full precision
 
-To display dates in formats other than their default string representation, use the `format-date` helper.
+To display dates in formats other than their default string representation, use the `formatDate` helper.
 
-## Customizing Date Formats with format-date
-The [[format-date]] helper formats a date value using [Moment.js syntax](https://momentjs.com/docs/#/displaying/format/):
+## Customizing Date Formats with formatDate
+The [[formatDate]] helper formats a date value using [Moment.js syntax](https://momentjs.com/docs/#/displaying/format/):
 
 ```handlebars
-{{format-date "YYYY-MM-DD"}}
-{{format-date "dddd, MMMM Do" now}}
+{{formatDate "YYYY-MM-DD"}}
+{{formatDate "dddd, MMMM Do" now}}
 ```
 
 The helper takes a quoted format string and an optional source time. If no source is specified, `{{now}}` is used.
 
 > [!NOTE]
-> Z2K Templates does **not** support Obsidian's date formatting syntax (`{{date:YYYY-MM-DD}}`). This syntax is invalid Handlebars and will cause parsing errors. Use the `format-date` helper instead – see [[#Obsidian Date Syntax Not Supported|below]].
+> Z2K Templates does **not** support Obsidian's date formatting syntax (`{{date:YYYY-MM-DD}}`). This syntax is invalid Handlebars and will cause parsing errors. Use the `formatDate` helper instead – see [[#Obsidian Date Syntax Not Supported|below]].
 
-For complete syntax details, see [[format-date]].
+For complete syntax details, see [[formatDate]].
 
 ## Common Format Patterns
 Here are frequently-used date formats (assuming the date is January 14, 2025):
@@ -84,13 +84,13 @@ Here are frequently-used date formats (assuming the date is January 14, 2025):
 | `x` | 1736871045000 | Unix timestamp (milliseconds) |
 
 ## Working with Date Sources
-The `format-date` helper accepts different date sources as its second parameter:
+The `formatDate` helper accepts different date sources as its second parameter:
 
 ### The now Field
 `{{now}}` represents the current moment with full precision – date, time, and timezone:
 
 ```handlebars
-{{format-date "YYYY-MM-DD HH:mm:ss" now}}
+{{formatDate "YYYY-MM-DD HH:mm:ss" now}}
 ```
 
 This is the **recommended** source for most formatting because it preserves complete temporal information.
@@ -111,31 +111,31 @@ Z2K Templates provides convenience fields for common dates:
 See [[Built-In Fields]] for the complete list.
 
 ### User-Provided Dates
-Dates from user prompts or external data sources are passed as strings. These work with `format-date`, but see the [[#Important: Time Truncation Pitfalls|time truncation warning]] below.
+Dates from user prompts or external data sources are passed as strings. These work with `formatDate`, but see the [[#Important: Time Truncation Pitfalls|time truncation warning]] below.
 
-## Date Arithmetic with date-add
-To format dates other than today, use the [[date-add]] helper to offset from `{{now}}`:
+## Date Arithmetic with dateAdd
+To format dates other than today, use the [[dateAdd]] helper to offset from `{{now}}`:
 
 ```handlebars
-{{format-date "YYYY-MM-DD" (date-add -7)}}
+{{formatDate "YYYY-MM-DD" (dateAdd -7)}}
 ```
 
-This formats the date 7 days ago. The `date-add` helper accepts:
+This formats the date 7 days ago. The `dateAdd` helper accepts:
 
-- Days: `(date-add 5)` or `(date-add -5)`
-- Explicit units: `(date-add 2 "weeks")`, `(date-add 1 "month")`
+- Days: `(dateAdd 5)` or `(dateAdd -5)`
+- Explicit units: `(dateAdd 2 "weeks")`, `(dateAdd 1 "month")`
 
 ### Examples
 
 ```handlebars
 {{!-- Next Monday --}}
-{{format-date "YYYY-MM-DD" (date-add 1 "week")}}
+{{formatDate "YYYY-MM-DD" (dateAdd 1 "week")}}
 
 {{!-- End of current month --}}
-{{format-date "MMMM Do" (date-add 1 "month" (date-add -1 "day"))}}
+{{formatDate "MMMM Do" (dateAdd 1 "month" (dateAdd -1 "day"))}}
 
 {{!-- Same day last year --}}
-{{format-date "MMMM D, YYYY" (date-add -1 "year")}}
+{{formatDate "MMMM D, YYYY" (dateAdd -1 "year")}}
 ```
 
 ## Important: Time Truncation Pitfalls
@@ -145,20 +145,20 @@ Because dates are stored as strings, time-of-day information can be lost when a 
 The built-in fields `{{yesterday}}` and `{{tomorrow}}` are stored as date strings (e.g., `2025-01-13`) without time components. If you try to format them with time patterns:
 
 ```handlebars
-{{format-date "HH:mm" yesterday}}
+{{formatDate "HH:mm" yesterday}}
 ```
 
 You'll get `00:00` – not a meaningful time.
 
 ### The Solution
-For dates other than today that need time precision, use `{{date-add}}` from `{{now}}` instead of the convenience fields:
+For dates other than today that need time precision, use `{{dateAdd}}` from `{{now}}` instead of the convenience fields:
 
 ```handlebars
 {{!-- Correct: preserves time information --}}
-{{format-date "YYYY-MM-DD HH:mm" (date-add -1)}}
+{{formatDate "YYYY-MM-DD HH:mm" (dateAdd -1)}}
 
 {{!-- Problematic: time is truncated --}}
-{{format-date "YYYY-MM-DD HH:mm" yesterday}}
+{{formatDate "YYYY-MM-DD HH:mm" yesterday}}
 ```
 
 ### When It Doesn't Matter
@@ -166,7 +166,7 @@ If you're only formatting the date portion (no time), the convenience fields wor
 
 ```handlebars
 {{!-- This is fine --}}
-{{format-date "dddd, MMMM Do" yesterday}}
+{{formatDate "dddd, MMMM Do" yesterday}}
 ```
 
 ## Obsidian Date Syntax Not Supported
@@ -177,15 +177,15 @@ Z2K Templates does **not** support Obsidian's native date formatting syntax:
 {{date:YYYY-MM-DD}}
 ```
 
-This syntax is invalid Handlebars – the colon makes Handlebars interpret `YYYY-MM-DD` as a property path, which fails. Use `format-date` instead:
+This syntax is invalid Handlebars – the colon makes Handlebars interpret `YYYY-MM-DD` as a property path, which fails. Use `formatDate` instead:
 
 ```handlebars
 {{!-- Use this instead --}}
-{{format-date "YYYY-MM-DD"}}
+{{formatDate "YYYY-MM-DD"}}
 ```
 
 > [!DANGER] Notes for Review
-> - Verify the date-add examples work as documented – particularly the nested `date-add` for end-of-month.
+> - Verify the dateAdd examples work as documented – particularly the nested `dateAdd` for end-of-month.
 > - The "Same day last year" example may not handle leap years correctly. Consider noting this.
 > - Test that `{{date}}` vs `{{now}}` behave as described regarding time precision.
 > - Verify that user-provided date fields truly pass through as-is vs. having any parsing applied.

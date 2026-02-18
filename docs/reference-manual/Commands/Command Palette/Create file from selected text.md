@@ -32,12 +32,12 @@ The selected text becomes available to the template as the `{{sourceText}}` fiel
 
 - **As the title** – `# {{sourceText}}` makes the selection the file's heading
 - **As content** – Place `{{sourceText}}` in the body where the text should appear
-- **As a field value** – Use `{{field-info "topic" suggest=sourceText}}` to pre-fill a field with the selection.
+- **As a field value** – Use `{{fieldInfo "topic" suggest=sourceText}}` to pre-fill a field with the selection.
 
 If the template does not include a reference to `{{sourceText}}`, the plugin will simply place the selected text at the end of the new file. 
 
 > [!TIP] Selected Text as Field Data
-> This third option is a great way to present the selected text as a value into a field for the template. If you know you wish to use it as a value without modifications, use the [[field-info value|value]] parameter instead.
+> This third option is a great way to present the selected text as a value into a field for the template. If you know you wish to use it as a value without modifications, use the [[fieldInfo value|value]] parameter instead.
 
 
 ### Example Template

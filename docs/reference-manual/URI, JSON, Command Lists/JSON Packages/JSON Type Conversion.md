@@ -26,7 +26,7 @@ This distinction matters because the same data can produce different results dep
 > If you want to travel down the rabbit hole of Field Types, please make sure you first understand how Z2K Templates understand them by reading the [[Field Types]] page.
 
 ## URI Sources — String Coercion
-When a [[JSON Packages Overview|JSON Package]] arrives through a [[URI Actions|URI]], every parameter value is a string. The plugin must infer the intended type. It does this by consulting the template's field definitions — specifically, the `type` set via [[field-info type|field-info]]. 
+When a [[JSON Packages Overview|JSON Package]] arrives through a [[URI Actions|URI]], every parameter value is a string. The plugin must infer the intended type. It does this by consulting the template's field definitions — specifically, the `type` set via [[fieldInfo type|fieldInfo]]. 
 
 For example, if the URI contains `rating=5`:
 - If the template declares `rating` as type `number` → the value becomes the number `5`
@@ -85,7 +85,7 @@ Auto-conversion is conservative — only exact matches of `"true"` and `"false"`
 
 ### Choosing Your Transport
 - If your field data includes numbers, booleans, or arrays, prefer a **JSON source** (`.json` file, `.jsonl` file, or the `json` command). Values arrive correctly typed without relying on field declarations.
-- If you're using a **URI**, make sure your template declares [[Field Types|field types]] via [[field-info type|field-info]] for any non-string fields. Without type declarations, auto-conversion may produce unexpected results — `"0"` becomes the number `0`, not the string `"0"`.
+- If you're using a **URI**, make sure your template declares [[Field Types|field types]] via [[fieldInfo type|fieldInfo]] for any non-string fields. Without type declarations, auto-conversion may produce unexpected results — `"0"` becomes the number `0`, not the string `"0"`.
 
 ### The templateJsonData Exception
 The [[templateJsonData]] parameter adds nuance. When used inside a URI:

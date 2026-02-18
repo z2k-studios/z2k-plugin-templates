@@ -20,5 +20,5 @@ Template Fields are the workhorses of Z2K Templates. They are placeholders, writ
 ## Additional Information
 The following pages are also relevant to understanding the use of [[Template Fields Overview|Template Fields]]:
 - [[Built-In Fields]] -- a list of Built-In Fields supported by the Z2K Templates plugin
-- [[field-info Helper]] --  how to control how fields work through the built-in `{{field-info}}` helper function
+- [[fieldInfo Helper]] --  how to control how fields work through the built-in `{{fieldInfo}}` helper function
 - [[Lifecycle of a Template]] and [[Deferred Field Resolution]] -- discusses how fields are resolved into their resultant values

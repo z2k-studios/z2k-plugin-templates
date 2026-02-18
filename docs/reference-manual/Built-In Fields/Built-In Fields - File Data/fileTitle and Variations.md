@@ -41,13 +41,13 @@ What about Obsidian's `{{title}}` field?
 ### File Extension
 When you assign a value to the `{{fileTitle}}` built-in, you do not need to specify a file extension (e.g. "`.md`"). The plugin will automatically add an extension to the file for you. 
 
-### field-info and fileTitle
-Even though `{{fileTitle}}` is a [[Built-In Fields|Built-In Field]], you can still use the `{{field-info}}` function on the field to change how it is prompted for. In fact, that is the most common use of the `{{fileTitle}}` field - to use [[reference-manual/field-info Helper/field-info Helper|field-info]] to specify a default name for a file. 
+### fieldInfo and fileTitle
+Even though `{{fileTitle}}` is a [[Built-In Fields|Built-In Field]], you can still use the `{{fieldInfo}}` function on the field to change how it is prompted for. In fact, that is the most common use of the `{{fileTitle}}` field - to use [[reference-manual/fieldInfo Helper/fieldInfo Helper|fieldInfo]] to specify a default name for a file. 
 
 > [!TIP] Naming your Resultant Files with User Entered Fields
-> The most common use of the `{{fileTitle}}` built-in field is to use it within a [[field-info Helper|field-info helper function]]. With `{{field-info}}`, you can specify the prompting and naming of any resultant file created from the template. 
+> The most common use of the `{{fileTitle}}` built-in field is to use it within a [[fieldInfo Helper|fieldInfo helper function]]. With `{{fieldInfo}}`, you can specify the prompting and naming of any resultant file created from the template. 
 > 
-> Using these two built-ins together is extremely useful, and as such there is a dedicated page just for discussing what you can do with them: see [[Modifying Built-In Field Behaviors#fileTitle and field-info|fileTitle and field-info]].
+> Using these two built-ins together is extremely useful, and as such there is a dedicated page just for discussing what you can do with them: see [[Modifying Built-In Field Behaviors#fileTitle and fieldInfo|fileTitle and fieldInfo]].
 
 
 ## See Also

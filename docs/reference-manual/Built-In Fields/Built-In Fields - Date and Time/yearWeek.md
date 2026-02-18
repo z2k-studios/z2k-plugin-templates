@@ -29,7 +29,7 @@ Given today's date is January 27, 2026:
 Use `yearWeek` to create weekly notes with consistent naming:
 
 ```handlebars
-{{field-info fileTitle suggest="{{yearWeek}}" directives="finalize-suggest"}}
+{{fieldInfo fileTitle suggest="{{yearWeek}}" directives="finalize-suggest"}}
 
 # Weekly Review: {{yearWeek}}
 
@@ -64,17 +64,17 @@ Related to: {{wikilink yearWeek}}
 ```
 
 ## Customizing the Format
-To adjust the format of the week display, use the [[format-date]] built-in helper function with [[now]] as the source:
+To adjust the format of the week display, use the [[formatDate]] built-in helper function with [[now]] as the source:
 
 ```handlebars
 {{! Default format: 2026-w05 }}
 {{yearWeek}}
 
 {{! Alternative: Week 5 of 2026 }}
-Week {{format-date "W" now}} of {{year}}
+Week {{formatDate "W" now}} of {{year}}
 
 {{! Alternative: 2026/W05 }}
-{{format-date "YYYY/[W]WW"}}
+{{formatDate "YYYY/[W]WW"}}
 ```
 
 ## Difference from weekNum
@@ -90,5 +90,5 @@ Use `yearWeek` when you need the full year-week identifier; use `weekNum` when y
 
 - [[weekNum]] for just the week number
 - [[year]] for just the year
-- [[format-date]] for custom date formatting
+- [[formatDate]] for custom date formatting
 - [[Built-In Fields - Date and Time]] for all date/time fields

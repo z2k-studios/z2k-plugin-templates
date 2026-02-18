@@ -49,7 +49,7 @@ The body contains Markdown mixed with template expressions ([[Template Fields]],
 Example:
 
 ```md
-# Meeting Notes for {{format-date "LLLL"}}
+# Meeting Notes for {{formatDate "LLLL"}}
 
 Attendees: {{attendees}}
 
@@ -62,7 +62,7 @@ Attendees: {{attendees}}
 The body allows:
 - Standard Markdown
 - Field references: `{{attendees}}`, `{{agenda}}`
-- Helper functions: `{{format-date date}}` (see [[format-date]])
+- Helper functions: `{{formatDate date}}` (see [[formatDate]])
 - Conditional Handlebars constructs
 
 ## Example Template File Structures

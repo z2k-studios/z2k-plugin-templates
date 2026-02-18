@@ -58,5 +58,5 @@ For a more detailed analysis of Z2K Templates in contrast to the popular Templat
 > - Re‑verify example parity against the latest Templater docs. If needed, add a more exact citation for each snippet and a screenshot of the equivalent Z2K prompt.
 > - Confirm “custom user functions” status in Z2K (helpers registration roadmap) before publishing.
 > - Consider adding QuickAdd launch examples in a future “Workflows” page.
-> - Fix the | syntax with current field-info
+> - Fix the | syntax with current fieldInfo
 

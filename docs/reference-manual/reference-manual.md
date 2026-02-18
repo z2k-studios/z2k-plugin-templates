@@ -89,7 +89,7 @@ aliases:
 	- [[Built-In Fields - Template Data|Template Data]] - built-in fields about the template used to create files
 	- [[Built-In Fields - Misc|Misc Built-In Fields]] - misc built-in fields
 	- [[Built-In Fields - Z2K System|Z2K System]] - built-in links to other cards in the Z2K System compliant vault.
-	- [[Modifying Built-In Field Behaviors]] - using `{{`[[reference-manual/field-info Helper/field-info Helper|field-info]]`}}` to modify how built-in fields behave
+	- [[Modifying Built-In Field Behaviors]] - using `{{`[[reference-manual/fieldInfo Helper/fieldInfo Helper|fieldInfo]]`}}` to modify how built-in fields behave
 
 7. [[reference-manual/Naming Conventions/Naming Conventions|Naming Conventions]] - Conventions used by Z2K Templates 
 	- [[Naming Overview]] - an overview of the naming conventions
@@ -131,26 +131,26 @@ aliases:
 	- [[Misc Functions]] - Assortment of misc helpers
 	- [[Handlebars Built-In Functions]] - Helpers that are provided by the underlying Handlebars.js library
 	
-12. [[reference-manual/field-info Helper/field-info Helper|field-info Helper]]
-	- [[field-info Cheat Sheet|Cheat Sheet]] - a brief one page summary of the `{{field-info}}` helper function
-	- [[field-info Syntax|Syntax]] - syntax of the underlying helper function
-	- [[field-info Output|Output]] - what does the `{{field-info}}` helper output?
-	- [[field-info Parameters|Parameters]] - steps through `{{field-info}}` (and `{{field-output}}`) parameters
-		- [[field-info prompt|prompt]] Parameter - the prompt message displayed to the user
-		- [[field-info suggest|suggest]] Parameter - the suggested value to pre-fill in the prompt
-		- [[field-info type|type]] Parameter - the type of data associated with the field
-		- [[field-info fallback|fallback]] Parameter - the value used if the user never provides a value
-		- [[field-info directives|directives]] Parameter - advanced control of prompting
-		- [[field-info opts|opts]] Parameter - possible field values for singleSelect and multiSelect fields
-		- [[field-info value|value]] Parameter - manually assign values to a field
-	- [[field-info Usage Tips|Usage Tips]] - tips to understanding how to use `{{field-info}}` & best practices
-	- [[field-info Examples|Examples]] - presents a number of example templates that make use of `{{field-info}}`
-	- [[field-info Variations]] - similar functions within the same family of helper functions
-		- [[field-output Helper Variation]] - sister function that outputs the field value 
-		- [[fi Helper Variation]] - abbreviated version of `{{field-info}}`
-		- [[fo Helper Variation]] - abbreviated version of `{{field-output}}`
-	- [[Modifying Built-In Field Behaviors|field-info and Built-In Fields]] - how `{{field-info}}` works with [[Built-In Fields]]
-	- [[field-info and Block Templates]] - steps through how to use `{{field-info}}` with block templates
+12. [[reference-manual/fieldInfo Helper/fieldInfo Helper|fieldInfo Helper]]
+	- [[fieldInfo Cheat Sheet|Cheat Sheet]] - a brief one page summary of the `{{fieldInfo}}` helper function
+	- [[fieldInfo Syntax|Syntax]] - syntax of the underlying helper function
+	- [[fieldInfo Output|Output]] - what does the `{{fieldInfo}}` helper output?
+	- [[fieldInfo Parameters|Parameters]] - steps through `{{fieldInfo}}` (and `{{fieldOutput}}`) parameters
+		- [[fieldInfo prompt|prompt]] Parameter - the prompt message displayed to the user
+		- [[fieldInfo suggest|suggest]] Parameter - the suggested value to pre-fill in the prompt
+		- [[fieldInfo type|type]] Parameter - the type of data associated with the field
+		- [[fieldInfo fallback|fallback]] Parameter - the value used if the user never provides a value
+		- [[fieldInfo directives|directives]] Parameter - advanced control of prompting
+		- [[fieldInfo opts|opts]] Parameter - possible field values for singleSelect and multiSelect fields
+		- [[fieldInfo value|value]] Parameter - manually assign values to a field
+	- [[fieldInfo Usage Tips|Usage Tips]] - tips to understanding how to use `{{fieldInfo}}` & best practices
+	- [[fieldInfo Examples|Examples]] - presents a number of example templates that make use of `{{fieldInfo}}`
+	- [[fieldInfo Variations]] - similar functions within the same family of helper functions
+		- [[fieldOutput Helper Variation]] - sister function that outputs the field value 
+		- [[fi Helper Variation]] - abbreviated version of `{{fieldInfo}}`
+		- [[fo Helper Variation]] - abbreviated version of `{{fieldOutput}}`
+	- [[Modifying Built-In Field Behaviors|fieldInfo and Built-In Fields]] - how `{{fieldInfo}}` works with [[Built-In Fields]]
+	- [[fieldInfo and Block Templates]] - steps through how to use `{{fieldInfo}}` with block templates
 		
 13. [[Handlebars Support]] - How Z2K's field language is similar to and differs from the Handlebars.js library  
     - [[Template Comments]] (`{{! comment }}`)  
@@ -195,7 +195,7 @@ aliases:
 17. [[System Block Templates]]
 	- [[Intro to System Blocks]]
 	- [[Using System Blocks and YAML]]
-	- [[Using System Blocks and field-info]]
+	- [[Using System Blocks and fieldInfo]]
 	-  [[Using System Blocks and Markdown]]
 
 

@@ -40,7 +40,7 @@ The following is a list of actions performed by the Templates Plugin during fina
 - certain [[YAML Configuration Properties]] are adjusted to reflect finalization (e.g. the [[z2k_template_type]] property is reconfigured to [[z2k_template_type#value -- finalized-content-file|finalized-content-file]]).
 
 ## Are All Fields Removed?
-Technically, no. It is possible to configure some fields to linger past even finalization. For instance, if a field is specified to be [[field-info directives#finalize-preserve|preserved]], they will continue to persist even past finalization. 
+Technically, no. It is possible to configure some fields to linger past even finalization. For instance, if a field is specified to be [[fieldInfo directives#finalize-preserve|preserved]], they will continue to persist even past finalization. 
 
 ## Finalization Output
 Once you have finalized a content file, what is the output? Well, to state the obvious, it is a [[Finalized Stage|Finalized Content File]]. Let's continue on with that documentation page.
