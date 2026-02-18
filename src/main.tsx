@@ -38,7 +38,7 @@ interface Z2KTemplatesPluginSettings {
 	errorLogLevel: "none" | "error" | "warn" | "info" | "debug"; // Minimum severity level to log
 	useTemplateFileExtensions: boolean; // Whether to use .template and .block file extensions
 	templateExtensionsVisible: boolean; // Whether .template and .block files are currently visible in Obsidian
-	globalBlock: string; // Global field-info declarations (applied to all templates)
+	globalBlock: string; // Global fieldInfo declarations (applied to all templates)
 	userHelpers: string; // Custom JavaScript helper functions
 	customHelpersEnabled: boolean; // Whether custom helpers are active (ACE risk)
 }
@@ -512,11 +512,11 @@ Use it for:
 - Default values you want across all templates
 
 Priority: built-in < global < system < block < main
-(Global field-infos can be overridden by system blocks or the template itself.)
+(Global fieldInfos can be overridden by system blocks or the template itself.)
 
 Example:
-{{field-info author "Author name" suggest="Anonymous"}}
-{{field-info project "Project" type="text"}}`,
+{{fieldInfo author "Author name" suggest="Anonymous"}}
+{{fieldInfo project "Project" type="text"}}`,
 						validate: (code) => this.plugin.validateGlobalBlock(code),
 						onSave: async (content) => {
 							this.plugin.settings.globalBlock = content;
@@ -3044,7 +3044,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		// DOCS: YAML frontmatter fields are automatically added as field values.
 		// DOCS: This allows templates to reference metadata from template files, system blocks, and existing files.
 		// DOCS: YAML fields are added with 'no-prompt' directive to avoid re-prompting for existing data.
-		// DOCS: Priority order: Built-ins < YAML fields < field-info.value < Plugin built-ins < Overrides
+		// DOCS: Priority order: Built-ins < YAML fields < fieldInfo.value < Plugin built-ins < Overrides
 		// DOCS: All frontmatter fields are included except Obsidian internal fields (currently only 'position').
 		// DOCS: User-facing fields like 'tags', 'aliases', and 'cssclasses' are included as they represent user data.
 		// DOCS: Values are passed through with their native YAML types (string, number, array, etc.)
@@ -3065,7 +3065,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			// Skip Obsidian internal fields
 			if (key === 'position') continue;
 
-			// Skip if field-info already has a value property (higher priority)
+			// Skip if fieldInfo already has a value property (higher priority)
 			if (state.fieldInfos[key]?.value !== undefined) continue;
 
 			// Create field info if doesn't exist (and add no-prompt directive)
@@ -4398,7 +4398,7 @@ const FieldCollectionForm = ({ templateState, userHelpers, onComplete, onCancel,
  * A template expression that computes the field's value from other fields.
  * Example: `value="{{firstName}} {{lastName}}"`
  * - Re-evaluated whenever dependencies change (until user edits the field)
- * - Used by: field-info value= parameter, URI overrides, YAML frontmatter values
+ * - Used by: fieldInfo value= parameter, URI overrides, YAML frontmatter values
  * - When adding external data, store here so {{references}} resolve dynamically
  *
  * ### resolvedValues[fieldName] (locked result)
