@@ -1463,7 +1463,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		let existingFile: TFile | undefined;
 		if (cps.existingFilePath) {
 			existingFile = this.getFile(cps.existingFilePath) || undefined;
-			if (!existingFile) {
+			if (!existingFile && cmd !== "upsert") {
 				throw new TemplatePluginError(`Command: File not found:\n${cps.existingFilePath}`);
 			}
 		}
@@ -1505,6 +1505,35 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				promptMode,
 				finalize
 			});
+			return;
+		}
+
+		if (cmd === "upsert") {
+			if (!templateFile) {
+				throw new TemplatePluginError("Command: 'upsert' cmd requires 'templatePath'");
+			}
+			if (!cps.existingFilePath) {
+				throw new TemplatePluginError("Command: 'upsert' cmd requires 'existingFilePath'");
+			}
+			if (existingFile) {
+				// File exists → continue path
+				await this.continueCard({
+					existingFile, fieldOverrides, uriKeys, promptMode, finalize
+				});
+			} else {
+				// File doesn't exist → create at exact path
+				const targetPath = normalizeFullPath(cps.existingFilePath);
+				const lastSlash = targetPath.lastIndexOf('/');
+				const folderPath = lastSlash >= 0 ? targetPath.substring(0, lastSlash) : '';
+				const basename = targetPath.substring(lastSlash + 1).replace(/\.md$/, '');
+				const cardTypeFolder = this.getTemplateCardType(templateFile);
+				const targetFolder = pathFolderFromTFolder(await this.createFolder(folderPath));
+				await this.createCard({
+					cardTypeFolder, templateFile, fieldOverrides, uriKeys,
+					promptMode, destDir: targetFolder, finalize,
+					existingTitle: basename,
+				});
+			}
 			return;
 		}
 
@@ -1902,6 +1931,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		sourceFile?: TFile, // Always an indexed output file
 		fromSelection?: boolean,
 		finalize?: boolean,
+		existingTitle?: string, // Pre-set fileTitle (used by upsert to match target path)
 	}) {
 		try {
 			if (!opts) { opts = {}; }
@@ -1934,7 +1964,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			// Convert sourceText to string for addPluginBuiltIns (handles all VarValueType cases)
 			const sourceTextStr = opts.fieldOverrides.sourceText != null ? String(opts.fieldOverrides.sourceText) : undefined;
 			await this.addYamlFieldValues(state); // System blocks already in state from parseTemplate
-			await this.addPluginBuiltIns(state, { sourceText: sourceTextStr, templateName: opts.templateFile.basename, fileCreationDate: opts.sourceFile?.stat.ctime });
+			await this.addPluginBuiltIns(state, { sourceText: sourceTextStr, templateName: opts.templateFile.basename, fileCreationDate: opts.sourceFile?.stat.ctime, existingTitle: opts.existingTitle });
 			this.setSuggestedTitleFromYaml(state);
 			// For sourceFile: use original filename as suggestion if template doesn't specify one
 			if (opts.sourceFile) {
