@@ -75,6 +75,8 @@ interface CommandParams {
 	// Template & file paths (keys might need normalization)
 	templatePath?: string;
 	blockPath?: string;  // Alias for templatePath
+	templateContents?: string;
+	blockContents?: string;  // Alias for templateContents
 	existingFilePath?: string;
 	destDir?: string;
 	destHeader?: string;
@@ -445,25 +447,26 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 
 		containerEl.createEl('h3', {text: 'Error Logging'});
 
-		new Setting(containerEl)
-			.setName('Error log file')
-			.setDesc('Path to error log file (vault-relative or absolute).')
-			.setClass('setting-full-width')
-			.addText(text => {
-				const input = text
-					.setValue(this.plugin.settings.errorLogPath)
-					.inputEl;
-
-				this.validateTextInput(input,
-					(value) => {
-						if (value && /[*?"<>|]/.test(value)) { return "Invalid characters in file path"; }
-						return null;
-					},
-					async (validValue) => {
-						this.plugin.settings.errorLogPath = validValue;
-						await this.plugin.saveData(this.plugin.settings);
-					});
-			});
+		// Log path setting removed from UI — uses default path in plugin folder.
+		// new Setting(containerEl)
+		// 	.setName('Error log file')
+		// 	.setDesc('Path to error log file (vault-relative or absolute).')
+		// 	.setClass('setting-full-width')
+		// 	.addText(text => {
+		// 		const input = text
+		// 			.setValue(this.plugin.settings.errorLogPath)
+		// 			.inputEl;
+		//
+		// 		this.validateTextInput(input,
+		// 			(value) => {
+		// 				if (value && /[*?"<>|]/.test(value)) { return "Invalid characters in file path"; }
+		// 				return null;
+		// 			},
+		// 			async (validValue) => {
+		// 				this.plugin.settings.errorLogPath = validValue;
+		// 				await this.plugin.saveData(this.plugin.settings);
+		// 			});
+		// 	});
 
 		new Setting(containerEl)
 			.setName('Error log level')
@@ -478,6 +481,20 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 				.onChange(async (value) => {
 					this.plugin.settings.errorLogLevel = value as "none" | "error" | "warn" | "info" | "debug";
 					await this.plugin.saveData(this.plugin.settings);
+				}));
+
+		new Setting(containerEl)
+			.setName('Error log')
+			.setDesc('View the error log file.')
+			.addButton(button => button
+				.setButtonText('View Error Log')
+				.onClick(() => {
+					new LogViewerModal(this.app, {
+						title: 'Error Log',
+						logPath: this.plugin.settings.errorLogPath,
+						emptyMessage: 'No log entries yet.',
+						onClear: () => this.plugin.errorLogger.clearLog(),
+					}).open();
 				}));
 
 		containerEl.createEl('h3', {text: 'Quick Commands'});
@@ -700,20 +717,46 @@ class ErrorLogger {
 		return levels.indexOf(severity) <= levels.indexOf(currentLevel);
 	}
 
+	private static readonly MAX_LOG_SIZE = 1024 * 1024; // 1 MB
+	private static readonly TRUNCATE_TARGET = 700 * 1024; // ~700 KB
+
+	async clearLog(): Promise<void> {
+		try {
+			await this.app.vault.adapter.write(this.settings.errorLogPath, '');
+		} catch (error) {
+			console.error("Failed to clear error log:", error);
+		}
+	}
+
 	private async writeToLog(context: LogContext): Promise<void> {
 		const entry = this.formatLogEntry(context);
 		const logPath = this.settings.errorLogPath;
 
 		try {
-			const fileExists = await this.app.vault.adapter.exists(logPath);
-			if (!fileExists) {
-				await this.app.vault.adapter.write(logPath, "# Z2K Templates Error Log\n\n");
+			let existingContent = '';
+			if (await this.app.vault.adapter.exists(logPath)) {
+				existingContent = await this.app.vault.adapter.read(logPath);
 			}
-			const existingContent = await this.app.vault.adapter.read(logPath);
-			await this.app.vault.adapter.write(logPath, existingContent + entry);
+			const newContent = existingContent + entry;
+			await this.app.vault.adapter.write(logPath, newContent);
+			await this.truncateIfNeeded(logPath, newContent);
 		} catch (error) {
 			console.error("Failed to write to error log:", error);
 		}
+	}
+
+	private async truncateIfNeeded(logPath: string, content: string): Promise<void> {
+		if (content.length <= ErrorLogger.MAX_LOG_SIZE) return;
+
+		// Find a clean entry boundary (---) at or after the cut point
+		const cutPoint = content.length - ErrorLogger.TRUNCATE_TARGET;
+		const separator = "\n---\n\n";
+		const boundaryIndex = content.indexOf(separator, cutPoint);
+
+		if (boundaryIndex === -1) return; // No clean boundary found, keep as-is
+
+		const trimmed = content.substring(boundaryIndex + separator.length);
+		await this.app.vault.adapter.write(logPath, trimmed);
 	}
 
 	private formatLogEntry(context: LogContext): string {
@@ -1285,8 +1328,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		const cps: Record<string, any> = {};  // Command parameters
 		const templateData: Record<string, any> = {};  // Template field data (preserves original keys)
 
-		const knownKeys = ['cmd', 'templatePath', 'blockPath', 'existingFilePath',
-			'destDir', 'destHeader', 'prompt', 'finalize', 'location',
+		const knownKeys = ['cmd', 'templatePath', 'blockPath', 'templateContents', 'blockContents',
+			'existingFilePath', 'destDir', 'destHeader', 'prompt', 'finalize', 'location',
 			'fieldData', 'fieldData64', 'jsonData', 'jsonData64',
 			'maxRetries', 'retryDelayMs'];
 
@@ -1459,6 +1502,12 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			}
 		}
 
+		// Resolve inline template content (alternative to templatePath/blockPath)
+		const templateContent: string | undefined = cps.templateContents || cps.blockContents || undefined;
+		if (templateContent && templateFile) {
+			throw new TemplatePluginError("Command: Cannot specify both templatePath/blockPath and templateContents/blockContents");
+		}
+
 		// Resolve existing file
 		let existingFile: TFile | undefined;
 		if (cps.existingFilePath) {
@@ -1478,13 +1527,16 @@ export default class Z2KTemplatesPlugin extends Plugin {
 
 		// Route commands
 		if (cmd === "new") {
-			if (!templateFile) {
-				throw new TemplatePluginError("Command: 'new' cmd requires 'templatePath'");
+			if (!templateFile && !templateContent) {
+				throw new TemplatePluginError("Command: 'new' cmd requires 'templatePath' or 'templateContents'");
 			}
-			const cardTypeFolder = this.getTemplateCardType(templateFile);
+			const cardTypeFolder = templateFile
+				? this.getTemplateCardType(templateFile)
+				: (destDir ?? pathFolderFrom(""));
 			await this.createCard({
 				cardTypeFolder,
 				templateFile,
+				templateContent,
 				fieldOverrides,
 				uriKeys,
 				promptMode,
@@ -1509,8 +1561,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		}
 
 		if (cmd === "upsert") {
-			if (!templateFile) {
-				throw new TemplatePluginError("Command: 'upsert' cmd requires 'templatePath'");
+			if (!templateFile && !templateContent) {
+				throw new TemplatePluginError("Command: 'upsert' cmd requires 'templatePath' or 'templateContents'");
 			}
 			if (!cps.existingFilePath) {
 				throw new TemplatePluginError("Command: 'upsert' cmd requires 'existingFilePath'");
@@ -1526,10 +1578,12 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				const lastSlash = targetPath.lastIndexOf('/');
 				const folderPath = lastSlash >= 0 ? targetPath.substring(0, lastSlash) : '';
 				const basename = targetPath.substring(lastSlash + 1).replace(/\.md$/, '');
-				const cardTypeFolder = this.getTemplateCardType(templateFile);
+				const cardTypeFolder = templateFile
+					? this.getTemplateCardType(templateFile)
+					: (destDir ?? pathFolderFrom(""));
 				const targetFolder = pathFolderFromTFolder(await this.createFolder(folderPath));
 				await this.createCard({
-					cardTypeFolder, templateFile, fieldOverrides, uriKeys,
+					cardTypeFolder, templateFile, templateContent, fieldOverrides, uriKeys,
 					promptMode, destDir: targetFolder, finalize,
 					existingTitle: basename,
 				});
@@ -1547,6 +1601,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 
 			await this.insertBlock({
 				templateFile,
+				templateContent,
 				existingFile,
 				destHeader: cps.destHeader,
 				location,
@@ -1765,6 +1820,9 @@ export default class Z2KTemplatesPlugin extends Plugin {
 					// Invalid JSON - log and collect
 					await this.log('error', 'batch', `Invalid JSON in command queue: ${line}`);
 					failedLines.push(line);
+					if (pauseMs > 0 && i < lines.length - 1) {
+						await sleep(pauseMs);
+					}
 					continue;
 				}
 				try {
@@ -1934,6 +1992,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	async createCard(opts?: {
 		cardTypeFolder?: PathFolder,
 		templateFile?: PathFile,
+		templateContent?: string, // Inline template content (alternative to templateFile)
 		fieldOverrides?: Record<string,VarValueType>,
 		uriKeys?: Set<string>,
 		promptMode?: "none"|"remaining"|"all",
@@ -1954,27 +2013,40 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				opts.fieldOverrides.sourceText = editor.getSelection();
 			}
 
-			if (!opts.cardTypeFolder) {
-				opts.cardTypeFolder = await this.promptForCardTypeFolder();
+			if (!opts.templateContent) {
+				if (!opts.cardTypeFolder) {
+					opts.cardTypeFolder = await this.promptForCardTypeFolder();
+				}
+				if (!opts.templateFile) {
+					opts.templateFile = await this.promptForTemplateFile(opts.cardTypeFolder, "document-template");
+				}
 			}
-			if (!opts.templateFile) {
-				opts.templateFile = await this.promptForTemplateFile(opts.cardTypeFolder, "document-template");
+			if (!opts.cardTypeFolder) {
+				opts.cardTypeFolder = pathFolderFrom("");
 			}
 			if (!opts.destDir) {
 				opts.destDir = opts.cardTypeFolder;
 			}
 
-			let content = await this.app.vault.adapter.read(opts.templateFile.path);
+			let content: string;
+			const templateFileForParse = opts.templateFile ?? pathFileFrom("(inline)");
+			if (opts.templateContent) {
+				content = opts.templateContent;
+			} else {
+				content = await this.app.vault.adapter.read(opts.templateFile!.path);
+			}
 			let { fm, body } = Z2KYamlDoc.splitFrontmatter(content);
-			fm = this.updateYamlOnCreate(fm, opts.templateFile.basename);
+			fm = this.updateYamlOnCreate(fm, templateFileForParse.basename);
 			content = Z2KYamlDoc.joinFrontmatter(fm, body);
-			let systemBlocksContent = await this.GetSystemBlocksContent(opts.cardTypeFolder);
-			let state = await this.parseTemplate(content, systemBlocksContent, this.settings.globalBlock, opts.templateFile);
+			let systemBlocksContent = opts.templateFile
+				? await this.GetSystemBlocksContent(opts.cardTypeFolder)
+				: "";
+			let state = await this.parseTemplate(content, systemBlocksContent, this.settings.globalBlock, templateFileForParse);
 			let hadSourceTextField = !!state.fieldInfos["sourceText"];
 			// Convert sourceText to string for addPluginBuiltIns (handles all VarValueType cases)
 			const sourceTextStr = opts.fieldOverrides.sourceText != null ? String(opts.fieldOverrides.sourceText) : undefined;
 			await this.addYamlFieldValues(state); // System blocks already in state from parseTemplate
-			await this.addPluginBuiltIns(state, { sourceText: sourceTextStr, templateName: opts.templateFile.basename, fileCreationDate: opts.sourceFile?.stat.ctime, existingTitle: opts.existingTitle });
+			await this.addPluginBuiltIns(state, { sourceText: sourceTextStr, templateName: templateFileForParse.basename, fileCreationDate: opts.sourceFile?.stat.ctime, existingTitle: opts.existingTitle });
 			this.setSuggestedTitleFromYaml(state);
 			// For sourceFile: use original filename as suggestion if template doesn't specify one
 			if (opts.sourceFile) {
@@ -2054,6 +2126,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	}
 	async insertBlock(opts?: {
 		templateFile?: PathFile,
+		templateContent?: string, // Inline template content (alternative to templateFile)
 		blockTypeFolder?: PathFolder, // scopes which block templates are shown in the picker
 		existingFile?: TFile, // Always an indexed output file
 		destHeader?: string,
@@ -2068,7 +2141,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			if (!opts) { opts = {}; }
 			if (!opts.fieldOverrides) { opts.fieldOverrides = {}; }
 			if (!opts.existingFile) { opts.existingFile = this.getOpenFileOrThrow(); }
-			if (!opts.templateFile) {
+			if (!opts.templateFile && !opts.templateContent) {
 				const scopeDir = opts.blockTypeFolder ?? pathFolderFromTFolder(this.getOpenFileOrThrow().parent as TFolder);
 				opts.templateFile = await this.promptForTemplateFile(scopeDir, "block-template");
 			}
@@ -2081,12 +2154,20 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			}
 
 			// Parse and resolve block
-			let content = await this.app.vault.adapter.read(opts.templateFile.path);
-			let state = await this.parseTemplate(content, "", "", opts.templateFile);
+			const templateFileForParse = opts.templateFile ?? pathFileFrom("(inline)");
+			let content: string;
+			if (opts.templateContent) {
+				content = opts.templateContent;
+			} else {
+				content = await this.app.vault.adapter.read(opts.templateFile!.path);
+			}
+			let state = await this.parseTemplate(content, "", "", templateFileForParse);
 			let hadSourceTextField = !!state.fieldInfos["sourceText"];
 			// Add global block, system blocks, and existing file YAML for field values
 			let globalBlockYaml = Z2KYamlDoc.splitFrontmatter(this.settings.globalBlock).fm;
-			let systemBlocksContent = await this.GetSystemBlocksContent(this.getTemplateCardType(opts.templateFile));
+			let systemBlocksContent = opts.templateFile
+				? await this.GetSystemBlocksContent(this.getTemplateCardType(opts.templateFile))
+				: "";
 			let systemBlocksYaml = Z2KYamlDoc.splitFrontmatter(systemBlocksContent).fm;
 			let existingFileContent = await this.app.vault.read(opts.existingFile);
 			let existingFileYaml = Z2KYamlDoc.splitFrontmatter(existingFileContent).fm;
@@ -5409,6 +5490,124 @@ export class ErrorModal extends Modal {
 			</>
 		);
 	}
+	onClose() {
+		if (this.root) { this.root.unmount(); }
+		this.contentEl.empty();
+	}
+}
+
+// ------------------------------------------------------------------------------------------------
+// Log Viewer Modal
+// ------------------------------------------------------------------------------------------------
+interface LogViewerModalOptions {
+	title: string;
+	logPath: string;
+	emptyMessage?: string;
+	onClear?: () => Promise<void>;
+}
+
+function LogViewerContent({ app, options, onClose }: { app: App; options: LogViewerModalOptions; onClose: () => void }) {
+	const [content, setContent] = useState<string>('');
+	const [error, setError] = useState<string | null>(null);
+	const contentRef = useRef<HTMLPreElement>(null);
+	const lastSizeRef = useRef<number>(-1);
+	const lastMtimeRef = useRef<number>(-1);
+	const isAtBottomRef = useRef<boolean>(true);
+
+	// Track whether user is scrolled to bottom
+	const handleScroll = () => {
+		if (!contentRef.current) return;
+		const el = contentRef.current;
+		isAtBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 20;
+	};
+
+	// Auto-scroll to bottom if user was already there
+	useEffect(() => {
+		if (isAtBottomRef.current && contentRef.current) {
+			contentRef.current.scrollTop = contentRef.current.scrollHeight;
+		}
+	}, [content]);
+
+	useEffect(() => {
+		const poll = async () => {
+			try {
+				const exists = await app.vault.adapter.exists(options.logPath);
+				if (!exists) {
+					setContent('');
+					setError(null);
+					lastSizeRef.current = -1;
+					lastMtimeRef.current = -1;
+					return;
+				}
+				const stat = await app.vault.adapter.stat(options.logPath);
+				if (!stat) return;
+				if (stat.size === lastSizeRef.current && stat.mtime === lastMtimeRef.current) return;
+				lastSizeRef.current = stat.size;
+				lastMtimeRef.current = stat.mtime;
+				const text = await app.vault.adapter.read(options.logPath);
+				setContent(text);
+				setError(null);
+			} catch (e: any) {
+				setError(`Failed to read log: ${e.message}`);
+			}
+		};
+		poll(); // initial read
+		const intervalId = window.setInterval(poll, 250);
+		return () => window.clearInterval(intervalId);
+	}, []);
+
+	const handleClear = () => {
+		if (!options.onClear) return;
+		new ConfirmationModal(app, {
+			title: 'Clear Log',
+			message: 'Are you sure you want to clear the log file? This cannot be undone.',
+			confirmText: 'Clear',
+			cancelText: 'Cancel',
+			confirmClass: 'btn-warning',
+		}, async (confirmed) => {
+			if (confirmed) { await options.onClear!(); }
+		}).open();
+	};
+
+	const isEmpty = !content.trim();
+
+	return (
+		<div className="log-viewer-content">
+			<pre ref={contentRef} className="log-viewer-display" onScroll={handleScroll}>
+				{error ? error : isEmpty ? (options.emptyMessage ?? 'No log entries.') : content}
+			</pre>
+			<div className="log-viewer-footer">
+				{options.onClear && (
+					<button className="btn btn-warning" onClick={handleClear} disabled={isEmpty && !error}>Clear Log</button>
+				)}
+				<button className="btn btn-secondary" onClick={onClose}>Close</button>
+			</div>
+		</div>
+	);
+}
+
+export class LogViewerModal extends Modal {
+	options: LogViewerModalOptions;
+	root: any;
+
+	constructor(app: App, options: LogViewerModalOptions) {
+		super(app);
+		this.options = options;
+	}
+
+	onOpen() {
+		this.modalEl.addClass('z2k', 'log-viewer-modal');
+		this.titleEl.setText(this.options.title);
+		this.contentEl.empty();
+		this.contentEl.addClass('modal-content');
+		this.root = createRoot(this.contentEl);
+		this.root.render(
+			<ErrorBoundary onError={(error) => { new Notice(`Log viewer error: ${error.message}`); this.close(); }}>
+				<LogViewerContent app={this.app} options={this.options} onClose={() => this.close()} />
+			</ErrorBoundary>
+		);
+	}
+
 	onClose() {
 		if (this.root) { this.root.unmount(); }
 		this.contentEl.empty();

@@ -662,6 +662,62 @@
 
 /*
 --------------------------------------------------------------------------------------------------------------------------------
+	Log Viewer Modal
+--------------------------------------------------------------------------------------------------------------------------------
+*/
+.z2k.log-viewer-modal {
+	width: 600px;
+	max-width: 90vw;
+	height: 70vh;
+	max-height: 70vh;
+}
+
+.z2k.log-viewer-modal .modal-content {
+	height: 100%;
+	max-height: none;
+	display: flex;
+	flex-direction: column;
+}
+
+.z2k .log-viewer-content {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	padding: 0 20px 16px 20px;
+	gap: 12px;
+	min-height: 0;
+}
+
+.z2k .log-viewer-display {
+	flex: 1;
+	overflow-y: auto;
+	background-color: var(--background-secondary);
+	border-radius: 4px;
+	padding: 12px;
+	margin: 0;
+	font-family: var(--font-monospace, monospace);
+	font-size: 13px;
+	white-space: pre-wrap;
+	word-break: break-word;
+	color: var(--text-normal);
+	user-select: text;
+	cursor: text;
+	min-height: 0;
+}
+
+.z2k .log-viewer-footer {
+	flex-shrink: 0;
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
+	padding-top: 8px;
+	border-top: 1px solid var(--background-modifier-border);
+}
+
+
+
+/*
+--------------------------------------------------------------------------------------------------------------------------------
 	Code Editor Modal
 --------------------------------------------------------------------------------------------------------------------------------
 */
