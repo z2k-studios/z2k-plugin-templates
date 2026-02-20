@@ -51,7 +51,7 @@ The rename-to-processing step is atomic — if the plugin crashes or restarts, i
 Errors in a `.jsonl` file are handled per-line, not per-file. A single bad line does not stop the rest of the batch.
 - **Invalid JSON on a line** — the line is logged as an error and added to a list of failed lines. Processing continues with the next line.
 - **Command execution failure** — depends on the line's retry configuration:
-  - If the command has `maxRetries > 0`, the failed line is extracted into its own individual `.json` file and handed off to the [[Command Queue]]'s retry system
+  - If the command has `maxRetries > 0` (or `-1`), the failed line is extracted into its own individual `.json` file and handed off to the [[Command Queue]]'s retry system
   - If `maxRetries` is 0 or absent, the line is added to the failed lines list
 - **After processing** — if any lines failed, they are written to a new file in the `failed/` subdirectory as `<original-name>.<timestamp>.failed.jsonl`
 
@@ -75,8 +75,8 @@ For full details on retry behavior and failure states, see the [[Retry and Error
 
 ### With Retry Configuration
 ```jsonl
-{"cmd": "new", "templatePath": "Templates/Report.md", "title": "Q4 Report", "maxRetries": 3, "retryDelayMs": 5000}
-{"cmd": "new", "templatePath": "Templates/Report.md", "title": "Q1 Forecast", "maxRetries": 3, "retryDelayMs": 5000}
+{"cmd": "new", "templatePath": "Templates/Report.md", "title": "Q4 Report", "maxRetries": 3, "retryDelay": "5s"}
+{"cmd": "new", "templatePath": "Templates/Report.md", "title": "Q1 Forecast", "maxRetries": 3, "retryDelay": "5s"}
 ```
 
 If the first line fails, it will be extracted to its own `.json` file and retried up to 3 times with a 5-second delay between attempts.

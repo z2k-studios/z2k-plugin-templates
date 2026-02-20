@@ -28,8 +28,8 @@ The table below lists all recognized directives. Not all directives apply to eve
 | `fieldData64` | All | Base64-encoded version of `fieldData`. See [[URIs with JSON Data#Base64 Encoding]]. |
 | `jsonData` | `fromJson` | A JSON string containing a complete command package. See [[URI Command - fromJson]]. |
 | `jsonData64` | `fromJson` | Base64-encoded version of `jsonData`. See [[URIs with JSON Data#Base64 Encoding]]. |
-| `maxRetries` | All | Maximum retry attempts for batch/queue processing. |
-| `retryDelayMs` | All | Delay in milliseconds between retries. |
+| `maxRetries` | All | Maximum retry attempts for batch/queue processing. Use `-1` for unlimited. |
+| `retryDelay` | All | Duration to wait between retries (e.g., `"5s"`, `"1m"`). |
 
 ## Directives vs Field Data
 Every parameter on a URI is either a directive or field data. The distinction:
@@ -45,6 +45,6 @@ If a parameter key matches a recognized directive (case-insensitive), it is trea
 The `vault` parameter is handled by Obsidian itself, not by the Z2K Templates plugin. It tells Obsidian which vault to switch to before executing the command. It is not listed in the directive table above because the plugin never sees it – Obsidian processes it before routing the URI to the plugin. See [[URI Syntax#Vault]] for details.
 
 > [!DANGER] Internal Notes
-> - The recognized directive keys are defined in `knownKeys` at line 1242 of main.tsx: `cmd`, `templatePath`, `blockPath`, `existingFilePath`, `destDir`, `destHeader`, `prompt`, `finalize`, `location`, `fieldData`, `fieldData64`, `jsonData`, `jsonData64`, `maxRetries`, `retryDelayMs`.
+> - The recognized directive keys are defined in `knownKeys` at line 1242 of main.tsx: `cmd`, `templatePath`, `blockPath`, `existingFilePath`, `destDir`, `destHeader`, `prompt`, `finalize`, `location`, `fieldData`, `fieldData64`, `jsonData`, `jsonData64`, `maxRetries`, `retryDelay`.
 > - Directive key normalization (line 1249): `k.replace(/[^a-zA-Z0-9]/g, '').toLowerCase()`. This means `template-path`, `template_path`, `templatePath`, and `TEMPLATEPATH` all match. Field data keys are NOT normalized – they preserve original casing.
 > - Consider whether `vault` should be added to `knownKeys` and silently discarded, in case Obsidian passes it through to the handler rather than stripping it. Without this, a `vault` parameter would be treated as field data.

@@ -196,7 +196,7 @@ This is not a queue error – it's a template/data mismatch. Test the template m
 
 **Possible causes**:
 - Permanent error (wrong template path, bad syntax) → Retries won't help; fix the underlying issue
-- Retry delay too short → Increase `retryDelayMs` if the issue needs time to resolve
+- Retry delay too short → Increase `retryDelay` if the issue needs time to resolve
 - External dependency never available → Verify the external resource will actually become available
 
 ## Advanced Debugging

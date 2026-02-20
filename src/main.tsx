@@ -92,7 +92,7 @@ interface CommandParams {
 	jsonData64?: string;  // Base64-encoded JSON (standard or URL-safe)
 	// Retry configuration
 	maxRetries?: number;  // Default 0
-	retryDelayMs?: number;  // Default 0
+	retryDelay?: string;  // Duration string (e.g., "5s", "1m"). Default "0s"
 	// Index signature to allow other unknown keys (treated as template data)
 	[key: string]: any;
 }
@@ -1331,7 +1331,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		const knownKeys = ['cmd', 'templatePath', 'blockPath', 'templateContents', 'blockContents',
 			'existingFilePath', 'destDir', 'destHeader', 'prompt', 'finalize', 'location',
 			'fieldData', 'fieldData64', 'jsonData', 'jsonData64',
-			'maxRetries', 'retryDelayMs'];
+			'maxRetries', 'retryDelay'];
 
 		// Separate command params from template data
 		for (const k in rawParams) {
@@ -1831,10 +1831,16 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				} catch (e) {
 					// Command execution failed - check if it has retry config
 					const maxRetries = cmdParams.maxRetries || 0;
-					if (maxRetries > 0) {
-						// Create individual .json file for retry
-						const retryFileName = `command-${moment().format('YYYY-MM-DD_HH-mm-ss-SSS')}.json`;
-						const retryFilePath = dirPath + '/' + retryFileName;
+					if (maxRetries > 0 || maxRetries === -1) {
+						// Create individual .json file for retry, preserving source batch name and line index
+						const srcName = (processingPath.split('/').pop() || 'command')
+							.replace(/\.processing\.jsonl$/, '');
+						let ts = moment();
+						let retryFilePath: string;
+						do {
+							retryFilePath = `${dirPath}/${srcName}.${i}.${ts.format('YYYY-MM-DD_HH-mm-ss')}.json`;
+							ts.add(1, 'second');
+						} while (await adapter.exists(retryFilePath));
 						await adapter.write(retryFilePath, line);
 						// Handle as failed command (creates .retry.json)
 						await this.handleCommandFailure(retryFilePath, e, cmdParams);
@@ -1886,7 +1892,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		}
 
 		const maxRetries = cmdParams.maxRetries || 0;
-		const retryDelayMs = cmdParams.retryDelayMs || 0;
+		const retryDelayMs = parseDuration(cmdParams.retryDelay || '0s', 0);
 
 		if (maxRetries === 0) {
 			// No retries configured - rename to .TIMESTAMP.failed.json
@@ -1911,8 +1917,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			};
 		}
 
-		// Check if retries exhausted
-		if (retryData.attempts >= maxRetries) {
+		// Check if retries exhausted (-1 means retry forever)
+		if (maxRetries !== -1 && retryData.attempts >= maxRetries) {
 			// Rename to .TIMESTAMP.failed.json and delete retry metadata
 			const failedPath = await this.getFailedPath(filePath);
 			await adapter.rename(filePath, failedPath);
@@ -1973,7 +1979,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		const queueDir = filePath.substring(0, lastSlash);
 		const filename = filePath.substring(lastSlash + 1)
 			.replace(/\.jsonl?$/, '')
-			.replace(/\.\d{4}-\d{2}-\d{2}(?:_\d{2}-\d{2}-\d{2})?\.delay$/, '');
+			.replace(/\.\d{4}-\d{2}-\d{2}(?:_\d{2}-\d{2}-\d{2})?\.delay$/, '')
+			.replace(/\.\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}$/, '');
 		// Ensure subfolder exists
 		const subfolderPath = `${queueDir}/${suffix}`;
 		if (!(await adapter.exists(subfolderPath))) {
