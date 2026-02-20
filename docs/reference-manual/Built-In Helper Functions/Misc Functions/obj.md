@@ -43,10 +43,10 @@ This produces an object: `{ name: "John", age: 30, city: "New York" }`
 ### Using Field Values
 
 ```handlebars
-{{field-info firstName prompt="First name"}}
-{{field-info lastName prompt="Last name"}}
+{{fieldInfo firstName prompt="First name"}}
+{{fieldInfo lastName prompt="Last name"}}
 
-{{obj first=firstName last=lastName fullName=(format-string "{{value}} " firstName)}}
+{{obj first=firstName last=lastName fullName=(formatString "{{value}} " firstName)}}
 ```
 
 ### Combining with arr for Complex Data
@@ -78,4 +78,4 @@ metadata: {{obj author=creator date=date version="1.0"}}
 ## See Also
 
 - [[arr]] for creating arrays
-- [[field-info (Field Functions)]] for structured field definitions
+- [[fieldInfo (Field Functions)]] for structured field definitions

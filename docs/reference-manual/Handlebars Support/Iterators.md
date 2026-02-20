@@ -49,7 +49,7 @@ If the variable passed to `{{#each}}` is unresolved, Handlebars receives `undefi
 The intended behavior is that `{{#each}}` blocks referencing unresolved fields should be preserved in the output until the data becomes available or [[Finalization]] occurs. See [[Conditionals#Known Issue]] for full details and workaround options.
 
 > [!WARNING]
-> Until the deferred-block bug is fixed, ensure that any data used with `{{#each}}` is available at the time of rendering. Unlike standalone `{{field}}` expressions, iterators are not currently deferred. The workaround is to mark the relevant fields as [[field-info directives#required|required]].
+> Until the deferred-block bug is fixed, ensure that any data used with `{{#each}}` is available at the time of rendering. Unlike standalone `{{field}}` expressions, iterators are not currently deferred. The workaround is to mark the relevant fields as [[fieldInfo directives#required|required]].
 
 ## Iterators with the arr Helper
 Z2K Templates provides the `arr` helper for constructing arrays inline. This is useful when you want to iterate over a fixed set of values without requiring external data:
@@ -105,7 +105,7 @@ Inside the loop, `{{this}}` in the block template refers to the current array it
 Z2K Templates renames partials uniquely internally during preprocessing to avoid collisions. When the same partial appears multiple times inside a loop, each iteration reuses the same compiled partial — which is typically fine for simple blocks.
 
 > [!WARNING]
-> If a block template contains [[field-info Helper|field-info]] declarations with prompted fields, the prompting behavior when used inside a loop depends on how [[Deferred Field Resolution]] and field-info interact with repeated invocations. This pattern is not well-tested — verify with your specific templates.
+> If a block template contains [[fieldInfo Helper|fieldInfo]] declarations with prompted fields, the prompting behavior when used inside a loop depends on how [[Deferred Field Resolution]] and fieldInfo interact with repeated invocations. This pattern is not well-tested — verify with your specific templates.
 
 ## Iterating Over Objects
 `{{#each}}` also works with objects, iterating over their properties:

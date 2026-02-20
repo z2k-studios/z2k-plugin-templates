@@ -22,7 +22,7 @@ Why build a new templating plugin when the impressive [Templater plugin](https:/
 | ------------------------------------- | ---------------------------------------------- | -------------------------------------------- |
 | **Interactive prompting UI**          | **Yes** — native modal prompts per field       | **Yes** — `tp.system.prompt/suggester` in JS |
 | **Date & time constants**             | **Yes** (e.g., `{{date}}`)                     | **Yes** (`<% tp.date.now() %>`, etc.)        |
-| **String/date formatting helpers**    | **Yes** (`format-string`, `format-date`, etc.) | **Yes** (via JS functions/libraries)         |
+| **String/date formatting helpers**    | **Yes** (`formatString`, `formatDate`, etc.) | **Yes** (via JS functions/libraries)         |
 | **Context-aware template discovery**  | **Yes** (folder ancestry)                      | Not built-in (QuickAdd/scripts)              |
 | **Hierarchical System YAML**          | **Yes** (merged on create)                     | Not built-in (scriptable)                    |
 | **Partials / includes**               | **Yes** (Handlebars partials)                  | **Yes** (`tp.file.include()`)                |
@@ -111,7 +111,7 @@ Category: <%* const c = await tp.system.suggester(['Work','Home','Study'], ['wor
 - **Z2K Templates**:
 ```md title="Example C - Z2K Templates.md"
 –––
-Category: {{field-output Category type="singleSelect" opts="Work, Home, Study"}}
+Category: {{fieldOutput Category type="singleSelect" opts="Work, Home, Study"}}
 –––
 # Note — {{Category}}
 ```
@@ -137,7 +137,7 @@ Here, you would then manually edit later or script a custom command.
 
 - **Z2K Templates**:
 ```md title="Example D - Z2K Templates.md"
-{{field-info fileTitle="{{today}}.md"}}
+{{fieldInfo fileTitle="{{today}}.md"}}
 Steps: {{StepsTaken}}
 Breakfast: {{Breakfast}}
 Dinner: {{Dinner}}
@@ -160,7 +160,7 @@ Use **Continue Filling File** during the day; and then a **Finalize** step appli
 
 - **Z2K Templates**:
 ```md title="Example E - Z2K Templates.md"
-- Mood:: {{field-output Mood type="multiselect" opts="Happy, Sad, Confused"}}
+- Mood:: {{fieldOutput Mood type="multiselect" opts="Happy, Sad, Confused"}}
 ```
 
 
@@ -172,5 +172,5 @@ Use **Continue Filling File** during the day; and then a **Finalize** step appli
 > - Re‑verify example parity against the latest Templater docs. If needed, add a more exact citation for each snippet and a screenshot of the equivalent Z2K prompt.
 > - Confirm “custom user functions” status in Z2K (helpers registration roadmap) before publishing.
 > - Consider adding QuickAdd launch examples in a future “Workflows” page.
-> - Fix the | syntax with current field-info
+> - Fix the | syntax with current fieldInfo
 

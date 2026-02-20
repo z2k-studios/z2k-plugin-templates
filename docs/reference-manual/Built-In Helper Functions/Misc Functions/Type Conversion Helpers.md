@@ -46,7 +46,7 @@ Converts a value to a number.
 ### Use Case: Ensuring Numeric Comparisons
 
 ```handlebars
-{{field-info userInput type="text"}}
+{{fieldInfo userInput type="text"}}
 
 {{#if (gt (toNumber userInput) 100)}}
 Value exceeds maximum of 100.
@@ -96,7 +96,7 @@ Returns `false` for:
 ### Use Case: Handling User Input
 
 ```handlebars
-{{field-info enableFeature type="text" prompt="Enable feature? (yes/no)"}}
+{{fieldInfo enableFeature type="text" prompt="Enable feature? (yes/no)"}}
 
 {{#if (toBool enableFeature)}}
 Feature is enabled.
@@ -133,7 +133,7 @@ Converts a value to a string.
 ### Use Case: Ensuring String Operations
 
 ```handlebars
-{{field-info count type="number"}}
+{{fieldInfo count type="number"}}
 
 {{! Ensure count is treated as string for concatenation }}
 ID-{{toString count}}
@@ -145,4 +145,4 @@ ID-{{toString count}}
 
 - [[Comparison Operators]] for comparing values
 - [[Arithmetic Operators]] for numeric operations
-- [[format-number]] for formatting numbers as strings with specific patterns
+- [[formatNumber]] for formatting numbers as strings with specific patterns

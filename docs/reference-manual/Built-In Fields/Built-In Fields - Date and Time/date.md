@@ -10,18 +10,18 @@ The `{{date}}` built-in field returns the current date.
 The default format for the `{{date}}` built-in field is `YYYY-MM-DD`. 
 
 ## Customizing the Format of date
-To adjust the format of this built-in date-time field, please use the [[format-date]] built-in Helper function. Please note that Obsidian's formatting style is not supported (see [[Custom Field Formatting#Obsidian Date-Time Formatting|Obsidian Date-Time Formatting]]).
+To adjust the format of this built-in date-time field, please use the [[formatDate]] built-in Helper function. Please note that Obsidian's formatting style is not supported (see [[Custom Field Formatting#Obsidian Date-Time Formatting|Obsidian Date-Time Formatting]]).
 
-> [!TIP] Best to use the now built-in field for format-date
-> When using `format-date` to alter the appearance of `{{date}}`, we recommend using the `{{now}}` built-in field instead. Please see the [[format-date#Using format-date with sourceTimes other than Now|comment in the format-date]] reference page.
+> [!TIP] Best to use the now built-in field for formatDate
+> When using `formatDate` to alter the appearance of `{{date}}`, we recommend using the `{{now}}` built-in field instead. Please see the [[formatDate#Using formatDate with sourceTimes other than Now|comment in the formatDate]] reference page.
 
 
 ## Example Output 
 Given a template snippet of:
 ```md title="Date Example Template.md"
 - Today's Date: {{date}}           {{~! This uses the default formatting.    }}
-- Today's Month: {{format-date "MM" now}}   {{~! use "now" instead of "date" }}
-- Today's Year: {{format-date "YYYY" now}}  {{~! use "now" instead of "date" }}
+- Today's Month: {{formatDate "MM" now}}   {{~! use "now" instead of "date" }}
+- Today's Year: {{formatDate "YYYY" now}}  {{~! use "now" instead of "date" }}
 - Link to Today's Daily Note: {{wikilink date}}
 ```
 

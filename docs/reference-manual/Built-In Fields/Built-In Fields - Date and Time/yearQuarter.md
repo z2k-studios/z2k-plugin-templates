@@ -7,7 +7,7 @@ sidebar_label: "{{yearQuarter}}"
 The `{{yearQuarter}}` built-in field returns the current year and quarter in the format "`YYYY-[Q]Q`". 
 
 ## Default Format
-The default format for the `{{yearQuarter}}` built-in field is "`YYYY-[Q]Q`". That is, if it is January 9th, 2026, then `{{yearQuarter}}` will output "`2026-Q1`". You can override this formatting using Obsidian style date formatting or with the [[format-date]] Built-In Helper Function. 
+The default format for the `{{yearQuarter}}` built-in field is "`YYYY-[Q]Q`". That is, if it is January 9th, 2026, then `{{yearQuarter}}` will output "`2026-Q1`". You can override this formatting using Obsidian style date formatting or with the [[formatDate]] Built-In Helper Function. 
 
 ## Example Output 
 Given a template snippet of:

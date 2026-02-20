@@ -66,7 +66,7 @@ YAML has its own type system. After Handlebars renders a field expression into a
 Consider this frontmatter:
 ```yaml
 ---
-card_creation_day_of_month: {{format-date "D"}}
+card_creation_day_of_month: {{formatDate "D"}}
 ---
 ```
 
@@ -75,7 +75,7 @@ This seems innocuous enough. When the template gets instantiated, the built in h
 The first attempt at a solution is to quote the string:
 ```yaml
 ---
-card_creation_day_of_month: "{{format-date "D"}}"
+card_creation_day_of_month: "{{formatDate "D"}}"
 ---
 ```
 
@@ -83,7 +83,7 @@ This fails, however, because now you have multiple uses of the quote character. 
 
 ```yaml
 ---
-card_creation_day_of_month: '{{format-date "D"}}'
+card_creation_day_of_month: '{{formatDate "D"}}'
 ---
 ```
 
@@ -160,7 +160,7 @@ You can safely omit quotes when:
 Using Handlebar fields inside your template's YAML code will also cause a form of [[Template Pollution]], where the template's field entry will be listed along side the actual values if you are performing database operations on the YAML properties (e.g. with Bases). This pollution can proliferate if the field persists into [[WIP Stage|WIP Content Files]]. See [[Template Pollution]] for more details. 
 
 There are two recommended ways to solve this problem:
-1. Use the field-info directive "[[field-info directives#required|required]]" to force any fields in YAML frontmatter to be provided during instantiation. This will prevent pollution in WIP Content Files. 
+1. Use the fieldInfo directive "[[fieldInfo directives#required|required]]" to force any fields in YAML frontmatter to be provided during instantiation. This will prevent pollution in WIP Content Files. 
 2. If you wish to remove the pollution from the template files as well, you will need to use [[Template File Extensions]] which will hide template files from Obsidian's processing rules. 
 
 
@@ -171,7 +171,7 @@ There are several restrictions on what you can place inside YAML frontmatter.
 Block template partials (`{{> blockName}}`) are **not allowed** in YAML frontmatter. The engine explicitly excludes block recursion during YAML processing. If you need to inject YAML from another source, use [[Intro to System Blocks|System Blocks]] or [[YAML and Block Templates|block template YAML merging]] instead.
 
 > [!WARNING] Block Expressions Are Strongly Discouraged
-> Handlebars block expressions like `{{#if}}`, `{{#each}}`, and `{{#with}}` are not explicitly prevented in YAML, but they are **strongly discouraged**. These expressions would need to produce syntactically valid YAML – including correct indentation, colons, and list markers – which is extremely fragile. A small change to the template data could break the YAML structure entirely. If you need conditional metadata, consider using [[field-info fallback|fallback values]] or [[field-info directives|directives]] instead.
+> Handlebars block expressions like `{{#if}}`, `{{#each}}`, and `{{#with}}` are not explicitly prevented in YAML, but they are **strongly discouraged**. These expressions would need to produce syntactically valid YAML – including correct indentation, colons, and list markers – which is extremely fragile. A small change to the template data could break the YAML structure entirely. If you need conditional metadata, consider using [[fieldInfo fallback|fallback values]] or [[fieldInfo directives|directives]] instead.
 
 ### HTML Entity Handling
 Handlebars normally escapes special characters as HTML entities (e.g., `'` becomes `&#x27;`). The engine automatically unescapes the standard entities (`&#x27;`, `&quot;`, `&lt;`, `&gt;`, `&amp;`) after rendering YAML. However, if you use triple-brace expressions (`{{{field}}}`) to bypass Handlebars escaping, be aware that raw output may contain characters that conflict with YAML syntax.

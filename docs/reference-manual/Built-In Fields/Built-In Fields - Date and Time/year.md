@@ -7,7 +7,7 @@ sidebar_label: "{{year}}"
 The `{{year}}` built-in field returns the current year in the format "`YYYY`". 
 
 ## Default Format
-The default format for the `{{year}}` built-in field is "`YYYY`". That is, if it is January 9th, 2026, then `{{year}}` will output "`2026`". You can override this formatting using Obsidian style date formatting or with the [[format-date]] Built-In Helper Function. 
+The default format for the `{{year}}` built-in field is "`YYYY`". That is, if it is January 9th, 2026, then `{{year}}` will output "`2026`". You can override this formatting using Obsidian style date formatting or with the [[formatDate]] Built-In Helper Function. 
 
 ## Example Output 
 Given a template snippet of:

@@ -44,14 +44,14 @@ In general, it is best to ask for data from the user without the use of wikilink
 ## Tips
 
 > [!TIP] Make Unstructured Data by File Friendly Before Wikilinking
-> If you are building a wikilink using generic (i.e. unstructured) user inputted data, it is best to [[format-string-file-friendly|make the data be file friendly]] before building a wikilink from it. This will ensure that any characters that are not file friendly will get properly removed.
+> If you are building a wikilink using generic (i.e. unstructured) user inputted data, it is best to [[formatStringFileFriendly|make the data be file friendly]] before building a wikilink from it. This will ensure that any characters that are not file friendly will get properly removed.
 > 
 > For instance, suppose you want to make an wikilink to an book title that a user specifies. Because it can be common to include characters like a `:` colon, this can cause errors in the resultant link name. 
 > 
-> The solution is simple, however. Simply use the [[format-string-file-friendly]] helper function to clean up the data before outputting it into a wikilink. For example:
+> The solution is simple, however. Simply use the [[formatStringFileFriendly]] helper function to clean up the data before outputting it into a wikilink. For example:
 > 
 > ```md title="Author Template.md"
->- Most Famous Book : {{wikilink (format-string-file-friendly FamousBook)}} FamousBook}}
+>- Most Famous Book : {{wikilink (formatStringFileFriendly FamousBook)}} FamousBook}}
 > ```
 > 
 > In this instance, if the user specifies "2001: A Space Odyssey", then the plugin will output

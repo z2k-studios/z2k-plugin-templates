@@ -25,7 +25,7 @@ Z2K Templates provides a rich set of string formatting helpers for transforming 
 Convert all characters to uppercase:
 
 ```handlebars
-{{format-string-to-upper projectName}}
+{{formatStringToUpper projectName}}
 ```
 
 `"my project"` → `"MY PROJECT"`
@@ -34,7 +34,7 @@ Convert all characters to uppercase:
 Convert all characters to lowercase:
 
 ```handlebars
-{{format-string-to-lower Status}}
+{{formatStringToLower Status}}
 ```
 
 `"IN PROGRESS"` → `"in progress"`
@@ -44,10 +44,10 @@ Convert all characters to lowercase:
 ```handlebars
 {{!-- YAML tag (lowercase, no spaces) --}}
 tags:
-  - {{format-string-to-lower (format-string-slugify category)}}
+  - {{formatStringToLower (formatStringSlugify category)}}
 
 {{!-- Shouting header --}}
-# {{format-string-to-upper title}}
+# {{formatStringToUpper title}}
 ```
 
 ## Whitespace Handling
@@ -66,11 +66,11 @@ The `~` [[Whitespace Control|tilde]] character inside expression delimiters trim
 
 This affects the template source, not the field value. See [[Whitespace Control]] for complete details, including how whitespace is handled for [[Silent Helper Functions]].
 
-### Value Whitespace: format-string-trim
-The [[format-string-trim]] helper removes leading and trailing whitespace from the field value itself:
+### Value Whitespace: formatStringTrim
+The [[formatStringTrim]] helper removes leading and trailing whitespace from the field value itself:
 
 ```handlebars
-{{format-string-trim userInput}}
+{{formatStringTrim userInput}}
 ```
 
 `"  hello world  "` → `"hello world"`
@@ -79,7 +79,7 @@ The [[format-string-trim]] helper removes leading and trailing whitespace from t
 
 ```handlebars
 Before
-{{~format-string-trim userInput~}}
+{{~formatStringTrim userInput~}}
 After
 ```
 
@@ -90,10 +90,10 @@ In this example:
 Both mechanisms can be combined as needed.
 
 ## Embedding in Surrounding Text
-The [[format-string]] helper inserts a field value into a format string using `{{value}}` as a placeholder:
+The [[formatString]] helper inserts a field value into a format string using `{{value}}` as a placeholder:
 
 ```handlebars
-{{format-string fieldName "format string with {{value}} inside"}}
+{{formatString fieldName "format string with {{value}} inside"}}
 ```
 
 The key benefit: the surrounding text only appears when the field has a value. If the field is empty or missing, the entire expression produces nothing – no orphaned prefixes, suffixes, or units left behind.
@@ -105,10 +105,10 @@ Consider a template that displays temperature data from an external source:
 - Temperature:: {{Temperature}} degrees F
 ```
 
-If no temperature is provided, the output is `- Temperature::  degrees F` – an empty value with orphaned units. Using `format-string` keeps it clean:
+If no temperature is provided, the output is `- Temperature::  degrees F` – an empty value with orphaned units. Using `formatString` keeps it clean:
 
 ```handlebars
-- Temperature:: {{format-string Temperature "{{value}} degrees F"}}
+- Temperature:: {{formatString Temperature "{{value}} degrees F"}}
 ```
 
 Now, if `Temperature` has no value, the entire expression is empty.
@@ -117,16 +117,16 @@ Now, if `Temperature` has no value, the entire expression is empty.
 
 ```handlebars
 {{!-- Bullet list item --}}
-{{format-string PassingIdea "- {{value}}"}}
+{{formatString PassingIdea "- {{value}}"}}
 
 {{!-- Wrap in brackets --}}
-{{format-string tagName "[{{value}}]"}}
+{{formatString tagName "[{{value}}]"}}
 
 {{!-- Create a wikilink --}}
-{{format-string noteName "[[{{value}}]]"}}
+{{formatString noteName "[[{{value}}]]"}}
 
 {{!-- Add units --}}
-{{format-string Distance "{{value}} km"}}
+{{formatString Distance "{{value}} km"}}
 ```
 
 For creating Obsidian wikilinks specifically, consider the [[wikilink]] helper which handles edge cases like display text.
@@ -135,14 +135,14 @@ For creating Obsidian wikilinks specifically, consider the [[wikilink]] helper w
 By default, Z2K Templates [[Default Formatting Rules#Character Escaping and Raw Output|reverses HTML entity escaping]] for Markdown compatibility. In practice, this means most text passes through unchanged.
 
 ### Explicit Raw Output
-The [[format-string-raw]] helper marks content as "safe" – it won't be processed by Handlebars' escaping:
+The [[formatStringRaw]] helper marks content as "safe" – it won't be processed by Handlebars' escaping:
 
 ```handlebars
-{{format-string-raw markdownContent}}
+{{formatStringRaw markdownContent}}
 ```
 
 ### When to Use It
-Because Z2K Templates already handles unescaping, `format-string-raw` is rarely needed. It's most useful when:
+Because Z2K Templates already handles unescaping, `formatStringRaw` is rarely needed. It's most useful when:
 
 - Composing output inside other helpers where you want explicit control
 - Working with content that might contain Handlebars-like syntax you want preserved
@@ -157,10 +157,10 @@ Handlebars' [[Unescaped Expressions|triple mustache]] syntax achieves the same r
 See [[Unescaped Expressions]] for complete details on escaping behavior.
 
 ## Reversing CamelCase
-The [[format-string-spacify]] helper converts collapsed or camelCase strings back to readable text:
+The [[formatStringSpacify]] helper converts collapsed or camelCase strings back to readable text:
 
 ```handlebars
-{{format-string-spacify fieldName}}
+{{formatStringSpacify fieldName}}
 ```
 
 | Input | Output |
@@ -180,7 +180,7 @@ This is particularly useful for:
 ### Conditional Text with Fallback
 ```handlebars
 {{#if subtitle}}
-## {{format-string-trim subtitle}}
+## {{formatStringTrim subtitle}}
 {{else}}
 ## Untitled Section
 {{/if}}
@@ -188,18 +188,18 @@ This is particularly useful for:
 
 ### Clean User Input for Display
 ```handlebars
-{{format-string-to-upper (format-string-trim userInput)}}
+{{formatStringToUpper (formatStringTrim userInput)}}
 ```
 
 ### Normalized Tags
 ```handlebars
 tags:
 {{#each categories}}
-  - {{format-string-to-lower (format-string-trim this)}}
+  - {{formatStringToLower (formatStringTrim this)}}
 {{/each}}
 ```
 
 > [!DANGER] Notes for Review
-> - Verify `format-string-spacify` handles the edge cases listed (HTMLParser, userID).
-> - The `format-string` examples use escaped quotes – test that these render correctly.
-> - Consider adding examples for `format-string-encode-base64` if there are common use cases in templates.
+> - Verify `formatStringSpacify` handles the edge cases listed (HTMLParser, userID).
+> - The `formatString` examples use escaped quotes – test that these render correctly.
+> - Consider adding examples for `formatStringEncodeBase64` if there are common use cases in templates.

@@ -93,6 +93,6 @@ Another example of how storing your field values in YAML code becomes apparent w
 
 > [!DANGER] Notes
 > - This pattern relies on `addYamlFieldValues()` being called during block insertion with the existing file's YAML (plugin line 1984). Verify that this code path is stable and intentional.
-> - When a YAML property and a field-info `value` parameter both exist for the same field, the field-info `value` wins (plugin line 2930). This means a block template that declares `{{field-info "BookAuthor" value="Override"}}` would override the stored YAML value.
+> - When a YAML property and a fieldInfo `value` parameter both exist for the same field, the fieldInfo `value` wins (plugin line 2930). This means a block template that declares `{{fieldInfo "BookAuthor" value="Override"}}` would override the stored YAML value.
 > - If the stored YAML value is not a string (e.g., a number or boolean from unquoted YAML), verify how Handlebars renders it in the block template body.
 > - This feature is by design but has not been extensively tested. The name collision between YAML properties and template fields is resolved by treating them as the same field – verify this holds for edge cases like nested objects or array values.

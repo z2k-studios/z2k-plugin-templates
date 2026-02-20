@@ -60,21 +60,21 @@ Tildes can be combined with any Handlebars expression type:
 | Partial | `{{~> blockName~}}` |
 
 ## Silent Helpers and Implicit Whitespace Handling
-Some Z2K Templates helpers – known as [[Silent Helper Functions|silent helpers]] – produce no visible output. The most common is `{{field-info}}` (and its abbreviation `{{fi}}`), which declares metadata about a field but renders as an empty string (see [[field-info Helper]]).
+Some Z2K Templates helpers – known as [[Silent Helper Functions|silent helpers]] – produce no visible output. The most common is `{{fieldInfo}}` (and its abbreviation `{{fi}}`), which declares metadata about a field but renders as an empty string (see [[fieldInfo Helper]]).
 
 Because these helpers output nothing, they can leave behind blank lines in your template. You might be tempted to use tildes to clean these up:
 
 ```handlebars
-{{~field-info fieldName type="date"~}}
+{{~fieldInfo fieldName type="date"~}}
 ```
 
-This works, but is usually unnecessary. Z2K Templates automatically removes the entire line during [[Finalization]] when a silent helper like `{{field-info}}` is the only content on that line – the same [[Template Comments#Difference from Default Handlebars Behavior|line-aware removal]] behavior that applies to [[Template Comments|comments]].
+This works, but is usually unnecessary. Z2K Templates automatically removes the entire line during [[Finalization]] when a silent helper like `{{fieldInfo}}` is the only content on that line – the same [[Template Comments#Difference from Default Handlebars Behavior|line-aware removal]] behavior that applies to [[Template Comments|comments]].
 
-In practice, the cleanest approach is to place `{{field-info}}` declarations on their own lines and let Z2K Templates handle the whitespace for you:
+In practice, the cleanest approach is to place `{{fieldInfo}}` declarations on their own lines and let Z2K Templates handle the whitespace for you:
 
 ```handlebars
-{{field-info projectName type="text" prompt="Project name?"}}
-{{field-info dueDate type="date" prompt="Due date?"}}
+{{fieldInfo projectName type="text" prompt="Project name?"}}
+{{fieldInfo dueDate type="date" prompt="Due date?"}}
 # {{projectName}}
 Due: {{dueDate}}
 ```
@@ -84,4 +84,4 @@ Due: {{dueDate}}
 
 
 > [!DANGER] Notes for Review
-> - Verify that whitespace control tildes work correctly with `{{field-output}}` / `{{fo}}` as well.
+> - Verify that whitespace control tildes work correctly with `{{fieldOutput}}` / `{{fo}}` as well.

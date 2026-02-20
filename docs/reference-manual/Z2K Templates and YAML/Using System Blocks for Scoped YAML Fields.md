@@ -91,16 +91,16 @@ Templates in `/Projects/ClientWork/` get the consulting attribution. Templates e
 
 Another folder, say `/Chats/ChatGPT` can set the default author to be `"ChatGPT"` and have a similar effect. 
 
-### Providing field-info Defaults
-System blocks can also contain `{{field-info}}` declarations in their body to set prompts, types, or fallback behavior across all templates in scope:
+### Providing fieldInfo Defaults
+System blocks can also contain `{{fieldInfo}}` declarations in their body to set prompts, types, or fallback behavior across all templates in scope:
 
 ```handlebars file="/Projects/.system-block.md"
 ---
 status: draft
 ---
-{{field-info "status" type="singleSelect" opts="draft,active,complete,archived"}}
-{{field-info "priority" type="singleSelect" opts="low,medium,high,critical"}}
+{{fieldInfo "status" type="singleSelect" opts="draft,active,complete,archived"}}
+{{fieldInfo "priority" type="singleSelect" opts="low,medium,high,critical"}}
 ```
 
-Every template under `/Projects/` now gets a dropdown for `status` and `priority` – without repeating the `{{field-info}}` in each template.
+Every template under `/Projects/` now gets a dropdown for `status` and `priority` – without repeating the `{{fieldInfo}}` in each template.
 

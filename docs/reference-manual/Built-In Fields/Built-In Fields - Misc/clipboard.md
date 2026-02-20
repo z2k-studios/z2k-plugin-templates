@@ -45,7 +45,7 @@ Check if the clipboard has content before including it:
 Set the clipboard content as a prompt suggestion for a field, allowing the user to modify it:
 
 ```handlebars
-{{field-info quote suggest=clipboard prompt="Enter the text you wish to quote:"}}
+{{fieldInfo quote suggest=clipboard prompt="Enter the text you wish to quote:"}}
 
 > {{quote}}
 ```
@@ -54,8 +54,8 @@ Set the clipboard content as a prompt suggestion for a field, allowing the user 
 Use clipboard content alongside other template data:
 
 ```handlebars
-{{field-info title prompt="Title for this snippet"}}
-{{field-info source prompt="Source URL"}}
+{{fieldInfo title prompt="Title for this snippet"}}
+{{fieldInfo source prompt="Source URL"}}
 
 # {{title}}
 

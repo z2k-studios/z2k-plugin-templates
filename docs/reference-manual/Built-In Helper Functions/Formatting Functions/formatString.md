@@ -1,0 +1,48 @@
+---
+sidebar_position: 100
+sidebar_class_name: z2k-code
+sidebar_label: "{{formatString}}"
+---
+# formatString Helper
+Z2K allows you to provide a very simple string formatting helper function `formatString` for adding additional characters around a field. 
+
+The nomenclature for the `formatString` is:
+
+```
+{{formatString fieldname quoted-formatString}}
+```
+
+where:
+- `formatString` is the predefined name of the helper function for formatting strings
+- `fieldname` is the name of the field that will receive the data to be formatted
+- `quoted-formatString` is a hard coded string of how the string should be formatted. It should contain `{{value}}` to specify where the field data should be inserted. If omitted, the template defaults to `"{{value}}"` (i.e. the value is returned unchanged).
+
+Also supports named hash parameters: `{{formatString value=fieldname template="..."}}`
+
+## Null Handling
+If the field value is null or undefined, the helper returns nothing – no formatting is applied. This makes it safe for conditional formatting (see [[#Why Format with Additional Text?]]).
+
+## Examples
+- `{{formatString PassingIdea "- {{value}}"}}` – If the phrase "Life is Beautiful!" is passed in for the `PassingIdea` field, then it will put it into a bulleted list, i.e. output `- Life is Beautiful!`
+
+## Why Format with Additional Text?
+Why use this instead of simply embedding the additional text directly in the template file? There are times when you want the additional text to be added, but only if valid data is being sent in.
+
+For instance, imagine having a program that will fill in data for the current temperature. If you create the template to read:
+```
+- Temperature:: {{Temperature}} degrees F
+```
+
+Then if there was not a temperature provided on a given day, the field could result in:
+```
+- Temperature::  degrees F
+```
+
+which is ambiguous at best.
+
+Instead, you could use `formatString` to make the units conditional on if there is valid data:
+
+```
+- Temperature:: {{formatString Temperature "{{value}} degrees F"}}
+```
+

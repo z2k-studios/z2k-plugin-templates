@@ -143,7 +143,7 @@ The double brackets are stripped before resolution. This can be useful for maint
 > [!DANGER] Notes for Review
 > - The existing chicken scratch notes mentioned `{{> (random "BlockA.md" "BlockB.md")}}` as working for dynamic block selection. However, the source code at line 1073 of `z2k-template-engine/src/main.ts` explicitly throws an error for SubExpression-based partial names: "Dynamic block names are not supported." This is a **discrepancy** – either the code changed after the notes were written, or the notes were aspirational. Verify which is correct.
 > - The resolution order described here comes from the chicken scratch notes. Verify against the actual block resolution logic in `z2k-plugin-templates/main.tsx` (the `getBlockCallback` function).
-> - Partial parameters are passed through to Handlebars and should work, but the interaction with Z2K Templates' field-info system (do parameters override field-info declarations in the block?) needs verification.
+> - Partial parameters are passed through to Handlebars and should work, but the interaction with Z2K Templates' fieldInfo system (do parameters override fieldInfo declarations in the block?) needs verification.
 > - The wikilink syntax support (`{{> [[name]]}}`) is confirmed in source at line 1077-1078.
 > - Related GitHub issue for relative path support: [#117](https://github.com/z2k-studios/z2k-plugin-templates/issues/117)
 > - Are relative paths still not supported ? (mentioned above)

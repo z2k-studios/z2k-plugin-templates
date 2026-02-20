@@ -30,7 +30,7 @@ I will be working in the documentation section "Handlebars Support" for the Z2K 
 My first question will be on the page `reference-manual/Handlebars Support/Conditionals.md`. It suggests that (in the section `Conditionals and Deferred Fields`) that if a field is a deferred field, then it will still evaluate the #IF conditional. This is not what was intended in the code - it should instead ignore all conditionals until either a) the field does become defined, or b) finalization. 
 - (If this is too difficult, then a stop gap solution would be to still handle the field replacement in the #IF statement, but just always defer all conditionals to be executed upon and only upon finalization - that implementation choice is left to the developer). 
 - ((A third fallback is to make it a hard requirement that a field is `required`, which is better than nothing - so worth mentioning as an option)) 
-	- See `Z2K Studios Workspace/Code/Obsidian Plugins/z2k-plugin-templates/docs/reference-manual/field-info Helper/field-info Parameters/field-info directives.md` 
+	- See `Z2K Studios Workspace/Code/Obsidian Plugins/z2k-plugin-templates/docs/reference-manual/fieldInfo Helper/fieldInfo Parameters/fieldInfo directives.md` 
 
 So the task is to evaluate the code and determine what it actually does. Further, it should note all of this desired behaviour in the danger section so that it can be added to a test jig. 
 

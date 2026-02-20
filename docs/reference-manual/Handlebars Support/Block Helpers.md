@@ -64,9 +64,9 @@ Inside the helper, call `options.inverse(this)` to render the else branch.
 ## Limitation: Restricted Functionality Mode
 Block helpers are **not supported** while in a [[Restricted Functionality Mode]]. These are contexts where Z2K Templates evaluates expressions with a limited feature set, for instance:
 
-- `prompt` parameters in `{{field-info}}`
-- `suggest` parameters in `{{field-info}}`
-- `fallback` parameters in `{{field-info}}`
+- `prompt` parameters in `{{fieldInfo}}`
+- `suggest` parameters in `{{fieldInfo}}`
+- `fallback` parameters in `{{fieldInfo}}`
 - YAML frontmatter values
 
 In these contexts, only simple expressions and inline helpers work. Attempting to use a block helper will not produce the expected result. See [[Restricted Functionality Mode]] for the full list of what is and isn't supported.
@@ -74,7 +74,7 @@ In these contexts, only simple expressions and inline helpers work. Attempting t
 For example, this will **not** work as intended:
 
 ```handlebars
-{{field-info taskName prompt="{{#if projectName}}Task for {{projectName}}:{{else}}Task name:{{/if}}"}}
+{{fieldInfo taskName prompt="{{#if projectName}}Task for {{projectName}}:{{else}}Task name:{{/if}}"}}
 ```
 
 Instead, use inline helpers to achieve conditional logic in these contexts.
@@ -84,7 +84,7 @@ Like [[Conditionals]] and [[Iterators]], block helpers are block statements – 
 
 > [!DANGER] Notes for Review
 > - **Deferred field bug**: Custom block helpers are affected by the same [[Conditionals#Known Issue|block statement preservation bug]] as `{{#if}}` and `{{#each}}`. Block statements referencing unresolved fields are not preserved — they evaluate immediately with `undefined` values. See that page for root cause and desired behavior options.
-> - The restricted functionality mode limitation is documented in a code comment at line 366 of `z2k-template-engine/src/main.ts`: "field-infos and blocks are not supported in reduced-set templates." The section now links to [[Restricted Functionality Mode]].
+> - The restricted functionality mode limitation is documented in a code comment at line 366 of `z2k-template-engine/src/main.ts`: "fieldInfos and blocks are not supported in reduced-set templates." The section now links to [[Restricted Functionality Mode]].
 > - The `spoiler` example uses raw HTML, which works in Obsidian's live preview and reading mode. Consider whether a more Markdown-native example would be preferable.
 > - User-defined block helpers are registered via the same `registerHelper` mechanism as inline helpers (lines 801-820 of `z2k-plugin-templates/main.tsx`). The distinction is purely in how the helper function uses `options.fn()`.
-> - It's unclear whether Z2K Templates' built-in helpers (like `field-info`) can be used as block helpers. This should be tested and documented if relevant.
+> - It's unclear whether Z2K Templates' built-in helpers (like `fieldInfo`) can be used as block helpers. This should be tested and documented if relevant.

@@ -103,25 +103,25 @@ Z2K provides various built-in helper functions:
 
 **Formatting Helpers**:
 
-- `format-date`: Format dates with Moment.js patterns
+- `formatDate`: Format dates with Moment.js patterns
 
-- `format-string`: Add text around field values with placeholder
+- `formatString`: Add text around field values with placeholder
 
-- `format-string-to-upper`: Convert to uppercase
+- `formatStringToUpper`: Convert to uppercase
 
-- `format-string-to-lower`: Convert to lowercase
+- `formatStringToLower`: Convert to lowercase
 
-- `format-string-spacify`: Convert camelCase to spaced text
+- `formatStringSpacify`: Convert camelCase to spaced text
 
-- `format-string-trim`: Remove whitespace
+- `formatStringTrim`: Remove whitespace
 
-- `format-string-raw`: Prevent markdown escaping
+- `formatStringRaw`: Prevent markdown escaping
 
-- `format-string-bulletize`: Create bullet lists
+- `formatStringBulletize`: Create bullet lists
 
-- `format-number`: Format numbers using Numeral.js
+- `formatNumber`: Format numbers using Numeral.js
 
-- `format-number-to-fixed`: Format to fixed decimal places
+- `formatNumberToFixed`: Format to fixed decimal places
 
 
 

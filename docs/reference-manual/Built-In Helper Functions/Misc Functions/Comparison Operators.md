@@ -55,7 +55,7 @@ This is a high-priority item (priority 3 or lower)
 ### Checking Field Values
 
 ```handlebars
-{{field-info status type="singleSelect" options=(arr "draft" "review" "published")}}
+{{fieldInfo status type="singleSelect" options=(arr "draft" "review" "published")}}
 
 {{#if (eq status "published")}}
 **Published**: This document is live.
@@ -69,7 +69,7 @@ This is a high-priority item (priority 3 or lower)
 ### Numeric Comparisons
 
 ```handlebars
-{{field-info score type="number"}}
+{{fieldInfo score type="number"}}
 
 {{#if (gte score 90)}}
 Grade: A
@@ -85,7 +85,7 @@ Grade: Needs Improvement
 ### Combining with Other Helpers
 
 ```handlebars
-{{#if (eq (format-string-to-lower category) "urgent")}}
+{{#if (eq (formatStringToLower category) "urgent")}}
 Priority handling required.
 {{/if}}
 ```

@@ -13,7 +13,7 @@ A simple use case is to set a YAML property that is to be set for every file wit
 
 ```yaml file="/Contacts/.system-block.md"
 ---
-contact_relationship : "{{field-output Relationship directives='required'}}"
+contact_relationship : "{{fieldOutput Relationship directives='required'}}"
 ---
 ```
 

@@ -13,7 +13,7 @@ Handlebars was designed for HTML output, so it escapes characters that have synt
 - [[#How Standard Handlebars Escaping Works]]
 - [[#How Z2K Templates Handles Escaping]]
 - [[#Triple-Mustache Syntax]]
-- [[#The format-string-raw Helper]]
+- [[#The formatStringRaw Helper]]
 - [[#No Markdown Escaping]]
 - [[#When Escaping Still Matters]]
 
@@ -54,11 +54,11 @@ Handlebars' triple-mustache syntax `{{{variable}}}` tells the engine to skip esc
 
 In Z2K Templates, because HTML entities are unescaped automatically anyway, triple-mustache is rarely necessary. However, it remains available and functions correctly – it simply skips the escaping step that Z2K Templates would reverse regardless.
 
-## The format-string-raw Helper
-The `format-string-raw` [[Helper Functions|helper]] provides an alternative way to output a value without escaping:
+## The formatStringRaw Helper
+The `formatStringRaw` [[Helper Functions|helper]] provides an alternative way to output a value without escaping:
 
 ```handlebars
-{{format-string-raw fieldName}}
+{{formatStringRaw fieldName}}
 ```
 
 This wraps the value in a Handlebars `SafeString`, which tells Handlebars to leave it untouched. Like triple-mustache, this is redundant in Z2K Templates due to the automatic unescaping – but it can be useful when composing output inside other helpers where you want to be explicit about intent.
@@ -95,4 +95,4 @@ Because Z2K Templates reverses all HTML entity escaping, there is currently no b
 > - ==Needs testing==: Verify that `{{field}}` and `{{{field}}}` produce truly identical output in all cases.
 > - Triple-mustache is listed as "untested" on the [[Handlebars and Z2K Templates]] overview page. If confirmed accurate here, that entry should be moved to the supported list.
 > - There may be edge cases where the order of operations matters – e.g., if a helper intentionally produces HTML entities that should survive rendering. No such case was found in the built-in helpers.
-> - A `format-string-escape-markdown` helper has been requested as an enhancement (GitHub issue #141, milestone 2.0).
+> - A `formatString-escape-markdown` helper has been requested as an enhancement (GitHub issue #141, milestone 2.0).

@@ -30,20 +30,20 @@ Block Templates support the full range of field prompting features. When a block
 z2k_template_type: partial
 ---
 ## Task: {{taskName}}
-- [ ] {{field-info description placeholder="Describe the task..."}}
-- Priority: {{field-info priority type="select" options="low,medium,high"}}
-- Due: {{field-info dueDate type="date"}}
+- [ ] {{fieldInfo description placeholder="Describe the task..."}}
+- Priority: {{fieldInfo priority type="select" options="low,medium,high"}}
+- Due: {{fieldInfo dueDate type="date"}}
 ```
 
 ## Advanced Handlebars Features
 Block Templates support all Handlebars syntax and built-in helpers available in Z2K Templates:
 
 - **Built-in fields**: `{{date}}`, `{{time}}`, `{{clipboard}}`, etc.
-- **Helper functions**: `{{format-date}}`, `{{calc}}`, `{{#if}}`, etc.
+- **Helper functions**: `{{formatDate}}`, `{{calc}}`, `{{#if}}`, etc.
 - **Nested partials**: `{{> another-block}}`
 
 ```handlebars
-## Log Entry - {{format-date "YYYY-MM-DD HH:mm"}}
+## Log Entry - {{formatDate "YYYY-MM-DD HH:mm"}}
 
 {{#if priority}}
 **Priority**: {{priority}}
@@ -63,4 +63,4 @@ Consider using descriptive names that indicate:
 - [[What is a Block Template]] for fundamentals
 - [[Block Template Requirements]] for identification rules
 - [[Handlebars Support]] for template syntax
-- [[field-info]] for field prompt configuration
+- [[fieldInfo]] for field prompt configuration

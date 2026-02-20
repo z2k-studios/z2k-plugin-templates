@@ -26,15 +26,15 @@ When you run this command:
 The selected text becomes available as `{{sourceText}}` within the block template. Templates can use this to:
 - **Wrap content** – Add structure around the selected text
 - **Transform content** – Use selection as part of a larger pattern
-- **Pre-fill fields** – Use `suggest=sourceText` to offer the selection as a default value using the [[field-info Helper|field-info Helper]]
+- **Pre-fill fields** – Use `suggest=sourceText` to offer the selection as a default value using the [[fieldInfo Helper|fieldInfo Helper]]
 
 ### Example Block Template
 A "Callout" block template that wraps selected text:
 
 ```handlebars
-{{field-info calloutType prompt="Which type of callout do you want to use?" type="singleSelect" opts="note, warning, success, info, tip, error, example" suggest="note"}}
-{{field-info calloutText suggest=sourceText}}
-> [!{{format-string-to-upper calloutType}}] {{title}}
+{{fieldInfo calloutType prompt="Which type of callout do you want to use?" type="singleSelect" opts="note, warning, success, info, tip, error, example" suggest="note"}}
+{{fieldInfo calloutText suggest=sourceText}}
+> [!{{formatStringToUpper calloutType}}] {{title}}
 > {{calloutText}}
 ```
 
@@ -55,7 +55,7 @@ A "Callout" block template that wraps selected text:
 ## Tips
 - Great for refactoring – select messy text, wrap it in structured templates
 - The selection is replaced, not preserved separately – design templates accordingly
-- Combine with [[field-info Helper|field-info]] to offer the selection as a suggestion rather than forcing its use
+- Combine with [[fieldInfo Helper|fieldInfo]] to offer the selection as a suggestion rather than forcing its use
 
 ## Related Commands
 - [[Insert Block Template]] – Insert a block without using a selection

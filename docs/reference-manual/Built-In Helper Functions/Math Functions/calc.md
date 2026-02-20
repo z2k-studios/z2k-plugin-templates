@@ -33,19 +33,19 @@ Invalid expressions fail silently – they return `null` rather than causing a t
 
 ### Using with Fields
 ```handlebars
-{{field-info price type="number" prompt="Enter price"}}
-{{field-info taxRate type="number" suggest=0.08}}
+{{fieldInfo price type="number" prompt="Enter price"}}
+{{fieldInfo taxRate type="number" suggest=0.08}}
 
-{{! For complex expressions involving fields, use format-string to build the expression }}
-Total: ${{calc (format-string price "\{{value}} * 1.08")}}
+{{! For complex expressions involving fields, use formatString to build the expression }}
+Total: ${{calc (formatString price "\{{value}} * 1.08")}}
 ```
 
-### Fractional Days with date-add
-One common use is computing fractional day values for [[date-add]]:
+### Fractional Days with dateAdd
+One common use is computing fractional day values for [[dateAdd]]:
 ```handlebars
-One hour from now: {{date-add (calc "1/24")}}
-Two hours from now: {{date-add (calc "2/24")}}
-Ninety minutes from now: {{date-add (calc "1.5/24")}}
+One hour from now: {{dateAdd (calc "1/24")}}
+Two hours from now: {{dateAdd (calc "2/24")}}
+Ninety minutes from now: {{dateAdd (calc "1.5/24")}}
 ```
 
 ### Advanced Functions
@@ -66,5 +66,5 @@ For simple two-operand math, the [[Arithmetic Operators]] (`add`, `subtract`, `m
 
 ## See Also
 - [[Arithmetic Operators]] for simple two-operand math
-- [[date-add]] for time offset calculations using fractional days
-- [[format-number]] and [[format-number-to-fixed]] for formatting numeric output
+- [[dateAdd]] for time offset calculations using fractional days
+- [[formatNumber]] and [[formatNumberToFixed]] for formatting numeric output

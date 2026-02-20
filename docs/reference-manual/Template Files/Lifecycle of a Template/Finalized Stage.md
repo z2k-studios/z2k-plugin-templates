@@ -17,7 +17,7 @@ Finalized Content Files are the result of performing the [[Finalization|Finaliza
 This action removes all(\*)  signs of handlebars templated fields and helpers from a content file, rendering a finalized version that is no different than any other content file in the vault.
 
 > [!NOTE] Some Fields can Persist Past Finalization
-> (\*) Note: it is possible for advanced users to identify some fields to persist beyond finalization using the [[field-info directives|field-info directives]].
+> (\*) Note: it is possible for advanced users to identify some fields to persist beyond finalization using the [[fieldInfo directives|fieldInfo directives]].
 
 ## Once Finalized, Can You Add New Template Information?
 There is nothing strictly prohibiting adding new `{{fields}}` into a finalized content file, and then performing a [[Continue filling note]] command on the file. For instance, you can write `{{yesterday}}` and then perform a keyboard shortcut to [[Finalization|Finalize]] the current file to have it replaced automatically. 

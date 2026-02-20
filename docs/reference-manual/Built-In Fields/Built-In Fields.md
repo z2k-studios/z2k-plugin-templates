@@ -21,7 +21,7 @@ The following types of built-in fields are available:
 - [[Built-In Fields - Z2K System|Z2K System]] - built-in links to other cards in the Z2K System compliant vault.
 
 Additional Information:
-- [[Modifying Built-In Field Behaviors]] - using `{{`[[reference-manual/field-info Helper/field-info Helper|field-info]]`}}` to modify how built-in fields behave
+- [[Modifying Built-In Field Behaviors]] - using `{{`[[reference-manual/fieldInfo Helper/fieldInfo Helper|fieldInfo]]`}}` to modify how built-in fields behave
 
 
 # Built-In Field Naming Conventions

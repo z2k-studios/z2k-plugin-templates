@@ -17,8 +17,8 @@ This is the most convenient way to give your templates meaningful default filena
 
 The value must be a string. The plugin will throw an error if it encounters a non-string type.
 
-> [!NOTE] Equivalent to field-info on fileTitle
-> This property is equivalent to using [[reference-manual/field-info Helper/field-info Helper|field-info]] to set the [[field-info suggest|suggest]] value for the built-in [[fileTitle and Variations|fileTitle]] field. We find the `z2k_templated_suggested_title` approach to be far more readable.
+> [!NOTE] Equivalent to fieldInfo on fileTitle
+> This property is equivalent to using [[reference-manual/fieldInfo Helper/fieldInfo Helper|fieldInfo]] to set the [[fieldInfo suggest|suggest]] value for the built-in [[fileTitle and Variations|fileTitle]] field. We find the `z2k_templated_suggested_title` approach to be far more readable.
 
 ## Example
 This sets the suggested title of an instantiated file to combine a book's title and author:

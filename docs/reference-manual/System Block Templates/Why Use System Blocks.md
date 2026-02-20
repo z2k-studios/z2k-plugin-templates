@@ -10,8 +10,8 @@ Z2K Templates supports the concept of "System Block Templates" (aka "System Bloc
 Using System Blocks, you can:
 - Ensure that certain YAML fields are used consistently throughout the entire vault (or subsections) 
 	- see [[Using System Blocks and YAML]]
-- Ensure that certain `field-info` is consistently defined within the entire vault (or subsections) 
-	- see [[Using System Blocks and field-info]]
+- Ensure that certain `fieldInfo` is consistently defined within the entire vault (or subsections) 
+	- see [[Using System Blocks and fieldInfo]]
 - Specify a common header of text to include at the top of every markdown file 
 	- see [[Using System Blocks and Markdown]]
 
@@ -50,8 +50,8 @@ tags:
 Define fields that should appear in every template:
 
 ```handlebars file=".system-block.md"
-{{field-info author default="{{creator}}"}}
-{{field-info dataType setValue="Information"}}
-{{field-info assumeVoiceIs setValue="AI"}}
+{{fieldInfo author default="{{creator}}"}}
+{{fieldInfo dataType setValue="Information"}}
+{{fieldInfo assumeVoiceIs setValue="AI"}}
 ```
 

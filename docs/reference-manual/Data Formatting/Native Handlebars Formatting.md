@@ -88,12 +88,12 @@ Status: In Progress
 Conditionals are useful for formatting decisions. Here, a transaction cost is displayed in accounting format – negative values wrapped in parentheses:
 
 ```handlebars
-{{field-info TransactionCost type="number" prompt="Transaction amount?"}}
+{{fieldInfo TransactionCost type="number" prompt="Transaction amount?"}}
 
 {{#if (calc TransactionCost "<" 0)}}
-({{format-number (calc TransactionCost "*" -1) "$0,0.00"}})
+({{formatNumber (calc TransactionCost "*" -1) "$0,0.00"}})
 {{else}}
-{{format-number TransactionCost "$0,0.00"}}
+{{formatNumber TransactionCost "$0,0.00"}}
 {{/if}}
 ```
 
@@ -148,7 +148,7 @@ Native Handlebars features combine freely with Z2K helper functions:
 
 ```handlebars
 {{~#if projectName~}}
-**Project:** {{format-string-to-upper projectName}}
+**Project:** {{formatStringToUpper projectName}}
 {{~/if~}}
 ```
 

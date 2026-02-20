@@ -19,7 +19,7 @@ When working with multi-select fields or arrays from external data, you'll often
 Multi-select fields (configured with `type="multi-select"`) store an array of selected options. By default, this array renders as a comma-separated string.
 
 ```handlebars
-{{field-info tags type="multi-select" options="Work,Personal,Urgent,Later"}}
+{{fieldInfo tags type="multi-select" options="Work,Personal,Urgent,Later"}}
 Selected: {{tags}}
 ```
 
@@ -30,10 +30,10 @@ Selected: Work,Urgent
 ```
 
 ## Comma-Separated Output
-The [[format-string-commafy]] helper provides more control over comma-separated rendering:
+The [[formatStringCommafy]] helper provides more control over comma-separated rendering:
 
 ```handlebars
-{{format-string-commafy tags}}
+{{formatStringCommafy tags}}
 ```
 
 This produces a properly formatted comma-separated list with spaces:
@@ -52,10 +52,10 @@ For other separators, use the [[Iterators|`{{#each}}`]] block with explicit form
 Output: `Work | Urgent`
 
 ## Bulleted Lists
-The [[format-string-bulletize]] helper converts array elements or multiline text into a Markdown bullet list:
+The [[formatStringBulletize]] helper converts array elements or multiline text into a Markdown bullet list:
 
 ```handlebars
-{{format-string-bulletize tags}}
+{{formatStringBulletize tags}}
 ```
 
 Output:
@@ -66,11 +66,11 @@ Output:
 ```
 
 ### With Multiline Input
-`format-string-bulletize` also works with multiline text strings, treating each line as a list item:
+`formatStringBulletize` also works with multiline text strings, treating each line as a list item:
 
 ```handlebars
-{{field-info notes type="textarea" prompt="Enter items (one per line)"}}
-{{format-string-bulletize notes}}
+{{fieldInfo notes type="textarea" prompt="Enter items (one per line)"}}
+{{formatStringBulletize notes}}
 ```
 
 If the user enters:
@@ -144,7 +144,7 @@ Or as an inline YAML array:
 
 ```handlebars
 ---
-tags: [{{format-string-commafy tags}}]
+tags: [{{formatStringCommafy tags}}]
 ---
 ```
 
@@ -154,13 +154,13 @@ When a multi-select has no selections, or an array is empty:
 ```handlebars
 {{#if tags}}
 ## Tags
-{{format-string-bulletize tags}}
+{{formatStringBulletize tags}}
 {{else}}
 *No tags selected*
 {{/if}}
 ```
 
 > [!DANGER] Notes for Review
-> - Verify `format-string-bulletize` handles both arrays and multiline strings as described.
+> - Verify `formatStringBulletize` handles both arrays and multiline strings as described.
 > - The `eq` helper in conditional formatting may not exist – check if this is a built-in or needs documentation.
 > - Test YAML inline array format with values containing commas or special characters.

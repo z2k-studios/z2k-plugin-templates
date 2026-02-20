@@ -56,8 +56,8 @@ Returns the result of the arithmetic operation as a number.
 ### Basic Arithmetic
 
 ```handlebars
-{{field-info quantity type="number" prompt="Enter quantity"}}
-{{field-info price type="number" prompt="Enter price"}}
+{{fieldInfo quantity type="number" prompt="Enter quantity"}}
+{{fieldInfo price type="number" prompt="Enter price"}}
 
 Total: ${{multiply quantity price}}
 ```
@@ -67,8 +67,8 @@ Total: ${{multiply quantity price}}
 For more complex calculations, chain operations using subexpressions:
 
 ```handlebars
-{{field-info subtotal type="number"}}
-{{field-info taxRate type="number" suggest=0.08}}
+{{fieldInfo subtotal type="number"}}
+{{fieldInfo taxRate type="number" suggest=0.08}}
 
 Tax: ${{multiply subtotal taxRate}}
 Total: ${{add subtotal (multiply subtotal taxRate)}}
@@ -77,8 +77,8 @@ Total: ${{add subtotal (multiply subtotal taxRate)}}
 ### Calculating Percentages
 
 ```handlebars
-{{field-info completed type="number"}}
-{{field-info total type="number"}}
+{{fieldInfo completed type="number"}}
+{{fieldInfo total type="number"}}
 
 Progress: {{multiply (divide completed total) 100}}%
 ```
@@ -86,7 +86,7 @@ Progress: {{multiply (divide completed total) 100}}%
 ### Incrementing Values
 
 ```handlebars
-{{field-info version type="number" suggest=1}}
+{{fieldInfo version type="number" suggest=1}}
 
 Next version: {{add version 1}}
 ```
@@ -108,5 +108,5 @@ The `calc` helper supports full mathematical expressions including parentheses, 
 
 - [[calc]] for complex mathematical expressions
 - [[toNumber]] for converting values to numbers
-- [[format-number]] for formatting numeric output
-- [[format-number-to-fixed]] for controlling decimal places
+- [[formatNumber]] for formatting numeric output
+- [[formatNumberToFixed]] for controlling decimal places

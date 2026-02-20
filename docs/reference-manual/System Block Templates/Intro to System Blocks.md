@@ -15,10 +15,10 @@ System Blocks are special system-level [[Block Templates]] embedded within your 
 ## System Block Files
 System Block Files are stored in special `.system-block.md` files that are located throughout an Obsidian vault. All YAML and markdown text inside these System Block files are automatically inserted directly into any card *made at that folder level and all child folders.* 
 
-System Blocks can include both content and [[Z2K Templates and YAML|YAML frontmatter]], but typically it is just used for hierarchical setting of YAML properties. System Blocks are also frequently used to establish [[field-info Helper|field-info]] settings throughout the vault. 
+System Blocks can include both content and [[Z2K Templates and YAML|YAML frontmatter]], but typically it is just used for hierarchical setting of YAML properties. System Blocks are also frequently used to establish [[fieldInfo Helper|fieldInfo]] settings throughout the vault. 
 
 ## Hierarchical Inclusion
-The System Blocks can be stored at multiple folder levels within your Obsidian vault. This allows you to specify default YAML fields and [[field-info Helper|field-info]] settings that apply to only a specific folder and subfolders. 
+The System Blocks can be stored at multiple folder levels within your Obsidian vault. This allows you to specify default YAML fields and [[fieldInfo Helper|fieldInfo]] settings that apply to only a specific folder and subfolders. 
 
 When multiple layers of YAML text are included in your folder structure by having multiple System YAML files at different folder depths, then the YAML is accumulated from a top (root) to down (leaf) order. That is, the text in the `z2k-system.yaml` file in your root folder is the first text inserted into every new card.
 
@@ -30,7 +30,7 @@ Some notes on System Block files:
 
 ## What is the Difference between System Blocks and the Global Block?
 System Blocks and the [[Global Block]] are quite similar. Both insert blocks of YAML and context text into large swaths of files automatically. But they have different purposes:
-- **System Blocks** are hierarchical and embedded directly into the folder structure. This allows you to adjust the values of YAML settings and `{{field-info}}` commands at the folder level. System Blocks are used by vault designers who have a larger system that they use. 
+- **System Blocks** are hierarchical and embedded directly into the folder structure. This allows you to adjust the values of YAML settings and `{{fieldInfo}}` commands at the folder level. System Blocks are used by vault designers who have a larger system that they use. 
 - **The Global Block** is a single shot, completely global block of text that is inserted into every file created with the Template Plugin. It is not embedded at all into the vault; you specify it via the settings page. 
 
 ## Examples

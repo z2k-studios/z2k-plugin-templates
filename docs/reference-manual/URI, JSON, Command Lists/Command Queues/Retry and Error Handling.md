@@ -5,7 +5,7 @@ aliases:
 - Retry Logic
 - Error Handling
 - maxRetries
-- retryDelayMs
+- retryDelay
 ---
 # Retry and Error Handling
 The Command Queue includes a retry system for commands that fail due to transient issues – timing problems, temporary file locks, or external resources that weren't available at the moment of execution. This page covers how retries work, what counts as a failure, and how errors are surfaced.
@@ -23,8 +23,8 @@ Retry behavior is controlled by two parameters in the [[JSON Packages Overview|J
 
 | Parameter | Type | Default | Description |
 | --- | --- | --- | --- |
-| `maxRetries` | number | `0` | Maximum retry attempts after initial failure |
-| `retryDelayMs` | number | `0` | Milliseconds to wait before next retry |
+| `maxRetries` | number | `0` | Maximum retry attempts after initial failure. Use `-1` for unlimited retries. |
+| `retryDelay` | string | `"0s"` | Duration to wait before next retry (e.g., `"5s"`, `"1m"`). Uses standard [[duration format|Duration Format]]. |
 
 These are [[JSON Directives|directive keys]] – they control the queue's behavior, not the template's field data.
 
@@ -35,7 +35,7 @@ These are [[JSON Directives|directive keys]] – they control the queue's behavi
   "templatePath": "Templates/Daily Sync.md",
   "prompt": "none",
   "maxRetries": 3,
-  "retryDelayMs": 5000,
+  "retryDelay": "5s",
   "syncSource": "external-api"
 }
 ```
@@ -43,7 +43,7 @@ These are [[JSON Directives|directive keys]] – they control the queue's behavi
 This command will be attempted up to 4 times total (1 initial + 3 retries), with a 5-second wait between each attempt.
 
 ## How Retries Work
-When a command with `maxRetries > 0` fails:
+When a command with `maxRetries > 0` (or `-1`) fails:
 
 1. The plugin creates (or updates) a sidecar file next to the command file:
    - Command: `daily-sync.json`
@@ -63,14 +63,14 @@ When a command with `maxRetries > 0` fails:
 
 4. When `nextRetryAfter` has passed, the command is re-executed. On failure, `attempts` is incremented and a new `nextRetryAfter` is set.
 
-5. When `attempts >= maxRetries`, the command is moved to `failed/` and the sidecar is deleted.
+5. When `attempts >= maxRetries`, the command is moved to `failed/` and the sidecar is deleted. If `maxRetries` is `-1`, this step never occurs — the command retries indefinitely.
 
 ### Retry Timing
-If `retryDelayMs` is `0` (the default), the retry becomes eligible immediately on the next scan. The effective retry interval is then the [[Queue Settings#Scan Frequency|scan frequency]] setting.
+If `retryDelay` is `"0s"` (the default), the retry becomes eligible immediately on the next scan. The effective retry interval is then the [[Queue Settings#Scan Frequency|scan frequency]] setting.
 
-If `retryDelayMs` is non-zero, it adds an additional wait on top of the scan interval. For example:
+If `retryDelay` is non-zero, it adds an additional wait on top of the scan interval. For example:
 - Scan frequency: 60 seconds
-- `retryDelayMs`: 5000 (5 seconds)
+- `retryDelay`: `"5s"` (5 seconds)
 - Effective minimum retry interval: 60 seconds (next scan after the 5-second delay passes)
 
 The delay is a *minimum* wait, not an exact scheduled time.
@@ -111,7 +111,7 @@ Crucially, these scenarios do **not** cause a failure:
 If the template has a field `{{authorName}}` but the JSON Package doesn't provide `authorName`, this is **not an error**. The plugin's fallback behavior applies:
 - By default, the placeholder `{{authorName}}` is preserved in the output
 - The `finalize-clear` option removes the placeholder instead
-- Per-field fallbacks can be specified via the [[field-info Helper]]
+- Per-field fallbacks can be specified via the [[fieldInfo Helper]]
 
 This design supports deferred resolution – fields can be left unfilled for later completion via the [[JSON Command - continue|continue command]].
 
@@ -135,7 +135,7 @@ If the JSON Package provides `projectManager` but the template doesn't have a `{
 Errors in a `.jsonl` batch file are handled per-line, not per-file. A bad line does not stop the batch.
 
 When a line fails:
-- **If `maxRetries > 0`** – the failed line is extracted into its own standalone `.json` file and handed off to the retry system. It becomes an independent command that will be retried separately from the original batch.
+- **If `maxRetries > 0` (or `-1`)** – the failed line is extracted into its own standalone `.json` file and handed off to the retry system. It becomes an independent command that will be retried separately from the original batch.
 - **If `maxRetries` is absent or `0`** – the line is logged and added to a list of failed lines
 
 After all lines are processed:
@@ -161,18 +161,19 @@ It is less useful for **permanent failures**:
 - Invalid parameter values
 - Template authoring errors (bad Handlebars)
 
-Permanent failures will fail on every retry and eventually exhaust `maxRetries`. They end up in `failed/` regardless – retries just delay the inevitable.
+Permanent failures will fail on every retry and eventually exhaust `maxRetries` (unless set to `-1`). They end up in `failed/` regardless – retries just delay the inevitable. Avoid using `maxRetries: -1` for commands that are likely to fail permanently.
 
 ### Recommendations
 - Use retries for automation workflows where transient issues are expected
-- Set `retryDelayMs` to match the expected recovery time of transient issues (e.g., 5-10 seconds for file indexing)
+- Set `retryDelay` to match the expected recovery time of transient issues (e.g., `"5s"` to `"10s"` for file indexing)
 - Keep `maxRetries` modest (2-3) for transient issues; higher values rarely help for permanent failures
+- Use `maxRetries: -1` only for commands that depend on an external condition that will eventually be met (e.g., waiting for a synced file to arrive)
 - Inspect the `failed/` folder periodically to catch configuration errors
 
 
 
 > [!DANGER] Internal Notes
 > - The retry system uses an in-memory check during processing – if a `.retry.json` sidecar is corrupted (invalid JSON), the behavior is undefined. The code reads and parses it but doesn't have explicit error handling for a malformed sidecar.
-> - There is no backoff strategy – `retryDelayMs` is constant across all attempts. Exponential backoff would require tracking the current attempt count and calculating delay, which isn't implemented.
+> - There is no backoff strategy – `retryDelay` is constant across all attempts. Exponential backoff would require tracking the current attempt count and calculating delay, which isn't implemented.
 > - The failed file contents are identical to the original command – there's no added metadata about what error occurred. Error details are only available in the Obsidian developer console. Consider adding an `error` field to failed files or creating companion `.error` files.
-> - JSONL line promotion creates a timestamped filename like `command-2025-01-15_14-30-00-123.json` (with milliseconds). This ensures uniqueness but makes it harder to correlate promoted files back to their source batch.
+> - JSONL line promotion creates a filename like `<source-batch>.<line-index>.<timestamp>.json` (e.g., `test-batch.4.2025-01-15_14-30-00.json`), preserving the source batch name and line number for traceability.

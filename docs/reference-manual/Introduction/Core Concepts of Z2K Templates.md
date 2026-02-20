@@ -35,7 +35,7 @@ Title: {{ProjectName}}
 Date: {{date}}
 Status: {{Status}}
 –––
-{{field-info Status type="singleSelect" opts="Planned, In Progress, Complete"}}
+{{fieldInfo Status type="singleSelect" opts="Planned, In Progress, Complete"}}
 
 # Project: {{ProjectName}}
 
@@ -61,17 +61,17 @@ Z2K Templates uses [[Handlebars Support|Handlebars.js]] as it's underlying synta
 - Read More: [[Built-In Fields]], [[Built-In Helper Functions]]
 - Example:
 ```md title="Partial Template - Status Update.md"
-Date::{{format-date 'MMMM D, YYYY' now}}
+Date::{{formatDate 'MMMM D, YYYY' now}}
 Status:: {{#if Completed}}✅{{else}}❌{{/if}}
 ```
 
 ## Prompting and Fallback Behavior
 
-When a field's value can't be resolved (for example, it isn't provided via JSON, YAML frontmatter, or a built-in function), the plugin will **prompt** you for the data. Z2K Templates allows you to configure how the prompting interface works with the Built-in Helper Function [[field-output]].  Example:
+When a field's value can't be resolved (for example, it isn't provided via JSON, YAML frontmatter, or a built-in function), the plugin will **prompt** you for the data. Z2K Templates allows you to configure how the prompting interface works with the Built-in Helper Function [[fieldOutput]].  Example:
 
 ```md title="Template - Prompting.md"
-My Location :: {{field-output Location "Where were you today?" "NYC, NY"}}
-My Mood     :: {{field-output Mood type="singleSelect" opts="Happy, Neutral, Stressed"}}
+My Location :: {{fieldOutput Location "Where were you today?" "NYC, NY"}}
+My Mood     :: {{fieldOutput Mood type="singleSelect" opts="Happy, Neutral, Stressed"}}
 ```
 
 If a field remains blank, Z2K Templates follows its [[Fallback Behavior|fallback behavior rules]] — such as clearing it, keeping the placeholder, or applying a suggest value.
@@ -125,7 +125,7 @@ Z2K Templates merges YAML from multiple sources — including partials and paren
 Templates can pull data from multiple origins. Potential data sources include::
 
 1. **[[Built-In Fields|Built-in fields]] and [[Helper Functions|helper functions]]** — values like `date` or computed values from helper functions.
-2. **Default values stored directly in the template** — specified in field syntax using  [[field-info]]
+2. **Default values stored directly in the template** — specified in field syntax using  [[fieldInfo]]
 3. **Existing files** — other vault files can be read through built-in fields such as `{{SystemData}}` and [[Block Templates]].
 4. **External URI calls** — incoming data provided through [[URI and JSON Support|URI triggers]].
 5. **External JSON command lists** — batches of Z2K Templates actions written in to [[JSON Packages]]

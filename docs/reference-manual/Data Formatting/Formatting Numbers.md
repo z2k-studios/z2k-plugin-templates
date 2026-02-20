@@ -5,28 +5,28 @@ aliases:
 - formatting numbers
 ---
 # Formatting Numbers
-Z2K Templates provides two helpers for formatting numeric values: [[format-number]] for general formatting with Numeral.js, and [[format-number-to-fixed]] for simple decimal place control.
+Z2K Templates provides two helpers for formatting numeric values: [[formatNumber]] for general formatting with Numeral.js, and [[formatNumberToFixed]] for simple decimal place control.
 
 ## Available Helpers
 ![[Formatting Functions#Number Formatting Helpers]]
 
 ## Basic Usage
 
-### format-number
+### formatNumber
 Uses [Numeral.js](http://numeraljs.com/) format strings:
 
 ```handlebars
-{{format-number fieldName "formatString"}}
+{{formatNumber fieldName "formatString"}}
 ```
 
-### format-number-to-fixed
+### formatNumberToFixed
 Rounds to a fixed number of decimal places:
 
 ```handlebars
-{{format-number-to-fixed fieldName decimalPlaces}}
+{{formatNumberToFixed fieldName decimalPlaces}}
 ```
 
-For complete syntax details, see [[format-number]] and [[format-number-to-fixed]].
+For complete syntax details, see [[formatNumber]] and [[formatNumberToFixed]].
 
 ## Common Format Patterns
 Assuming a field `amount` with value `1234567.8912`:
@@ -83,28 +83,28 @@ For a field with value `1048576` (bytes):
 
 ### Invoice Line Item
 ```handlebars
-{{field-info quantity type="number" prompt="Quantity?"}}
-{{field-info unitPrice type="number" prompt="Unit price?"}}
-{{field-info total type="number" value=(calc quantity "*" unitPrice) directives="no-prompt"}}
+{{fieldInfo quantity type="number" prompt="Quantity?"}}
+{{fieldInfo unitPrice type="number" prompt="Unit price?"}}
+{{fieldInfo total type="number" value=(calc quantity "*" unitPrice) directives="no-prompt"}}
 
 | Item | Qty | Price | Total |
 |------|-----|-------|-------|
-| Widget | {{quantity}} | {{format-number unitPrice "$0,0.00"}} | {{format-number total "$0,0.00"}} |
+| Widget | {{quantity}} | {{formatNumber unitPrice "$0,0.00"}} | {{formatNumber total "$0,0.00"}} |
 ```
 
 ### Statistics Summary
 ```handlebars
-{{field-info score type="number" prompt="Score (0-100)?"}}
+{{fieldInfo score type="number" prompt="Score (0-100)?"}}
 
-Score: {{format-number-to-fixed score 1}}%
-Normalized: {{format-number (calc score "/" 100) "0.00"}}
+Score: {{formatNumberToFixed score 1}}%
+Normalized: {{formatNumber (calc score "/" 100) "0.00"}}
 ```
 
 ### Duration Tracking
 ```handlebars
-{{field-info minutes type="number" prompt="Minutes spent?"}}
+{{fieldInfo minutes type="number" prompt="Minutes spent?"}}
 
-Time: {{format-number-to-fixed (calc minutes "/" 60) 2}} hours
+Time: {{formatNumberToFixed (calc minutes "/" 60) 2}} hours
 ```
 
 ## Handling Non-Numeric Values

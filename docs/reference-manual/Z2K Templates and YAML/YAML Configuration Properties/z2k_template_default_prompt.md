@@ -5,7 +5,7 @@ aliases:
 - z2k_template_default_prompt
 ---
 # z2k_template_default_prompt
-This [[YAML Configuration Properties|Z2K Templates YAML Configuration Property]] would specify a default prompt string to display for all fields in a template file. When set, every field that does not have its own [[field-info prompt|prompt]] parameter would use this string as its prompt message.
+This [[YAML Configuration Properties|Z2K Templates YAML Configuration Property]] would specify a default prompt string to display for all fields in a template file. When set, every field that does not have its own [[fieldInfo prompt|prompt]] parameter would use this string as its prompt message.
 
 The property supports the built-in placeholder `{{FieldName}}`, which would be replaced with each field's name at prompt time – allowing a single prompt string to serve as a dynamic default across all fields.
 
@@ -16,10 +16,10 @@ The property supports the built-in placeholder `{{FieldName}}`, which would be r
 
 | Key                           | Value Type | Planned Result |
 | ----------------------------- | ---------- | -------------- |
-| `z2k_template_default_prompt` | string     | Sets a default prompt string for all fields that lack an explicit [[field-info prompt\|prompt]] parameter |
+| `z2k_template_default_prompt` | string     | Sets a default prompt string for all fields that lack an explicit [[fieldInfo prompt\|prompt]] parameter |
 
-> [!NOTE] Use field-info for Specific Field Prompts
-> To specify a prompt for a specific field (as opposed to all fields in a template file), use the [[field-info prompt|prompt]] parameter of the [[reference-manual/field-info Helper/field-info Helper|field-info]] helper function.
+> [!NOTE] Use fieldInfo for Specific Field Prompts
+> To specify a prompt for a specific field (as opposed to all fields in a template file), use the [[fieldInfo prompt|prompt]] parameter of the [[reference-manual/fieldInfo Helper/fieldInfo Helper|fieldInfo]] helper function.
 
 ## Planned Example
 This would set a custom default prompt for all fields in the file:
@@ -29,7 +29,7 @@ z2k_template_default_prompt: "Please specify the value of {{FieldName}}"
 ---
 ```
 
-With this setting, a field named `{{ProjectName}}` would display the prompt: "Please specify the value of ProjectName" – unless that field has its own prompt set via `{{field-info}}`.
+With this setting, a field named `{{ProjectName}}` would display the prompt: "Please specify the value of ProjectName" – unless that field has its own prompt set via `{{fieldInfo}}`.
 
 ## Lifecycle Behavior
 | Lifecycle Event                   | Expected Effect on `z2k_template_default_prompt` |

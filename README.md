@@ -32,7 +32,7 @@ The **Z2K Templates Plugin** supercharges Obsidian by providing an advanced temp
 		- `{{today}}`, `{{timestamp}}`, `{{cardTitle}}`
 
 	- **Helper functions** transform and format data during template rendering. They support operations like string casing, date formatting, whitespace control, bulletizing multiline text, and linking fields as Obsidian wikilinks or URLs. These functions follow a Handlebars-inspired syntax and can be nested for advanced logic.
-	    - `format-date`, `format-string`, `format-string-to-upper`, `wikilink`, `url`, `format-string-raw`
+	    - `formatDate`, `formatString`, `formatStringToUpper`, `wikilink`, `url`, `formatStringRaw`
 
 ### Formatting & Helper Functions
 - Built-in helpers for formatting and linking:

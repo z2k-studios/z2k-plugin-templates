@@ -29,8 +29,8 @@ These keys are recognized as command directives and are separated from field dat
 | `templateJsonData64` | string                       | Base64-encoded field data. See [[JSON64 Format]].                                                                                                                                                             |
 | `json`               | string                       | A JSON-encoded command string — the payload for the `json` command. Not used with other commands. See [[json Command]].                                                                                       |
 | `json64`             | string                       | Base64-encoded equivalent of `json`. See [[JSON64 Format]].                                                                                                                                                   |
-| `maxRetries`         | number                       | Maximum retry attempts on failure (default: 0). Used by the [[Command Queue]].                                                                                                                                |
-| `retryDelayMs`       | number                       | Delay in milliseconds between retry attempts (default: 0). Used by the [[Command Queue]].                                                                                                                     |
+| `maxRetries`         | number                       | Maximum retry attempts on failure (default: 0). Use `-1` for unlimited retries. Used by the [[Command Queue]].                                                                                                |
+| `retryDelay`         | string                       | Duration to wait between retry attempts (e.g., `"5s"`, `"1m"`). Default: `"0s"`. Used by the [[Command Queue]].                                                                                               |
 
 ## Prompt Modes
 The `prompt` directive controls whether the user is prompted to fill in field values:

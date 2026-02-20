@@ -42,7 +42,7 @@ An example of a workflow for tracking tasks:
 
 ## Tips
 - Run this command multiple times if you keep deferring – each run catches remaining fields
-- Combine with the [[field-info Helper]] to control which fields can be deferred
+- Combine with the [[fieldInfo Helper]] to control which fields can be deferred
 - Use [[Fallback Behavior]] to set default values for fields you frequently skip
 - If you are done, use the [[Finalization|Finalize]] command to remove all remaining fields.
 
