@@ -13,7 +13,7 @@ aliases:
 That distinction drives everything from [[Deferred Field Resolution]] to [[Fallback Behavior]].
 
 > [!TIP]
-> By using a smart combination of [[Fallback Behavior|fallback handling]], [[field-info suggest|suggestions]] and [[Deferred Field Resolution]], you can make the data entry for new files to be as optimized as possible - allowing you capture that an idea with minimal effort at the moment when an idea (or the need for a new file in your vault) occurs. 
+> By using a smart combination of [[Fallback Behavior|fallback handling]], [[fieldInfo suggest|suggestions]] and [[Deferred Field Resolution]], you can make the data entry for new files to be as optimized as possible - allowing you capture that an idea with minimal effort at the moment when an idea (or the need for a new file in your vault) occurs. 
 
 ## Contents
 - [[#What Counts as Touching]]
@@ -32,7 +32,7 @@ Once touched, the field stays touched for the remainder of the form session – 
 ## What Changes When a Field Is Touched
 When a field transitions from untouched to touched:
 - The field's left border turns **green**, indicating interaction has occurred
-- The [[field-info suggest|suggest]] value – previously shown as the field's pre-filled content – is now treated as a **committed value** that the user has accepted or will edit
+- The [[fieldInfo suggest|suggest]] value – previously shown as the field's pre-filled content – is now treated as a **committed value** that the user has accepted or will edit
 - The **fallback preview** (the "Value if left untouched:" message below the input) disappears
 - The **reset button** (⟲) becomes available on hover over the label area
 - On submission, the field's current value is **written to the output** – the user has spoken
@@ -45,18 +45,18 @@ The field remains **unresolved** in the output file. The raw template syntax (e.
 
 ### On Submit and Finalize
 The plugin resolves the field using the [[Fallback Behavior]] procedure:
-1. If a `fallback=` value is specified on [[field-info Helper|{{field-info}}]], that value is used
-2. If a `finalize-clear` or `finalize-preserve` [[field-info directives|directive]] is specified, it determines behavior
+1. If a `fallback=` value is specified on [[fieldInfo Helper|{{fieldInfo}}]], that value is used
+2. If a `finalize-clear` or `finalize-preserve` [[fieldInfo directives|directive]] is specified, it determines behavior
 3. If the template's YAML contains `z2k_template_default_fallback_handling`, that setting applies
 4. If none of the above, the field is cleared from the output
 
 > [!NOTE]
-> Fields with the advanced `value=` parameter ([[field-info value|computed fields]]) are a special case. Their computed result is always written to the output regardless of touched state, provided no external data overrides them.
+> Fields with the advanced `value=` parameter ([[fieldInfo value|computed fields]]) are a special case. Their computed result is always written to the output regardless of touched state, provided no external data overrides them.
 
 ## The Reset Button
 The **⟲** icon appears when you hover over a touched field's label. Clicking it:
 - Sets the field back to **untouched**
-- Restores the field's value to the [[field-info suggest|suggest]] value
+- Restores the field's value to the [[fieldInfo suggest|suggest]] value
 - Re-displays the fallback preview (if a fallback is configured)
 - Removes the green left border
 
@@ -75,7 +75,7 @@ That distinction is the foundation of [[Deferred Field Resolution]] and the [[WI
 - [[Prompting Interface]] – The modal where touching occurs
 - [[Deferred Field Resolution]] – How untouched fields are preserved for later
 - [[Fallback Behavior]] – What happens to untouched fields during finalization
-- [[field-info suggest|suggest Parameter]] – The value restored on reset
+- [[fieldInfo suggest|suggest Parameter]] – The value restored on reset
 
 > [!DANGER] Notes for Documentation Team
 > - Touch is tracked per-field via the `touched` boolean in `FieldState` (`src/main.tsx` ~line 4395).

@@ -21,10 +21,10 @@ By default, if a field has no value during a processing event, the field is **pr
 ## Order of Precedence
 When a field is finalized without a value, the plugin resolves it using the following order of precedence (highest to lowest):
 
-1. **`fallback=` parameter** on [[field-info Helper|{{field-info}}]] – If specified, this value is used. When multiple `{{field-info}}` declarations exist for the same field (across [[field-info Variations|variations]], [[Block Templates]], or [[Intro to System Blocks|System Blocks]]), the last `fallback` value wins.
+1. **`fallback=` parameter** on [[fieldInfo Helper|{{fieldInfo}}]] – If specified, this value is used. When multiple `{{fieldInfo}}` declarations exist for the same field (across [[fieldInfo Variations|variations]], [[Block Templates]], or [[Intro to System Blocks|System Blocks]]), the last `fallback` value wins.
 
-2. **Finalize directive** on [[field-info Helper|{{field-info}}]] – If no `fallback` is specified, the plugin checks for a [[field-info directives|directive]]. The three finalize directives are mutually exclusive – only one can be active per field. If multiple are specified, the most recent one applies.
-   - `finalize-suggest` – uses the [[field-info suggest|suggest]] value as the fallback. If no suggest value exists, the field is cleared.
+2. **Finalize directive** on [[fieldInfo Helper|{{fieldInfo}}]] – If no `fallback` is specified, the plugin checks for a [[fieldInfo directives|directive]]. The three finalize directives are mutually exclusive – only one can be active per field. If multiple are specified, the most recent one applies.
+   - `finalize-suggest` – uses the [[fieldInfo suggest|suggest]] value as the fallback. If no suggest value exists, the field is cleared.
    - `finalize-clear` – removes the field from the output (replaces with empty string)
    - `finalize-preserve` – keeps the raw template syntax in the output
 
@@ -45,19 +45,19 @@ When a field is finalized without a value, the plugin resolves it using the foll
 
 ### Using a fallback value
 ```md
-{{field-info status fallback="Draft"}}
+{{fieldInfo status fallback="Draft"}}
 ```
 If `status` is never touched, it resolves to "Draft" on finalization.
 
 ### Using finalize-suggest
 ```md
-{{field-info fileTitle suggest="{{BookTitle}} - {{BookAuthor}}" directives="finalize-suggest"}}
+{{fieldInfo fileTitle suggest="{{BookTitle}} - {{BookAuthor}}" directives="finalize-suggest"}}
 ```
 If the user never touches `fileTitle`, the resolved suggest value becomes the filename on finalization. This is especially useful for file titles that have a predictable pattern but should still be editable.
 
 ### Using finalize-preserve
 ```md
-{{field-info notes directives="finalize-preserve"}}
+{{fieldInfo notes directives="finalize-preserve"}}
 ```
 If `notes` is never touched, the raw `{{notes}}` syntax remains in the finalized file – useful for fields you want to keep available even after finalization.
 
@@ -78,8 +78,8 @@ z2k_template_default_fallback_handling: finalize-clear
 ```
 
 ```md
-{{field-info importantNote directives="finalize-preserve"}}
-{{field-info status fallback="Pending"}}
+{{fieldInfo importantNote directives="finalize-preserve"}}
+{{fieldInfo status fallback="Pending"}}
 ```
 Here, most unresolved fields are cleared – but `importantNote` is preserved, and `status` gets its explicit fallback value.
 
@@ -90,8 +90,8 @@ See [[Prompt Touching]] for details on how the system distinguishes "deliberatel
 
 ## See Also
 - [[Prompt Touching]] – How touching determines whether fallback applies
-- [[field-info fallback|fallback Parameter]] – Setting per-field fallback values
-- [[field-info directives|directives Parameter]] – The `finalize-suggest`, `finalize-clear`, and `finalize-preserve` directives
+- [[fieldInfo fallback|fallback Parameter]] – Setting per-field fallback values
+- [[fieldInfo directives|directives Parameter]] – The `finalize-suggest`, `finalize-clear`, and `finalize-preserve` directives
 - [[YAML Configuration Properties]] – Template-wide fallback settings
 - [[Deferred Field Resolution]] – The broader concept of iterative field resolution
 

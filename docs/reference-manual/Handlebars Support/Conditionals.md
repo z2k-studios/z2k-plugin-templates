@@ -100,17 +100,17 @@ This project is active.
 
 The [[Built-In Helper Functions|comparison helpers]] (`eq`, `ne`, `lt`, `gt`, `lte`, `gte`) return boolean values and work naturally inside `{{#if}}` blocks. The same deferred-field caveat applies – if `status` is unresolved, `eq` receives `undefined` and the comparison fails.
 
-## Conditionals Inside field-info Parameters
-Conditionals can be embedded inside `{{field-info}}` string parameters such as `prompt`, `suggest`, and `fallback`. This is possible because `{{#if}}` is a native Handlebars construct that is processed identically everywhere — inside field-info parameter strings and in the main template body alike.
+## Conditionals Inside fieldInfo Parameters
+Conditionals can be embedded inside `{{fieldInfo}}` string parameters such as `prompt`, `suggest`, and `fallback`. This is possible because `{{#if}}` is a native Handlebars construct that is processed identically everywhere — inside fieldInfo parameter strings and in the main template body alike.
 
 ```handlebars
-{{field-info taskName prompt="{{#if projectName}}Task for {{projectName}}:{{else}}Task name:{{/if}}"}}
+{{fieldInfo taskName prompt="{{#if projectName}}Task for {{projectName}}:{{else}}Task name:{{/if}}"}}
 ```
 
 When the prompt is rendered, `projectName` is resolved from the current field context. If defined, the prompt reads "Task for My Project:"; otherwise "Task name:".
 
 > [!NOTE]
-> Don't confuse this with [[Block Templates]] (`{{> block-name}}`), which are **not** available inside field-info parameter strings. See [[Restricted Functionality Mode#Block Helpers vs Block Templates]] for the distinction.
+> Don't confuse this with [[Block Templates]] (`{{> block-name}}`), which are **not** available inside fieldInfo parameter strings. See [[Restricted Functionality Mode#Block Helpers vs Block Templates]] for the distinction.
 
 ## Nested Conditionals
 Conditionals can be nested:

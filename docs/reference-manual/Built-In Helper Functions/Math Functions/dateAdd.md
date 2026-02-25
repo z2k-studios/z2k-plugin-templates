@@ -29,11 +29,11 @@ Some sample usages outputting modified dates directly into a file:
 One Hour From Now: {{dateAdd (calc "1/24")}} {{! 1/24th of a day is an hour }}
 Same Day Last Week : {{formatDate "YYYY-MM-DD" (dateAdd -7 now)}} 
 
-Some more advance examples that use the [[field-info value|value]] parameter to create new fields that behave like [[Built-In Fields]]:
+Some more advance examples that use the [[fieldInfo value|value]] parameter to create new fields that behave like [[Built-In Fields]]:
 ```handlebars
-# Creating new custom fields using field-info
-{{field-info DaysFromNow2 value=(date-add 2)}}
-{{field-info InTwoHours value=(format-date "HH:mm" (date-add (calc "2/24") now))}}
+# Creating new custom fields using fieldInfo
+{{fieldInfo DaysFromNow2 value=(date-add 2)}}
+{{fieldInfo InTwoHours value=(format-date "HH:mm" (date-add (calc "2/24") now))}}
 Two Hours From Now: {{InTwoHours}}
 Link to Two Days From Now: {{wikilink (formatDate "YYYY-MM-DD" DaysFromNow2)}}
 

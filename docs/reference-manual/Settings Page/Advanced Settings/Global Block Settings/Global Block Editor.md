@@ -8,10 +8,10 @@ aliases:
 The Global Block Editor, accessed through the [[Settings Page]], allows you to modify the current [[Global Block]] – template content that is automatically prepended to every template before rendering. Click the **Edit Global Block** button to open the editor modal.
 
 ![[global-block-editor.png]]
-(Screenshot: The Global Block editor modal with example field-info declarations)
+(Screenshot: The Global Block editor modal with example fieldInfo declarations)
 
 ## Global Block in Brief
-The global block behaves like a [[System and Global Blocks|system block]], but at a higher scope. Content here is invisibly prepended to every template before the engine processes it. The most common use is declaring [[reference-manual/field-info Helper/field-info Helper|field-info]] entries that apply everywhere – default prompts, types, or suggested values for fields used across many templates.
+The global block behaves like a [[System and Global Blocks|system block]], but at a higher scope. Content here is invisibly prepended to every template before the engine processes it. The most common use is declaring [[reference-manual/fieldInfo Helper/fieldInfo Helper|fieldInfo]] entries that apply everywhere – default prompts, types, or suggested values for fields used across many templates.
 
 > [!INFO] See the Global Block reference page
 > For more information on the Global Block, please consult its own [[Global Block|reference page]]. This page focuses on the use of the editor within the plugin settings.
@@ -27,7 +27,7 @@ The toolbar spans the top of the modal:
 	- **Font size display** – shows the current editor font size (e.g., `14px`).
 	- **A+ button** – increases the editor font size by 1px (maximum 20px).
 
-The A−/A+ controls are useful when working with dense `{{field-info}}` declarations or when the default font size is too small or too large for comfortable editing.
+The A−/A+ controls are useful when working with dense `{{fieldInfo}}` declarations or when the default font size is too small or too large for comfortable editing.
 
 ### Editor Area
 The central area is a full-featured [CodeMirror](https://codemirror.net/) code editor supporting:

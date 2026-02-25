@@ -6,7 +6,7 @@ aliases:
 - input types
 ---
 # Prompting Interface per Type
-The [[Prompting Interface]] renders a different input control for each [[Field Types|field type]]. The type is set via the `type=` parameter on [[field-info Helper|{{field-info}}]]. If no type is specified, the field defaults to `text`.
+The [[Prompting Interface]] renders a different input control for each [[Field Types|field type]]. The type is set via the `type=` parameter on [[fieldInfo Helper|{{fieldInfo}}]]. If no type is specified, the field defaults to `text`.
 
 This page shows what each type looks like and how it behaves inside the prompting modal.
 
@@ -24,7 +24,7 @@ This page shows what each type looks like and how it behaves inside the promptin
 The default type. Renders as a **multi-line textarea**.
 
 ```md
-{{field-info journalEntry prompt="What happened today?" type="text"}}
+{{fieldInfo journalEntry prompt="What happened today?" type="text"}}
 ```
 
 - Accepts any text, including line breaks
@@ -37,7 +37,7 @@ The default type. Renders as a **multi-line textarea**.
 Renders as a **single-line text input** with filename validation. Used for the built-in `fileTitle` field and any field whose value will become part of a filename.
 
 ```md
-{{field-info projectName prompt="Project name" type="titleText"}}
+{{fieldInfo projectName prompt="Project name" type="titleText"}}
 ```
 
 - Rejects characters invalid in filenames: `\ / : * ? " < > |`
@@ -52,7 +52,7 @@ Renders as a **single-line text input** with filename validation. Used for the b
 Renders as a **number input** (browser-native spinner control).
 
 ```md
-{{field-info rating prompt="Rate this album (1-10)" type="number"}}
+{{fieldInfo rating prompt="Rate this album (1-10)" type="number"}}
 ```
 
 - Only accepts numeric values
@@ -66,7 +66,7 @@ Renders as a **number input** (browser-native spinner control).
 Renders as a **date picker** using the browser's native `date` input.
 
 ```md
-{{field-info startDate prompt="When does the project begin?" type="date"}}
+{{fieldInfo startDate prompt="When does the project begin?" type="date"}}
 ```
 
 - Presents a calendar-style date picker (appearance varies by OS/browser)
@@ -80,7 +80,7 @@ Renders as a **date picker** using the browser's native `date` input.
 Renders as a **datetime-local picker** using the browser's native `datetime-local` input.
 
 ```md
-{{field-info eventTime prompt="When is the meeting?" type="datetime"}}
+{{fieldInfo eventTime prompt="When is the meeting?" type="datetime"}}
 ```
 
 - Presents a combined date and time picker
@@ -94,7 +94,7 @@ Renders as a **datetime-local picker** using the browser's native `datetime-loca
 Renders as a **checkbox**.
 
 ```md
-{{field-info isPublished prompt="Published?" type="boolean"}}
+{{fieldInfo isPublished prompt="Published?" type="boolean"}}
 ```
 
 - The label is rendered *beside* the checkbox rather than above it
@@ -105,28 +105,28 @@ Renders as a **checkbox**.
 *(Screenshot: a boolean field rendered as a checkbox with its label to the right)*
 
 ## singleSelect
-Renders as a **dropdown** (`<select>`) populated with options from the [[field-info opts|opts]] parameter.
+Renders as a **dropdown** (`<select>`) populated with options from the [[fieldInfo opts|opts]] parameter.
 
 ```md
-{{field-info genre prompt="Pick a genre" type="singleSelect" opts="Fiction,Non-Fiction,Poetry,Drama"}}
+{{fieldInfo genre prompt="Pick a genre" type="singleSelect" opts="Fiction,Non-Fiction,Poetry,Drama"}}
 ```
 
 - Displays a "Select an option" placeholder when no selection has been made
-- The [[field-info suggest|suggest]] value pre-selects the matching option if it exists in the options list
+- The [[fieldInfo suggest|suggest]] value pre-selects the matching option if it exists in the options list
 - The stored value is the selected option's text, not an index
 
 ![[prompting-type-singleselect.png]]
 *(Screenshot: a singleSelect dropdown with options expanded)*
 
 ## multiSelect
-Renders as a **group of checkboxes** – one for each option in the [[field-info opts|opts]] parameter.
+Renders as a **group of checkboxes** – one for each option in the [[fieldInfo opts|opts]] parameter.
 
 ```md
-{{field-info tags prompt="Select applicable tags" type="multiSelect" opts="Research,Review,Draft,Final"}}
+{{fieldInfo tags prompt="Select applicable tags" type="multiSelect" opts="Research,Review,Draft,Final"}}
 ```
 
 - Each option is an independent checkbox with a label
-- The [[field-info suggest|suggest]] value can pre-select multiple options (pass a comma-separated list)
+- The [[fieldInfo suggest|suggest]] value can pre-select multiple options (pass a comma-separated list)
 - The stored value is an array of the selected options' text values
 - Checking or unchecking any box counts as [[Prompt Touching|touching]] the field
 
@@ -135,8 +135,8 @@ Renders as a **group of checkboxes** – one for each option in the [[field-info
 
 ## See Also
 - [[Prompting Interface]] – Overview of the prompting modal
-- [[field-info type|type Parameter]] – Full documentation of the `type=` parameter
-- [[field-info opts|opts Parameter]] – How to define options for select types
+- [[fieldInfo type|type Parameter]] – Full documentation of the `type=` parameter
+- [[fieldInfo opts|opts Parameter]] – How to define options for select types
 
 > [!DANGER] Notes for Documentation Team
 > - All screenshot placeholders need to be captured from a live prompting interface showing each field type.

@@ -61,7 +61,7 @@ No value provided.
 Inside the helper, call `options.inverse(this)` to render the else branch.
 
 ## Block Helpers in Restricted Functionality Mode
-Block helpers **do work** inside [[Restricted Functionality Mode]] contexts (such as `prompt`, `suggest`, and `fallback` parameters in `{{field-info}}`). This is because block helpers are native Handlebars language constructs, and these contexts are evaluated through `Handlebars.compile` which processes them natively.
+Block helpers **do work** inside [[Restricted Functionality Mode]] contexts (such as `prompt`, `suggest`, and `fallback` parameters in `{{fieldInfo}}`). This is because block helpers are native Handlebars language constructs, and these contexts are evaluated through `Handlebars.compile` which processes them natively.
 
 For example, this works:
 

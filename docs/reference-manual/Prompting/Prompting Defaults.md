@@ -5,10 +5,10 @@ aliases:
 - default prompting behavior
 ---
 # Prompting Defaults
-Every [[Template Fields|template field]] that appears in the [[Prompting Interface]] has a set of properties that control how it's presented and what happens when the user doesn't provide a value. When you don't explicitly configure a field with [[field-info Helper|{{field-info}}]], these defaults apply.
+Every [[Template Fields|template field]] that appears in the [[Prompting Interface]] has a set of properties that control how it's presented and what happens when the user doesn't provide a value. When you don't explicitly configure a field with [[fieldInfo Helper|{{fieldInfo}}]], these defaults apply.
 
 ## Default Values
-The following table shows what the prompting interface assumes when no `{{field-info}}` is specified for a field:
+The following table shows what the prompting interface assumes when no `{{fieldInfo}}` is specified for a field:
 
 | Property     | Default                        | Effect                                                        |
 | ------------ | ------------------------------ | ------------------------------------------------------------- |
@@ -19,7 +19,7 @@ The following table shows what the prompting interface assumes when no `{{field-
 | `opts`       | Empty                          | No options (only relevant for `singleSelect` / `multiSelect`) |
 | `directives` | None                           | No special behavior                                           |
 | `value`      | None                           | Field is not computed; user provides the value                |
-For more information, please see the dedicated [[field-info Helper]] documentation. 
+For more information, please see the dedicated [[fieldInfo Helper]] documentation. 
 
 ## Prompt Label Generation
 When no `prompt=` parameter is set, the label shown to the user is derived from the field name using the following rules:
@@ -27,40 +27,40 @@ When no `prompt=` parameter is set, the label shown to the user is derived from 
 - `camelCase` boundaries are split with spaces: `projectName` → "Project Name"
 - Acronym boundaries are preserved: `XMLParser` → "XML Parser", `HTTPServer` → "HTTP Server"
 
-For example, the field `{{meetingAttendees}}` generates the label "Meeting Attendees" without any `{{field-info}}` configuration.
+For example, the field `{{meetingAttendees}}` generates the label "Meeting Attendees" without any `{{fieldInfo}}` configuration.
 
 ## Overriding Defaults
-Each default can be overridden independently using [[field-info Helper|{{field-info}}]]. You only need to specify the properties you want to change – everything else keeps its default.
+Each default can be overridden independently using [[fieldInfo Helper|{{fieldInfo}}]]. You only need to specify the properties you want to change – everything else keeps its default.
 
 ### Override the prompt label
 ```md
-{{field-info meetingAttendees prompt="Who attended the meeting?"}}
+{{fieldInfo meetingAttendees prompt="Who attended the meeting?"}}
 ```
 
 ### Override the type
 ```md
-{{field-info priority type="singleSelect" opts="Low,Medium,High,Critical"}}
+{{fieldInfo priority type="singleSelect" opts="Low,Medium,High,Critical"}}
 ```
 
 ### Override the suggest value
 ```md
-{{field-info author suggest="{{creator}}"}}
+{{fieldInfo author suggest="{{creator}}"}}
 ```
 
 ### Override fallback behavior
 ```md
-{{field-info status fallback="Draft"}}
+{{fieldInfo status fallback="Draft"}}
 ```
 
 ### Combine multiple overrides
 ```md
-{{field-info dueDate prompt="When is this due?" type="date" suggest="{{date}}" fallback="TBD"}}
+{{fieldInfo dueDate prompt="When is this due?" type="date" suggest="{{date}}" fallback="TBD"}}
 ```
 
-See [[field-info Parameters]] for the full parameter reference.
+See [[fieldInfo Parameters]] for the full parameter reference.
 
 ## See Also
-- [[field-info Parameters]] – Complete parameter documentation
+- [[fieldInfo Parameters]] – Complete parameter documentation
 - [[Prompting Interface]] – How the prompting modal works
 - [[Fallback Behavior]] – What happens when no value is provided
 

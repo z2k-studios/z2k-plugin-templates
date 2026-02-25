@@ -62,7 +62,7 @@ Certain characters inside `{{ }}` trigger special parsing behavior. Using them i
 If you need a field name that resembles any of these patterns, restructure the name. For example, use `{{DinnerMeal}}` instead of attempting `{{Dinner.Meal}}`.
 
 ## Display Labels in the Prompting UI
-When Z2K Templates prompts a user for a field value, it converts the field name into a human-readable label (unless a specific [[field-info prompt|prompt]] has been specified). The conversion logic splits camelCase and PascalCase into separate words with spaces:
+When Z2K Templates prompts a user for a field value, it converts the field name into a human-readable label (unless a specific [[fieldInfo prompt|prompt]] has been specified). The conversion logic splits camelCase and PascalCase into separate words with spaces:
 
 | Field Name   | Display Label |
 | ------------ | ------------- |
@@ -80,7 +80,7 @@ The algorithm:
 This means well-formed camelCase and PascalCase names produce clean, readable prompts with no extra configuration. Irregular casing (e.g., `BOOKTITLE`) produces less readable labels (`BOOKTITLE` stays as-is) thus, another reason to follow the convention.
 
 > [!INFO]
-> You can override the display label entirely using the [[field-info prompt|prompt]] parameter of `{{field-info}}`. For example, `{{field-info BookTitle prompt="What is the book's title?"}}` replaces the auto-generated label with your custom text.
+> You can override the display label entirely using the [[fieldInfo prompt|prompt]] parameter of `{{fieldInfo}}`. For example, `{{fieldInfo BookTitle prompt="What is the book's title?"}}` replaces the auto-generated label with your custom text.
 
 > [!DANGER] Documentation Notes
 > - The `formatFieldName` function is defined in `main.tsx` (~line 3895). Verify the algorithm description stays accurate if the implementation changes.

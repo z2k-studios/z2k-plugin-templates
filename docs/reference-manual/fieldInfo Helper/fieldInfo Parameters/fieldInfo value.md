@@ -8,7 +8,7 @@ aliases:
   - fieldInfo value Parameter
   - computed fields
 ---
-# field-info value
+# fieldInfo value
 The `value` parameter assigns a computed value to a field, bypassing user prompting. Rather than asking the user to fill in the field, you define what it *is* — a literal, an expression, or a reference to another field — and the engine resolves it automatically at render time.
 
 When `value` is set, the field behaves like a built-in field: it evaluates, contributes its value to the template context, and never appears in the prompting interface.
@@ -51,18 +51,18 @@ Arrays are not a native literal type, but `value=(arr "a" "b" "c")` works — th
 If `value` is omitted, the field has no computed value and behaves normally — the user is prompted as usual.
 
 ## Automatic no-prompt
-Setting `value` automatically applies the [[field-info directives#no-prompt|no-prompt]] directive. You do not need to write `directives="no-prompt"` explicitly — it is added by the engine and specifying it yourself is redundant (though harmless).
+Setting `value` automatically applies the [[fieldInfo directives#no-prompt|no-prompt]] directive. You do not need to write `directives="no-prompt"` explicitly — it is added by the engine and specifying it yourself is redundant (though harmless).
 
 If you need the field to remain visible in the prompting interface despite having a `value` expression, use `directives="yes-prompt"` to override the implicit suppression. In that case, `value` supplies the pre-filled suggestion rather than computing the final value silently.
 
 ## field-output and value
-The `value` parameter is supported on [[field-output Helper Variation|field-output]] (and its alias `fo`) — all four helpers (`field-info`, `field-output`, `fi`, `fo`) pass through the same parameter extraction pipeline. A `value` on `field-output` assigns the computed value and immediately outputs it, rather than simply reading whatever the field currently holds.
+The `value` parameter is supported on [[field-output Helper Variation|field-output]] (and its alias `fo`) — all four helpers (`fieldInfo`, `field-output`, `fi`, `fo`) pass through the same parameter extraction pipeline. A `value` on `field-output` assigns the computed value and immediately outputs it, rather than simply reading whatever the field currently holds.
 
 ## Dependency Tracking
 If the `value` expression references another field, the engine tracks that field as a dependency and defers computation until the dependency is available:
 
 ```handlebars
-{{field-info AuthorURL value="https://author-db.com/{{Author}}"}}
+{{fieldInfo AuthorURL value="https://author-db.com/{{Author}}"}}
 ```
 
 If `Author` is not yet resolved when `AuthorURL` is first encountered, the computation is deferred. Once `Author` resolves — from user input, another `value=`, through [[Finalization|finalization]],  or an external data source — `AuthorURL` is computed automatically. If `Author` is never provided, `AuthorURL` remains empty.
@@ -79,7 +79,7 @@ Priority order (highest to lowest):
 4. `suggest` pre-fill
 5. `fallback`
 
-When `value` is declared at multiple levels — for example, in the global block and also in the main template — the most specific source wins. The [[Global Block and field-info#field-info Resolution Order|field-info resolution order]] determines which `value` expression is used:
+When `value` is declared at multiple levels — for example, in the global block and also in the main template — the most specific source wins. The [[Global Block and fieldInfo#fieldInfo Resolution Order|fieldInfo resolution order]] determines which `value` expression is used:
 
 `global block` < `system block` < `block template` < `main template`
 
@@ -91,7 +91,7 @@ So a main template's `value` overrides a system block's `value`, which overrides
 You can use the `value` parameter to define a static field that always has a specific value unless it is overridden. For instance, you can default a field `{{Status}}` to always have the value of "Draft" with the below expression:
 
 ```handlebars
-{{field-info Status value="Draft"}}
+{{fieldInfo Status value="Draft"}}
 ```
 
 If this is declared in a [[Global Block]] or [[Intro to System Blocks|System Block]], you can add it to the YAML frontmatter as a property:
@@ -102,14 +102,14 @@ status: "{{Status}}"
 Then, any template can override that with a new value that is more appropriate for that template:
 
 ```md file="Resolution Template.md"
-{{field-info Status value="Resolved"}}
+{{fieldInfo Status value="Resolved"}}
 ```
 
 ### Computed Fields
 The most common use: define a field whose value is always computed from an expression. The field behaves like an implicit built-in — available wherever the field name appears, without user intervention:
 
 ```handlebars
-{{field-info InOneWeek value=(format-date "YYYY-MM-DD" (date-add 7 now))}}
+{{fieldInfo InOneWeek value=(format-date "YYYY-MM-DD" (date-add 7 now))}}
 ```
 
 Note that the resolution of the value occurs at the point of [[Instantiation]] in this instance, given that all dependent fields and helpers (e.g. `now`) are known at that time. 
@@ -120,20 +120,20 @@ When declared in the [[Global Block]], `{{InOneWeek}}` becomes available in ever
 Give a complex expression a short, readable name. Instead of repeating `{{firstName}} {{lastName}}` throughout a template, define it once:
 
 ```handlebars
-{{field-info FullName value="{{firstName}} {{lastName}}"}}
+{{fieldInfo FullName value="{{firstName}} {{lastName}}"}}
 
 # {{FullName}}
 By {{FullName}}
 ```
 
-The expression evaluates fresh each time the field is rendered. In this instance, if either of the fields `{{firstName}}` or `{{lastName}}` are not known during [[Instantiation]], then the `{{field-info}}` entry will remain in the [[WIP Stage|WIP Content File]] until [[Finalization]]. At that point, if either part is undefined, the output degrades gracefully to whatever is resolved.
+The expression evaluates fresh each time the field is rendered. In this instance, if either of the fields `{{firstName}}` or `{{lastName}}` are not known during [[Instantiation]], then the `{{fieldInfo}}` entry will remain in the [[WIP Stage|WIP Content File]] until [[Finalization]]. At that point, if either part is undefined, the output degrades gracefully to whatever is resolved.
 
 ### Derived and Composed Fields
 Build new fields from existing ones — URLs, formatted strings, Markdown links:
 
 ```handlebars
-{{field-info ISBN-URL value="https://isbnsearch.org/isbn/{{ISBN}}"}}
-{{field-info AuthorAtWikipedia value=(wikipedia Author Author)}}
+{{fieldInfo ISBN-URL value="https://isbnsearch.org/isbn/{{ISBN}}"}}
+{{fieldInfo AuthorAtWikipedia value=(wikipedia Author Author)}}
 ```
 
 `ISBN-URL` silently provides a fully-formed URL wherever it's referenced. `AuthorAtWikipedia` generates a Markdown link to a Wikipedia search using whatever `Author` resolves to — or is empty if `Author` is not defined.
@@ -144,19 +144,19 @@ Build new fields from existing ones — URLs, formatted strings, Markdown links:
 A system block in a "Client Work" folder might declare:
 
 ```handlebars
-{{field-info Project value="Client Work"}}
-{{field-info BillingRate value=150}}
+{{fieldInfo Project value="Client Work"}}
+{{fieldInfo BillingRate value=150}}
 ```
 
-Any template instantiated under that folder receives `{{Project}}` and `{{BillingRate}}` without prompting. Templates deeper in the hierarchy can still override these by declaring their own `{{field-info Project}}` — the most specific declaration wins. 
+Any template instantiated under that folder receives `{{Project}}` and `{{BillingRate}}` without prompting. Templates deeper in the hierarchy can still override these by declaring their own `{{fieldInfo Project}}` — the most specific declaration wins. 
 
-For more examples with System Blocks, see [[Using System Blocks and field-info]]. See the page [[Global Block and Field Values]] for the vault-wide equivalent using the global block.
+For more examples with System Blocks, see [[Using System Blocks and fieldInfo]]. See the page [[Global Block and Field Values]] for the vault-wide equivalent using the global block.
 
 ### Redefining Built-In Fields
 `value` can override [[Built-In Fields|built-in fields]] entirely. The built-in's default formula is replaced at the priority level of the declaring source. Declared in the global block, the override applies vault-wide:
 
 ```handlebars
-{{field-info today value=(format-date "MM/DD/YYYY")}}
+{{fieldInfo today value=(format-date "MM/DD/YYYY")}}
 ```
 
 This reformats `{{today}}` across all templates when included in the [[Global Block]]. See [[Global Block and Field Values#Example - Override Built-In Field|Override Built-In Field]] for a full discussion.

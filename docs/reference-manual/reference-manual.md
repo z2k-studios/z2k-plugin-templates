@@ -205,7 +205,7 @@ aliases:
 18. [[Global Block]]
 	- [[Global Block Overview]]
 	- [[Global Block and Markdown]]
-	- [[Global Block and field-info]]
+	- [[Global Block and fieldInfo]]
 	- [[Global Block and Field Values]]
 	- [[Global Block and YAML]]
 

@@ -4,7 +4,7 @@ aliases:
   - Global Block and Markdown
 ---
 # The Global Block and Markdown
-The global block can inject literal Markdown content into every file – and not just for `{{field-info}}` [[Global Block and field-info|declarations]]. Any text in the global block that isn't YAML frontmatter is prepended directly to every template's body before rendering. This makes the global block an effective way to enforce structural conventions or insert boilerplate across the entire vault.
+The global block can inject literal Markdown content into every file – and not just for `{{fieldInfo}}` [[Global Block and fieldInfo|declarations]]. Any text in the global block that isn't YAML frontmatter is prepended directly to every template's body before rendering. This makes the global block an effective way to enforce structural conventions or insert boilerplate across the entire vault.
 
 Note: Global Block yaml frontmatter follows the standard [[Merging Multiple YAML Sources|YAML Merging]] guidelines discussed in [[Z2K Templates and YAML]].
 
@@ -15,8 +15,8 @@ Common uses:
 
 For examples of both, see [[#Example - Global File Structure]] and [[#Example - Global Company Notification]] below.
 
-## Markdown vs. field-info Declarations
-The global block supports both Markdown content and `{{field-info}}` declarations in the same block. The engine handles them in sequence: YAML is merged into the file's frontmatter, and the remaining body – whatever mix of Markdown and Handlebars expressions it contains – is prepended to the template body before rendering.
+## Markdown vs. fieldInfo Declarations
+The global block supports both Markdown content and `{{fieldInfo}}` declarations in the same block. The engine handles them in sequence: YAML is merged into the file's frontmatter, and the remaining body – whatever mix of Markdown and Handlebars expressions it contains – is prepended to the template body before rendering.
 
 ## Obsidian Comments
 Obsidian comment syntax (`%% ... %%`) can be used in the global block to inject invisible metadata into every file. The Z2K engine treats `%% ... %%` as literal text (it is not Handlebars syntax), so it passes through unchanged into the raw Markdown file. The comment is invisible in Obsidian's reading view but present in the file source.
@@ -26,7 +26,7 @@ Obsidian comment syntax (`%% ... %%`) can be used in the global block to inject 
 ```
 
 ## Example - Global File Structure
-The global block is not limited to `{{field-info}}` declarations – it can inject literal content into every file. This example enforces a vault-wide structural convention: every file begins with a one-sentence summary followed by a horizontal rule:
+The global block is not limited to `{{fieldInfo}}` declarations – it can inject literal content into every file. This example enforces a vault-wide structural convention: every file begins with a one-sentence summary followed by a horizontal rule:
 
 ```handlebars
 {{field-output SummaryStatement prompt="Single Sentence Summary"}}

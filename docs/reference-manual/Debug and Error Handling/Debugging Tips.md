@@ -54,15 +54,15 @@ Remember to set it back to **Warning** after diagnosing your issue – Debug log
 ## Common Error Messages
 The table below lists the error messages you're most likely to encounter and what to do about them.
 
-| Error Message | Where It Appears | Cause | What to Do |
-| --- | --- | --- | --- |
-| "Please enter a valid number" | Inline (form field) | A number-type field contains non-numeric text | Enter a valid number or clear the field |
-| "This field is required to finalize" | Inline (form field) | A `required` field was left empty during finalization | Provide a value before finalizing |
-| "Contains invalid characters" | Inline (form field) | A title field contains `\ / : * ? " < > \|` | Remove the invalid characters from the title |
-| "Cannot be just dots" | Inline (form field) | A title field contains only dots (e.g., `...`) | Enter a meaningful title |
-| "Cannot end with a space or dot" | Inline (form field) | A title field ends with a trailing space or period | Remove the trailing space or dot |
-| "Circular dependency detected: a -> b -> a" | Error dialog | Computed fields reference each other in a loop | Break the cycle by removing one of the circular `value=` references in your `{{field-info}}` declarations |
-| `[Error in helperName]` | Template output | A [[User Defined Helper Functions\|custom helper function]] threw an error during execution | Check the developer console for the specific JavaScript error, then fix the helper code |
+| Error Message | Where It Appears | Cause | What to Do                                                                                               |
+| ------------------------------------------- | ------------------- | ------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| "Please enter a valid number" | Inline (form field) | A number-type field contains non-numeric text | Enter a valid number or clear the field                                                                  |
+| "This field is required to finalize" | Inline (form field) | A `required` field was left empty during finalization | Provide a value before finalizing                                                                        |
+| "Contains invalid characters" | Inline (form field) | A title field contains `\ / : * ? " < > \|` | Remove the invalid characters from the title                                                             |
+| "Cannot be just dots" | Inline (form field) | A title field contains only dots (e.g., `...`) | Enter a meaningful title                                                                                 |
+| "Cannot end with a space or dot" | Inline (form field) | A title field ends with a trailing space or period | Remove the trailing space or dot                                                                         |
+| "Circular dependency detected: a -> b -> a" | Error dialog | Computed fields reference each other in a loop | Break the cycle by removing one of the circular `value=` references in your `{{fieldInfo}}` declarations |
+| `[Error in helperName]` | Template output | A [[User Defined Helper Functions\|custom helper function]] threw an error during execution | Check the developer console for the specific JavaScript error, then fix the helper code                  |
 | "Failed to load custom helpers" | Notice popup | The custom helpers JavaScript could not be evaluated | Open the developer console for the specific error, then edit your helpers in [[Settings Page\|Settings]] |
 
 > [!DANGER] Internal Notes

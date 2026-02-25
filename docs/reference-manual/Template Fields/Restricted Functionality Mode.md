@@ -12,7 +12,7 @@ Certain contexts within Z2K Templates operate in a **restricted functionality mo
 ## When Is Restricted Functionality Mode Active?
 Restricted functionality mode is active whenever Z2K Templates evaluates an expression that is embedded inside a string parameter value, rather than being rendered as part of the main template body. Specifically, this applies to:
 
-- All [[field-info Parameters]]:
+- All [[fieldInfo Parameters]]:
 	- **`prompt` parameters** in `{{fieldInfo}}` — the prompt text shown to the user
 	- **`suggest` parameters** in `{{fieldInfo}}` — the suggested default value
 	- **`fallback` parameters** in `{{fieldInfo}}` — the value used when no input is provided
@@ -54,7 +54,7 @@ Note that the [[Conditionals#Known Issue|deferred field limitation on block help
 The restricted rendering path exists because these contexts need to evaluate template expressions embedded inside parameter values — strings like `prompt="Enter a name for {{projectType}}"`. These embedded expressions need access to the current field context and helper functions, but don't need (and can't meaningfully use) the full template infrastructure like block template resolution, fieldInfo processing, or multi-pass rendering.
 
 ### How It Works Internally
-When a `{{field-info}}` parameter like `prompt="{{#if projectName}}Task for {{projectName}}:{{else}}Task name:{{/if}}"` is parsed, the outer Handlebars parser treats the `prompt` value as a string literal. The inner `{{#if}}` syntax is preserved as raw text. Later, this string is passed through to Handlebars, where the `{{#if}}` is parsed and evaluated as a real block helper.
+When a `{{fieldInfo}}` parameter like `prompt="{{#if projectName}}Task for {{projectName}}:{{else}}Task name:{{/if}}"` is parsed, the outer Handlebars parser treats the `prompt` value as a string literal. The inner `{{#if}}` syntax is preserved as raw text. Later, this string is passed through to Handlebars, where the `{{#if}}` is parsed and evaluated as a real block helper.
 
 > [!DANGER] Notes for Review
 > - ==Needs testing==: Verify that `{{#if}}` and `{{#each}}` actually work inside fieldInfo parameters (e.g., `prompt="{{#if projectName}}Task for {{projectName}}{{else}}Task name{{/if}}"`). Code analysis confirms the path is: `StringLiteral.value` → `reducedRenderContent` → `Handlebars.compile` → native `#if` evaluation. This should work, but needs empirical verification.

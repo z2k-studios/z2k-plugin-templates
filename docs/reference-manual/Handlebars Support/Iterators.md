@@ -51,17 +51,17 @@ The intended behavior is that `{{#each}}` blocks referencing unresolved fields s
 > [!WARNING]
 > Until the deferred-block bug is fixed, ensure that any data used with `{{#each}}` is available at the time of rendering. Unlike standalone `{{field}}` expressions, iterators are not currently deferred. The workaround is to mark the relevant fields as [[fieldInfo directives#required|required]].
 
-## Iterators Inside field-info Parameters
-Iterators can be embedded inside `{{field-info}}` string parameters. This is possible because `{{#each}}` is a native Handlebars construct that is processed identically everywhere — inside field-info parameter strings and in the main template body alike.
+## Iterators Inside fieldInfo Parameters
+Iterators can be embedded inside `{{fieldInfo}}` string parameters. This is possible because `{{#each}}` is a native Handlebars construct that is processed identically everywhere — inside fieldInfo parameter strings and in the main template body alike.
 
 A more common pattern is building option lists inline using the [[arr]] helper directly in the `opts` parameter — no `{{#each}}` needed:
 
 ```handlebars
-{{field-info statusTag type="select" prompt="Pick a status" opts=(arr "active" "paused" "done")}}
+{{fieldInfo statusTag type="select" prompt="Pick a status" opts=(arr "active" "paused" "done")}}
 ```
 
 > [!NOTE]
-> Don't confuse this with [[Block Templates]] (`{{> block-name}}`), which are **not** available inside field-info parameter strings. See [[Restricted Functionality Mode#Block Helpers vs Block Templates]] for the distinction.
+> Don't confuse this with [[Block Templates]] (`{{> block-name}}`), which are **not** available inside fieldInfo parameter strings. See [[Restricted Functionality Mode#Block Helpers vs Block Templates]] for the distinction.
 
 ## Iterators with the arr Helper
 Z2K Templates provides the `arr` helper for constructing arrays inline. This is useful when you want to iterate over a fixed set of values without requiring external data:

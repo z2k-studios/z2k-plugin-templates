@@ -13,7 +13,7 @@ Unlike [[System Blocks|System Blocks]], which are hierarchical and embedded thro
 For more information, please see:
 1. [[Global Block Overview]] - Overview of the Global Block, its scope, and how to use it
 2. [[Global Block and Markdown]] - Using the global block to inject Markdown content into every file
-3. [[Global Block and field-info]] - Using the global block for vault-wide field declarations and resolution order
+3. [[Global Block and fieldInfo]] - Using the global block for vault-wide field declarations and resolution order
 4. [[Global Block and Field Values]] - Using the global block to define values for fields
 5. [[Global Block and YAML]] - Using the global block to inject default YAML frontmatter
 

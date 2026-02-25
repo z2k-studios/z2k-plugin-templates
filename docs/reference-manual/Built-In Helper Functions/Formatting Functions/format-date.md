@@ -34,8 +34,8 @@ Assuming today was 2025-01-09
 ## Obsidian Style Data Formatting
 Please note that this helper function is the only way to format dates with Z2K Templates. The template does *not* support the Obsidian Date Formatting syntax. See [[Custom Field Formatting#Obsidian Date-Time Formatting|Obsidian Date-Time Formatting]] for more details. 
 
-## Using format-date with sourceTimes other than Now
-By default, the `{{format-date}}` helper uses the current date and time for the `sourceTime` parameter. 
+## Using formatDate with sourceTimes other than Now
+By default, the `{{formatDate}}` helper uses the current date and time for the `sourceTime` parameter. 
 
 Because time strings can be truncated or ambiguous, we highly recommend using the built-in field `{{now}}` ([[now]] is the default value) as the `sourceTime` parameter to format. This will insure that there is no chance of information loss or ambiguity, as `{{now}}` is a fully explicit and unambiguous representation of the current moment in time. This is a consequence of Z2K Templates' [[Field Types#Dates Are Strings — Handle with Care|loose typing]] — `date` and `datetime` fields are stored as strings, and parsing them back into date objects can lose time-of-day information.
 
@@ -43,17 +43,17 @@ If you need to format a date other than the current moment, we encourage you to 
 
 For instance:
 ```md title="Time Template.md"
-{{field-info myYesterday type="datetime" value=(date-add -1) directives="no-prompt"}}
-{{field-info myYesterdayFormatted type="datetime" value=(format-date "YYYY-MM-DD" (date-add -1)) directives="no-prompt"}}
+{{fieldInfo myYesterday type="datetime" value=(dateAdd -1) directives="no-prompt"}}
+{{fieldInfo myYesterdayFormatted type="datetime" value=(formatDate "YYYY-MM-DD" (date-add -1)) directives="no-prompt"}}
 
 
 ## Proper Formatting for Dates other than Now
-- Yesterday (direct version) :: {{format-date "YYYY-MM-DD" (date-add -1)}}
-- Yesterday (custom field) :: {{format-date "YYYY-MM-DD" myYesterday}}
+- Yesterday (direct version) :: {{formatDate "YYYY-MM-DD" (dateAdd -1)}}
+- Yesterday (custom field) :: {{formatDate "YYYY-MM-DD" myYesterday}}
 - Yesterday (custom field with formatting) :: {{myYesterdayFormatted}}
   
 ## Problematic Formatting
-- yesterday (time of day has been truncation) :: {{format-date "YYYY-MM-DD" yesterday}}
+- yesterday (time of day has been truncation) :: {{formatDate "YYYY-MM-DD" yesterday}}
 - yesterday (fail) :: {{format-date "HH:mm" yesterday}}
   
 
