@@ -14,10 +14,10 @@ The table below lists all recognized directives. Not all directives apply to eve
 
 | Directive | Applies To | Description |
 |-----------|-----------|-------------|
-| `cmd` | All | The command to execute: `new`, `continue`, `insertblock`, or `fromJson`. Always required. |
-| `templatePath` | `new`, `insertblock` | Vault-relative path to the template or block template file. |
+| `cmd` | All | The command to execute: `new`, `continue`, `upsert`, `insertblock`, or `fromJson`. Always required. |
+| `templatePath` | `new`, `upsert`, `insertblock` | Vault-relative path to the template or block template file. |
 | `blockPath` | `insertblock` | Alias for `templatePath` when used with `insertblock`. |
-| `existingFilePath` | `continue`, `insertblock` | Vault-relative path to the target file. |
+| `existingFilePath` | `continue`, `upsert`, `insertblock` | Vault-relative path to the target file. For `upsert`, also used as the output path when creating. |
 | `destDir` | `new` | Override the default output folder for the new file. |
 | `destHeader` | `insertblock` | The header under which to insert the block. Required when `location` is `header-top` or `header-bottom`. See [[JSON Directives#destHeader Matching]]. |
 | `prompt` | All | Controls the interactive prompt UI: `none` (suppress all prompts), `remaining` (prompt only for fields not already supplied), or `all` (prompt for every field, pre-filling supplied values). |
