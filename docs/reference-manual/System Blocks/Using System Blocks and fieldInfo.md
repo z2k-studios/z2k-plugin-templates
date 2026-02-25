@@ -24,6 +24,7 @@ Did you know that if a field was given a `{{fieldInfo}}` specification, but was 
 {{fieldInfo Relevance "When will I need to see this information again?"}}
 ```
 
+This opens a whole world of uses for system blocks - please see the [[Global Block]] section for more use cases (the Global Block behaves very similarly to System Blocks).
 
 ## Use Case: Setting Field Values Based on Hierarchical Location
  it is possible to use the [[fieldInfo value]] parameter to feed a value into a field that can be referenced elsewhere. Further, by setting this value to different values within the hierarchy with different System Blocks, you can adapt the value of a field accordingly. 

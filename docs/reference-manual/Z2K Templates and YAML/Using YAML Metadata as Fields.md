@@ -18,7 +18,7 @@ This works across all YAML sources – the template's own frontmatter, [[Block T
 - [[#Priority Among Data Sources]]
 
 ## How It Works
-During template processing, the plugin collects YAML frontmatter from all relevant sources (template file, inserted [[Block Templates]], [[Intro to System Blocks|System Blocks]], the [[Global Block]]) and merges the YAML properties using a [[Merging Multiple YAML Sources|last-wins strategy]]. The merged YAML is then parsed into native JavaScript values, and each top-level key becomes a field value in the template state.
+During template processing, the plugin collects YAML frontmatter from all relevant sources (template file, inserted [[Block Templates]], [[Intro to System Blocks|System Blocks]], the [[Global Block Editor]]) and merges the YAML properties using a [[Merging Multiple YAML Sources|last-wins strategy]]. The merged YAML is then parsed into native JavaScript values, and each top-level key becomes a field value in the template state.
 
 For example, given this template:
 

@@ -1,29 +1,88 @@
 ---
-sidebar_position: 10
+sidebar_position: 20
+aliases:
+- naming fields
+- field naming conventions
+- field naming
 ---
 # Field Naming Conventions
+Every [[Template Fields Overview|template field]] has a name – the identifier between the `{{ }}` braces. That name determines how the field is resolved, how it appears in the [[Prompting Interface|prompting UI]], and whether it collides with a [[Built-In Helper Functions|helper function]]. Choosing names carefully avoids all three problems.
 
-==Resolve this document with [[Naming Conventions]]==
+## Contents
+- [[#Naming Requirements]]
+- [[#Built-In vs. User-Defined Fields]]
+- [[#Special Field Characters]]
+- [[#Display Labels in the Prompting UI]]
 
-## Requirements 
-When using Z2K [[Template Fields Overview|Template Fields]], there are some important considerations for how to name a field
-- **A Field Name must not contain any spaces**. Thus, `{{Book Title}}` will be interpreted as a field name `Title` with a [[Helper Functions Overview|Helper Function]] named `Book`, which will likely result in an error. Instead, the field should be `{{BookTitle}}`
-- Field names are case sensitive. Fields that only differ by case will still be treated as separate fields. So a field like `{{BookTitle}}` is a different field than `{{Booktitle}}`.
+## Naming Requirements
+Two hard rules govern field names:
+- **No spaces.** A space inside `{{ }}` tells the parser that a [[Helper Functions Overview|helper function]] is being called. `{{Book Title}}` does not create a field called "Book Title" – it calls a helper named `Book` with parameter `Title`, which almost certainly produces an error. Use `{{BookTitle}}` instead.
+- **Case-sensitive.** Fields that differ only in case are treated as separate fields. `{{BookTitle}}` and `{{Booktitle}}` will prompt the user twice for two different values.
 
-## General Convention
-- A general convention for field names is that [[Built-In Fields|automated fields]] begin with lowercase (e.g. `{{weekNum}}`) whereas user specified fields begin with an Uppercase letter (e.g. `{{BookAuthor}}`).
+Beyond these two rules, any Unicode characters are valid in a field name – with the exceptions listed in [[#Special Field Characters]] below.
+
+## Built-In vs. User-Defined Fields
+Z2K Templates defines two categories of fields, each with a recommended naming style:
+
+| Category | Convention | Examples |
+|---|---|---|
+| [[Built-In Fields]] | camelCase (lowercase start) | `{{date}}`, `{{sourceText}}`, `{{weekNum}}`, `{{fileTitle}}` |
+| User-defined fields | PascalCase (uppercase start) | `{{BookAuthor}}`, `{{ProjectName}}`, `{{MeetingDate}}` |
+
+**Why the distinction matters.** When you scan a template, the case of the first letter tells you immediately whether a field is auto-populated by the plugin or will require user input:
+
+```md
+---
+author: {{creator}}
+title: {{BookTitle}}
+date: {{date}}
+---
+# {{BookTitle}} — Review by {{creator}}
+Rating: {{Rating}}
+```
+
+In this template, `creator` and `date` resolve automatically. `BookTitle` and `Rating` will prompt the user. The casing makes this visible at a glance.
+
+> [!NOTE]
+> PascalCase for user fields is a **convention, not a requirement**. The parser does not enforce it – `{{booktitle}}` works identically to `{{BookTitle}}`. But mixing styles makes templates harder to read, and a lowercase user field risks colliding with a current or future built-in field name.
 
 ## Special Field Characters
-In addition to spaces, a Z2K Template Field name cannot use any of the following characters as they represent other advanced field processing features:
+Certain characters inside `{{ }}` trigger special parsing behavior. Using them in a field name will not produce the field you expect – the parser will interpret them as syntax.
 
-| Character         | Example                                | Implied Feature                                                                                                                   |
-| ----------------- | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| ` ` (space)       | `{{wikilink today}}`                   | Helper functions (see [[Built-In Helper Functions]])                                                                              |
-| `\|` (pipe)       | `{{Author\|text\|Who is the Author?}}` | User querying prompts (see [[Prompting]])                                                                                         |
-| ! (bang)          | `{{! this is a comment}}`              | Comment Fields                                                                                                                    |
-| `.` (periods)     | `{{Meals.Dinner}}`                     | JSON hierarchical data (see [[Z2K Templates, URI, and JSON]])                                                                     |
-| `<` (less than)   | `{{< PartialTemplate.md}}`             | Partial templates (see [[Block Templates]])                                                                                       |
-| ( ) (parenthesis) | `{{wikilink (formatdate today)}}}`     | Nested Helper Functions (see [[Built-In Helper Functions]])                                                                       |
-| `~` (tilde)       | `{{~FilenameText}}`                    | External Whitespace Trimming (see [[Custom Field Formatting#Handlebars Whitespace Formatting\|Handlebars Whitespace Formatting]]) |
-|                   |                                        |                                                                                                                                   |
+| Character | Example | What It Triggers |
+|---|---|---|
+| ` ` (space) | `{{wikilink today}}` | [[Helper Functions Overview\|Helper function]] call |
+| `\|` (pipe) | `{{Author\|text\|Who is the Author?}}` | Inline [[Prompting\|prompting syntax]] |
+| `!` (bang) | `{{! this is a comment}}` | [[Template Comments\|Comment]] – entire expression is ignored |
+| `.` (period) | `{{Meals.Dinner}}` | Hierarchical JSON data path |
+| `<` (less than) | `{{< PartialTemplate.md}}` | [[Block Templates\|Partial / block template]] insertion |
+| `( )` (parentheses) | `{{wikilink (formatdate today)}}` | [[Using Nested Helper Functions\|Nested helper]] evaluation |
+| `~` (tilde) | `{{~FilenameText}}` | [[Whitespace Control\|Whitespace trimming]] |
 
+If you need a field name that resembles any of these patterns, restructure the name. For example, use `{{DinnerMeal}}` instead of attempting `{{Dinner.Meal}}`.
+
+## Display Labels in the Prompting UI
+When Z2K Templates prompts a user for a field value, it converts the field name into a human-readable label (unless a specific [[field-info prompt|prompt]] has been specified). The conversion logic splits camelCase and PascalCase into separate words with spaces:
+
+| Field Name   | Display Label |
+| ------------ | ------------- |
+| `BookTitle`  | Book Title    |
+| `parseXML`   | Parse XML     |
+| `fieldName`  | Field Name    |
+| `HTTPServer` | HTTP Server   |
+| `sourceText` | Source Text   |
+
+The algorithm:
+- Capitalizes the first letter
+- Inserts a space before each uppercase letter that follows a lowercase letter or digit (`parseXML` → `Parse XML`)
+- Inserts a space between consecutive uppercase letters when followed by a lowercase letter (`HTTPServer` → `HTTP Server`)
+
+This means well-formed camelCase and PascalCase names produce clean, readable prompts with no extra configuration. Irregular casing (e.g., `BOOKTITLE`) produces less readable labels (`BOOKTITLE` stays as-is) thus, another reason to follow the convention.
+
+> [!INFO]
+> You can override the display label entirely using the [[field-info prompt|prompt]] parameter of `{{field-info}}`. For example, `{{field-info BookTitle prompt="What is the book's title?"}}` replaces the auto-generated label with your custom text.
+
+> [!DANGER] Documentation Notes
+> - The `formatFieldName` function is defined in `main.tsx` (~line 3895). Verify the algorithm description stays accurate if the implementation changes.
+> - The Special Field Characters table should stay synchronized with [[Field Syntax]] and any future parser changes.
+> - The Naming Fields page in section 5 ([[Template Fields]]) links here via `[[Naming Fields]]`. Ensure both pages stay consistent – this page is the canonical reference for field naming; the section 5 page covers field syntax more broadly.

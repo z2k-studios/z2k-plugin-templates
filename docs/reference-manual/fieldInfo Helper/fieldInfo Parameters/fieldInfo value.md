@@ -4,64 +4,164 @@ doc_state: initial_ai_draft
 title: fieldInfo value Parameter
 sidebar_label: value
 aliases:
-- value
-- fieldInfo value Parameter
+  - value
+  - fieldInfo value Parameter
+  - computed fields
 ---
+# field-info value
+The `value` parameter assigns a computed value to a field, bypassing user prompting. Rather than asking the user to fill in the field, you define what it *is* — a literal, an expression, or a reference to another field — and the engine resolves it automatically at render time.
 
+When `value` is set, the field behaves like a built-in field: it evaluates, contributes its value to the template context, and never appears in the prompting interface.
 
-# fieldInfo value
-The optional `value` parameter in the [[reference-manual/fieldInfo Helper/fieldInfo Helper]] allows you to set a value to a field within the template code. This essentially bypasses the prompting of the user for this field. 
-
-This is an advanced feature that is particularly useful for `{{fields}}` in [[Template Folder Hierarchies]] or with [[Custom Helper Functions]].
+## Contents
+- [[#Syntax]]
+- [[#Accepted Values]]
+- [[#Automatic no-prompt]]
+- [[#Dependency Tracking]]
+- [[#Resolution Priority]]
+- [[#Use Cases]]
+- [[#Examples]]
 
 ## Syntax
-The `value` parameter must be prefaced with the `value=` keyword assignment, i.e. it is a [[fieldInfo Syntax#Named Parameters|Named Parameter]]. For example:
+`value` is a [[fieldInfo Syntax#Named Parameters|Named Parameter]] — it cannot be specified positionally. It appears after the field name and any positional parameters:
 
-```md title="Sample value parameter"
-{{fieldInfo TOE type="number" value=42 directives="no-prompt"}}
-{{fieldInfo TOE_Author type="text" value="Douglas Adams"}}
+```handlebars
+{{fieldInfo fieldName value=<expression>}}
+```
+
+All of the following are valid:
+```handlebars
+{{fieldInfo Status value="Draft"}}
+{{fieldInfo Version value=1}}
+{{fieldInfo InOneWeek value=(format-date "YYYY-MM-DD" (date-add 7 now))}}
+{{fieldInfo FullName value="{{firstName}} {{lastName}}"}}
 ```
 
 ## Accepted Values
-The `value` value accepts quoted strings, unquoted numbers, and boolean keywords (`true` and `false`).  They will not accept `arr` arrays or date/datetimes (which should be provided has just strings). 
+The `value` parameter accepts:
+- **Quoted strings** — `value="Draft"` or `value="https://example.com/{{ISBN}}"`
+- **Unquoted numbers** — `value=42`, `value=3.14`
+- **Boolean keywords** — `value=true`, `value=false`
+- **Field references** — `value=Author` (resolves to whatever `Author` currently contains)
+- **Subexpressions** — `value=(helperName arg1 arg2)` — any helper call, including nested ones such as `value=(format-date "YYYY-MM-DD" (date-add 7 now))`
 
-## Default value Value
-If omitted, the default `value` (ahem) value is an empty string.
+Arrays are not a native literal type, but `value=(arr "a" "b" "c")` works — the [[arr]] helper returns a real array that is stored and passed through the value pipeline intact.
 
-## Embedded Fields
-Please note that the `value` parameter could allow `{{fields}}` in it - but this has not been tested. Let us know how it goes!
+## Default Value
+If `value` is omitted, the field has no computed value and behaves normally — the user is prompted as usual.
 
-## Why Use the Value Parameter?
-At first glance, it seems pretty ridiculous to be able to specify a value for a field inside a template field. If you know the value, then why not just use it instead of making it a field?
+## Automatic no-prompt
+Setting `value` automatically applies the [[field-info directives#no-prompt|no-prompt]] directive. You do not need to write `directives="no-prompt"` explicitly — it is added by the engine and specifying it yourself is redundant (though harmless).
 
-Most of the scenarios are fairly advanced templates work, but they do lead to some interesting applications. Here are some class of examples:
+If you need the field to remain visible in the prompting interface despite having a `value` expression, use `directives="yes-prompt"` to override the implicit suppression. In that case, `value` supplies the pre-filled suggestion rather than computing the final value silently.
 
-# Example: Formatting a Field with Additional Text
-You can use the `value` parameter to make alternative versions of the field with additional text. 
+## field-output and value
+The `value` parameter is supported on [[field-output Helper Variation|field-output]] (and its alias `fo`) — all four helpers (`field-info`, `field-output`, `fi`, `fo`) pass through the same parameter extraction pipeline. A `value` on `field-output` assigns the computed value and immediately outputs it, rather than simply reading whatever the field currently holds.
 
-For example:
-```md title="Book Template.md"
-{{fieldInfo ISBN-URL value="https://isbnsearch.org/isbn/{{ISBN}}"}}
+## Dependency Tracking
+If the `value` expression references another field, the engine tracks that field as a dependency and defers computation until the dependency is available:
 
-# Links to More Information
-- Book URL :: {{url BookURL}}
-- Author URL :: {{url AuthorURL "{{Author}}"}}
-- ISBN URL :: {{url ISBN-URL "{{ISBN}}"}}
+```handlebars
+{{field-info AuthorURL value="https://author-db.com/{{Author}}"}}
 ```
 
+If `Author` is not yet resolved when `AuthorURL` is first encountered, the computation is deferred. Once `Author` resolves — from user input, another `value=`, through [[Finalization|finalization]],  or an external data source — `AuthorURL` is computed automatically. If `Author` is never provided, `AuthorURL` remains empty.
 
-### Example: Controlling Output Based on Another Field
-Consider this template
+This means you can safely reference fields defined elsewhere in the template or in higher-priority sources without worrying about declaration order.
+
+## Resolution Priority
+When multiple [[Field Data Sources]] compete to fill a field, `value` sits in the middle — it wins over suggestions and fallbacks, but loses to user input and external data. If the field has already been filled before `value` is evaluated, the computed expression is skipped entirely.
+
+Priority order (highest to lowest):
+1. User input (explicitly entered via the prompting interface)
+2. External data (JSON package, URI, or Command Queue)
+3. `value` expression — which one applies depends on source priority (see below)
+4. `suggest` pre-fill
+5. `fallback`
+
+When `value` is declared at multiple levels — for example, in the global block and also in the main template — the most specific source wins. The [[Global Block and field-info#field-info Resolution Order|field-info resolution order]] determines which `value` expression is used:
+
+`global block` < `system block` < `block template` < `main template`
+
+So a main template's `value` overrides a system block's `value`, which overrides the global block's `value`. Only one `value` expression ever reaches the resolution step — the one from the highest-priority source that declared it.
+
+## Use Cases
+
+### Static Literal Value
+You can use the `value` parameter to define a static field that always has a specific value unless it is overridden. For instance, you can default a field `{{Status}}` to always have the value of "Draft" with the below expression:
+
+```handlebars
+{{field-info Status value="Draft"}}
+```
+
+If this is declared in a [[Global Block]] or [[Intro to System Blocks|System Block]], you can add it to the YAML frontmatter as a property:
+```yaml
+status: "{{Status}}"
+```
+
+Then, any template can override that with a new value that is more appropriate for that template:
+
+```md file="Resolution Template.md"
+{{field-info Status value="Resolved"}}
+```
+
+### Computed Fields
+The most common use: define a field whose value is always computed from an expression. The field behaves like an implicit built-in — available wherever the field name appears, without user intervention:
+
+```handlebars
+{{field-info InOneWeek value=(format-date "YYYY-MM-DD" (date-add 7 now))}}
+```
+
+Note that the resolution of the value occurs at the point of [[Instantiation]] in this instance, given that all dependent fields and helpers (e.g. `now`) are known at that time. 
+
+When declared in the [[Global Block]], `{{InOneWeek}}` becomes available in every template across the vault. See [[Global Block and Field Values]] for a detailed discussion of this pattern.
+
+### Readability: Aliasing Complex Expressions
+Give a complex expression a short, readable name. Instead of repeating `{{firstName}} {{lastName}}` throughout a template, define it once:
+
+```handlebars
+{{field-info FullName value="{{firstName}} {{lastName}}"}}
+
+# {{FullName}}
+By {{FullName}}
+```
+
+The expression evaluates fresh each time the field is rendered. In this instance, if either of the fields `{{firstName}}` or `{{lastName}}` are not known during [[Instantiation]], then the `{{field-info}}` entry will remain in the [[WIP Stage|WIP Content File]] until [[Finalization]]. At that point, if either part is undefined, the output degrades gracefully to whatever is resolved.
+
+### Derived and Composed Fields
+Build new fields from existing ones — URLs, formatted strings, Markdown links:
+
+```handlebars
+{{field-info ISBN-URL value="https://isbnsearch.org/isbn/{{ISBN}}"}}
+{{field-info AuthorAtWikipedia value=(wikipedia Author Author)}}
+```
+
+`ISBN-URL` silently provides a fully-formed URL wherever it's referenced. `AuthorAtWikipedia` generates a Markdown link to a Wikipedia search using whatever `Author` resolves to — or is empty if `Author` is not defined.
+
+### Hierarchical Value Injection
+[[Intro to System Blocks|System blocks]] can use `value` to inject folder-specific values into fields, making them available transparently to all templates in that folder's hierarchy.
+
+A system block in a "Client Work" folder might declare:
+
+```handlebars
+{{field-info Project value="Client Work"}}
+{{field-info BillingRate value=150}}
+```
+
+Any template instantiated under that folder receives `{{Project}}` and `{{BillingRate}}` without prompting. Templates deeper in the hierarchy can still override these by declaring their own `{{field-info Project}}` — the most specific declaration wins. 
+
+For more examples with System Blocks, see [[Using System Blocks and field-info]]. See the page [[Global Block and Field Values]] for the vault-wide equivalent using the global block.
+
+### Redefining Built-In Fields
+`value` can override [[Built-In Fields|built-in fields]] entirely. The built-in's default formula is replaced at the priority level of the declaring source. Declared in the global block, the override applies vault-wide:
+
+```handlebars
+{{field-info today value=(format-date "MM/DD/YYYY")}}
+```
+
+This reformats `{{today}}` across all templates when included in the [[Global Block]]. See [[Global Block and Field Values#Example - Override Built-In Field|Override Built-In Field]] for a full discussion.
+
+> [!WARNING]
+> Overriding built-in fields is a vault-wide change. Any template expecting the standard format will silently receive the override. Document overrides clearly.
 
 
-==todo==
-
-Note that setting a value will effectively remove it from being prompted (i.e. impleses a noprompt)
-
-
-readability - assign a complicated expresion to a fieldname and then just reference that field name thereafter.
-
-if statements
-
-
-Use with hierarchical systems, where the value of a field is based in the context of where the card was created. Then the system blocks in those locations can define values for fields that global templates can pick up. 

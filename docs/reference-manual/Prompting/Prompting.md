@@ -3,20 +3,16 @@ sidebar_position: 1
 sidebar_folder_position: 100
 ---
 # Prompting
-
-## Overview
-In many circumstances, a template will be activated directly by the user by using a "New Card" command. In these instances, a template file can help specify how to prompt the user for data for each field in the template file.
+When you use a template to [[Instantiation|instantiate]] a new content file (and when later continuing to fill in [[Deferred Field Resolution|deferred fields]] during the [[WIP Stage]]), any fields that cannot be be resolved will be prompted for using an interactive [[Prompting Interface]]. This section steps through how this prompting interface works and how it can be customized. 
 
 ## Contents
 For more details, see:
-
-1. [[Prompting Interface]]
-2. [[Prompting Interface per Type]]
-3. [[Prompting Defaults]]
-4. [[Prompt Touching]]
-5. [[Fallback Behavior]]
-6. [[Built-in Helpers for Prompting]]
-
+1. [[Prompting Interface]] – The modal dialog where you fill in field values
+2. [[Prompting Interface per Type]] – What each field type looks like in the prompting modal
+3. [[Prompting Defaults]] – What happens when no `{{field-info}}` is specified
+4. [[Prompt Touching]] – How field interaction determines what values are committed
+5. [[Fallback Behavior]] – What happens to untouched fields during finalization
+6. [[Built-in Helpers for Prompting]] – How `{{field-info}}` parameters control the prompting interface
 
 ## See Also
 - [[Lifecycle of a Template]]

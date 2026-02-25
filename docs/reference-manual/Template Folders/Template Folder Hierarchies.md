@@ -1,5 +1,7 @@
 ---
 sidebar_position: 20
+aliases:
+  - hierarchies
 ---
 # Overview
 The simplest way to begin using Z2K Templates is to use a single [[Template Folders|templates folder]] located in the [[Templates Root Folder]] (typically the root of your vault). This [[What is a Template Folder#Design Approach Single Root Templates Folder|single Templates Folder design]] is simple and works well for vaults with a small number of Templates. All templates will be globally visible. 

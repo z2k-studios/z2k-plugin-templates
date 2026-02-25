@@ -24,14 +24,14 @@ When multiple layers of YAML text are included in your folder structure by havin
 
 ## Details
 Some notes on System Block files:
-- The System Blocks files should follow the same guidelines mentioned in [[Z2K Templates and YAML]]
+- The System Blocks files should follow the same guidelines mentioned in [[Z2K Templates and YAML]]. See also the discussion on [[Merging Multiple YAML Sources]].
 - The `.system-block.md` files are hidden as a result of having an initial dot in the filename. This was intentional in order to keep the user interface clean. To modify these files, you will need to use an external text editor - or temporarily rename them - to view and edit them inside Obsidian. 
 - Note: Comments in the YAML are routinely removed by Obsidian and other plugins. Do not assume any YAML comments will be persistent.
 
 ## What is the Difference between System Blocks and the Global Block?
 System Blocks and the [[Global Block]] are quite similar. Both insert blocks of YAML and context text into large swaths of files automatically. But they have different purposes:
 - **System Blocks** are hierarchical and embedded directly into the folder structure. This allows you to adjust the values of YAML settings and `{{fieldInfo}}` commands at the folder level. System Blocks are used by vault designers who have a larger system that they use. 
-- **The Global Block** is a single shot, completely global block of text that is inserted into every file created with the Template Plugin. It is not embedded at all into the vault; you specify it via the settings page. 
+- **The Global Block** is a single shot, completely global block of text that is inserted into every file created with the Template Plugin. It is not embedded at all into the vault; you specify it via the settings page via the [[Global Block Editor]].
 
 ## Examples
 For example, a system block might inject standardized metadata:

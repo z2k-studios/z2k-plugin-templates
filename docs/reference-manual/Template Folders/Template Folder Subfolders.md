@@ -19,10 +19,10 @@ This technique is particularly powerful when applied to a **root level Templates
 
 Thus, by using this technique, you can dispense with all of the "`Templates`" folders distributed throughout your vault and use just a single `Templates` folder in your [[Templates Root Folder]]. This makes the vault appear "cleaner", with templates fading away into the background of the vault structure. (See [[Hiding Template Folders]] for other solutions).
 
-## But It Comes With Downsides
+## … but It Comes With Downsides
 This approach is a great way to get rid of all those `Templates` folders embedded throughout your vault - but it comes at a price. 
 
-The primary downside is that you must manually remember to make sure your "shadow" folder structure inside your root level Templates Folder matches *exactly* the same structure of your vault. Renaming a vault folder can cause all of its templates files to no longer be discoverable.
+The primary downside is that you must manually remember to make sure your "shadow" folder structure inside your root level Templates Folder matches *exactly* the same structure of your vault. Keeping this "shadow" folder structure is a manual process. Renaming a vault folder can cause all of its templates files to no longer be discoverable.
 
 ### Example Hierarchy Using Templates SubFolders
 To demonstrate how a setup could exist with Template Folders Subfolders, take the [[Template Folder Hierarchies#Template Hierarchies Example|Template Hierarchies Example]], but move all of the templates into a single Templates root level folder, and use subfolders underneath it to add context sensitivity. 

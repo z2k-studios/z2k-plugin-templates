@@ -105,7 +105,7 @@ aliases:
 	- [[String Formatting Rules]]
 	- [[Prompting|Template Fields and Prompting Commands]]
 
-9. [[Prompting]] - How to customize the prompting for data for a field  
+9. [[Prompting]] - How to customize the prompting for data for a field
 	- [[Prompting Interface]]
 	- [[Prompting Interface per Type]]
 	- [[Prompting Defaults]]
@@ -173,11 +173,15 @@ aliases:
     - [[Block Template Basics]]  
     - [[Block Template Parameters]]  
 
-15. [[Settings Page]] - Details on the Settings Page for the Z2K Templates Plugin  
+15. [[Settings Page]] - Details on the Settings Page for the Z2K Templates Plugin
 	- [[General Settings]]
+	- [[Command Queue Settings]]
+	- [[Error Logging Settings]]
 	- [[Quick Command Settings]]
-	- [[Code Block Settings]]
-	- [[Global Block Settings]]
+	- [[Advanced Settings]]
+		- [[File Extension Settings]]
+		- [[Global Block Settings]]
+		- [[Custom Helper Settings]]
 	
 ### Advanced 
 
@@ -192,15 +196,21 @@ aliases:
 	- [[Editing .template and .block Files]] - how to edit template files after they have been converted to custom file extensions
 	- [[File Extension Process Guide]] - Our recommendations for using these custom file extensions
 
-17. [[System Block Templates]]
+17. [[System Blocks]]
 	- [[Intro to System Blocks]]
 	- [[Using System Blocks and YAML]]
-	- [[Using System Blocks and fieldInfo]]
-	-  [[Using System Blocks and Markdown]]
+	- [[Using System Blocks and field-info]]
+	- [[Using System Blocks and Markdown]]
 
+18. [[Global Block]]
+	- [[Global Block Overview]]
+	- [[Global Block and Markdown]]
+	- [[Global Block and field-info]]
+	- [[Global Block and Field Values]]
+	- [[Global Block and YAML]]
 
-18. [[Z2K Templates and YAML|YAML Integration]] 
-	- [[Using Fields Inside YAML Metadata]] 
+19. [[Z2K Templates and YAML|YAML Integration]]
+	- [[Using Fields Inside YAML Metadata]]
 		- How To Guide: [[How to Use Z2K Fields Inside YAML Metadata]]
 	- [[Using YAML Metadata as Fields]]
 	- [[YAML and Block Templates]]
@@ -215,19 +225,19 @@ aliases:
 	    - author?
 	    - Version?
 
-19. [[URI, JSON, Command Queues]] - Triggering template fields externally through URI and/or passing JSON packages 
+20. [[URI, JSON, Command Queues]] - Triggering template fields externally through URI and/or passing JSON packages
 	- [[URI Actions]]
 	- [[JSON Packages]]
 	- [[Command Queues]]
-	
-20. [[Z2K System Features|Z2K System Features]] - Additional features specific to the larger Z2K System  
 
-21. [[Debug and Error Handling]]  
+21. [[Z2K System Features|Z2K System Features]] - Additional features specific to the larger Z2K System
+
+22. [[Debug and Error Handling]]
 
 
 ### Misc
 
-22. [[Appendix]]  
+23. [[Appendix]]
     - Full Variable & Helper Reference (alphabetical)  
     - [[Glossary]]
     - [[Roadmap and Extensibility]]  

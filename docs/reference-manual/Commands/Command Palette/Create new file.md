@@ -30,7 +30,7 @@ When you run this command:
 *(Screenshot: Template selection modal)*
 
 ## Why Ask for Destination First Then Template?
-Asking for the destination before the template points to a fundamental design decision for Z2K Templates. The destination folder is more than just a folder to receive a file, but points to the [[Destination Context|context]] of the content you wish to create. Then, [[Template Folder Hierarchies|based on that content]], the plugin will present the available set of templates that are relevant to that context using [[Template Folder Hierarchies]]. Specifically, templates in [[Template Folders]] along the path from the destination to the [[Template Folders#Template Root Folder|templates root folder]] appear - see [[Template Discovery]] for the full algorithm.
+Asking for the destination before the template points to a fundamental design decision for Z2K Templates. The destination folder is more than just a folder to receive a file, but points to the [[Destination Context|context]] of the content you wish to create. Then, [[Template Folder Hierarchies|based on that content]], the plugin will present the available set of templates that are relevant to that context using [[Template Folder Hierarchies]]. Specifically, templates in [[Template Folders]] along the path from the destination to the [[Templates Root Folder]] appear - see [[Template Discovery]] for the full algorithm.
 
 ## Example Workflow
 Here is a typical way to create a new file from a template

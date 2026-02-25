@@ -1,64 +1,16 @@
 ---
 sidebar_position: 80
 aliases:
-- custom helpers
 - custom formatting functions
-- user defined helpers
-- custom helper functions
+- custom helpers
 ---
 # Writing Custom Formatting Functions
-When Z2K Templates' built-in helpers don't meet your needs, you can write your own helper functions in JavaScript.
-## Contents
-- [[#Enabling Custom Helpers]]
-- [[#The registerHelper Function]]
-- [[#Available Globals]]
-- [[#Writing Your First Helper]]
-- [[#Working with Parameters]]
-- [[#Accessing Obsidian APIs]]
-- [[#Error Handling]]
-- [[#Best Practices]]
-- [[#Example Helpers]]
+The most common reason to write a [[User Defined Helper Functions|custom helper]] is to handle a formatting transformation that Z2K Templates' built-in [[Formatting Functions]] don't cover. A custom formatting helper takes a value, transforms it, and returns the result.
 
-## Enabling Custom Helpers
-Custom helpers are disabled by default for safety – they execute arbitrary JavaScript code with full access to your vault.
+For complete documentation — including setup, available globals, Obsidian API access, error handling, and best practices — see [[User Defined Helper Functions]].
 
-To enable:
-
-1. Open **Settings → Z2K Templates**
-2. Find the **Custom Helpers** toggle
-3. Enable it (you'll see a security warning)
-4. Click **Edit Custom Helpers** to open the code editor
-
-> [!WARNING]
-> Custom helpers execute arbitrary JavaScript with full access to your vault, files, and the Obsidian API. Only enable this if you wrote the helper code yourself or fully trust its source.
-
-## The registerHelper Function
-Custom helpers are registered using the `registerHelper` function:
-
-```javascript
-registerHelper('helperName', (arg1, arg2, ...) => {
-    // Your code here
-    return result;
-});
-```
-
-Once registered, use the helper in templates like any built-in helper:
-
-```handlebars
-{{helperName argument1 argument2}}
-```
-
-## Available Globals
-Inside the custom helpers editor, these globals are available:
-
-| Global           | Description                                                                 |
-| ---------------- | --------------------------------------------------------------------------- |
-| `moment`         | Moment.js library for date manipulation                                     |
-| `Handlebars`     | The Handlebars instance (advanced usage)                                    |
-| `registerHelper` | Function to register your custom helpers                                    |
-
-## Writing Your First Helper
-A simple helper that transforms a value:
+## A Simple Formatter
+A custom formatting helper takes a value and returns a transformed string:
 
 ```javascript
 registerHelper('shout', (value) => {
@@ -66,17 +18,15 @@ registerHelper('shout', (value) => {
 });
 ```
 
-Usage in templates:
+Usage in a template:
 
 ```handlebars
-{{shout "hello my beautiful world"}}
+{{shout title}}
 ```
 
-Output: `HELLO MY BEAUTIFUL WORLD!`
+Output: `MY NOTE TITLE!`
 
-## Working with Parameters
-
-### Single Parameter
+## Single Parameter
 Most formatting helpers take one value and transform it:
 
 ```javascript
@@ -85,8 +35,10 @@ registerHelper('reverse', (value) => {
 });
 ```
 
-### Multiple Parameters
-Helpers can accept multiple arguments:
+Usage: `{{reverse "hello"}}` → `olleh`
+
+## Multiple Parameters
+Helpers can accept additional arguments to control behavior:
 
 ```javascript
 registerHelper('repeat', (value, times) => {
@@ -94,201 +46,6 @@ registerHelper('repeat', (value, times) => {
 });
 ```
 
-Usage: `{{repeat "a rose is " 4}}` → `a rose is a rose is a rose is a rose is `
+Usage: `{{repeat "echo " 3}}` → `echo echo echo `
 
-### Optional Parameters with Defaults
-```javascript
-registerHelper('truncate', (value, length, ellipsis) => {
-    const str = String(value);
-    const maxLen = Number(length) || 50;
-    const suffix = ellipsis !== undefined ? String(ellipsis) : '...';
-
-    if (str.length <= maxLen) return str;
-    return str.substring(0, maxLen) + suffix;
-});
-```
-
-Usage:
-- `{{truncate description 100}}` → First 100 chars + "..."
-- `{{truncate description 100 " [more]"}}` → First 100 chars + " [more]"
-
-### The Options Hash
-Handlebars passes an options object as the last argument. For simple helpers, you can ignore it, but it's there if needed:
-
-```javascript
-registerHelper('debug', (value, options) => {
-    console.log('Value:', value);
-    console.log('Options:', options);
-    return String(value);
-});
-```
-
-## Accessing Obsidian APIs
-Custom helpers can interact with your vault:
-
-### Get Recent Files
-```javascript
-registerHelper('recentFiles', (count) => {
-    const limit = Number(count) || 5;
-    return app.vault.getMarkdownFiles()
-        .sort((a, b) => b.stat.mtime - a.stat.mtime)
-        .slice(0, limit)
-        .map(f => f.basename)
-        .join(', ');
-});
-```
-
-Usage: `{{recentFiles 3}}` → `Note A, Note B, Note C`
-
-### Get File Metadata
-```javascript
-registerHelper('fileTag', (filename, tagIndex) => {
-    const file = app.vault.getAbstractFileByPath(filename + '.md');
-    if (!file) return '';
-
-    const cache = app.metadataCache.getFileCache(file);
-    const tags = cache?.frontmatter?.tags || [];
-    const idx = Number(tagIndex) || 0;
-
-    return tags[idx] || '';
-});
-```
-
-### Show a Notice
-```javascript
-registerHelper('notify', (message) => {
-    new obsidian.Notice(String(message));
-    return ''; // Silent helper
-});
-```
-
-## Error Handling
-Z2K Templates wraps all custom helpers with error handling. If your helper throws an error:
-
-1. The error is logged to the console
-2. The error is recorded in the [[Error Handling|error log]]
-3. The output is replaced with `[Error in helperName]`
-
-Your template continues processing rather than failing entirely.
-
-### Defensive Coding
-Still, write defensively to provide better user experience:
-
-```javascript
-registerHelper('safeDivide', (a, b) => {
-    const numA = Number(a);
-    const numB = Number(b);
-
-    if (isNaN(numA) || isNaN(numB)) {
-        return '[Invalid numbers]';
-    }
-    if (numB === 0) {
-        return '[Division by zero]';
-    }
-    return numA / numB;
-});
-```
-
-## Best Practices
-
-### Date Handling
-Dates in Z2K Templates are stored as strings. When working with dates:
-
-- Use `{{now}}` as your source – it's a fully qualified, unambiguous timestamp
-- Parse date strings carefully with Moment.js
-- Consider timezone implications
-
-```javascript
-registerHelper('daysUntil', (dateString) => {
-    const target = moment(dateString);
-    const now = moment();
-
-    if (!target.isValid()) {
-        return '[Invalid date]';
-    }
-
-    const days = target.diff(now, 'days');
-    if (days < 0) return `${Math.abs(days)} days ago`;
-    if (days === 0) return 'Today';
-    if (days === 1) return 'Tomorrow';
-    return `In ${days} days`;
-});
-```
-
-### Return Types
-Helpers should return strings (or values that convert cleanly to strings). Returning objects or undefined may produce unexpected output.
-
-### Naming Conventions
-Follow Z2K's [[Naming Helpers|helper naming conventions]]:
-- Use lowercase with hyphens: `my-helper`
-- Be descriptive: `format-phone-number` not `fpn`
-- Avoid conflicts with built-in helpers
-
-### Performance
-Helpers run during template rendering. Avoid:
-- Expensive file system operations
-- Network requests (templates should render quickly)
-- Infinite loops
-
-## Example Helpers
-
-### Title Case
-```javascript
-registerHelper('titleCase', (value) => {
-    return String(value)
-        .toLowerCase()
-        .replace(/\b\w/g, char => char.toUpperCase());
-});
-```
-
-### Word Count
-```javascript
-registerHelper('wordCount', (value) => {
-    const text = String(value).trim();
-    if (!text) return 0;
-    return text.split(/\s+/).length;
-});
-```
-
-### Random Choice
-```javascript
-registerHelper('randomChoice', (...args) => {
-    // Last arg is Handlebars options, ignore it
-    const choices = args.slice(0, -1);
-    if (choices.length === 0) return '';
-    return choices[Math.floor(Math.random() * choices.length)];
-});
-```
-
-Usage: `{{randomChoice "Option A" "Option B" "Option C"}}`
-
-### Quote Block Formatter
-```javascript
-registerHelper('blockquote', (value) => {
-    return String(value)
-        .split('\n')
-        .map(line => '> ' + line)
-        .join('\n');
-});
-```
-
-### Link to Daily Note
-```javascript
-registerHelper('dailyLink', (offset) => {
-    const date = moment().add(Number(offset) || 0, 'days');
-    const formatted = date.format('YYYY-MM-DD');
-    return `[[${formatted}]]`;
-});
-```
-
-Usage:
-- `{{dailyLink}}` → `[[2025-01-14]]`
-- `{{dailyLink -1}}` → `[[2025-01-13]]`
-- `{{dailyLink 7}}` → `[[2025-01-21]]`
-
-> [!DANGER] Notes for Review
-> - Verify all example helpers work as documented – especially the Obsidian API examples.
-> - The `recentFiles` example uses `app.vault` directly – confirm this is the correct API.
-> - Test what happens when `registerHelper` is called with a name that conflicts with a built-in helper.
-> - Document whether helpers persist across sessions or need to be re-registered.
-> - "Custom helpers have full access to the Obsidian API and can perform any transformation you need" - is this true?!
+For more examples and full reference documentation, see [[User Defined Helper Functions]].

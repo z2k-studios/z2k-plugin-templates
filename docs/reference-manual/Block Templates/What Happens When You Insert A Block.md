@@ -38,7 +38,7 @@ Field values are collected from multiple sources, in this priority order (lowest
 
 1. **Built-in fields** - Date/time fields, etc.
 2. **Global Block** - Values from your global block settings ==Is this correct?==
-3. **System Blocks** - Values from [[System Block Templates]] ==Is this correct?==
+3. **System Blocks** - Values from [[System and Global Blocks]] ==Is this correct?==
 4. **Existing File YAML** - Values already in the target document's frontmatter
 5. **Field-info defaults** - Default values specified in the block template
 6. **Plugin built-ins** - Values like `sourceText`, `clipboard`

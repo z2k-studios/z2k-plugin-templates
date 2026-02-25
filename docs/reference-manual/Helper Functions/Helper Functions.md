@@ -15,3 +15,7 @@ For more information, please see:
 5. [[User Defined Helper Functions]] - How to build your own Helper functions
 6. [[Built-In Helper Functions]] - predefined Helper functions to help with common tasks
 
+## Related Information
+- [[Naming Helpers|Helper Naming Conventions]] - Naming conventions for built-in and user defined helper functions
+- [[Built-In Helper Functions]] - Predefined Helper Functions that ship with Z2K Templates
+

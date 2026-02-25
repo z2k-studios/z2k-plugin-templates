@@ -20,3 +20,7 @@ The following classes of Helper Functions are included with the Z2K Templates pl
 - [[Misc Functions]] - Assortment of misc helpers
 - [[Handlebars Built-In Functions]] - Helpers that are provided by the underlying Handlebars.js library
 
+
+## Related Information
+- [[Naming Helpers|Helper Naming Conventions]] - Naming conventions for built-in helper functions
+

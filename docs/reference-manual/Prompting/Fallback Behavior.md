@@ -1,88 +1,99 @@
 ---
-sidebar_position: 68
+sidebar_position: 50
+aliases:
+- fallback behavior
+- fallback handling
+- fallback resolution
 ---
+# Fallback Behavior
+Fallback behavior determines what happens to a [[Template Fields|template field]] when no value is provided for it – specifically, when the user never [[Prompt Touching|touches]] the field in the [[Prompting Interface]] and then clicks **Submit and Finalize**.
 
-Fallback behavior determines what happens when a Template Field exists in a template but no data is provided for it during an update action.
+This matters because Z2K Templates supports [[Deferred Field Resolution]] – fields can remain unresolved across multiple editing sessions. At some point, though, the note gets [[Finalization|finalized]], and every remaining field needs a resolution strategy.
 
-Performed during the [[Finalization|Finalize]] step of the [[Lifecycle of a Template]]
+## Why Z2K Handles This Differently
+Classic [[Handlebars Support|Handlebars]] assumes all data is available at render time – a missing variable produces an empty string. Z2K Templates breaks this assumption for two reasons:
 
-Fallback behavior is different in Z2K than for classic Handlebars Field Replacement for a number of reasons:
-1. Some cards are repeatedly being operated on, with not all data known at once (e.g. Log Files that are updated throughout the day).
-2. Some cards will have data that is not known at creation (e.g. say, creating a card for a book, you will not know how you will rate it until you are finished)
+1. **Iterative workflows** – Some notes are built over time (e.g., daily logs updated throughout the day). Not all data is known at creation.
+2. **Deferred knowledge** – Some fields can't be answered yet (e.g., a book rating before you've finished reading).
 
-By default, if a field is not provided with data during a processing event, the field will remain in the file untouched. There are two ways this default handling can be overriden:
+By default, if a field has no value during a processing event, the field is **preserved as-is** in the output file – keeping the template syntax intact for later resolution.
 
-# Override - Default Answer
-If a field specifies a [[Prompting#^DefaultAnswer|Default Answer]], then that is a signal that unspecified fields should be filled in with that Default Answer upon use of the template file.
+## Order of Precedence
+When a field is finalized without a value, the plugin resolves it using the following order of precedence (highest to lowest):
 
-# Override - Default Fallback Behavior
+1. **`fallback=` parameter** on [[field-info Helper|{{field-info}}]] – If specified, this value is used. When multiple `{{field-info}}` declarations exist for the same field (across [[field-info Variations|variations]], [[Block Templates]], or [[Intro to System Blocks|System Blocks]]), the last `fallback` value wins.
 
-See [[YAML Configuration Properties]]
+2. **Finalize directive** on [[field-info Helper|{{field-info}}]] – If no `fallback` is specified, the plugin checks for a [[field-info directives|directive]]. The three finalize directives are mutually exclusive – only one can be active per field. If multiple are specified, the most recent one applies.
+   - `finalize-suggest` – uses the [[field-info suggest|suggest]] value as the fallback. If no suggest value exists, the field is cleared.
+   - `finalize-clear` – removes the field from the output (replaces with empty string)
+   - `finalize-preserve` – keeps the raw template syntax in the output
 
-If a template file contains in its YAML code includes the key `z2k_template_default_fallback_handling`, it will use the method specified in the key's value:
+3. **`z2k_template_default_fallback_handling` YAML property** – If neither a `fallback` value nor a finalize directive is present, the plugin checks the template's YAML frontmatter. See [[YAML Configuration Properties]] for details.
 
-| Key                                  | Key Value            | Fallback Behavior                                                                                |
-| ------------------------------------ | -------------------- | ------------------------------------------------------------------------------------------------ |
-| `z2k_template_default_fallback_handling` | `finalize-preserve`  | (default) If no value is provided for a field, the field will be preserved as-is in the resultant file. |
-| `z2k_template_default_fallback_handling` | `finalize-clear`     | If no value is provided for a field, it will clear the field from the resultant file.               |
-See [[YAML Configuration Properties]] for more details.
+| YAML Value | Behavior |
+| ---------- | -------- |
+| `finalize-preserve` | (default) Preserve the field as-is in the output |
+| `finalize-clear` | Clear the field from the output |
+| `finalize-suggest` | Use the field's suggest value; if none exists, clear the field |
 
-# Override - clear and preserve Helper functions
-If a field uses the [[Built-In Helper Functions|built-in helper functions]] `clear` or `preserve`, it will override the default behavior for that particular field, allowing for fine-grained control of fallback behavior. 
+4. **Default behavior** – If none of the above are configured, the field is **cleared** from the output.
 
-# Implementation Notes
+> [!NOTE]
+> The `fallback=` parameter takes precedence over *all* other mechanisms. If you set `fallback="N/A"`, the field will always resolve to "N/A" on finalization, regardless of directives or YAML settings.
 
-1. This will require potentially a branched copy of handlebars/mustache.js. Or you can preprocess the data and add a custom helper around every field that will do the preservation step.
-	1. Tip: Use https://jsfiddle.net/76484/bpoezqga/ to explore Handlebars implementation
-2. Other implementations that were considered:
-	2. Airship implements a [$def helper](https://jsfiddle.net/76484/bpoezqga/)
-	3. You can also register a [helper](https://jsfiddle.net/76484/bpoezqga/) to re-output the field: 
-3. Need documentation on what to do if both `clear` is used and a suggest value is used. 
+## Examples
 
-- Replacement Control Helpers:
-	- `{{xx FieldName}}` - says clear the field if it is not present 
-		- Property: If data for the field is not provided, do you a) leave the field intact, b) clear the field, c) insert the suggest value
-	- `{{xd FieldName||Suggest Value}}` - says to insert the field's Suggest Value
-	- OR 
-	- `{{preserve FieldName}}` - says to preserve this field if no value is provided
-	- `{{noPrompt Fieldname}}` - says to never prompt the user for this field
-		-  Property to say don't prompt the user for this field, just leave in the file? - Think Logs
+### Using a fallback value
+```md
+{{field-info status fallback="Draft"}}
+```
+If `status` is never touched, it resolves to "Draft" on finalization.
 
+### Using finalize-suggest
+```md
+{{field-info fileTitle suggest="{{BookTitle}} - {{BookAuthor}}" directives="finalize-suggest"}}
+```
+If the user never touches `fileTitle`, the resolved suggest value becomes the filename on finalization. This is especially useful for file titles that have a predictable pattern but should still be editable.
 
-By default a variable with no value returns an empty string. This can usually be configured in your Mustache library. The Ruby version of Mustache supports raising an exception in this situation, for instance.
+### Using finalize-preserve
+```md
+{{field-info notes directives="finalize-preserve"}}
+```
+If `notes` is never touched, the raw `{{notes}}` syntax remains in the finalized file – useful for fields you want to keep available even after finalization.
 
+### Using the YAML property
+```yaml
+---
+z2k_template_default_fallback_handling: finalize-clear
+---
+```
+All fields in this template without explicit fallback values or directives will be cleared on finalization.
 
-[https://stackoverflow.com/questions/8978779/how-can-i-plug-a-strategy-to-deal-with-missing-attributes-when-using-mustache-te](https://stackoverflow.com/questions/8978779/how-can-i-plug-a-strategy-to-deal-with-missing-attributes-when-using-mustache-te)
+### Combining approaches
+You can set a template-wide default via YAML and override it for specific fields:
+```yaml
+---
+z2k_template_default_fallback_handling: finalize-clear
+---
+```
 
+```md
+{{field-info importantNote directives="finalize-preserve"}}
+{{field-info status fallback="Pending"}}
+```
+Here, most unresolved fields are cleared – but `importantNote` is preserved, and `status` gets its explicit fallback value.
 
-https://stackoverflow.com/questions/17133367/finding-missing-variables-in-a-mustache-template
+## Connection to Prompt Touching
+Fallback behavior only applies to **untouched** fields. If a user [[Prompt Touching|touches]] a field (even to leave it empty), the entered value is written as-is. Fallback resolution is strictly for fields the user never interacted with.
 
-This way you can handle empty values so you still get ProductVersion:
+See [[Prompt Touching]] for details on how the system distinguishes "deliberately empty" from "not yet addressed."
 
-`Product Version={{#Version}}{{{Version}}}{{/Version}}{{^Version}}''{{/Version}}`
+## See Also
+- [[Prompt Touching]] – How touching determines whether fallback applies
+- [[field-info fallback|fallback Parameter]] – Setting per-field fallback values
+- [[field-info directives|directives Parameter]] – The `finalize-suggest`, `finalize-clear`, and `finalize-preserve` directives
+- [[YAML Configuration Properties]] – Template-wide fallback settings
+- [[Deferred Field Resolution]] – The broader concept of iterative field resolution
 
-Where `{{^Version}}{{/Version}}` is called an inverted section and will be rendered if the value of that section's tag is null, undefined, false, falsy or an empty list. As it is explained in the doc.
-
-
-
-
-
-
-
-
-
-
-==Clean up resolution of conflicts between fallback and fallback directives and yaml setting==
-Please note that the `fallback` parameter overrules both the `finalize-clear` and `finalize-preserve` directives.
-
-Move the following to Fallback Behavior and ! include it here.
-
-Order of precedence:
-- Any `fallback` `{{fieldInfo}}` parameter takes highest precedence. If there are multiple `fallback` values specified for a field (across all [[fieldInfo Variations]]), then the latest fallback value is used.
-- If there is not a `fallback` value, then the plugin checks to see if a `finalize-xxx` [[fieldInfo directives|directive]] has been specified. If multiple have been specified, again, it uses the most recent.
-- If there is not a `fallback` nor a `finalize-xxx` directive, then the plugin will use the [[Fallback Handling YAML fields]] to determine the default fallback behavior.
-- If none of the above were found, then the field is cleared.
-
-
-Please see the [[Fallback Behavior]] page for more details. 
-
+> [!DANGER] Notes for Documentation Team
+> - Submit handling at `src/main.tsx` ~line 4249: untouched fields during finalization use `resolvedFallback` value, but skip `finalize-preserve` fields to let preservation logic handle them.
