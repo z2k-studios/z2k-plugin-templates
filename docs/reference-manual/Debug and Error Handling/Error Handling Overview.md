@@ -67,7 +67,7 @@ When a template field has no data provided for it, this is **not an error**. The
 ## Where Feature-Specific Errors Are Documented
 Most error behaviors are documented alongside the feature they belong to. Here's where to find them:
 - **Command queue failures and retries** – [[Retry and Error Handling]] covers retry configuration, failure classification, and the JSONL batch error pipeline
-- **Helper function errors** – [[Helper Functions Overview]] and [[User Defined Helper Functions]] describe what happens when a helper throws an error (including the `[Error in helperName]` inline output)
+- **Helper function errors** – [[Helper Functions Overview]] and [[Custom Helper Functions]] describe what happens when a helper throws an error (including the `[Error in helperName]` inline output)
 - **Fallback behavior** – [[Fallback Behavior]] explains what happens when a field has no value
 - **Template syntax** – [[Handlebars Support]] covers the template language and its constraints
 

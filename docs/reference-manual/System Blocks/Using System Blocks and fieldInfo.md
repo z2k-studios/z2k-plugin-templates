@@ -6,8 +6,9 @@ aliases:
 - Z2K System Block Templates and fieldInfo
 ---
 # Using System Blocks and fieldInfo
-The [[fieldInfo Helper]] Allows you to control how fields are prompted for and behave within [[Template Files]]. By moving your `{{fieldInfo}}` helper function calls into system blocks, you allow for frequently used fields to be configured across many templates, and even adapted based on which folders they are in. It's a powerful combination. 
+The [[fieldInfo Helper]] allows you to control how fields are prompted for and behave within [[Template Files]]. By moving your `{{fieldInfo}}` calls into system blocks, you configure fields across many templates at once — and adapt their behavior based on which folder they are in.
 
+The [[Global Block]] does this vault-wide. System blocks do it folder by folder — the same field can carry different values at different depths of your vault hierarchy. That scoped control is the key advantage system blocks offer over the global block.
 
 > [!NOTE] Intentional Collisions
 > Using System Blocks with fieldInfo will likely (and intentionally) cause metadata value collisions for fields. Collisions are by design made to result in useful resolution for hierarchical structures. Please see [[Field Data Sources#Field Metadata Resolution|Field Info Metadata Collision Resolution]] for more details.
@@ -77,3 +78,9 @@ When this template is instantiated into a new content file, it will correctly re
 - Data Domain: Information
 
 ```
+
+For the vault-wide equivalent of this pattern using the global block, see [[Global Block and Field Values]]. To create new fields that resolve silently without a system block, see [[Custom Built-In Fields]].
+
+> [!DANGER] NOTES
+> - **What happens in unaddressed folders**: In the example above, templates inside `Z2K/Thoughts/` have a system block but no `DataDomain` override. Verify whether they inherit from `my-vault/.system-block.md` (value: `"Unknown"`) or produce an empty field. Clarify the inheritance behavior and add a note if needed.
+> - **Page completeness**: This page covers two use cases. Consider whether additional use cases warrant documentation — e.g., using system blocks to set `type`, `options`, or other `fieldInfo` parameters (not just `value`) in a folder-scoped way.

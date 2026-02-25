@@ -22,6 +22,7 @@ The following types of built-in fields are available:
 
 Additional Information:
 - [[Modifying Built-In Field Behaviors]] - using `{{`[[reference-manual/fieldInfo Helper/fieldInfo Helper|fieldInfo]]`}}` to modify how built-in fields behave
+- [[Custom Built-In Fields]] - creating your own fields that resolve automatically, like built-ins
 
 
 # Built-In Field Naming Conventions

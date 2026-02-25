@@ -11,7 +11,7 @@ Here are the different ways in which [[Field Data Sources|Field Data]] can be fo
 1. **[[Default Formatting Rules|Default Formatting]]** – All data has a small amount of formatting applied automatically. This includes trimming behavior for text, default date formats, and character handling.
 2. **[[Native Handlebars Formatting|Handlebars Syntax Features]]** – Handlebars provides built-in formatting capabilities like [[Whitespace Control|whitespace control]] with tildes, [[Unescaped Expressions|raw output]] with triple-mustache, and [[Conditionals|conditional rendering]].
 3. **[[Formatting Functions|Z2K Helper Functions]]** – Z2K Templates ships with a library of helper functions for specific formatting tasks: `formatDate`, `formatNumber`, `formatString-*`, and more.
-4. **[[User Defined Helper Functions|Custom Helper Functions]]** – For the most advanced users, you can also provide custom helper function to do advanced formatting techniques. .
+4. **[[Custom Helper Functions]]** – For the most advanced users, you can also provide custom helper function to do advanced formatting techniques. .
 
 ## Where Data Comes From
 Formatting applies regardless of how data enters your template. Data sources include:

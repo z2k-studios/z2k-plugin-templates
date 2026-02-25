@@ -7,7 +7,7 @@ aliases:
 - user-defined helper settings
 ---
 # Custom Helper Settings
-Settings for writing and registering custom Handlebars helper functions in JavaScript. This is a very advanced feature, and one to be used with caution (see Warning below). For the full discussion of helper functions and how to design them, see [[User Defined Helper Functions]].
+Settings for writing and registering custom Handlebars helper functions in JavaScript. This is a very advanced feature, and one to be used with caution (see Warning below). For the full discussion of helper functions and how to design them, see [[Custom Helper Functions]].
 
 ## Contents
 For more information, please see:

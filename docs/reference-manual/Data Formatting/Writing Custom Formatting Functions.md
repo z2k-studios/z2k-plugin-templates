@@ -1,13 +1,12 @@
 ---
 sidebar_position: 80
 aliases:
-- custom formatting functions
-- custom helpers
+  - custom formatting functions
 ---
 # Writing Custom Formatting Functions
-The most common reason to write a [[User Defined Helper Functions|custom helper]] is to handle a formatting transformation that Z2K Templates' built-in [[Formatting Functions]] don't cover. A custom formatting helper takes a value, transforms it, and returns the result.
+The most common reason to write a [[Custom Helper Functions|custom helper]] is to handle a formatting transformation that Z2K Templates' built-in [[Formatting Functions]] don't cover. A custom formatting helper takes a value, transforms it, and returns the result.
 
-For complete documentation — including setup, available globals, Obsidian API access, error handling, and best practices — see [[User Defined Helper Functions]].
+For complete documentation — including setup, available globals, Obsidian API access, error handling, and best practices — see [[Custom Helper Functions]].
 
 ## A Simple Formatter
 A custom formatting helper takes a value and returns a transformed string:
@@ -48,4 +47,4 @@ registerHelper('repeat', (value, times) => {
 
 Usage: `{{repeat "echo " 3}}` → `echo echo echo `
 
-For more examples and full reference documentation, see [[User Defined Helper Functions]].
+For more examples and full reference documentation, see [[Custom Helper Functions]].

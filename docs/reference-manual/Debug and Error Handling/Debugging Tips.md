@@ -28,7 +28,7 @@ For advanced users, some detailed diagnostic information is only written to Obsi
 
 The console is particularly useful for:
 - Seeing the full stack trace of an error (even when the log level is not set to Debug)
-- Diagnosing custom [[User Defined Helper Functions|helper function]] errors – loading failures are reported here with the specific JavaScript error
+- Diagnosing [[Custom Helper Functions]] errors – loading failures are reported here with the specific JavaScript error
 - Checking for template parsing errors that the error dialog didn't fully explain
 
 > [!NOTE]
@@ -62,7 +62,7 @@ The table below lists the error messages you're most likely to encounter and wha
 | "Cannot be just dots" | Inline (form field) | A title field contains only dots (e.g., `...`) | Enter a meaningful title                                                                                 |
 | "Cannot end with a space or dot" | Inline (form field) | A title field ends with a trailing space or period | Remove the trailing space or dot                                                                         |
 | "Circular dependency detected: a -> b -> a" | Error dialog | Computed fields reference each other in a loop | Break the cycle by removing one of the circular `value=` references in your `{{fieldInfo}}` declarations |
-| `[Error in helperName]` | Template output | A [[User Defined Helper Functions\|custom helper function]] threw an error during execution | Check the developer console for the specific JavaScript error, then fix the helper code                  |
+| `[Error in helperName]` | Template output | A [[Custom Helper Functions\|custom helper function]] threw an error during execution | Check the developer console for the specific JavaScript error, then fix the helper code                  |
 | "Failed to load custom helpers" | Notice popup | The custom helpers JavaScript could not be evaluated | Open the developer console for the specific error, then edit your helpers in [[Settings Page\|Settings]] |
 
 > [!DANGER] Internal Notes

@@ -22,7 +22,7 @@ A block helper wraps content between an opening `{{#helperName}}` and closing `{
 The helper can render the content, modify it, repeat it, or skip it entirely. This is the mechanism behind Handlebars' built-in [[Conditionals]] (`{{#if}}`) and [[Iterators]] (`{{#each}}`).
 
 ## Defining Custom Block Helpers
-Custom block helpers are defined through Z2K Templates' [[User Defined Helper Functions|user-defined helper]] system. In your helper code, the block content is accessible via `options.fn(this)` and the inverse (`{{else}}`) via `options.inverse(this)`:
+Custom block helpers are defined through Z2K Templates' [[Custom Helper Functions]] system. In your helper code, the block content is accessible via `options.fn(this)` and the inverse (`{{else}}`) via `options.inverse(this)`:
 
 ```js
 registerHelper('spoiler', function(options) {
@@ -81,5 +81,5 @@ Like [[Conditionals]] and [[Iterators]], block helpers are block statements – 
 > [!DANGER] Notes for Review
 > - **Deferred field bug**: Custom block helpers are affected by the same [[Conditionals#Known Issue|block statement preservation bug]] as `{{#if}}` and `{{#each}}`. Block statements referencing unresolved fields are not preserved — they evaluate immediately with `undefined` values. See that page for root cause and desired behavior options.
 > - **Restricted mode correction**: The previous version of this page incorrectly stated that block helpers don't work in restricted mode. Code analysis (tracing `reducedRenderContent` → `Handlebars.compile` path) shows they DO work — the code comment at line 366 ("blocks not supported") refers to block templates (partials), not block helpers. ==Needs testing== to confirm empirically that the `{{#if}}` in prompt parameter example actually works as described.
-> - User-defined block helpers are registered via the same `registerHelper` mechanism as inline helpers (lines 801-820 of `z2k-plugin-templates/main.tsx`). The distinction is purely in how the helper function uses `options.fn()`.
+> - Custom block helpers are registered via the same `registerHelper` mechanism as inline helpers (lines 801-820 of `z2k-plugin-templates/main.tsx`). The distinction is purely in how the helper function uses `options.fn()`.
 > - It's unclear whether Z2K Templates' built-in helpers (like `fieldInfo`) can be used as block helpers. This should be tested and documented if relevant.

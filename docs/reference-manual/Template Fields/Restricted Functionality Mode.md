@@ -30,7 +30,7 @@ In restricted functionality mode, the following features **work normally**:
 
 - **Field references** — `{{fieldName}}` resolves to its value from the current context
 - **[[Built-In Fields]]** — `{{date}}`, `{{time}}`, `{{year}}`, etc.
-- **Inline [[Helper Functions]]** — `{{helperName arg1 arg2}}` calls work, including both [[Built-In Helper Functions]] and [[User Defined Helper Functions|user-defined helpers]]
+- **Inline [[Helper Functions]]** — `{{helperName arg1 arg2}}` calls work, including both [[Built-In Helper Functions]] and [[Custom Helper Functions]]
 - **Nested helpers** — `{{outer (inner arg)}}` subexpressions work
 - **Handlebars built-in block helpers** — `{{#if}}`, `{{#each}}`, `{{#unless}}`, `{{#with}}` work because they are native to Handlebars (see [[#Block Helpers vs Block Templates]])
 - **Custom [[Block Helpers]]** — user-registered block helpers also work, as user helpers are passed into the rendering context

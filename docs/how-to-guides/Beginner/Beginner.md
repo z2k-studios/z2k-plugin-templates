@@ -19,7 +19,7 @@ Just starting out and need some tutorials on how to use [[Z2K Templates]]? These
 	- [[Insert Block Template Using Selected Text#Example Block Template|insert block template from selection]]
 	- Use the insert block for selected text function
 	- Make a variant without selected text 
-	- Add a [[User Defined Helper Functions|Custom Helper Functions]] to format a string to have every line have a preceeding "> " to it from the selection
+	- Add a [[Custom Helper Functions]] to format a string to have every line have a preceeding "> " to it from the selection
 	- Step through the process from simple (just insert block template) to moderate (has the selected text) to advanced (custom text formatting function)
 - How to Create a New File from a Selected Block of Text and Template - introduces SystemData
 - How to Use Partial Templates for Block Level Templates

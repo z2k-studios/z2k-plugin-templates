@@ -20,7 +20,7 @@ When `value` is set, the field behaves like a built-in field: it evaluates, cont
 - [[#Dependency Tracking]]
 - [[#Resolution Priority]]
 - [[#Use Cases]]
-- [[#Examples]]
+- [[#Closing Comments]]
 
 ## Syntax
 `value` is a [[fieldInfo Syntax#Named Parameters|Named Parameter]] — it cannot be specified positionally. It appears after the field name and any positional parameters:
@@ -47,6 +47,9 @@ The `value` parameter accepts:
 
 Arrays are not a native literal type, but `value=(arr "a" "b" "c")` works — the [[arr]] helper returns a real array that is stored and passed through the value pipeline intact.
 
+> [!NOTE] Restricted Functionality Mode
+> The `value=` expression is evaluated using [[Restricted Functionality Mode]] — a simplified rendering path. Field references, built-in fields, inline helpers, nested subexpressions, and Handlebars block helpers (`{{#if}}`, `{{#each}}`) all work normally. What does not work: [[Block Templates]] (partials) and `{{fieldInfo}}` declarations embedded inside the expression (they are silently ignored). If your `value=` expression calls another helper that internally tries to use partials, it will fail. See [[Restricted Functionality Mode]] for the complete supported/unsupported feature list.
+
 ## Default Value
 If `value` is omitted, the field has no computed value and behaves normally — the user is prompted as usual.
 
@@ -54,9 +57,6 @@ If `value` is omitted, the field has no computed value and behaves normally — 
 Setting `value` automatically applies the [[fieldInfo directives#no-prompt|no-prompt]] directive. You do not need to write `directives="no-prompt"` explicitly — it is added by the engine and specifying it yourself is redundant (though harmless).
 
 If you need the field to remain visible in the prompting interface despite having a `value` expression, use `directives="yes-prompt"` to override the implicit suppression. In that case, `value` supplies the pre-filled suggestion rather than computing the final value silently.
-
-## fieldOutput and value
-The `value` parameter is supported on [[fieldOutput Helper Variation|fieldOutput]] (and its alias `fo`) — all four helpers (`fieldInfo`, `fieldOutput`, `fi`, `fo`) pass through the same parameter extraction pipeline. A `value` on `fieldOutput` assigns the computed value and immediately outputs it, rather than simply reading whatever the field currently holds.
 
 ## Dependency Tracking
 If the `value` expression references another field, the engine tracks that field as a dependency and defers computation until the dependency is available:
@@ -70,20 +70,13 @@ If `Author` is not yet resolved when `AuthorURL` is first encountered, the compu
 This means you can safely reference fields defined elsewhere in the template or in higher-priority sources without worrying about declaration order.
 
 ## Resolution Priority
-When multiple [[Field Data Sources]] compete to fill a field, `value` sits in the middle — it wins over suggestions and fallbacks, but loses to user input and external data. If the field has already been filled before `value` is evaluated, the computed expression is skipped entirely.
-
-Priority order (highest to lowest):
-1. User input (explicitly entered via the prompting interface)
-2. External data (JSON package, URI, or Command Queue)
-3. `value` expression — which one applies depends on source priority (see below)
-4. `suggest` pre-fill
-5. `fallback`
-
 When `value` is declared at multiple levels — for example, in the global block and also in the main template — the most specific source wins. The [[Global Block and fieldInfo#fieldInfo Resolution Order|fieldInfo resolution order]] determines which `value` expression is used:
 
 `global block` < `system block` < `block template` < `main template`
 
 So a main template's `value` overrides a system block's `value`, which overrides the global block's `value`. Only one `value` expression ever reaches the resolution step — the one from the highest-priority source that declared it.
+
+For how `value` fits among all field data sources (external data, YAML properties, prompting, etc.), see [[Field Data Sources]].
 
 ## Use Cases
 
@@ -105,8 +98,17 @@ Then, any template can override that with a new value that is more appropriate f
 {{fieldInfo Status value="Resolved"}}
 ```
 
+### Text Expansion
+ You can also use the `value` parameter  to auto expand out a field into a larger set of text. For instance, add this to your Global Block:
+
+```handlebars
+{{fieldInfo LipSum value="Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."}}
+```
+
+ and now you can use the field `{{LipSum}}`  in your templates to automatically insert the full sentence into any instantiated content file.
+
 ### Computed Fields
-The most common use: define a field whose value is always computed from an expression. The field behaves like an implicit built-in — available wherever the field name appears, without user intervention:
+A common use of the `value` parameter is to define a field whose value is always computed from an expression. The field behaves like an [[Custom Built-In Fields|implicit built-in]] — available wherever the field name appears, without user intervention:
 
 ```handlebars
 {{fieldInfo InOneWeek value=(formatDate "YYYY-MM-DD" (dateAdd 7 now))}}
@@ -114,7 +116,7 @@ The most common use: define a field whose value is always computed from an expre
 
 Note that the resolution of the value occurs at the point of [[Instantiation]] in this instance, given that all dependent fields and helpers (e.g. `now`) are known at that time. 
 
-When declared in the [[Global Block]], `{{InOneWeek}}` becomes available in every template across the vault. See [[Global Block and Field Values]] for a detailed discussion of this pattern.
+When declared in the [[Global Block]], `{{InOneWeek}}` becomes available in every template across the vault. See [[Global Block and Field Values]] for a detailed discussion of this pattern. 
 
 ### Readability: Aliasing Complex Expressions
 Give a complex expression a short, readable name. Instead of repeating `{{firstName}} {{lastName}}` throughout a template, define it once:
@@ -126,10 +128,10 @@ Give a complex expression a short, readable name. Instead of repeating `{{firstN
 By {{FullName}}
 ```
 
-The expression evaluates fresh each time the field is rendered. In this instance, if either of the fields `{{firstName}}` or `{{lastName}}` are not known during [[Instantiation]], then the `{{fieldInfo}}` entry will remain in the [[WIP Stage|WIP Content File]] until [[Finalization]]. At that point, if either part is undefined, the output degrades gracefully to whatever is resolved.
+The expression evaluates fresh each time the field is rendered. In this instance, if either of the fields `{{firstName}}` or `{{lastName}}` are not known during [[Instantiation]], then the `{{fieldInfo}}` entry will remain in the [[WIP Stage|WIP Content File]] until [[Finalization]]. At that point, if either part is undefined, the output degrades gracefully to whatever is resolved. 
 
 ### Derived and Composed Fields
-Build new fields from existing ones — URLs, formatted strings, Markdown links:
+Build new fields from existing ones -- URLs, formatted strings, Markdown links:
 
 ```handlebars
 {{fieldInfo ISBN-URL value="https://isbnsearch.org/isbn/{{ISBN}}"}}
@@ -159,9 +161,32 @@ For more examples with System Blocks, see [[Using System Blocks and fieldInfo]].
 {{fieldInfo today value=(formatDate "MM/DD/YYYY")}}
 ```
 
-This reformats `{{today}}` across all templates when included in the [[Global Block]]. See [[Global Block and Field Values#Example - Override Built-In Field|Override Built-In Field]] for a full discussion.
+This reformats `{{today}}` across all templates when included in the [[Global Block]]. See [[Global Block and Field Values#Example - Override Built-In Field|Override Built-In Field]] for a full discussion, and [[Modifying Built-In Field Behaviors]] for limitations, scoping, and prompting control.
+
+### Redefining Built-In Fields with Conditionals
+A more involved example: overriding `{{fileTitle}}` to enforce Zettelkasten-style timestamp IDs. Pairing it with an optional companion field keeps filenames both sortable and human-readable:
+
+```handlebars
+{{fieldInfo fileTitlePostFix "Describe this file (optional)"}}
+{{fieldInfo fileTitle value="{{timestamp}}{{#if fileTitlePostFix}} - {{fileTitlePostFix}}{{/if}}"}}
+```
+
+When `fileTitlePostFix` is provided — say, "Meeting notes" — the file is named `20241113142530 - Meeting notes`. When left blank, the filename is just the timestamp. The `{{#if}}` block helper works inside a `value=` string expression because [[Restricted Functionality Mode]] supports Handlebars block helpers.
+
+
+## Closing Comments
 
 > [!WARNING]
 > Overriding built-in fields is a vault-wide change. Any template expecting the standard format will silently receive the override. Document overrides clearly.
 
+To define entirely new fields that behave like built-ins — rather than overriding existing ones — see [[Custom Built-In Fields]].
+
+
+
+> [!DANGER] NOTES
+> - **fileTitle + value=**: The `fileTitle` override example is unverified. Confirm that `value=` on `{{fileTitle}}` actually sets the output filename, and that the `{{#if fileTitlePostFix}}` block helper inside the string expression evaluates correctly at instantiation time. If `value=` does not work on `fileTitle`, replace the example with `suggest=` and note the difference.
+> - **timestamp format**: Confirm the exact output format of `{{timestamp}}` for use in filenames — specifically whether it produces a filesystem-safe string (no colons, slashes, etc.).
+> - **Argument order for formatDate**: Examples in this page use `(formatDate "FORMAT")` (one arg, defaults to current date) or `(formatDate "FORMAT" dateExpression)` (format first, then date). Using reversed argument order produces unexpected output — confirm this is clearly documented on the [[formatDate]] reference page.
+> - **fieldOutput and value**: The page states that `value` is supported on `fieldOutput`/`fo`. Verify this is implemented and works correctly in the current engine build.
+> 
 

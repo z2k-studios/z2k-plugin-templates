@@ -15,4 +15,4 @@ For more information, please see:
 
 1. [[File Extension Settings]] – Toggle `.template` and `.block` file extensions to hide template files from Obsidian
 2. [[Global Block Settings]] – A global template block prepended to every template before rendering
-3. [[Custom Helper Settings]] – User-defined Handlebars helper functions written in JavaScript
+3. [[Custom Helper Settings]] – Custom Handlebars helper functions written in JavaScript

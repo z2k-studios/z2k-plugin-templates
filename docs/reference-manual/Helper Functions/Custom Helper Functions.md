@@ -1,12 +1,12 @@
 ---
 sidebar_position: 50
 aliases:
-- Custom Helper Functions
-- custom helpers
-- user defined helpers
+  - custom helpers
+  - user defined helpers
+  - User Defined Helper Functions
 ---
-# User Defined Helper Functions
-When Z2K Templates' built-in helpers don't cover what you need, you can write your own in JavaScript. Custom helpers have full access to the Obsidian API and can perform any transformation you need.
+# Custom Helper Functions
+When Z2K Templates' built-in helpers don't cover what you need, you can write your own in JavaScript. Custom Helper Functions have full access to the Obsidian API and can perform any transformation you need.
 
 ## Contents
 - [[#Enabling Custom Helpers]]
@@ -22,10 +22,10 @@ When Z2K Templates' built-in helpers don't cover what you need, you can write yo
 Custom helpers are disabled by default — they execute arbitrary JavaScript with full access to your vault.
 
 To enable:
-1. Open **Settings → Z2K Templates**
-2. Find the **Custom Helpers** toggle
+1. Open **Settings → Z2K Templates** (see [[Settings Page]])
+2. Find the **Custom Helpers** toggle (see [[Custom Helper Settings]])
 3. Enable it (you'll see a security warning)
-4. Click **Edit Custom Helpers** to open the code editor
+4. Click **Edit Custom Helpers** to open the code editor (see [[Edit Custom Helpers]])
 
 > [!WARNING]
 > Custom helpers execute arbitrary JavaScript with full access to your vault, files, and the Obsidian API. Only enable this if you wrote the helper code yourself or fully trust its source.

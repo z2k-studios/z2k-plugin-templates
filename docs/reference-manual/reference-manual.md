@@ -120,7 +120,7 @@ aliases:
 	- [[Using Fields in Parameters]] - How to use `{{fields}}` inside Helper Functions
 	- [[Using Nested Helper Functions]] - How to nest Helper Functions inside other Helper Functions
 	- [[Silent Helper Functions]] - A special class of Helper Functions that are silent
-	- [[User Defined Helper Functions]] - How to build your own Helper functions
+	- [[Custom Helper Functions]] - How to build your own Helper functions
 	- [[Built-In Helper Functions]] - predefined Helper functions to help with common tasks
 	
 11. [[Built-In Helper Functions]] - A list of built-in Helper Functions and how to use them  
