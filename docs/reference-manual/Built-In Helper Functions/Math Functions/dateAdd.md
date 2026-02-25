@@ -32,8 +32,8 @@ Same Day Last Week : {{formatDate "YYYY-MM-DD" (dateAdd -7 now)}}
 Some more advance examples that use the [[fieldInfo value|value]] parameter to create new fields that behave like [[Built-In Fields]]:
 ```handlebars
 # Creating new custom fields using fieldInfo
-{{fieldInfo DaysFromNow2 value=(date-add 2)}}
-{{fieldInfo InTwoHours value=(format-date "HH:mm" (date-add (calc "2/24") now))}}
+{{fieldInfo DaysFromNow2 value=(dateAdd 2)}}
+{{fieldInfo InTwoHours value=(formatDate "HH:mm" (dateAdd (calc "2/24") now))}}
 Two Hours From Now: {{InTwoHours}}
 Link to Two Days From Now: {{wikilink (formatDate "YYYY-MM-DD" DaysFromNow2)}}
 

@@ -23,10 +23,10 @@ With this technique, you can:
 For instance, consider a field `{{InOneWeek}}` that always contains the date one week from now:
 
 ```handlebars
-{{fieldInfo InOneWeek value=(format-date "YYYY-MM-DD" (date-add 7 now))}}
+{{fieldInfo InOneWeek value=(formatDate "YYYY-MM-DD" (dateAdd 7 now))}}
 ```
 
-`{{date-add 7 now}}` returns a date seven days out; `{{format-date}}` renders it as an ISO date string. With `directives="no-prompt"`, no prompt is shown – the value resolves silently. (Note: `value=` automatically applies `no-prompt`, so the directive is technically redundant here but harmless.)
+`{{dateAdd 7 now}}` returns a date seven days out; `{{formatDate}}` renders it as an ISO date string. With `directives="no-prompt"`, no prompt is shown – the value resolves silently. (Note: `value=` automatically applies `no-prompt`, so the directive is technically redundant here but harmless.)
 
 > [!INFO] Use `value` suppresses prompting.
 > When you use the [[fieldInfo value|fieldInfo value Parameter]], it automatically applies the `no-prompt` [[fieldInfo directives|directive]] to the field. See the [[fieldInfo value|value]] reference page for details.
@@ -44,10 +44,10 @@ Another example — a field that generates a Wikipedia search link for the `Auth
 The `value=` parameter can even redefine [[Built-In Fields|built-in fields]], giving you vault-wide control over their format or content. This example replaces the default `today` date format (`YYYY-MM-DD`) with a US-style format:
 
 ```handlebars
-{{fieldInfo today value=(format-date "MM-DD-YYYY")}}
+{{fieldInfo today value=(formatDate "MM-DD-YYYY")}}
 ```
 
-`{{format-date}}` with no explicit date value defaults to the current date. Applied in the global block, this reformats `{{today}}` across every template in the vault.
+`{{formatDate}}` with no explicit date value defaults to the current date. Applied in the global block, this reformats `{{today}}` across every template in the vault.
 
 > [!WARNING] Risk of Redefining Built-In Fields
 > Overriding built-in fields globally affects all templates that use them, including any that expect the standard format. Use with care, and document the override so vault collaborators aren't surprised.

@@ -29,7 +29,7 @@ Obsidian comment syntax (`%% ... %%`) can be used in the global block to inject 
 The global block is not limited to `{{fieldInfo}}` declarations – it can inject literal content into every file. This example enforces a vault-wide structural convention: every file begins with a one-sentence summary followed by a horizontal rule:
 
 ```handlebars
-{{field-output SummaryStatement prompt="Single Sentence Summary"}}
+{{fieldOutput SummaryStatement prompt="Single Sentence Summary"}}
 
 ---
 ```

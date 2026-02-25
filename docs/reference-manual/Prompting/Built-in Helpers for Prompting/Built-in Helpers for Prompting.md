@@ -129,7 +129,7 @@ See [[fieldInfo fallback|fallback Parameter]] for full details.
 The `{{fieldInfo}}` helper has extensive documentation in its own section:
 - [[fieldInfo Helper]] – Introduction and overview
 - [[fieldInfo Parameters]] – All parameters in detail
-- [[fieldInfo Variations]] – `{{field-output}}`, `{{fi}}`, and `{{fo}}` shorthand forms
+- [[fieldInfo Variations]] – `{{fieldOutput}}`, `{{fi}}`, and `{{fo}}` shorthand forms
 
 ## See Also
 - [[Prompting Interface]] – The modal where these helpers take effect
@@ -137,5 +137,5 @@ The `{{fieldInfo}}` helper has extensive documentation in its own section:
 
 > [!DANGER] Notes for Documentation Team
 > - This page merges the former "Controlling the Prompt with fieldInfo" standalone page. The aliases from that page are preserved in frontmatter above so existing wikilinks (`[[Controlling the Prompt with fieldInfo]]`) still resolve.
-> - The `refhtml` placeholder files (`refhtml - fieldInfo (Prompting).md` and `refhtml - field-output (Prompting).md`) in this folder are Docusaurus redirect placeholders. They should remain unchanged.
+> - The `refhtml` placeholder files (`refhtml - fieldInfo (Prompting).md` and `refhtml - fieldOutput (Prompting).md`) in this folder are Docusaurus redirect placeholders. They should remain unchanged.
 > - The `value=` parameter is not covered here because it bypasses the prompting interface entirely (computed fields are hidden from the form). It's documented in [[fieldInfo value|value Parameter]].

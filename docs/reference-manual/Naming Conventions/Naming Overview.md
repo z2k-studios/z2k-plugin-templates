@@ -51,9 +51,6 @@ The following table maps each naming context to its convention, with examples.
 | Template file name   | Human-readable                                                   | `Meeting Notes.md`, `Book Review.template`                                | No restriction on case |
 | Template folder name | Human-readable                                                   | `Templates`, `Project Templates`                                          | No restriction on case |
 
-> [!WARNING] Helper Naming Inconsistency
-> The current codebase uses **mixed conventions** for multi-word built-in helpers: some are kebab-case (`field-info`, `format-date`), some are camelCase (`toNumber`, `chatGPT`). The target convention is camelCase, consistent with the Handlebars community standard. See [[Naming Helpers]] for the full breakdown and planned renames. This is tracked in [GitHub Issue #140](https://github.com/z2k-studios/z2k-plugin-templates/issues/140).
-
 ## Why Multiple Conventions?
 Each convention is chosen to match the expectations of the context it appears in:
 - **Fields and helpers** live inside `{{ }}` expressions – Handlebars territory. The Handlebars ecosystem uses camelCase for identifiers, so Z2K follows suit.
@@ -95,5 +92,4 @@ After instantiation, `BookAuthor` in YAML and `{{BookAuthor}}` in a block templa
 
 
 > [!DANGER] Documentation Notes
-> - Once helpers are renamed per GitHub Issue #140, remove the WARNING callout in [[#Convention Summary]] and update the helper examples in the summary table.
 > - Verify the user YAML field-linked scenario stays accurate if the field-from-YAML mechanism changes (see `addYamlFieldValues()` in the plugin source).

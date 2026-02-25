@@ -33,7 +33,7 @@ All of the following are valid:
 ```handlebars
 {{fieldInfo Status value="Draft"}}
 {{fieldInfo Version value=1}}
-{{fieldInfo InOneWeek value=(format-date "YYYY-MM-DD" (date-add 7 now))}}
+{{fieldInfo InOneWeek value=(formatDate "YYYY-MM-DD" (dateAdd 7 now))}}
 {{fieldInfo FullName value="{{firstName}} {{lastName}}"}}
 ```
 
@@ -43,7 +43,7 @@ The `value` parameter accepts:
 - **Unquoted numbers** — `value=42`, `value=3.14`
 - **Boolean keywords** — `value=true`, `value=false`
 - **Field references** — `value=Author` (resolves to whatever `Author` currently contains)
-- **Subexpressions** — `value=(helperName arg1 arg2)` — any helper call, including nested ones such as `value=(format-date "YYYY-MM-DD" (date-add 7 now))`
+- **Subexpressions** — `value=(helperName arg1 arg2)` — any helper call, including nested ones such as `value=(formatDate "YYYY-MM-DD" (dateAdd 7 now))`
 
 Arrays are not a native literal type, but `value=(arr "a" "b" "c")` works — the [[arr]] helper returns a real array that is stored and passed through the value pipeline intact.
 
@@ -55,8 +55,8 @@ Setting `value` automatically applies the [[fieldInfo directives#no-prompt|no-pr
 
 If you need the field to remain visible in the prompting interface despite having a `value` expression, use `directives="yes-prompt"` to override the implicit suppression. In that case, `value` supplies the pre-filled suggestion rather than computing the final value silently.
 
-## field-output and value
-The `value` parameter is supported on [[field-output Helper Variation|field-output]] (and its alias `fo`) — all four helpers (`fieldInfo`, `field-output`, `fi`, `fo`) pass through the same parameter extraction pipeline. A `value` on `field-output` assigns the computed value and immediately outputs it, rather than simply reading whatever the field currently holds.
+## fieldOutput and value
+The `value` parameter is supported on [[fieldOutput Helper Variation|fieldOutput]] (and its alias `fo`) — all four helpers (`fieldInfo`, `fieldOutput`, `fi`, `fo`) pass through the same parameter extraction pipeline. A `value` on `fieldOutput` assigns the computed value and immediately outputs it, rather than simply reading whatever the field currently holds.
 
 ## Dependency Tracking
 If the `value` expression references another field, the engine tracks that field as a dependency and defers computation until the dependency is available:
@@ -109,7 +109,7 @@ Then, any template can override that with a new value that is more appropriate f
 The most common use: define a field whose value is always computed from an expression. The field behaves like an implicit built-in — available wherever the field name appears, without user intervention:
 
 ```handlebars
-{{fieldInfo InOneWeek value=(format-date "YYYY-MM-DD" (date-add 7 now))}}
+{{fieldInfo InOneWeek value=(formatDate "YYYY-MM-DD" (dateAdd 7 now))}}
 ```
 
 Note that the resolution of the value occurs at the point of [[Instantiation]] in this instance, given that all dependent fields and helpers (e.g. `now`) are known at that time. 
@@ -156,7 +156,7 @@ For more examples with System Blocks, see [[Using System Blocks and fieldInfo]].
 `value` can override [[Built-In Fields|built-in fields]] entirely. The built-in's default formula is replaced at the priority level of the declaring source. Declared in the global block, the override applies vault-wide:
 
 ```handlebars
-{{fieldInfo today value=(format-date "MM/DD/YYYY")}}
+{{fieldInfo today value=(formatDate "MM/DD/YYYY")}}
 ```
 
 This reformats `{{today}}` across all templates when included in the [[Global Block]]. See [[Global Block and Field Values#Example - Override Built-In Field|Override Built-In Field]] for a full discussion.

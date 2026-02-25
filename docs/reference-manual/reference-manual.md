@@ -124,7 +124,7 @@ aliases:
 	- [[Built-In Helper Functions]] - predefined Helper functions to help with common tasks
 	
 11. [[Built-In Helper Functions]] - A list of built-in Helper Functions and how to use them  
-	- [[Field Info Functions]] - Helpers for specifying information about fields
+	- [[fieldInfo Functions]] - Helpers for specifying information about fields
 	- [[Formatting Functions]] - Helpers for formatting output
 	- [[Linking Functions]] - Helpers for building links
 	- [[Math Functions]] - Helpers for doing basic math or manipulations of fields
@@ -199,7 +199,7 @@ aliases:
 17. [[System Blocks]]
 	- [[Intro to System Blocks]]
 	- [[Using System Blocks and YAML]]
-	- [[Using System Blocks and field-info]]
+	- [[Using System Blocks and fieldInfo]]
 	- [[Using System Blocks and Markdown]]
 
 18. [[Global Block]]
