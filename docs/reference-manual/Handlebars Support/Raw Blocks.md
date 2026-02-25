@@ -11,7 +11,7 @@ In standard Handlebars, raw blocks (`{{{{rawblock}}}}...{{{{/rawblock}}}}`) prev
 For the standard Handlebars behavior, see the [Handlebars Raw Blocks documentation](https://handlebarsjs.com/guide/expressions.html#literal-segments).
 
 ## Known Issue: Raw Blocks Do Not Suppress Evaluation
-==This is a **bug**. Raw blocks should prevent template processing of their contents, matching standard Handlebars behavior. Currently, the syntax highlighter recognizes raw block syntax but the template engine does not implement the semantics.==
+==This is a **bug**. Raw blocks should prevent template processing of their contents, matching standard Handlebars behavior. Currently, the syntax highlighter recognizes raw block syntax but the template engine does not implement the semantics. Is there a bug filed?==
 
 In standard Handlebars, a raw block like this:
 

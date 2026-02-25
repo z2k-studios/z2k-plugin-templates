@@ -49,6 +49,22 @@ When a field is finalized without a value, the plugin resolves it using the foll
 ```
 If `status` is never touched, it resolves to "Draft" on finalization.
 
+### Using a fallback value for numeric values
+```handlebars
+{{fieldInfo rating type="number" fallback="-1"}}
+```
+If `rating` is never touched, this will output the text `-1` when fallback handling is triggered. Normally this would be fine, but let's say you have other Template code being conditional off that number:
+
+```handlebars
+{{#if (gte rating 0)}}Rating:: {{rating}}{{else}}(No rating provided){{/if}}
+```
+
+In this case, because it may be worth converting your fallback value to a numeric value first:
+
+```handlebars
+{{fieldInfo rating type="number" fallback=(toNumber "-1")}}
+```
+
 ### Using finalize-suggest
 ```md
 {{fieldInfo fileTitle suggest="{{BookTitle}} - {{BookAuthor}}" directives="finalize-suggest"}}
