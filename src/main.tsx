@@ -50,11 +50,11 @@ const DEFAULT_SETTINGS: Z2KTemplatesPluginSettings = {
 	templatesFolderName: 'Templates',
 	cardReferenceName: 'note',
 	quickCommands: [],
-	offlineCommandQueueEnabled: true,
+	offlineCommandQueueEnabled: false,
 	offlineCommandQueueDir: '.obsidian/plugins/z2k-plugin-templates/command-queue',
 	offlineCommandQueueFrequency: '60s',
-	offlineCommandQueuePause: '',
-	offlineCommandQueueArchiveDuration: '1d',
+	offlineCommandQueuePause: '1s',
+	offlineCommandQueueArchiveDuration: '1w',
 	errorLogPath: '.obsidian/plugins/z2k-plugin-templates/error-log.md',
 	errorLogLevel: 'warn',
 	useTemplateFileExtensions: false,
@@ -355,8 +355,8 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 		containerEl.appendChild(queueSettingsContainer);
 
 		new Setting(queueSettingsContainer)
-			.setName('Queue directory')
-			.setDesc('Directory for queued command files (JSON/JSONL) - vault-relative or absolute.')
+			.setName('Queue folder')
+			.setDesc('Folder for queued command files (JSON/JSONL) - vault-relative or absolute.')
 			.setClass('setting-full-width')
 			.addText(text => {
 				const input = text
