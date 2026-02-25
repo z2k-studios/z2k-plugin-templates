@@ -24,6 +24,7 @@ Commands for creating new files from templates.
 | [[Create File From Selected Text]]          | Text selected   | Creates a new file, passing the selection as data                    |
 | [[Apply Template to File]] | Active .md file | Applies a template to an existing file                               |
 | [[Continue Filling File]]                   | Active .md file | Resumes prompting for [[Deferred Field Resolution\|deferred fields]] |
+| [[Finalize File]]                           | Active .md file | Finalizes a file immediately using fallbacks — no prompting          |
 
 ## Block Template Commands
 Commands for inserting reusable content blocks.

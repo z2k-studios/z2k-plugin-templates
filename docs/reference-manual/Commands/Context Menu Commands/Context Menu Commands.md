@@ -3,7 +3,6 @@ sidebar_folder_position: 20
 sidebar_position: 1
 sidebar_metacategory: "Basics"
 ---
-
 # Context Menu Commands
 Z2K Templates adds commands to Obsidian's right-click context menus, giving you quick access to template operations without opening the Command Palette.
 
@@ -30,6 +29,7 @@ These commands appear when you right-click on files or folders in the file explo
 | Command                                                                       | Appears When                               | Description                                 |
 | ----------------------------------------------------------------------------- | ------------------------------------------ | ------------------------------------------- |
 | [[Create New File Here (Context Menu)\|Create New File Here]]                 | Right-click on a folder                    | Creates a new templated file in that folder |
+| [[Finalize file (Context Menu)\|Finalize This File]]                          | File is a content file (`.md`)             | Finalizes file using fallbacks — no prompting |
 | [[Convert to Document Template (Context Menu)\|Convert to Document Template]] | File is not a document template            | Marks file as a document template           |
 | [[Convert to Block Template (Context Menu)\|Convert to Block Template]]       | File is not a block template               | Marks file as a block template              |
 | [[Convert to Markdown Template (Context Menu)\|Convert to Markdown Template]] | File has `.template` or `.block` extension | Changes extension to `.md`                  |
