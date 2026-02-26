@@ -118,7 +118,7 @@ Queue commands that depend on external data that will be available at a known fu
   "cmd": "new",
   "templatePath": "Templates/Data Import.md",
   "prompt": "none",
-  "templateJsonData": "Data/exports/nightly-export.json"
+  "fieldData": "Data/exports/nightly-export.json"
 }
 ```
 

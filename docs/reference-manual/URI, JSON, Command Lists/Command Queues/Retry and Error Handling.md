@@ -86,7 +86,7 @@ These occur before the command executes, during parameter parsing:
 | Missing `cmd`                      | No command specified in the JSON Package                               |
 | Empty `cmd`                        | Command is whitespace or empty string                                  |
 | Unknown `cmd`                      | Not `new`, `continue`, `insertblock`, or `json`                        |
-| Invalid JSON in `templateJsonData` | Malformed JSON string or file not found                                |
+| Invalid JSON in `fieldData` | Malformed JSON string or file not found                                |
 | Invalid `prompt` value             | Not `none`, `remaining`, or `all`                                      |
 | Invalid `finalize` value           | Not a boolean or recognized string (`true`/`false`/`yes`/`no`/`1`/`0`) |
 | Invalid `location` value           | Not a recognized position or valid line number                         |

@@ -18,7 +18,7 @@ The following [[JSON Directives]] are relevant to the [[JSON Commands|JSON Comma
 | `destDir`          | No       | Vault-relative path to the output folder. Defaults to the template's card type folder. Auto-creates if missing. |
 | `prompt`           | No       | [[JSON Directives#Prompt Modes\|Prompt mode]]: `"none"`, `"remaining"`, or `"all"`.                             |
 | `finalize`         | No       | Whether to [[Finalization\|finalize]] the note (resolve all remaining fields). Default: template's own setting. |
-| `templateJsonData` | No       | Bundled field data. See [[JSON Field Data]] for how to specify field data.                                      |
+| `fieldData` | No       | Bundled field data. See [[JSON Field Data]] for how to specify field data.                                      |
 ### Ignored Directives
 The directives `existingFilePath`, `destHeader`, `location`, `blockPath` are ignored. These are not used by the `new` command.
 
@@ -102,11 +102,11 @@ The note will be created in `People/New Contacts/` instead of the template's def
   "templatePath": "Templates/Import Record.md",
   "prompt": "none",
   "finalize": true,
-  "templateJsonData": "Data/imports/record-2024-01-15.json"
+  "fieldData": "Data/imports/record-2024-01-15.json"
 }
 ```
 
-Field data is loaded from a separate file in the vault. See [[templateJsonData]] for details.
+Field data is loaded from a separate file in the vault. See [[fieldData]] for details.
 
 > [!DANGER] Internal Notes
 > - Confirm exact behavior when `prompt` is `"none"`, `fileTitle` is not provided, and no `z2k_template_suggested_title` exists. Does the plugin generate a name from the template filename? Does it throw an error? The code path needs tracing through `createCard` → title resolution.

@@ -15,7 +15,7 @@ At a high level, a Z2K Templates JSON Package has this shape:
   "cmd": "<command>",
   "<directive>": "<value>",
   "<fieldName>": "<fieldValue>",
-  "templateJsonData": { "<fieldName>": "<fieldValue>" }
+  "fieldData": { "<fieldName>": "<fieldValue>" }
 }
 ```
 
@@ -25,7 +25,7 @@ At a high level, a Z2K Templates JSON Package has this shape:
 	- See [[JSON Directives]] for details on known directives
 - Field Data:
 	- See [[JSON Field Data]] for details on how to add field data into a JSON Package
-	- `templateJsonData` optionally nests field data in a separate object, as discussed in the next section. 
+	- `fieldData` optionally nests field data in a separate object, as discussed in the next section. 
 
 
 ## Key Normalization
@@ -84,14 +84,13 @@ Note: the "\n" will be converted to newlines automatically.
   "cmd": "new",
   "templatePath": "Templates/Contact Card.md",
   "prompt": "none",
-  "templateJsonData": "Data/contacts/new-contact.json"
+  "fieldData": "Data/contacts/new-contact.json"
 }
 ```
 
-Here, `templateJsonData` is a vault-relative file path — the plugin reads the file and parses its contents as field data. See [[templateJsonData]] for the other input forms (inline JSON object, inline JSON string).
+Here, `fieldData` is a vault-relative file path — the plugin reads the file and parses its contents as field data. See [[fieldData]] for the other input forms (inline JSON object, inline JSON string).
 
 > [!DANGER] Internal Notes
-> - The `templateJsonData64` and `json64` keys are declared in the `CommandParams` interface and included in the `knownKeys` list, but no decoding logic exists in `processCommand()`. They are documented as supported but are not yet implemented.
 > - There is currently no way to pass an inline block template body via `insertblock` — it always requires a `templatePath` or `blockPath` pointing to an existing file. An inline block content parameter would be a useful addition. File as a feature request.
 > - Confirm whether `destDir` creates the folder if it doesn't exist — the code calls `this.createFolder(cps.destDir)`, which suggests it does. Documented as auto-creating for now.
 > - The key normalization behavior (stripping non-alphanumeric, case-insensitive matching) applies to all known keys equally, but the docs comment at line 1236 says to just document `templatePath` for simplicity. We've documented the normalization behavior as a general section since it applies uniformly.

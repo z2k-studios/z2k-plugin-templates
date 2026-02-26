@@ -21,7 +21,7 @@ The following [[JSON Directives]] are relevant to the [[JSON Commands|JSON Comma
 | `location`         | No          | Where to insert the block. See [[#Insertion Location]] below.                                                                                                 |
 | `prompt`           | No          | [[JSON Directives#Prompt Modes\|Prompt mode]]: `"none"`, `"remaining"`, or `"all"`.                                                                           |
 | `finalize`         | No          | Whether to [[Finalization\|finalize]] the inserted block. Default: template's own setting.                                                                    |
-| `templateJsonData` | No          | Bundled field data. See [[JSON Field Data]] for how to specify field data.                                                                                    |
+| `fieldData` | No          | Bundled field data. See [[JSON Field Data]] for how to specify field data.                                                                                    |
 ### Ignored Directives
 The directive `destDir` is ignored for the `insertblock` command. The block is inserted into an existing file, not used to create a new one.
 

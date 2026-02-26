@@ -168,7 +168,7 @@ Error: Template not found: Templates/Missing Template.md
 - Template file doesn't exist → Check `templatePath`
 - Required parameter missing → Add missing `cmd`, `templatePath`, etc.
 - Invalid parameter value → Check `prompt`, `finalize`, `location` values
-- JSON syntax error in `templateJsonData` → Validate nested JSON
+- JSON syntax error in `fieldData` → Validate nested JSON
 
 ### Note Created But Fields Wrong
 

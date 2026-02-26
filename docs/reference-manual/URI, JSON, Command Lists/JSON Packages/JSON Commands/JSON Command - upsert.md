@@ -21,7 +21,7 @@ The following [[JSON Directives]] are relevant to the [[JSON Commands|JSON Comma
 | `templatePath`     | Yes      | Vault-relative path to the template. Used only when the file does not yet exist.                                                               |
 | `prompt`           | No       | [[JSON Directives#Prompt Modes\|Prompt mode]]: `"none"`, `"remaining"`, or `"all"`.                                                            |
 | `finalize`         | No       | Whether to [[Finalization\|finalize]] the note after filling. Default: template's own setting.                                                 |
-| `templateJsonData` | No       | Bundled field data. See [[JSON Field Data]] for how to specify field data.                                                                     |
+| `fieldData` | No       | Bundled field data. See [[JSON Field Data]] for how to specify field data.                                                                     |
 
 ### Ignored Directives
 `destDir`, `fileTitle`, `destHeader`, `location`, and `blockPath` are ignored. The output path is determined entirely by `existingFilePath`.

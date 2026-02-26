@@ -35,7 +35,7 @@ For example, if the URI contains `rating=5`:
 - If the template has no type declaration for `rating` → auto-conversion applies (see below)
 
 ## JSON Sources — Native Types
-When a [[JSON Packages Overview|JSON Package]] arrives from a [[JSON Structure|.json file]], a [[JSONL Format|.jsonl file]], or through the [[json Command]], values keep their JSON types. No conversion is performed.
+When a [[JSON Packages Overview|JSON Package]] arrives from a [[JSON Structure|.json file]], a [[JSONL Format|.jsonl file]], or through the [[URI Command - fromJson|fromJson command]], values keep their JSON types. No conversion is performed.
 
 ```json
 {
@@ -91,21 +91,21 @@ Whether `\n` becomes a newline — and `\t` a tab — depends on the transport. 
 - If your field data includes numbers, booleans, or arrays, prefer a **JSON source** (`.json` file, `.jsonl` file, or the `json` command). Values arrive correctly typed without relying on field declarations.
 - If you're using a **URI**, make sure your template declares [[Field Types|field types]] via [[fieldInfo type|fieldInfo]] for any non-string fields. Without type declarations, auto-conversion may produce unexpected results — `"0"` becomes the number `0`, not the string `"0"`.
 
-### The templateJsonData Exception
-The [[templateJsonData]] parameter adds nuance. When used inside a URI:
-- The `templateJsonData` string itself is parsed as JSON, so the values inside it *are* natively typed
+### The fieldData Exception
+The [[fieldData]] parameter adds nuance. When used inside a URI:
+- The `fieldData` string itself is parsed as JSON, so the values inside it *are* natively typed
 - But they are still marked as coming from a URI source if the outer transport is a URI
 
 When used inside a `.json` or `.jsonl` file:
-- If `templateJsonData` is a nested object, its values are natively typed and marked as a JSON source
-- If `templateJsonData` is a file path string, the loaded file's values are natively typed
+- If `fieldData` is a nested object, its values are natively typed and marked as a JSON source
+- If `fieldData` is a file path string, the loaded file's values are natively typed
 
 > [!INFO]
-> When in doubt about type behavior, use the [[json Command]] or a `.json` command file. These guarantee that your values arrive exactly as you wrote them — no conversion, no surprises.
+> When in doubt about type behavior, use the [[URI Command - fromJson|fromJson command]] or a `.json` command file. These guarantee that your values arrive exactly as you wrote them — no conversion, no surprises.
 
 
 
 > [!DANGER] Internal Notes
-> - The `templateJsonData` exception described above needs verification. The code at line 1296 creates `fieldOverrides` by spreading `additionalFields` (from `templateJsonData`) with `templateData` (top-level non-directive keys). The `uriKeys` set at line 1298 only contains keys from `templateData`, not from `additionalFields`. This means `templateJsonData` values are *never* subject to URI string conversion, even when the outer transport is a URI. This is arguably correct (the JSON was parsed, so types are preserved), but should be confirmed as intentional.
+> - The `fieldData` exception described above needs verification. The code at line 1296 creates `fieldOverrides` by spreading `additionalFields` (from `fieldData`) with `templateData` (top-level non-directive keys). The `uriKeys` set at line 1298 only contains keys from `templateData`, not from `additionalFields`. This means `fieldData` values are *never* subject to URI string conversion, even when the outer transport is a URI. This is arguably correct (the JSON was parsed, so types are preserved), but should be confirmed as intentional.
 > - The auto-conversion behavior for undeclared types is narrow — only `"true"`, `"false"`, and numeric strings are converted. This is different from the generous parsing used for declared `boolean` types. Document whether this asymmetry is intentional or a simplification.
-> - Confirm whether arrays and objects passed via URI `templateJsonData` (as inline JSON) are handled correctly, or if they're limited to scalar values only.
+> - Confirm whether arrays and objects passed via URI `fieldData` (as inline JSON) are handled correctly, or if they're limited to scalar values only.

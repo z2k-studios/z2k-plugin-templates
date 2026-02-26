@@ -4,7 +4,6 @@ aliases:
 - URIs with JSON Data
 - URI JSON
 - fieldData URI
-- templateJsonData URI
 ---
 # URIs with JSON Data
 By default, field data is passed as individual parameters on the URI – one `key=value` pair per field. This works well for a handful of simple values. When field data gets more complex – many fields, nested values, or characters that are painful to percent-encode – two advanced alternatives let you bundle data more efficiently.
@@ -114,7 +113,6 @@ Base64 is useful when:
 - You need to pass moderate amounts of data inside a URI string without writing to an external file
 
 > [!DANGER] Internal Notes
-> - `fieldData64` and `jsonData64` are declared in `CommandParams` but have no decoding logic in `processCommand()`. They are not yet implemented.
 > - `fieldData` inline JSON detection is based on whether the value starts with `{` (line 1265 of main.tsx). A file path that starts with `{` would be misinterpreted as inline JSON.
 > - When `fieldData` is used alongside individual field parameters, the merge order is: `{ ...fieldData, ...individualParams }` (line 1296). Individual parameters win.
 > - The `fromJson` command's recursive call passes `isJsonSource = true`, so all values from the parsed JSON preserve their types.

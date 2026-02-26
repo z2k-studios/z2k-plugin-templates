@@ -19,7 +19,7 @@ For more information, please see:
 		- [[JSON Command - insertblock]] — Insert a block template into a file
 	3. [[JSON Directives]] — The directives or parameters that control how a command is performed
 	4. [[JSON Field Data]] — How field data is passed within the JSON Package.
-		- [[templateJsonData]] — The `templateJsonData` parameter for bundling field data separately from command directives
+		- [[fieldData]] — The `fieldData` parameter for bundling field data separately from command directives
 
 3.  Other JSON Formats and details: 
 	- [[JSONL Format]] — The `.jsonl` batch file specification for sending multiple commands

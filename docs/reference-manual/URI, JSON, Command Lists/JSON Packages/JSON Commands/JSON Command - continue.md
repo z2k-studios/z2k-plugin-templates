@@ -17,7 +17,7 @@ The following [[JSON Directives]] are relevant to the [[JSON Commands|JSON Comma
 | `existingFilePath` | Yes      | Vault-relative path to the existing note to continue filling.                                  |
 | `prompt`           | No       | [[JSON Directives#Prompt Modes\|Prompt mode]]: `"none"`, `"remaining"`, or `"all"`.            |
 | `finalize`         | No       | Whether to [[Finalization\|finalize]] the note after filling. Default: template's own setting. |
-| `templateJsonData` | No       | Bundled field data. See [[JSON Field Data]] for how to specify field data.                     |
+| `fieldData` | No       | Bundled field data. See [[JSON Field Data]] for how to specify field data.                     |
 
 ### Ignored Directives
 The directives `templatePath`, `blockPath`, `destDir`, `destHeader`, `location` are all ignored. The template is determined from the existing file's metadata — you don't need to specify it again.
