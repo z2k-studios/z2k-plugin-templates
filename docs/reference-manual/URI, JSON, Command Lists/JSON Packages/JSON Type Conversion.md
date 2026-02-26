@@ -13,6 +13,7 @@ When field values arrive in a [[JSON Packages Overview|JSON Package]], the plugi
 - [[#URI Sources — String Coercion]]
 - [[#JSON Sources — Native Types]]
 - [[#Conversion Rules for URI Strings]]
+- [[#String Escape Sequences]]
 - [[#Practical Implications]]
 
 ## The Core Rule
@@ -80,6 +81,9 @@ When a field has no type declaration (or uses a type like `singleSelect` that do
 - Everything else → stays as a string
 
 Auto-conversion is conservative — only exact matches of `"true"` and `"false"` trigger boolean conversion, unlike the declared `boolean` type which accepts a wider range of truthy/falsy strings.
+
+## String Escape Sequences
+Whether `\n` becomes a newline — and `\t` a tab — depends on the transport. JSON sources expand escape sequences automatically; URI sources do not. For the full breakdown and a summary table, see [[Special Characters in Text]].
 
 ## Practical Implications
 

@@ -71,11 +71,13 @@ For detailed, command-specific examples, see the [[JSON Commands]] section. Belo
   "blockPath": "Templates/Blocks/Task List.block",
   "existingFilePath": "Notes/Project Plan.md",
   "destHeader": "Tasks",
+  "taskList": "- Birth\n- School\n- Work\n- Death",
   "location": "header-bottom",
   "projectName": "Z2K v2"
 }
 ```
 
+Note: the "\n" will be converted to newlines automatically. 
 ### With Field Data in a Separate File
 ```json
 {

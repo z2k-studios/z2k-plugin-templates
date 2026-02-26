@@ -103,7 +103,6 @@ If `isPublished` resolves to `true`, the YAML parser sees `published: true` and 
 
 This may be exactly what you want – or it may cause unexpected behavior downstream if a plugin or query expects a string.
 
-
 ### Problem: Special Characters
 YAML assigns special meaning to characters like `:`, `#`, `&`, `*`, `|`, `>`, and `!`. If a field value contains these characters in an unquoted context, the YAML parser may misinterpret or reject the result.
 
@@ -143,6 +142,8 @@ You can safely omit quotes when:
 - The field resolves to a simple alphanumeric value with no special characters (e.g., a single word like `draft` or `active`)
 - You *want* YAML type coercion – for example, you intentionally want `true` to be boolean because a Dataview query expects it
 
+… but be aware that Obsidian also watches properties and can get confused if it perceives different value types being used for the same property.
+
 ### Summary
 
 | Scenario | Quoted | Unquoted |
@@ -167,17 +168,22 @@ There are two recommended ways to solve this problem:
 ## Restrictions
 There are several restrictions on what you can place inside YAML frontmatter.
 
-### No Block Template Partials
-Block template partials (`{{> blockName}}`) are **not allowed** in YAML frontmatter. The engine explicitly excludes block recursion during YAML processing. If you need to inject YAML from another source, use [[Intro to System Blocks|System Blocks]] or [[YAML and Block Templates|block template YAML merging]] instead.
+### No Block Templates (Partials)
+Block templates (`{{> blockName}}`) are **not allowed** in YAML frontmatter. The engine explicitly excludes block recursion during YAML processing. If you need to inject YAML from another source, use [[Intro to System Blocks|System Blocks]] or [[YAML and Block Templates|block template YAML merging]] instead.
 
-> [!WARNING] Block Expressions Are Strongly Discouraged
-> Handlebars block expressions like `{{#if}}`, `{{#each}}`, and `{{#with}}` are not explicitly prevented in YAML, but they are **strongly discouraged**. These expressions would need to produce syntactically valid YAML – including correct indentation, colons, and list markers – which is extremely fragile. A small change to the template data could break the YAML structure entirely. If you need conditional metadata, consider using [[fieldInfo fallback|fallback values]] or [[fieldInfo directives|directives]] instead.
+### Handlebar Block Expressions - Discouraged
+Handlebars block expressions like `{{#if}}`, `{{#each}}`, and `{{#with}}` are not explicitly prevented in YAML, but they are **strongly discouraged**. 
+
+These expressions would need to produce syntactically valid YAML – including correct indentation, colons, and list markers – which is extremely fragile. A small change to the template data could break the YAML structure entirely. 
+
+You could use the conditional inside a single string on a single and it "should" work. 
+
+If you need conditional metadata, consider using [[fieldInfo fallback|fallback values]] or [[fieldInfo directives|directives]] instead.
 
 ### HTML Entity Handling
 Handlebars normally escapes special characters as HTML entities (e.g., `'` becomes `&#x27;`). The engine automatically unescapes the standard entities (`&#x27;`, `&quot;`, `&lt;`, `&gt;`, `&amp;`) after rendering YAML. However, if you use triple-brace expressions (`{{{field}}}`) to bypass Handlebars escaping, be aware that raw output may contain characters that conflict with YAML syntax.
+===I think that the way Z2K Templates handles [[Unescaped Expressions|escaping]] that this whole paragraph is incorrect and can be removed===
 
-### Undefined Fields Are Preserved
-If a field in your YAML has no resolved value, the expression is preserved as literal text. For example, `title: "{{ProjectName}}"` stays as `title: "{{ProjectName}}"` if `ProjectName` is not provided. This allows [[Deferred Field Resolution]] – the field can be filled in later via [[Continue filling note]].
 
 > [!DANGER] Notes
 > - The code comment at engine line 716 reads "DOCS: No blocks allowed in YAML frontmatter" – this is the explicit design intent.

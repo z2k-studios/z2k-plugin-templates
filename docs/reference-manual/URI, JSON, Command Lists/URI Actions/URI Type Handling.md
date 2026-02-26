@@ -22,9 +22,12 @@ This is the key behavioral difference between URI transport and JSON transport:
 
 If precise typing matters for your use case – and you don't want to rely on type declarations in the template – use the `fromJson` command or `fieldData` to pass typed values directly. 
 
+## String Escape Sequences
+URI decoding does not expand `\n` or `\t` — they arrive as literal characters. Use `%0A` for a real newline in a URI parameter, or pass data via [[URIs with JSON Data#fieldData|fieldData]] or [[URI Command - fromJson|fromJson]] where JSON parsing expands them normally. For the full breakdown, see [[Special Characters in Text]].
+
 ## More Information
 For more information:
-- To understand the loose field typing in Z2K Templates, see [[Field Types]]. 
+- To understand the loose field typing in Z2K Templates, see [[Field Types]].
 - To understand how JSON types are converted, see [[JSON Type Conversion]].
 - To understand how to use JSON with URI Actions, see [[URIs with JSON Data]]
 

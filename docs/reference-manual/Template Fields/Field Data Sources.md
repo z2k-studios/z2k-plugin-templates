@@ -1,5 +1,5 @@
 ---
-sidebar_position: 30
+sidebar_position: 60
 ---
 # Template Field Data Sources
 Z2K Templates is all about taking data in from a source and then inserting that information into templates to make new files in your vault. The information that can be inserted into [[Template Fields]] can come from a variety of places.

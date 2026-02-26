@@ -16,17 +16,14 @@ Z2K Templates maintains an error log file inside your vault. The log captures er
 - [[#Reading the Log]]
 
 ## Settings
-Both settings are found under the **Error Logging** heading on the [[Settings Page]].
+The following settings are found under the **Error Logging** heading on the [[Settings Page]]. See [[Error Logging Settings]] for the full reference.
 
-| Setting             | Default                                               | Description                                                                                                                |
-| ------------------- | ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| **Error log file**  | `.obsidian/plugins/z2k-plugin-templates/error-log.md` | Path to the log file, relative to the vault root or absolute. By default, the log file is within the plugin's data folder. |
-| **Error log level** | Warning                                               | Minimum severity level to record. Everything at this level and above is logged.                                            |
+| Setting             | Default | Description                                                                     |
+| ------------------- | ------- | ------------------------------------------------------------------------------- |
+| **Error log level** | Warning | Minimum severity level to record. Everything at this level and above is logged. |
+| **View Error Log**  | Button  | Opens the [[View Error Log\|live log viewer]] modal                             |
 
-The log file is created automatically on the first logged event. If the file already exists, new entries are appended to the end.
-
-> [!NOTE]
-> The default log path places the file inside the plugin's own data folder, keeping it out of your working vault. You can move it anywhere – for example, a dedicated `Admin/Logs/` folder – by changing the path in settings.
+The log file is always written to `.obsidian/plugins/z2k-plugin-templates/error-log.md`. This location is fixed — it is not user-configurable. The file is created automatically on the first logged event; new entries are appended to the end.
 
 ## Severity Levels
 The log level setting acts as a threshold. Setting it to "Warning" means errors *and* warnings are logged, but informational and debug messages are not.
@@ -81,16 +78,14 @@ Error: unexpected closing tag
 The stack trace and context data are useful for reporting bugs or understanding exactly where a failure occurred.
 
 ## Reading the Log
-The log file is a standard Markdown file – open it in Obsidian like any other note. Each entry is separated by a horizontal rule (`---`), with the most recent entries at the bottom.
+The quickest way to view the log is the **[[View Error Log]]** button in **Settings → Error Logging**. It opens a live viewer modal that updates in real time and includes a **Clear Log** button (with confirmation).
 
-For a quick look at recent errors, scroll to the end of the file. For a targeted search, use Obsidian's search or `Ctrl/Cmd+F` within the file to find specific error messages or timestamps.
+The log file is also a standard Markdown file — open it in Obsidian like any other note. Each entry is separated by a horizontal rule (`---`), with the most recent entries at the bottom. For a targeted search, use `Ctrl/Cmd+F` within the file to find specific error messages or timestamps.
 
-> [!WARNING]
-> At present, the log file grows indefinitely. If you use verbose logging levels over a long period, the file can become large. Periodically clear or archive the log by deleting its contents or the file itself – it will be recreated automatically on the next logged event.
+> [!NOTE]
+> The log is automatically trimmed when it exceeds **1 MB** — older entries are removed until the file is approximately 700 KB. You can also clear the log manually at any time via the [[View Error Log|log viewer]].
 
 > [!DANGER] Internal Notes
-> - If the log file cannot be written (permissions, disk full, invalid path), the error is silently logged to the browser console instead. There is no user-visible notification of log write failures.
-> - The format check (`this.settings.errorLogLevel !== "debug"`) determines compact vs. verbose format. This means changing the log level from Warning to Debug mid-session will switch format for all subsequent entries, but won't retroactively change earlier entries.
-> - The `errorLogPath` setting accepts both vault-relative and absolute paths, but the settings UI validates against characters `* ? " < > |`. It does not validate that the path actually exists or is writable until the first log event.
-> - The log file is initialized with a `# Z2K Templates Error Log` heading when first created. This heading is not re-added if the file is manually cleared to empty – only if the file is deleted.
-> - We should have a way to clear the log after it reaches a certain size automatically - say 1 MB. 
+> - If the log file cannot be written (permissions, disk full), the error is silently logged to the browser console instead. There is no user-visible notification of log write failures.
+> - The format check (`this.settings.errorLogLevel !== "debug"`) determines compact vs. verbose format. Changing the log level mid-session switches format for all subsequent entries but does not retroactively reformat earlier ones.
+> - The log file is initialized with a `# Z2K Templates Error Log` heading when first created. This heading is not re-added if the file is manually cleared to empty — only if the file is deleted.

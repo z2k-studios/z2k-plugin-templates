@@ -1,5 +1,5 @@
 ---
-sidebar_position: 50
+sidebar_position: 80
 aliases:
 - restricted functionality mode
 - restricted mode
@@ -23,7 +23,7 @@ Restricted functionality mode is active whenever Z2K Templates evaluates an expr
 Any expression that can be used in the main template body — including [[Block Helpers]] like `{{#if}}` and `{{#each}}` — can also be embedded inside these parameter strings, and will be evaluated in restricted mode when they appear there. The behavior of those expressions is the same as in the main body, with the exceptions listed in [[#What Is Not Supported in Restricted Functionality Mode?]] above.
 
 ### What About YAML Frontmatter?
-YAML frontmatter is **not** in restricted functionality mode. YAML values are rendered through the main rendering pipeline (within `renderTemplate`), using `Handlebars.compile` with the full set of helpers and the same expression preservation logic as the template body. The only difference is that [[Block Templates]] (partials) are not available in YAML — but all helpers, fields, and block helpers work normally.
+YAML frontmatter is **not** in restricted functionality mode. YAML values are rendered through the main rendering pipeline using with the full set of helpers and the same expression preservation logic as the template body. The only difference is that [[Block Templates]] (partials) are not available in YAML — but all helpers, fields, and block helpers work normally.
 
 ## What Is Supported in Restricted Functionality Mode?
 In restricted functionality mode, the following features **work normally**:

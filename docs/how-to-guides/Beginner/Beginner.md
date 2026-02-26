@@ -9,7 +9,7 @@ Just starting out and need some tutorials on how to use [[Z2K Templates]]? These
 ## Beginner Guides
 - What Type of Templates Should I Make?
     - Potential Templates for XXX (See below)
-- How To Make Your First Template
+- [[How To Make Your First Template]]
 - How To Include Automated Fields like Date and Time
 - How to Specify the Name of the Created File using Fields
 - How to Specify Default Values for Fields

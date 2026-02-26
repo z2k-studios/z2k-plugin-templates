@@ -64,7 +64,7 @@ This is a deliberate design choice that keeps the merge behavior predictable. If
 
 
 > [!WARNING] Avoid merging tags and aliases properties
-> Unfortunately, with the current approach, the `tags` and `aliases` YAML properties used by Obsidian are at risk for being replaced in hierarchical merging. We hope to support arrays in the near future, but for now, array contents are not additive, but rather replacing. For this reason, we recommend using these two properties only in your final document template. 
+> Unfortunately, with the current approach, the `tags` and `aliases` YAML properties used by Obsidian are at risk for being replaced in hierarchical merging. We hope to support arrays in the future, but for now, array contents are not additive, but rather replacing. For this reason, we recommend using these two properties only in your final document template. 
 
 
 ## Merge Sources and Order

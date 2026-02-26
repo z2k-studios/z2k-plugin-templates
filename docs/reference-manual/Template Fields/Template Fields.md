@@ -11,9 +11,10 @@ Template Fields are the workhorses of Z2K Templates. They are placeholders, writ
 2. [[Template Field Flavors]] - Types of fields (automated, user specified)
 3. [[Field Syntax]] - The forms a field can take: `{{varName}}`, `{{{varName}}}`, helper parameters, and dot notation
 4. [[Syntax Highlighting]] - How Z2K Templates highlights fields in Obsidian's editor
-5. [[Field Types]]
-6. [[Field Data Sources]] -- Reviews all the ways data can be provided to fill in a template field
-7. [[Restricted Functionality Mode]] - For advanced users, this page describes the limitations of using fields in complex expressions
+5. [[Field Types]] - The data types a field can hold and how they affect prompting and external data conversion
+6. [[Field Data Sources]] - Reviews all the ways data can be provided to fill in a template field
+7. [[Special Characters in Text]] - How escape sequences and special characters behave in field values across different transports
+8. [[Restricted Functionality Mode]] - For advanced users, this page describes the limitations of using fields in complex expressions
 
 ## Additional Information
 The following pages are also relevant to understanding the use of [[Template Fields Overview|Template Fields]]:

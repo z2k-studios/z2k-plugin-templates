@@ -128,4 +128,5 @@ tags: research
 ```
 
 > [!DANGER] Notes for Review
-> - Verify whether comments inside YAML frontmatter are preserved or stripped differently – the engine has special YAML handling, but comment behavior in YAML was not explicitly tested.
+> - #TEST Verify whether comments inside YAML frontmatter are preserved or stripped differently – the engine has special YAML handling, but comment behavior in YAML was not explicitly tested.
+> - #TEST Verify that {{! Comments }} persist until finalization.
