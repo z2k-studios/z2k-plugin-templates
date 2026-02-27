@@ -6,7 +6,7 @@ aliases:
 - Processing Order
 ---
 # Queue Processing
-The Command Queue processor is the engine that watches the [[Queue Directory]], picks up command files, and executes them. This page covers how the scan loop operates, how files are ordered, and the two ways to trigger processing.
+The Command Queue processor is the engine that watches the [[Queue Folder]], picks up command files, and executes them. This page covers how the scan loop operates, how files are ordered, and the two ways to trigger processing.
 
 ## Contents
 - [[#Automatic Scanning]]
@@ -17,7 +17,7 @@ The Command Queue processor is the engine that watches the [[Queue Directory]], 
 - [[#JSONL Batch Processing]]
 
 ## Automatic Scanning
-The plugin runs a background timer that checks the [[Queue Directory]] at a configurable interval. The default scan frequency is **60 seconds**.
+The plugin runs a background timer that checks the [[Queue Folder]] at a configurable interval. The default scan frequency is **60 seconds**.
 
 Repeating with that interval, the Z2K Templates plugin will perform a full scan of the Queue Directory and look for any command queue file ready to be performed.
 
@@ -43,7 +43,7 @@ If the queue is already mid-processing, the command shows a notice and does noth
 
 ## Processing Order
 When a scan runs, the processor:
-1. Makes a list of all `.json` and `.jsonl` files in the [[Queue Directory]] top level
+1. Makes a list of all `.json` and `.jsonl` files in the [[Queue Folder]] top level
 2. Filters out special files – `.retry.json` sidecars and `.processing.jsonl` crash recovery files
 3. Sorts the remaining files by **creation time** (oldest first)
 4. Processes each file in that order

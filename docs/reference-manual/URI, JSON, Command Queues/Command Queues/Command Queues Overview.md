@@ -11,6 +11,9 @@ Command Queues allows data to be queued up for insertion into your Obsidian vaul
 
 The Command Queue is a file-based automation system built into Z2K Templates and uses [[JSON Packages]]. You drop a JSON Package into a watched directory as a `.json` or `.jsonl` file, and the plugin picks it up, executes it, and archives or discards the result – no manual interaction required.
 
+> [!NOTE]
+> Command Queues are **disabled by default**. To use them, enable the feature first in Settings → Z2K Templates → [[Command Queue Settings]].
+
 ## Why Command Queues Exist
 [[URI Actions]] let you trigger Z2K Templates from outside Obsidian, but they require Obsidian to be running and listening at the moment the URI fires. That works for one-shot links and bookmarks. It does not work when:
 - You want to queue commands while Obsidian is closed and have them processed on next launch
@@ -20,11 +23,11 @@ The Command Queue is a file-based automation system built into Z2K Templates and
 - You have a NAS drive auto generating data that does not have direct access to your obsidian vault (or even be able to load it). It can write data to a local drive that then is detected by Command Queues for later direct importing. 
 - You wish to serialize the importing of data from a variety of devices and push them into a single queue that will only be processed by a single device in order to prevent duplicate imports. You can share a cloud based folder for all devices to write to, and then designate one machine to handle the command queue processing. 
 
-Command Queues solve this by decoupling *when a command is created* from *when it is executed*. The queue directory acts as a mailbox – anything dropped there will eventually be processed.
+Command Queues solve this by decoupling *when a command is created* from *when it is executed*. The queue folder acts as a mailbox – anything dropped there will eventually be processed.
 
 ## How It Works
 The system operates on a simple loop:
-1. The plugin scans the [[Queue Directory]] at a configurable interval (default: every 60 seconds)
+1. The plugin scans the [[Queue Folder]] at a configurable interval (default: every 60 seconds)
 2. It picks up any `.json` and `.jsonl` files it finds, sorted oldest-first by creation time
 3. Each file is parsed as a [[JSON Packages Overview|JSON Package]] and executed through the same command pipeline used by [[URI Actions]]
 4. Successful commands are archived in a `done/` subfolder (or deleted immediately, depending on settings)
@@ -62,7 +65,7 @@ See [[JSONL Format]] for the full specification on batch files.
 
 ## What's Next
 The remaining pages in this section cover the command queueing system in detail:
-- [[Queue Directory]] – where files go and how the directory is organized
+- [[Queue Folder]] – where files go and how the directory is organized
 - [[Queue Processing]] – how the scan loop works and how files are ordered
 - [[Queue Settings]] – all configurable options
 - [[Command File Lifecycle]] – the states a file passes through
@@ -72,6 +75,6 @@ The remaining pages in this section cover the command queueing system in detail:
 
 
 > [!DANGER] Internal Notes
-> - The queue is enabled by default in the plugin settings (`offlineCommandQueueEnabled: true`). Confirm whether this is the intended shipping default or a development convenience.
+> - The queue is **disabled** by default as of issue #154 (`offlineCommandQueueEnabled: false`). Users must opt in via settings.
 > - The first automatic scan is delayed by one full frequency interval after plugin load. This means if frequency is 60s, the first scan happens ~60s after Obsidian starts. This is by design to avoid a scan storm on startup, but it's worth noting for users who expect immediate processing.
 > - There is currently no UI feedback (notification or toast) when a queued command succeeds. The user only sees the resulting note appear in the vault. Consider whether a summary notice ("Processed 3 commands from queue") would be useful.

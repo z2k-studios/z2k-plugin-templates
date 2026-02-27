@@ -8,7 +8,7 @@ aliases:
 # Enable Command Queue
 Master toggle for the command queue system. When off, the plugin ignores queued command files entirely.
 
-- **Default:** On
+- **Default:** Off
 - **Type:** Toggle
 
 When disabled, the remaining settings in the [[Command Queue Settings]] section are hidden from the settings panel.

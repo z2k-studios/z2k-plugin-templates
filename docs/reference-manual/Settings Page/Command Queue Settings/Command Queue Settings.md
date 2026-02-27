@@ -14,7 +14,7 @@ For the full discussion of command queues, JSON command format, and integration 
 For more information, please see:
 
 1. [[Enable Command Queue]] – Master toggle for the queue system
-2. [[Queue Folder]] – The folder the plugin watches for incoming command files
+2. [[Queue Folder (Settings)|Queue Folder]] – The folder the plugin watches for incoming command files
 3. [[Scan Frequency]] – How often the plugin checks for new command files
 4. [[Pause Between Commands]] – Delay inserted between processing each command
 5. [[Archive Duration]] – How long processed command files are retained

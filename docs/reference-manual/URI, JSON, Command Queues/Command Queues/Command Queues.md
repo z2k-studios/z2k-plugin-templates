@@ -16,7 +16,7 @@ Truly, this is a powerful feature. It enables data to be queued up for insertion
 ## Contents
 For more information, please see:
 1. [[Command Queues Overview]] – What Command Queues are, why they exist, and how the system works at a high level
-2. [[Queue Directory]] – Where command files live and how the directory is structured
+2. [[Queue Folder]] – Where command files live and how the folder is structured
 3. [[Queue Processing]] – How files are picked up, ordered, and executed
 4. [[Queue Settings]] – Configuration options for the Command Queue system
 5. [[Command File Lifecycle]] – The states a command file moves through from creation to completion

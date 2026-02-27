@@ -14,7 +14,7 @@ This allows you to specify the root folder that scopes the entire Z2K Templates 
 Leave this blank to allow Z2K Templates to operate across your entire vault (the default, and for most, the correct setting). Set it to a path like `/Projects` or `/SecondBrain/Z2K` to restrict the plugin to that section of your vault only.
 
 > [!NOTE] Leading Slashes Are Optional
-> A leading `/` is accepted but stripped internally – `/Projects` and `Projects` are treated identically. All paths in this field are always vault-root relative, regardless of whether you include a leading slash. There is no way to enter an absolute filesystem path here (unlike [[Queue Folder]] and [[Error Log File]], which accept absolute paths).
+> A leading `/` is accepted but stripped internally – `/Projects` and `Projects` are treated identically. All paths in this field are always vault-root relative, regardless of whether you include a leading slash. There is no way to enter an absolute filesystem path here (unlike [[Queue Folder (Settings)|Queue Folder]] and [[Error Log File]], which accept absolute paths).
 
 ## What the Root Folder Scopes
 Setting a Templates Root Folder affects the following behaviors:

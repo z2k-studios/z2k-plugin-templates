@@ -8,10 +8,14 @@ aliases:
 # Pause Between Commands
 An optional delay inserted between processing each command in a batch.
 
-- **Default:** Empty (no pause)
+- **Default:** `1s`
 - **Accepts:** A duration value (see [[Duration Format]]), or blank
 
-Leave blank for no pause – commands process as fast as possible. Set a duration when commands create files that subsequent commands depend on, or to avoid overwhelming Obsidian with rapid sequential file operations.
+Leave blank for no pause – commands process as fast as possible. Set a duration when commands create files that subsequent commands depend on, or to avoid overwhelming Obsidian with rapid sequential file operations. 
+
+A pause is useful when one command creates a file that a subsequent command needs to reference – it gives Obsidian's indexer time to register the new file.
+
+This applies between individual `.json` files and between lines within a `.jsonl` file. It does not apply after the last command. 
 
 This setting is only visible when [[Enable Command Queue]] is on.
 
@@ -29,4 +33,3 @@ Leave the field blank to disable the inter-command pause entirely. Alternatively
 Very short pauses (`100ms`–`500ms`) are enough to give Obsidian's file indexer breathing room between commands. Pauses longer than a few seconds will make large batches noticeably slow without additional benefit. Values above `30s` are rarely appropriate – if commands need that much time between them, consider whether they should be batched at all.
 
 > [!DANGER] NOTES
-> - See [GitHub issue #154](https://github.com/z2k-studios/z2k-plugin-templates/issues/154) for a proposal to change the default to `1s`.

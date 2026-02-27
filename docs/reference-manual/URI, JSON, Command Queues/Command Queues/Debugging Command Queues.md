@@ -28,7 +28,7 @@ When a command isn't processing as expected, work through these checks in order:
    - See [[#Testing with a Basic Command]] below for a minimal test case
 
 3. **Is the file in the right directory?**
-   - Check that your command file is in the configured [[Queue Directory]]
+   - Check that your command file is in the configured [[Queue Folder]]
    - The default is `.obsidian/plugins/z2k-plugin-templates/command-queue/`
 
 4. **Is the filename correct?**
@@ -62,7 +62,7 @@ There are two approaches – start with the simpler one.
 ### Option A: Zero-Setup Test (Recommended)
 This is the "hello world" of Z2K Templates command queues. It requires no template file – the template text is embedded directly in the command.
 
-Save this JSON as `queue-test.json` in your [[Queue Directory]]:
+Save this JSON as `queue-test.json` in your [[Queue Folder]]:
 
 ```json
 {
@@ -91,7 +91,7 @@ This note was created by the Command Queue at {{date}} {{time}}.
 Test value: {{testValue}}
 ```
 
-**Step 2:** Save this as `queue-test.json` in your [[Queue Directory]]:
+**Step 2:** Save this as `queue-test.json` in your [[Queue Folder]]:
 
 ```json
 {
