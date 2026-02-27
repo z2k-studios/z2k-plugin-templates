@@ -1,6 +1,7 @@
 ---
 sidebar_folder_position: 10
 sidebar_position: 1
+z2k_validation_ok: 2
 ---
 
 # fieldInfo Helper Functions

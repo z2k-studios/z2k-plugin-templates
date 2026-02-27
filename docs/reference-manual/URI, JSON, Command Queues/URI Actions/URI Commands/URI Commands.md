@@ -4,9 +4,11 @@ aliases:
 - URI Command
 sidebar_position: 1
 sidebar_folder_position: 20
+z2k_validation_ok: 5
+
 ---
 # URI Commands
-Each Z2K Templates URI includes a required `cmd` parameter that determines what the plugin does. Five commands are available.
+Each Z2K Templates URI includes a required `cmd` parameter that determines what the plugin actually does. Options are listed below.
 
 ## Contents
 For more information, please see:

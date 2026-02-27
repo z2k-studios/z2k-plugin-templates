@@ -1,6 +1,7 @@
 ---
 sidebar_position: 1
 sidebar_folder_position: 30
+z2k_validation_ok: 5
 aliases:
   - error logging settings
   - error log settings
@@ -14,6 +15,3 @@ For the full discussion of error handling and debugging, see [[Debug and Error H
 For more information, please see:
 1. [[Error Log Level]] – The minimum severity level that triggers a log entry
 2. [[View Error Log]] – Opens the live log viewer and clears the log
-
-> [!DANGER] NOTES
-> - The [[Debug and Error Handling]] page may not yet exist. If so, this settings section stands alone until that section is written.

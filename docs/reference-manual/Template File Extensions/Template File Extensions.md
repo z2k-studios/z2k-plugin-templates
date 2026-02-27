@@ -3,6 +3,7 @@ sidebar_folder_position: 160
 sidebar_position: 1
 sidebar_metacategory: Advanced
 doc_state: initial_ai_draft
+z2k_validation_ok: 2
 aliases:
   - Template File Extension
   - File Extension

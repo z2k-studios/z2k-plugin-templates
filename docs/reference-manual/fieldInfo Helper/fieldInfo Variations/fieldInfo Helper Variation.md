@@ -1,9 +1,10 @@
 ---
 title: fieldInfo Helper
-sidebar_position: 05
+sidebar_position: 5
 sidebar_label: "{{fieldInfo}}"
 sidebar_class_name: z2k-code
 doc_state: initial_ai_draft
+z2k_validation_ok: 3
 ---
 
 # fieldInfo

@@ -1,6 +1,7 @@
 ---
 sidebar_position: 1
 sidebar_folder_position: 70
+z2k_validation_ok: 5
 ---
 # Naming Conventions
 Z2K Templates uses distinct naming conventions for fields, helpers, template files, folders, and YAML properties. Each context follows its own rules – some enforced by the parser, others by convention. This section maps them all.

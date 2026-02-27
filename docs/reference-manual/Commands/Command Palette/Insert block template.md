@@ -24,7 +24,7 @@ When you run this command:
 ## Which Block Templates Appear?
 Block templates follow the same [[Template Discovery]] rules as document templates:
 
-- Only block templates in [[Template Folders]] along the path from your current file to the [[Templates Root Folder]] appear
+- It uses the current file's folder to establish the [[Destination Context]]. Therefore, only block templates in [[Template Folders]] along the path from your current file to the [[Templates Root Folder]] will appear in the file picker.
 - This means you see contextually relevant blocks, not every block template in your vault
 
 For example, if you're editing a file in `Projects/Website Redesign/`, you'll see block templates from:
