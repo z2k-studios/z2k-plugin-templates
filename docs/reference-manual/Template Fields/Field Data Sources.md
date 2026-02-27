@@ -17,7 +17,7 @@ Here are the different ways in which data can be inserted into a template using 
 | **Fallbacks**       | User        | The user can specify fallback values to use when all other data sources fail.                                                | [[Fallback Behavior]]                              |
 | **YAML Properties** | The Vault   | YAML frontmatter properties from the file, system blocks, or block templates are automatically available as field values.    | [[Using YAML Metadata as Fields]]                  |
 | **Existing Files**  | The Vault   | Other vault files can be fed into a template via the `{{sourceText}}` field, or through the use of block templates.          | [[sourceText\|sourceText]], [[Block Templates]]    |
-| **URI Calls**       | External    | Other applications (e.g. Apple Shortcuts, batch scripts) can insert data into templates to create new files via URI calls.   | [[URI Calls]]                                      |
+| **URI Calls**       | External    | Other applications (e.g. Apple Shortcuts, batch scripts) can insert data into templates to create new files via URI calls.   | [[URI Actions]]                                    |
 | **JSON Packages**   | External    | 3rd party applications (e.g. Apple Shortcuts) can create actions inside JSON files that will be read by the Templates Plugin | [[JSON Packages]]                                  |
 | **Command Queues**  | External    | Offline and programmatic template invocation that occurs asynchronously                                                      | [[Command Queues]]                                 |
 
@@ -41,9 +41,9 @@ Field values are set through a series of steps. Each step either checks whether 
 
 | Priority    | Source                                                                                                                          | Behavior                                                                                      |
 | ----------- | ------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| **Highest** | **External overrides** – values from [[JSON Packages]] or [[URI Calls]]                                                         | Unconditionally overwrites any existing value                                                 |
+| **Highest** | **External overrides** – values from [[JSON Packages]] or [[URI Actions]]                                                       | Unconditionally overwrites any existing value                                                 |
 |             | **Plugin-managed built-ins** – `{{templateName}}`, `{{templateVersion}}`, `{{templateAuthor}}`, `{{sourceText}}`, `{{creator}}` | Unconditionally overwrites – ensures these fields always reflect the actual template metadata |
-|             | **fieldInfo `value` parameter** – explicit values set via `{{fieldInfo}}` with [[fieldInfo value]]                           | Set during parsing, before YAML values are applied                                            |
+|             | **fieldInfo `value` parameter** – explicit values set via `{{fieldInfo}}` with [[fieldInfo value]]                              | Set during parsing, before YAML values are applied                                            |
 |             | **YAML property values** – from merged YAML frontmatter (see [[Using YAML Metadata as Fields]])                                 | Only fills in fields that don't already have a value – skips if fieldInfo already set one    |
 | **Lowest**  | **Prompting** – user input via the [[Prompting Interface]]                                                                      | Only runs for fields that still have no value after all the above                             |
 

@@ -46,7 +46,7 @@ aliases:
 		- [[Convert to Document Template]]            
 		- [[Convert to Content File]]                  
 		- [[Convert to Block Template]]            
-	- [[Quick Create Commands]]
+	- [[Quick Commands]]
 	- [[Context Menu Commands]]
 
 3. [[Template Files]] - The anatomy and lifecycle of a template file  

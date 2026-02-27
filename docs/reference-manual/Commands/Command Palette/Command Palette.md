@@ -53,7 +53,7 @@ Additional commands for advanced workflows.
 | [[Process Command Queue Now]] | [[Command Queues\|Offline queue enabled]] | Immediately processes any queued template commands |
 
 ## Custom Commands to Specific Templates
-You can also design your own commands to interface with specific templates. Please see the [[Quick Create Commands]] for more details. 
+You can also design your own commands to interface with specific templates. Please see the [[Quick Commands]] for more details. 
 
 ## Assigning Commands to Hotkeys
 Any command can be assigned a keyboard shortcut in Obsidian:

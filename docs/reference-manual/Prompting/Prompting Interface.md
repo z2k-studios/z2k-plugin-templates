@@ -22,7 +22,7 @@ The prompting interface appears whenever a command triggers template [[Instantia
 - [[Create new file]]
 - [[Continue filling file]]
 - [[Create file from selected text]]
-- [[Quick Create Commands]]
+- [[Quick Commands]]
 
 If the template has no promptable fields the interface is skipped entirely. For instance, if all fields in the template are built-in, computed, or hidden, there is no need to prompt for data.
 
@@ -42,9 +42,12 @@ Each field in the prompting interface is rendered as a row with the following el
 ### Visual Indicators
 The prompting interface uses a colored left border on each field to communicate state:
 - **No border** – The field is untouched.
-- **Green border** – The field has been [[Prompt Touching|touched]] (you've interacted with it).
-- **Red border** – The field has a validation error.
-- **Accent border** – The field currently has focus.
+- **Purple border** * – The field currently has focus.
+- **Green border** ** – The field has been [[Prompt Touching|touched]] (you've interacted with it).
+- **Red border** ** – The field has a validation error.
+
+\* The purple color comes from your Obsidian theme's accent color and may appear differently depending on your theme.
+\*\* If the field is currently in focus, it will show the purple border instead.
 
 ## Field Ordering
 Fields appear in the prompting interface in a deliberate order:

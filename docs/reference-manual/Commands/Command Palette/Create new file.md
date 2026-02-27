@@ -46,7 +46,7 @@ Here are some tips for making this most important command even easier to use:
 - Assign this command to `Ctrl/Cmd + N` to replace Obsidian's default new note behavior
 - You can also right click on a folder in the folder view and use the [[Create New File Here]] command to skip the destination context query.
 - If no templates appear, check that you have [[Template Folders]] configured correctly
-- For frequently-used templates, consider setting up [[Quick Create Commands]] instead
+- For frequently-used templates, consider setting up [[Quick Commands]] instead
 
 ## Related Commands
 

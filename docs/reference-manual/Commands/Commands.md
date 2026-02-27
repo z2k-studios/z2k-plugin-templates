@@ -10,4 +10,4 @@ Z2K Templates provides commands through Obsidian's Command Palette and context m
 ## Contents
 - [[Command Palette]] – Commands available via `Ctrl/Cmd + P`
 - [[Context Menu Commands]] – Commands available via right-click
-- [[Quick Create Commands]] – How to make custom commands for specific templates
+- [[Quick Commands]] – How to make custom commands for specific templates
