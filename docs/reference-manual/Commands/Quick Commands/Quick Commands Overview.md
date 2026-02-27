@@ -11,7 +11,7 @@ Quick Commands let you build custom commands tailored to your workflow. Instead 
 ## Why Use Quick Commands
 The standard [[Create New File]] command works well for occasional use, but frequent template users often want:
 - **Fewer prompts** — e.g. Skip the folder picker when you always create quick notes in `/Quick Notes`
-- **Keyboard shortcuts** — e.g. Assign `Ctrl+Shift+T` to instantly instantly insert a task block
+- **Keyboard shortcuts** — e.g. Assign `Ctrl+Shift+T` to instantly insert a task block
 - **Workflow-specific commands** — e.g. Create a new command "New Meeting Note" that uses your meeting template in your meetings folder
 - **Block insertion shortcuts** — Quick access to frequently-used block templates
 

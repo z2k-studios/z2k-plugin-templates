@@ -41,7 +41,7 @@ Commands for changing a file's template type or file extension.
 | ------------------------------------------------------ | ------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
 | [[Convert to Document Template]]                       | File not already a document template                          | Marks the file as a [[Types of Template Files#Document Templates\|document template]] |
 | [[Convert to Block Template]]                          | File not already a block template                             | Marks the file as a [[Types of Template Files#Block Templates\|block template]]       |
-| [[Convert to Markdown Template]]                       | File has `.template` or `.block` extension                    | Changes extension back to `.md` while keeping template status                         |
+| [[Switch to .md extension]]                            | File has `.template` or `.block` extension                    | Changes extension back to `.md` without changing template type                        |
 | [[Convert to Content File]]                            | File not already a content file                               | Removes template status, making it a normal file                                      |
 | [[Make .template and .block Templates Visible-Hidden]] | [[Use Template File Extensions\|Template extensions enabled]] | Toggles visibility of `.template` and `.block` files                                  |
 

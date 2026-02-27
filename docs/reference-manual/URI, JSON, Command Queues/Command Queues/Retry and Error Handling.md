@@ -21,10 +21,10 @@ The Command Queue includes a retry system for commands that fail due to transien
 ## Retry Configuration
 Retry behavior is controlled by two parameters in the [[JSON Packages Overview|JSON Package]]:
 
-| Parameter | Type | Default | Description |
-| --- | --- | --- | --- |
-| `maxRetries` | number | `0` | Maximum retry attempts after initial failure. Use `-1` for unlimited retries. |
-| `retryDelay` | string | `"0s"` | Duration to wait before next retry (e.g., `"5s"`, `"1m"`). Uses standard [[duration format|Duration Format]]. |
+| Parameter    | Type   | Default | Description                                                                                |                    |
+| ------------ | ------ | ------- | ------------------------------------------------------------------------------------------ | ------------------ |
+| `maxRetries` | number | `0`     | Maximum retry attempts after initial failure. Use `-1` for unlimited retries.              |                    |
+| `retryDelay` | string | `"0s"`  | Duration to wait before next retry (e.g., `"5s"`, `"1m"`). Uses standard [[duration format | Duration Format]]. |
 
 These are [[JSON Directives|directive keys]] – they control the queue's behavior, not the template's field data.
 

@@ -19,6 +19,7 @@ This page is meant to scratch that exact itch by providing a couple of options t
 > [!INFO] Recommended Approach
 > If your goal is to fully hide template files from Obsidian's file explorer, **Method 2 with [[Template File Extensions]]** is the cleanest solution. It lets you store templates anywhere without needing special folder names, and the plugin provides a built-in command to toggle their visibility. **Method 3** (dot-prefix folders) is a lighter-weight alternative that hides the folder itself but requires working outside of Obsidian to manage template files.
 
+
 > [!WARNING] Advanced Users Only
 > Please note that these methods are presented for advanced users only. We highly encourage not pursuing these advanced methods until your collections of templates files have stabilized. Making Template files less visible in your vault also means that they are more difficult to modify. Thus, please exercise some caution.
 

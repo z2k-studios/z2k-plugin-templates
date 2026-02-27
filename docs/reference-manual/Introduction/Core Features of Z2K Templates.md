@@ -15,6 +15,7 @@ Z2K Templates has a rich collection of features, including:
 - A series of [[Built-In Fields|built-in fields]] that will auto-populate data into the new notes.
 - [[Handlebars Support|Handlebars.js functions]], including built-in helpers for iteration and conditional formatting.
 - Support for [[Block Templates|block templates]] that allow you to build modular templates with consistent formatting.
+- Customizable [[Quick Commands|obsidian commands]] to insert blocks or create new files with templates, all assignable to hotkeys.
 - Support for [[Template Folder Hierarchies|Hierarchical Structures]] that allow you to build templates up as you traverse through a folder-based vault, including support for [[YAML Integration|YAML merging]] across templates.
 - [[URI Actions]] to allow external data to be fed into your templates to create new files programmatically.
 - External [[JSON Packages Overview|JSON Package]] and [[Command Queues]] that can be use to queue up data from external sources to be added to your vault when Obsidian is loaded.

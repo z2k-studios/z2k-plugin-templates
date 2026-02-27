@@ -10,6 +10,8 @@ Just starting out and need some tutorials on how to use [[Z2K Templates]]? These
 - What Type of Templates Should I Make?
     - Potential Templates for XXX (See below)
 - [[How To Make Your First Template]]
+- How to Organize Templates in Your Vault
+	- see [[Template Organization]]
 - How To Include Automated Fields like Date and Time
 - How to Specify the Name of the Created File using Fields
 - How to Specify Default Values for Fields

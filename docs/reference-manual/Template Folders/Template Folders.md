@@ -14,6 +14,7 @@ Template Folders are the default and easiest [[Template Requirements#Standard Me
 
 ## Contents
 - [[What is a Template Folder|What is a Template Folder?]] - what fundamentally is a Template Folder?
+- [[Template Organization]] - How to organize templates in your vault
 - [[Template Folder Hierarchies]] - how do you build a context-sensitive templating system?
 - [[Template Folder Subfolders]] - can template folders have sub folders?
 - [[Hiding Template Folders]] - how to deal with the proliferation of template folders?

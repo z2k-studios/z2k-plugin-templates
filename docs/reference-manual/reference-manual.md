@@ -37,15 +37,20 @@ aliases:
 
 3. [[Commands]]
 	- [[Command Palette]] - Commands available through the Command Palette
-		- [[Create new note]]                           
-		- [[Create note from selected text]]           
-		- [[Convert existing note to templated note]]  
-		- [[Continue filling note]]                     
-		- [[Insert Block Template]]                     
-		- [[Insert Block Template Using Selected Text]] 
-		- [[Convert to Document Template]]            
-		- [[Convert to Content File]]                  
-		- [[Convert to Block Template]]            
+		- [[Create New File]]
+		- [[Create File From Selected Text]]
+		- [[Apply Template to File]]
+		- [[Continue Filling File]]
+		- [[Finalize File]]
+		- [[Insert Block Template]]
+		- [[Insert Block Template Using Selected Text]]
+		- [[Convert to Document Template]]
+		- [[Convert to Block Template]]
+		- [[Switch to .md extension]]
+		- [[Convert to Content File]]
+		- [[Make .template and .block Templates Visible-Hidden]]
+		- [[Process Command Queue Now]]
+		- [[File Naming in Commands]]
 	- [[Quick Commands]]
 	- [[Context Menu Commands]]
 
@@ -230,9 +235,7 @@ aliases:
 	- [[JSON Packages]]
 	- [[Command Queues]]
 
-21. [[Z2K System Features|Z2K System Features]] - Additional features specific to the larger Z2K System
-
-22. [[Debug and Error Handling]]
+21. [[Debug and Error Handling]]
 
 
 ### Misc
