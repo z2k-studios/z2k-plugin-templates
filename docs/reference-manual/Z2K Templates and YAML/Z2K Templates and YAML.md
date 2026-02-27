@@ -18,7 +18,6 @@ The following pages cover these capabilities in detail:
 
 1. **Using Fields Inside YAML**
 	- [[Using Fields Inside YAML Metadata]] – how to place `{{field}}` expressions in your YAML frontmatter
-		- How-To Guide: [[How to Use Z2K Fields Inside YAML Metadata]]
 
 2. **Using YAML as a Data Source**
 	- [[Using YAML Metadata as Fields]] – how YAML properties become available as Handlebars fields

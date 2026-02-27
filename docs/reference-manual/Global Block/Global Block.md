@@ -16,4 +16,5 @@ For more information, please see:
 3. [[Global Block and fieldInfo]] - Using the global block for vault-wide field declarations and resolution order
 4. [[Global Block and Field Values]] - Using the global block to define values for fields
 5. [[Global Block and YAML]] - Using the global block to inject default YAML frontmatter
+6. [[Global Block Examples]] -  Quick links to a number of example use cases for the global block 
 

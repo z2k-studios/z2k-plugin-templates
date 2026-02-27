@@ -44,7 +44,7 @@ No prompts are shown. The command runs to completion silently.
 ## Related Commands
 - [[Continue Filling File]] – Prompts you for each remaining field instead of using fallbacks
 - [[Apply Template to File]] – Applies a template to an existing file, beginning the fill process
-- [[Finalize file (Context Menu)|Finalize This File (Context Menu)]] – Same operation from the file explorer right-click menu
+- [[Finalize this file (Context Menu)|Finalize This File (Context Menu)]] – Same operation from the file explorer right-click menu
 
 > [!DANGER]
 > - Confirm whether a confirmation dialog is shown before finalizing (issue #134 flagged this as a consideration — "destructive action").
