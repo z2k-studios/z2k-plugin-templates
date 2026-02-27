@@ -34,7 +34,9 @@ When the same field has `{{fieldInfo}}` declarations at multiple levels, the mos
 
 A declaration in the global block overrides built-in defaults. A declaration in a system block overrides the global block. The main template always has the final say.
 
-This means the global block sets the floor: it establishes defaults that every template inherits, but any template (or system block) can override them by providing its own `{{fieldInfo}}` for the same field.
+Interestingly, this means you can override the behavior of built-in fields, see [[Modifying Built-In Field Behaviors]] for more details.
+
+This also means the global block sets the floor: it establishes defaults that every template inherits, but any template (or system block) can override them by providing its own `{{fieldInfo}}` for the same field.
 
 ## Example - Global Field Prompts
 When a field appears across many templates but has no `{{fieldInfo}}` declaration in each one, users see a generic prompt (or no prompt at all). The global block solves this at the source:

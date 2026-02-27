@@ -52,6 +52,8 @@ This file catalogs all `DOCS:` tags found in the plugin and engine source code. 
 
 > Field info values are resolved through a priority chain: **built-in < global < system < block < main**. Values defined in the main template body override those from blocks, which override system blocks, which override the global block, which override built-in defaults. This determines which value "wins" when the same field is defined in multiple places.
 
+- Status: ✅ Documented — see [[Global Block and fieldInfo#fieldInfo Resolution Order]]
+
 ---
 
 ## DOCS Tag #4: No Blocks Allowed in YAML Frontmatter
