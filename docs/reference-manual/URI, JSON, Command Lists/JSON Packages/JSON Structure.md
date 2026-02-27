@@ -77,7 +77,24 @@ For detailed, command-specific examples, see the [[JSON Commands]] section. Belo
 }
 ```
 
-Note: the "\n" will be converted to newlines automatically. 
+Note: the "\n" will be converted to newlines automatically.
+
+### Create a New Note — Inline Template
+No template file needed:
+
+```json
+{
+  "cmd": "new",
+  "templateContents": "Hello {{Recipient}}! Created at {{date}}.",
+  "prompt": "none",
+  "finalize": true,
+  "fileTitle": "Hello World",
+  "Recipient": "Emerson"
+}
+```
+
+`templateContents` is accepted wherever `templatePath` would be (for `new`, `upsert`, and `insertblock`). `blockContents` is the equivalent alias for block insertion. See [[JSON Directives#Template Source|JSON Directives - Template Source]] for the full rules.
+
 ### With Field Data in a Separate File
 ```json
 {
@@ -91,8 +108,7 @@ Note: the "\n" will be converted to newlines automatically.
 Here, `fieldData` is a vault-relative file path — the plugin reads the file and parses its contents as field data. See [[fieldData]] for the other input forms (inline JSON object, inline JSON string).
 
 > [!DANGER] Internal Notes
-> - There is currently no way to pass an inline block template body via `insertblock` — it always requires a `templatePath` or `blockPath` pointing to an existing file. An inline block content parameter would be a useful addition. File as a feature request.
 > - Confirm whether `destDir` creates the folder if it doesn't exist — the code calls `this.createFolder(cps.destDir)`, which suggests it does. Documented as auto-creating for now.
-> - The key normalization behavior (stripping non-alphanumeric, case-insensitive matching) applies to all known keys equally, but the docs comment at line 1236 says to just document `templatePath` for simplicity. We've documented the normalization behavior as a general section since it applies uniformly.
+> - The key normalization behavior (stripping non-alphanumeric, case-insensitive matching) applies to all known keys equally. Documented the normalization behavior as a general section since it applies uniformly.
 > - The `destHeader` regex uses `escapeRegExp` on the header text and the `"mi"` flag (multiline, case-insensitive). Confirm edge cases: what happens with headers containing special regex characters in their text? `escapeRegExp` should handle this, but worth testing.
-> - Confirm the exact default naming behavior when `fileTitle` is not provided and `prompt` is `"none"`. The code path through `createCard` eventually leads to `generateUniqueFilePath` — does it use the template name as a fallback?
+> - ==**#TEST** Confirm the exact default naming behavior when `fileTitle` is not provided and `prompt` is `"none"`. The code path through `createCard` eventually leads to `generateUniqueFilePath` — does it use the template name as a fallback? For `templateContents` (no template file name), what string does it fall back to?==

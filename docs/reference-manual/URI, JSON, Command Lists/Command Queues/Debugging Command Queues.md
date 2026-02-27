@@ -55,10 +55,31 @@ When a command isn't processing as expected, work through these checks in order:
    - Check its `nextRetryAfter` timestamp
 
 ## Testing with a Basic Command
-Before debugging a complex command, verify that the Command Queue system is working at all. This requires creating a minimal test template and command.
+Before debugging a complex command, verify that the Command Queue system is working at all.
 
-### Step 1: Create a Test Template
-Create a simple template file in your vault. For example, create `Templates/Queue Test.md` with this content:
+There are two approaches – start with the simpler one.
+
+### Option A: Zero-Setup Test (Recommended)
+This is the "hello world" of Z2K Templates command queues. It requires no template file – the template text is embedded directly in the command.
+
+Save this JSON as `queue-test.json` in your [[Queue Directory]]:
+
+```json
+{
+  "cmd": "new",
+  "templateContents": "Hello from the queue! Created at {{date}} {{time}}.",
+  "prompt": "none",
+  "finalize": true,
+  "fileTitle": "Queue Hello World"
+}
+```
+
+No template file needed, no setup required. If this works, the queue is running. If it fails, the problem is the queue system itself – not your template or paths. See [[#If This Test Fails]] below for how to debug.
+
+### Option B: Template File Test
+If you want to test with a real template file (to also confirm that template lookup and path resolution are working):
+
+**Step 1:** Create `Templates/Queue Test.md` in your vault:
 
 ```md
 ---
@@ -70,8 +91,7 @@ This note was created by the Command Queue at {{date}} {{time}}.
 Test value: {{testValue}}
 ```
 
-### Step 2: Create a Test Command
-Save this JSON as `queue-test.json` in your [[Queue Directory]]:
+**Step 2:** Save this as `queue-test.json` in your [[Queue Directory]]:
 
 ```json
 {
@@ -90,17 +110,18 @@ Either wait for the next automatic scan or run **Process command queue now** fro
 
 ### Expected Result
 - The `queue-test.json` file should move to the `done/` subfolder
-- A new note should appear in your vault with the test value filled in
-- The note's content should show "Hello from the queue!" where `{{testValue}}` was
+- A new note should appear in your vault with the content filled in
 
 ### If This Test Fails
-If even this minimal test doesn't work:
+If even the zero-setup test doesn't work:
 - The queue system itself has a configuration problem
-- Check that the queue is enabled in settings
+- Check that the queue is enabled inside [[Queue Settings|Command Queue Settings]].
 - Check that the queue directory path is correct and accessible
 - Look for errors in the Developer Console
 
-If the basic test succeeds but your actual command fails, the problem is specific to your command – not the queue system. Focus on the command's JSON structure, template path, or field data.
+If Option A succeeds but Option B fails, the problem is `templatePath` resolution – verify the path matches exactly (case-sensitive), the file exists, and that Obsidian has permission to access the path. 
+
+If both tests succeed but your actual command fails, the problem is specific to your command. Focus on the command's JSON structure, directives, or field data.
 
 ## Inspecting File State
 The [[Command File Lifecycle]] determines what's happening with each command. Here's how to interpret what you see:
@@ -123,15 +144,12 @@ The command failed permanently. See [[#Reading Error Information]] below.
 The plugin crashed mid-batch. On next startup, it will resume from the beginning. See [[Command File Lifecycle#Crash Recovery]].
 
 ## Reading Error Information
-When a command fails, the error details are logged to the **Obsidian Developer Console**:
+When a command fails, start with the plugin's built-in [[Error Log]] — it captures structured error output without requiring you to open Developer Tools.
 
-1. Open the Developer Tools:
-   - macOS: `Cmd + Option + I`
-   - Windows/Linux: `Ctrl + Shift + I`
-2. Click the **Console** tab
-3. Look for error messages from `z2k-plugin-templates`
+For a full walkthrough of how to use the error log and what each error type means, see [[Debugging Tips]].
 
-Errors include:
+### Error Log (First Stop)
+The [[Error Log]] is accessible from Settings → Z2K Templates → Error Logging → View Error Log. It records:
 - JSON parsing failures
 - Missing template files
 - Invalid parameter values
@@ -139,9 +157,18 @@ Errors include:
 - File system errors
 
 > [!NOTE]
-> The failed command file itself does not contain error information – it's identical to the original command. Error details are only available in the console.
+> The failed command file itself does not contain error information – it's identical to the original command file.
 
-### Example Console Output
+### Developer Console (Fallback)
+If the error log doesn't contain enough detail, the Obsidian Developer Console provides lower-level output:
+
+1. Open the Developer Tools:
+   - macOS: `Cmd + Option + I`
+   - Windows/Linux: `Ctrl + Shift + I`
+2. Click the **Console** tab
+3. Look for error messages from `z2k-plugin-templates`
+
+### Example Output
 ```
 z2k-plugin-templates: Failed to process command file: /path/to/command.json
 Error: Template not found: Templates/Missing Template.md
@@ -165,8 +192,8 @@ Error: Template not found: Templates/Missing Template.md
 **Symptom**: File moves to `failed/` on first scan.
 
 **Possible causes**:
-- Template file doesn't exist → Check `templatePath`
-- Required parameter missing → Add missing `cmd`, `templatePath`, etc.
+- Template file doesn't exist → Check `templatePath`, or switch to `templateContents` to eliminate the file dependency
+- Required parameter missing → Add missing `cmd` and either `templatePath` or `templateContents`
 - Invalid parameter value → Check `prompt`, `finalize`, `location` values
 - JSON syntax error in `fieldData` → Validate nested JSON
 

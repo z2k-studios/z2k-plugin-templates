@@ -27,7 +27,10 @@ The table below summarizes the [[URI Directives]] relevant to the `insertblock` 
 
 | Directive          | Required    | Notes                                                                                                                          |
 | ------------------ | ----------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| `blockPath`        | Yes         | Vault-relative path to the block template. `templatePath` also works.                                                          |
+| `blockPath`        | Conditional | Vault-relative path to the block template. `templatePath` also works. Mutually exclusive with `blockContents`.                |
+| `templatePath`     | Conditional | Alias for `blockPath` in this context. Mutually exclusive with `templateContents`.                                            |
+| `blockContents`    | Conditional | Inline block template text — used instead of `blockPath`. No file on disk needed. See [[JSON Directives#Template Source]].    |
+| `templateContents` | Conditional | Alias for `blockContents`. Either a path or a contents directive is required (unless prompting interactively).                 |
 | `existingFilePath` | Conditional | Vault-relative path to the target file. Required for automated use. If omitted, the block inserts at the cursor (editor mode). |
 | `destHeader`       | Conditional | Required when `location` is `header-top` or `header-bottom`.                                                                   |
 | `location`         | No          | `file-top`, `file-bottom`, `header-top`, `header-bottom`, or a line number. See [[JSON Directives#Location Values]].           |
@@ -186,6 +189,28 @@ The `fieldData` value decodes to a JSON object whose keys fill the corresponding
 ```json
 {"philosopher": "Kant", "seat": 3, "left": "Hume", "right": "Descartes"}
 ```
+
+### Example - Inline Block — No File Required
+*Task:* Append a timestamped log entry without a pre-existing block template.
+
+*Pre-encoded:*
+```
+cmd              = insertblock
+blockContents    = {{timestamp}} : {{logEntry}}
+existingFilePath = 2026-01-20 - Tasks
+destHeader       = Tasks
+location         = header-bottom
+prompt           = none
+finalize         = true
+logEntry         = Finished shaving my yak
+```
+
+*Encoded URI:*
+```
+obsidian://z2k-templates?cmd=insertblock&blockContents=%7B%7Btimestamp%7D%7D%20%3A%20%7B%7BlogEntry%7D%7D&existingFilePath=2026-01-20%20-%20Tasks&destHeader=Tasks&location=header-bottom&prompt=none&finalize=true&logEntry=Finished%20shaving%20my%20yak
+```
+
+The block text is rendered with `logEntry` filled in and inserted at the bottom of the "Tasks" section. No block template file needed.
 
 > [!DANGER] Internal Notes
 > - When `existingFilePath` is omitted in a URI context, the plugin falls through to editor mode (insert at cursor). This is fragile for URI use since the user may not have the expected file open. Consider whether the plugin should throw an error when `existingFilePath` is missing in a URI context rather than silently falling through. Currently the code does not distinguish between URI and interactive invocation at this point.

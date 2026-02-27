@@ -16,13 +16,22 @@ The template name property is used in multiple ways:
 ## Built-In Field Linkage
 This value is also used as the value for the `{{templateName}}` [[Built-In Fields|Built-In Field]]. See [[Built-In Fields - Template Data#templateName|templateName]] for more details.
 
+## Plugin-Assigned Values
+In most cases `z2k_template_name` is set to the source template's filename. However, the plugin assigns special values in certain situations where no template file exists:
+
+| Value | When Assigned |
+| ---------- | -------------- |
+| Template filename (e.g. `Meeting Notes`) | Standard instantiation from a template file. |
+| `(inline)` | The note was created using `templateContents` or `blockContents` — inline template text passed via a [[JSON Packages Overview\|JSON Package]] or [[URI Actions\|URI]]. No template file exists. |
+
+The `(inline)` value surfaces through `{{templateName}}` wherever that field is used — in content, conditionals, or block inserts. Automation that tests `{{templateName}}` against a specific filename should account for this case if it may receive inline-created notes.
+
 ## Valid Settings
 The value must be a string. The plugin will throw an error if it encounters a non-string type.
 
 | Value Type | Result                                                                                                         |
 | ---------- | -------------------------------------------------------------------------------------------------------------- |
 | string     | Identifies the template that was used to create this file. Surfaces via the `{{templateName}}` built-in field. |
-
 
 > [!NOTE] Rarely Set Manually
 > In most cases, the plugin sets this property for you during instantiation. You would only set it manually if you need the `{{templateName}}` field to return a value different from the actual template filename – an uncommon scenario.

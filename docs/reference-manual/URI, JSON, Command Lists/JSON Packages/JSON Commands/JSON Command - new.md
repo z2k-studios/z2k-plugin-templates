@@ -11,16 +11,17 @@ The `new` command creates a new note from a template. It is the most common comm
 ## Directive Summary
 The following [[JSON Directives]] are relevant to the [[JSON Commands|JSON Command]] "`new`":
 
-| Directive          | Required | Description                                                                                                     |
-| ------------------ | -------- | --------------------------------------------------------------------------------------------------------------- |
-| `cmd`              | Yes      | Must be `"new"` for this command.                                                                               |
-| `templatePath`     | Yes      | Vault-relative path to the template file.                                                                       |
-| `destDir`          | No       | Vault-relative path to the output folder. Defaults to the template's card type folder. Auto-creates if missing. |
-| `prompt`           | No       | [[JSON Directives#Prompt Modes\|Prompt mode]]: `"none"`, `"remaining"`, or `"all"`.                             |
-| `finalize`         | No       | Whether to [[Finalization\|finalize]] the note (resolve all remaining fields). Default: template's own setting. |
-| `fieldData` | No       | Bundled field data. See [[JSON Field Data]] for how to specify field data.                                      |
+| Directive            | Required    | Description                                                                                                                                              |
+| -------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cmd`                | Yes         | Must be `"new"` for this command.                                                                                                                        |
+| `templatePath`       | Conditional | Vault-relative path to the template file. Either `templatePath` or `templateContents` is required — not both.                                            |
+| `templateContents`   | Conditional | Inline template text. Used instead of `templatePath` when no template file is needed. Destination defaults to vault root; override with `destDir`.       |
+| `destDir`            | No          | Vault-relative path to the output folder. Defaults to the template's card type folder (or vault root when using `templateContents`). Auto-creates if missing. |
+| `prompt`             | No          | [[JSON Directives#Prompt Modes\|Prompt mode]]: `"none"`, `"remaining"`, or `"all"`.                                                                      |
+| `finalize`           | No          | Whether to [[Finalization\|finalize]] the note (resolve all remaining fields). Default: template's own setting.                                           |
+| `fieldData`          | No          | Bundled field data. See [[JSON Field Data]] for how to specify field data.                                                                                |
 ### Ignored Directives
-The directives `existingFilePath`, `destHeader`, `location`, `blockPath` are ignored. These are not used by the `new` command.
+The directives `existingFilePath`, `destHeader`, `location`, `blockPath`, `blockContents` are ignored. These are not used by the `new` command.
 
 ## Output Filename
 The filename of the created note is determined by the [[Built-In Fields - File Data|fileTitle]] field. You can provide it as field data in the JSON Package:
@@ -108,6 +109,22 @@ The note will be created in `People/New Contacts/` instead of the template's def
 
 Field data is loaded from a separate file in the vault. See [[fieldData]] for details.
 
+### Inline Template — No File Required
+`templateContents` supplies the template text directly. No template file needs to exist on disk.
+
+```json
+{
+  "cmd": "new",
+  "templateContents": "Hello {{Recipient}}! This package is valid.",
+  "prompt": "none",
+  "finalize": true,
+  "fileTitle": "Hello World",
+  "Recipient": "Emerson"
+}
+```
+
+The note is created in the vault root (unless `destDir` is specified). System blocks are not applied; the global block YAML still is. This is the simplest possible self-contained command — useful for testing that the system is working before introducing a real template.
+
 > [!DANGER] Internal Notes
-> - Confirm exact behavior when `prompt` is `"none"`, `fileTitle` is not provided, and no `z2k_template_suggested_title` exists. Does the plugin generate a name from the template filename? Does it throw an error? The code path needs tracing through `createCard` → title resolution.
+> - ==**#TEST** Confirm exact behavior when `prompt` is `"none"`, `fileTitle` is not provided, and no `z2k_template_suggested_title` exists. Does the plugin generate a name from the template filename? Does it throw an error? The code path needs tracing through `createCard` → title resolution.==
 > - The `destDir` auto-creation uses `this.createFolder()` — confirm this works for nested paths (e.g., `"A/B/C"` where none exist).

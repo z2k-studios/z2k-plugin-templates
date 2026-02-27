@@ -50,6 +50,19 @@ z2k_template_type: finalized-content-file
 
 The field values are now stored as standard YAML properties – visible in Obsidian's Properties panel, queryable by Dataview, and available to any block template inserted later.
 
+## Use of Quotes
+===flesh out===
+- Use of `` inside ""
+- Escape characters… some support -- investigate
+
+```
+Title: "{{fieldOutput BookTitle directives='required'}}"
+Author: "{{fieldOutput AuthorName prompt='What is the full name of the author?'}}"
+Genre: "{{fieldOutput Genre type='singleSelect:Fiction,Nonfiction,Poetry'}}"
+```
+
+
+
 ## Next - Insert a Block Template
 When a block template is inserted into an existing file, the plugin collects YAML frontmatter from the file and makes all properties available as field values (see [[Using YAML Metadata as Fields]]). Because the YAML property names match the field names the block template expects, the block's `{{field}}` expressions resolve automatically – no prompting needed.
 

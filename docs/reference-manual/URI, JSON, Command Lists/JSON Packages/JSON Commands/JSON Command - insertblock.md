@@ -14,16 +14,18 @@ The following [[JSON Directives]] are relevant to the [[JSON Commands|JSON Comma
 | Directive          | Required    | Description                                                                                                                                                   |
 | ------------------ | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `cmd`              | Yes         | Must be `"insertblock"` for this command.                                                                                                                     |
-| `templatePath`     | Conditional | Vault-relative path to the block template. Required unless the plugin can prompt interactively.                                                               |
-| `blockPath`        | Conditional | Alias for `templatePath`. Either `templatePath` or `blockPath` must be provided.                                                                              |
+| `templatePath`     | Conditional | Vault-relative path to the block template. Mutually exclusive with `templateContents` / `blockContents`.                                                     |
+| `blockPath`        | Conditional | Alias for `templatePath`. Mutually exclusive with `blockContents` / `templateContents`.                                                                      |
+| `templateContents` | Conditional | Inline block template text. Used instead of `templatePath`/`blockPath`. No file on disk is needed. See [[JSON Directives#Template Source]].                   |
+| `blockContents`    | Conditional | Alias for `templateContents`. Either a path directive or a contents directive is required (unless prompting interactively).                                   |
 | `existingFilePath` | Conditional | Vault-relative path to the target file. Required for batch/URI use. In interactive mode, defaults to the active file.                                         |
 | `destHeader`       | Conditional | Target header in the file. Required when `location` is `"header-top"` or `"header-bottom"`. See [[JSON Directives#destHeader Matching\|destHeader Matching]]. |
 | `location`         | No          | Where to insert the block. See [[#Insertion Location]] below.                                                                                                 |
 | `prompt`           | No          | [[JSON Directives#Prompt Modes\|Prompt mode]]: `"none"`, `"remaining"`, or `"all"`.                                                                           |
 | `finalize`         | No          | Whether to [[Finalization\|finalize]] the inserted block. Default: template's own setting.                                                                    |
-| `fieldData` | No          | Bundled field data. See [[JSON Field Data]] for how to specify field data.                                                                                    |
+| `fieldData`        | No          | Bundled field data. See [[JSON Field Data]] for how to specify field data.                                                                                    |
 ### Ignored Directives
-The directive `destDir` is ignored for the `insertblock` command. The block is inserted into an existing file, not used to create a new one.
+The directives `destDir` and `fileTitle` are ignored for the `insertblock` command. The block is inserted into an existing file, not used to create a new one.
 
 ## Insertion Location
 The `location` and `destHeader` directives work together to determine where the block content is placed:
@@ -114,8 +116,25 @@ The block is inserted at line 42 of the file.
 
 No prompting, fully finalized — suitable for batch processing via a [[JSONL Format|.jsonl file]].
 
+### Inline Block Content — No File Required
+`blockContents` supplies the block template text directly, eliminating the need for a `.block` file on disk. This is useful for logging, one-off insertions, or any automation that generates dynamic content.
+
+```json
+{
+  "cmd": "insertblock",
+  "blockContents": "{{timestamp}} : {{logEntry}}",
+  "existingFilePath": "2026-01-20 - Tasks",
+  "destHeader": "Tasks",
+  "location": "header-bottom",
+  "prompt": "none",
+  "finalize": true,
+  "logEntry": "Finished shaving my yak"
+}
+```
+
+The block text is rendered with `logEntry` filled in and appended to the bottom of the "Tasks" section. No block template file is needed anywhere in the vault.
+
 > [!DANGER] Internal Notes
-> - There is currently no way to pass inline block content (a raw template body) via `insertblock` — it always requires a `templatePath` or `blockPath` pointing to an existing template file. An inline content parameter would be a useful addition. File as a feature request.
-> - Confirm what happens when `location` is a line number that exceeds the file's total lines. Does it insert at the end? Does it throw?
+> - ==**#TEST** Confirm what happens when `location` is a line number that exceeds the file's total lines. Does it insert at the end? Does it throw?==
 > - When `location` is omitted and `destHeader` is omitted, the command falls through to editor mode. In a batch context (Command Queue), this would likely throw because there's no active editor. Confirm this error behavior.
 > - The YAML from the block template is merged into the existing file's frontmatter using "last wins" strategy. Worth documenting this YAML merging behavior — it may warrant its own note or cross-reference to [[Merging Multiple YAML Sources]].

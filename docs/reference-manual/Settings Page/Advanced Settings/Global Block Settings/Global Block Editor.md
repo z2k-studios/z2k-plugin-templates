@@ -67,6 +67,7 @@ When the status is invalid, the Save button is disabled. Fix the reported error 
 
 ## Appendix: Common Handlebars Parser Error Tokens
 Parser errors follow a standard format:
+===MOVE THIS TO ITS OWN PAGE IN [[Handlebars Support]] and update links===
 
 ```
 Parse error on line N:

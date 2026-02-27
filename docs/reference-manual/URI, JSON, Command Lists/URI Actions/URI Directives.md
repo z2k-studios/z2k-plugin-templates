@@ -15,8 +15,10 @@ The table below lists all recognized directives. Not all directives apply to eve
 | Directive | Applies To | Description |
 |-----------|-----------|-------------|
 | `cmd` | All | The command to execute: `new`, `continue`, `upsert`, `insertblock`, or `fromJson`. Always required. |
-| `templatePath` | `new`, `upsert`, `insertblock` | Vault-relative path to the template or block template file. |
-| `blockPath` | `insertblock` | Alias for `templatePath` when used with `insertblock`. |
+| `templatePath` | `new`, `upsert`, `insertblock` | Vault-relative path to the template or block template file. Mutually exclusive with `templateContents`. |
+| `blockPath` | `insertblock` | Alias for `templatePath` when used with `insertblock`. Mutually exclusive with `blockContents`. |
+| `templateContents` | `new`, `upsert`, `insertblock` | Inline template text — used instead of `templatePath`. No file on disk is needed. See [[JSON Directives#Template Source]]. |
+| `blockContents` | `insertblock` | Alias for `templateContents` when inserting inline block content. Mutually exclusive with `blockPath`. |
 | `existingFilePath` | `continue`, `upsert`, `insertblock` | Vault-relative path to the target file. For `upsert`, also used as the output path when creating. |
 | `destDir` | `new` | Override the default output folder for the new file. |
 | `destHeader` | `insertblock` | The header under which to insert the block. Required when `location` is `header-top` or `header-bottom`. See [[JSON Directives#destHeader Matching]]. |
@@ -45,6 +47,6 @@ If a parameter key matches a recognized directive (case-insensitive), it is trea
 The `vault` parameter is handled by Obsidian itself, not by the Z2K Templates plugin. It tells Obsidian which vault to switch to before executing the command. It is not listed in the directive table above because the plugin never sees it – Obsidian processes it before routing the URI to the plugin. See [[URI Syntax#Vault]] for details.
 
 > [!DANGER] Internal Notes
-> - The recognized directive keys are defined in `knownKeys` at line 1242 of main.tsx: `cmd`, `templatePath`, `blockPath`, `existingFilePath`, `destDir`, `destHeader`, `prompt`, `finalize`, `location`, `fieldData`, `fieldData64`, `jsonData`, `jsonData64`, `maxRetries`, `retryDelay`.
+> - The recognized directive keys are defined in `knownKeys` at line 1331 of main.tsx: `cmd`, `templatePath`, `blockPath`, `templateContents`, `blockContents`, `existingFilePath`, `destDir`, `destHeader`, `prompt`, `finalize`, `location`, `fieldData`, `fieldData64`, `jsonData`, `jsonData64`, `maxRetries`, `retryDelay`.
 > - Directive key normalization (line 1249): `k.replace(/[^a-zA-Z0-9]/g, '').toLowerCase()`. This means `template-path`, `template_path`, `templatePath`, and `TEMPLATEPATH` all match. Field data keys are NOT normalized – they preserve original casing.
 > - Consider whether `vault` should be added to `knownKeys` and silently discarded, in case Obsidian passes it through to the handler rather than stripping it. Without this, a `vault` parameter would be treated as field data.

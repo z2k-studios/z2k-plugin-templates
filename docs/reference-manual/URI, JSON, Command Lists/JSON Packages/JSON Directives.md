@@ -10,6 +10,7 @@ A [[JSON Packages Overview|Z2K Templates JSON Package]] supports a number of dir
 
 ## Contents
 - [[#Directive Keys]]
+- [[#Template Source]]
 
 ## Directive Keys
 These keys are recognized as command directives and are separated from field data during processing:
@@ -17,8 +18,10 @@ These keys are recognized as command directives and are separated from field dat
 | Key                  | Type                         | Description                                                                                                                                                                                                   |
 | -------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `cmd`                | string                       | **Required.** The command to execute. See [[JSON Commands]] for more details.                                                                                                                                 |
-| `templatePath`       | string                       | Vault-relative path to the template file.                                                                                                                                                                     |
-| `blockPath`          | string                       | Alias for `templatePath` — used when inserting block templates.                                                                                                                                               |
+| `templatePath`       | string                       | Vault-relative path to the template file. Mutually exclusive with `templateContents`. See [[#Template Source]].                                                                                               |
+| `blockPath`          | string                       | Alias for `templatePath` — used when inserting block templates. Mutually exclusive with `blockContents`.                                                                                                      |
+| `templateContents`   | string                       | Inline template text, used instead of `templatePath`. No file on disk is needed. See [[#Template Source]].                                                                                                    |
+| `blockContents`      | string                       | Alias for `templateContents` — used when inserting inline block content. Mutually exclusive with `blockPath`.                                                                                                 |
 | `existingFilePath`   | string                       | Vault-relative path to the target file. Used by `continue` and `insertblock` to locate the file. Used by `upsert` to both check for the file's existence and determine the output path when creating.        |
 | `destDir`            | string                       | Vault-relative path to the destination folder for the output file. If omitted, the template's configured card type folder is used. The folder is created automatically if it doesn't exist.                   |
 | `destHeader`         | string                       | Target header name within the existing file. See [[#destHeader Matching]] for matching rules.                                                                                                                 |
@@ -31,6 +34,20 @@ These keys are recognized as command directives and are separated from field dat
 | `jsonData64`             | string                       | Base64-encoded equivalent of `json`. See [[JSON64 Format]].                                                                                                                                                   |
 | `maxRetries`         | number                       | Maximum retry attempts on failure (default: 0). Use `-1` for unlimited retries. Used by the [[Command Queue]].                                                                                                |
 | `retryDelay`         | string                       | Duration to wait between retry attempts (e.g., `"5s"`, `"1m"`). Default: `"0s"`. Used by the [[Command Queue]].                                                                                               |
+
+## Template Source
+Every command that creates or inserts content requires a template source. There are two ways to supply one:
+
+- **`templatePath` / `blockPath`** — a vault-relative path to a template file on disk. This is the standard approach.
+- **`templateContents` / `blockContents`** — the raw template text, supplied inline. No file on disk is needed.
+
+Exactly one of the two must be provided. Supplying both is an error.
+
+When using inline content (`templateContents` or `blockContents`):
+- The destination folder defaults to the vault root. Override it with `destDir`.
+- System blocks are not applied — no folder-level YAML is injected.
+- The global block YAML is still applied.
+- All field features work normally: `{{fi}}` declarations, field overrides, helpers, and prompting.
 
 ## Prompt Modes
 The `prompt` directive controls whether the user is prompted to fill in field values:
