@@ -177,7 +177,7 @@ aliases:
 	- [[General Settings]]
 	- [[Command Queue Settings]]
 	- [[Error Logging Settings]]
-	- [[Quick Command Settings]]
+	- [[Quick Commands Settings]]
 	- [[Advanced Settings]]
 		- [[File Extension Settings]]
 		- [[Global Block Settings]]

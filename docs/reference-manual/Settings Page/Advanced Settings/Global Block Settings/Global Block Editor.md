@@ -67,7 +67,7 @@ When the status is invalid, the Save button is disabled. Fix the reported error 
 
 ## Appendix: Common Handlebars Parser Error Tokens
 Parser errors follow a standard format:
-===MOVE THIS TO ITS OWN PAGE IN [[Handlebars Support]] and update links===
+===MOVE THIS TO ITS OWN PAGE IN [[Debug and Error Handling]] and reference it above. Please also reference it from [[Handlebars Support]] at an appropriate page in that section. Finally, can you file a bug for when the Error modal dialog box appears (e.g. one did for me during a quick command - see comment below), for it to show a link to the doc page?===
 
 ```
 Parse error on line N:
@@ -97,6 +97,10 @@ The token names in these messages refer to specific Handlebars syntax constructs
 | `ID` | identifier | Incomplete expression such as `{{}}` or `{{#}}` |
 | `EOF` | end of file | An expression or block was left open at the end of content |
 | `INVALID` | n/a | An unrecognized character appeared inside an expression |
+
+===ENOENT I got this during a quick command trying to create a new file with a template that did not exist. Can you add this code here?==
+
+
 
 > [!DANGER] NOTES
 > - The settings UI description says the global block applies "across all vaults." This is inaccurate – the setting is stored in `data.json` inside the plugin folder, which is per-vault. The phrase "all vaults" is misleading and should be corrected in the UI copy. See GitHub Issue #[156](https://github.com/z2k-studios/z2k-plugin-templates/issues/156).
