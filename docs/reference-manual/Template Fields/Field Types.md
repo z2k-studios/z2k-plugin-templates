@@ -12,6 +12,7 @@ Every [[Template Fields Overview|template field]] in Z2K Templates has a type. T
 ## Contents
 - [[#Available Types]]
 - [[#Native Types vs. String Types]]
+- [[#Type Preservation in Expressions]]
 - [[#Caveats on Z2K Templates Loose Typing]]
 
 ## Available Types
@@ -42,6 +43,24 @@ Z2K Templates has a loose type system — most fields are strings, and the type 
 - A `filenameText` field is a string with UI-level character restrictions
 
 The type declaration tells the prompting UI what widget to show (date picker, checkbox, dropdown), but once the value is captured, it enters the template as text. This is by design — the final output is always Markdown, and Markdown is text.
+
+## Type Preservation in Expressions
+Native types are preserved when values flow through expressions **by reference** — passed directly to a helper by name, without quotes or curly braces. When a value is embedded inside a quoted string, it is first rendered to a string before being passed, discarding any native type.
+
+**By reference — type-preserving:**
+```handlebars
+{{formatNumber rating}}
+{{wikilink today}}
+```
+`rating` and `today` are passed as their native values. A number stays a number; an array stays an array.
+
+**Embedded in a string — always a string:**
+```handlebars
+{{formatNumber "{{rating}}"}}
+```
+The inner `{{rating}}` is rendered to a string first. The helper receives `"4.5"` instead of the number `4.5`. For most helpers this is harmless — but for helpers that branch on type, or for `fieldInfo` parameters that expect arrays, it matters.
+
+**Prefer passing by reference.** Reserve `"{{field}}"` string interpolation for when you genuinely need to construct dynamic text combining multiple values. For everything else — helper arguments, `fieldInfo` parameters, subexpressions — the by-reference form is cleaner, type-safe, and more readable.
 
 ## Caveats on Z2K Templates Loose Typing
 The string-centric design keeps things simple, but there are edges worth knowing about.
