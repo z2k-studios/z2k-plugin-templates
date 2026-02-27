@@ -2,6 +2,7 @@
 sidebar_position: 120
 sidebar_class_name: z2k-code
 sidebar_label: "{{yearMonth}}"
+z2k_validation_ok: 5
 ---
 # yearMonth Built-In Field
 The `{{yearMonth}}` built-in field returns the current year and month in the format "`YYYY-MM`". 

@@ -1,5 +1,6 @@
 ---
 sidebar_position: 10
+z2k_validation_ok: 5
 aliases:
 - enable command queue
 - command queue enabled

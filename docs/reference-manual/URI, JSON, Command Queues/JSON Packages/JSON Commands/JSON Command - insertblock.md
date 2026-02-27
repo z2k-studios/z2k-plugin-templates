@@ -41,7 +41,7 @@ The `location` and `destHeader` directives work together to determine where the 
 | omitted           | omitted      | Falls through to **editor mode** — inserts at the cursor position. Only meaningful for interactive use. |
 
 > [!WARNING]
-> When using `insertblock` from a [[Command Queues|Command List]] (batch processing), always specify `location` or `destHeader` explicitly. Editor mode requires an active editor and cursor position, which is not available in batch context.
+> When using `insertblock` from a [[Command Queues|Command Queue]] (batch processing), always specify `location` or `destHeader` explicitly. Editor mode requires an active editor and cursor position, which is not available in batch context.
 
 ### destHeader Matching
 The `destHeader` value is matched against headers in the target file. For full matching rules (case sensitivity, header level, multiple matches), see [[JSON Directives#destHeader Matching]].

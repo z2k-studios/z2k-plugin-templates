@@ -44,7 +44,7 @@ To determine which type of template a template file is, the Z2K Templates plugin
 1. **YAML Explicit Declaration**: Does the file explicitly declare its type with the [[z2k_template_type]] YAML configuration setting? If so, the plugin follows this guidance first. 
 2. **File Extension Declaration**: Does the file explicitly declare its type with its [[Valid File Extensions|file extension]]? If so, then it will use that to decide on the type.
 3. **Folder Location**: If a file is stored in a [[Template Folders]] but without #1 or #2 clarified, then it is considered a Document Template .
-4. **URI or JSON Action**:  If a file has been explicitly passed as a template file within a URI or Command List action, then the plugin will treat it as a template file regardless of its location.
+4. **URI or JSON Action**:  If a file has been explicitly passed as a template file within a [[URI Actions|URI Call]] or [[Command Queue]] action, then the plugin will treat it as a template file regardless of its location.
 5. **Otherwise**, the file is not considered to be a template at all, and is marked as a normal content file.
 
 See [[Template Requirements]] for more details. 
