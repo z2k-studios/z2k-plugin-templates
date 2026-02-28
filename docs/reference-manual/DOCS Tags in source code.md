@@ -68,6 +68,8 @@ This file catalogs all `DOCS:` tags found in the plugin and engine source code. 
 
 > Block template syntax is not permitted inside YAML frontmatter sections. The YAML frontmatter is parsed independently and does not go through the block-processing pipeline. Attempting to use block syntax in frontmatter will not work as expected.
 
+- Status: ✅ Documented — see [[Restricted Functionality Mode#What About YAML Frontmatter?]]
+
 ---
 
 ## DOCS Tag #5: Dynamic Paths in Expressions Are Not Supported
