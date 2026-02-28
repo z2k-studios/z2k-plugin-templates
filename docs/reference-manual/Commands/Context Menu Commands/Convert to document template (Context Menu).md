@@ -2,6 +2,7 @@
 sidebar_position: 50
 sidebar_class_name: z2k-code
 sidebar_label: Convert to document template
+z2k_validation_ok: 5
 aliases:
 - convert to document template context menu
 ---

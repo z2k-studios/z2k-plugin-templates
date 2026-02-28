@@ -1,6 +1,7 @@
 ---
 sidebar_position: 20
 sidebar_label: Queue Folder
+z2k_validation_ok: 5
 aliases:
 - queue directory
 - command queue directory

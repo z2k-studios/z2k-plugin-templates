@@ -243,5 +243,4 @@ aliases:
 23. [[Appendix]]
     - Full Variable & Helper Reference (alphabetical)  
     - [[Glossary]]
-    - [[Roadmap and Extensibility]]  
     - [[Reference Manual for AI|Reference Manual for AI]]

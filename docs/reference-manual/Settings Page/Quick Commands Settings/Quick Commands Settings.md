@@ -1,6 +1,7 @@
 ---
 sidebar_position: 1
 sidebar_folder_position: 40
+z2k_validation_ok: 5
 aliases:
   - quick commands settings
 ---

@@ -1,25 +1,12 @@
 ---
-z2k_validation_ok: 4
+z2k_validation_ok: 4,5
 ---
 
 
-# Sections
-- Done, but needs review
-	- [[Handlebars Support]]
-- Needs Creation
-	- [[Error Handling]]
-	- [[Naming Conventions]]
-	- [[Prompting]]
-	- [[Settings Page]]
-	- [[Z2K System Features]]
-
 # Pages
-[[Modifying Built-In Field Behaviors]]
-[[random]]
-[[Misc Functions]]
+[[Template Organization]]
 [[Silent Helper Functions|Silent Helper Function]]
-
-[[Fallback Behavior]]
-
-# Claude Code Requests to Prioritize
+[[Using System Blocks and Markdown]]
+[[Installation]]
+[[fieldInfo and Block Templates]]
 
