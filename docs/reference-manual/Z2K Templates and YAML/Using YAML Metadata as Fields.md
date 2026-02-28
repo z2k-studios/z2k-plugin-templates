@@ -57,8 +57,10 @@ YAML supports richer types than plain strings – numbers, booleans, arrays, and
 
 This matters when using fields inside [[Conditionals|conditional expressions]] (`{{#if}}`) or [[Iterators|iterators]] (`{{#each}}`). An array value from YAML works naturally with `{{#each}}`, and a boolean value works naturally with `{{#if}}`.
 
+That said, when a value is rendered directly as `{{field}}`, it is always output as a string – the number `42` becomes the text `"42"`, and the boolean `true` becomes the text `"true"`. For the full picture of how native and string types behave throughout the data pipeline, see [[Field Types#Native Types vs. String Types|Native Types vs. String Types]].
+
 ## The Prompting Implication
-Here's a detail that can surprise you: when a YAML property provides a value for a field, **that field is not prompted for**.
+Here's a detail that can surprise you: when a YAML property provides a value for a field, **that field will not be prompted for**.
 
 The plugin automatically adds the `no-prompt` [[fieldInfo directives|directive]] to any field whose value comes from YAML. This makes sense – if the data is already present in the frontmatter, there's no reason to ask the user for it again. But it means that a YAML property can silently suppress a prompt you might have expected to see.
 

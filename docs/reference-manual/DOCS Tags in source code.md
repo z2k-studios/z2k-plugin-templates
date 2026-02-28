@@ -123,3 +123,5 @@ This file catalogs all `DOCS:` tags found in the plugin and engine source code. 
 - Issue Summary:
 
 > The `addYamlFieldValues` method automatically harvests YAML frontmatter from template files, system blocks, and existing files, injecting them as field values available to Handlebars expressions. They're added with `no-prompt` so they don't trigger user prompts for already-known data. Priority: built-ins are overridden by YAML fields, which are overridden by explicit `fieldInfo.value` declarations, which are overridden by plugin built-ins, which are overridden by external overrides. Only the Obsidian-internal `position` field is excluded; standard user fields (`tags`, `aliases`, `cssclasses`) are included. Types are preserved as native YAML types.
+
+- Status: ✅ Documented — [[Using YAML Metadata as Fields]] covers this comprehensively. Added clarifying sentence to "YAML Types Are Preserved" section noting that `{{field}}` output is always a string, with cross-reference to [[Field Types#Native Types vs. String Types]].

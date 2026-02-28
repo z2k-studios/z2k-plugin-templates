@@ -3166,13 +3166,13 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	}
 
 	async addYamlFieldValues(state: TemplateState, additionalYamlSources?: string[]): Promise<void> {
-		// DOCS: YAML frontmatter fields are automatically added as field values.
-		// DOCS: This allows templates to reference metadata from template files, system blocks, and existing files.
-		// DOCS: YAML fields are added with 'no-prompt' directive to avoid re-prompting for existing data.
-		// DOCS: Priority order: Built-ins < YAML fields < fieldInfo.value < Plugin built-ins < Overrides
-		// DOCS: All frontmatter fields are included except Obsidian internal fields (currently only 'position').
-		// DOCS: User-facing fields like 'tags', 'aliases', and 'cssclasses' are included as they represent user data.
-		// DOCS: Values are passed through with their native YAML types (string, number, array, etc.)
+		// YAML frontmatter fields are automatically added as field values.
+		// This allows templates to reference metadata from template files, system blocks, and existing files.
+		// YAML fields are added with 'no-prompt' directive to avoid re-prompting for existing data.
+		// Priority order: Built-ins < YAML fields < fieldInfo.value < Plugin built-ins < Overrides
+		// All frontmatter fields are included except Obsidian internal fields (currently only 'position').
+		// User-facing fields like 'tags', 'aliases', and 'cssclasses' are included as they represent user data.
+		// Values are passed through with their native YAML types (string, number, array, etc.)
 		// TODO: Refactor to use valuesBySource pattern for explicit priority ordering instead of relying on call order
 
 		// Merge all YAML sources (from template state + additional sources like system blocks or existing files)
