@@ -1322,8 +1322,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 
 	// Main command processor - accepts typed parameters and routes to appropriate handlers
 	// Called by: registerURIHandler (from URI), processQueueFile (from offline queue)
-	// DOCS: Non-field parameters can be templatePath, TemplatePath, template-path, template_path, etc. for robustness
-	// DOCS: but we should just say templatePath in the docs for simplicity
+	// Non-field parameters can be templatePath, TemplatePath, template-path, template_path, etc. for robustness
+	// but we should just say templatePath in the docs for simplicity in the docs.
 	private async processCommand(rawParams: CommandParams, context: "user" | "batch", isJsonSource: boolean = false): Promise<void> {
 		const cps: Record<string, any> = {};  // Command parameters
 		const templateData: Record<string, any> = {};  // Template field data (preserves original keys)

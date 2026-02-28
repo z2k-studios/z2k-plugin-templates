@@ -52,6 +52,8 @@ This file catalogs all `DOCS:` tags found in the plugin and engine source code. 
 
 > The command processor normalizes several casing and delimiter variants of the `templatePath` parameter (camelCase, PascalCase, kebab-case, snake_case) to allow for robustness when called from external tools or URIs. However, the canonical documented form is `templatePath` — docs should not enumerate the variants, as doing so would imply all forms are equally intentional.
 
+- Status: ✅ Documented — noted in DANGER block of [[JSON Directives]]
+
 ---
 
 ## DOCS Tag #4: All Unrecognized Parameters Are Treated as Template Data

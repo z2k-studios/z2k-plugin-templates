@@ -98,3 +98,7 @@ If `fileTitle` is not provided in the JSON Package:
 - The template's `z2k_template_suggested_title` YAML property is used as a suggested value
 - If `prompt` is not `"none"`, the user is prompted to enter a title
 - If `prompt` is `"none"` and no suggestion exists, the plugin's default naming behavior applies
+
+> [!DANGER] INTERNAL NOTES
+> - Notes:
+>   - The command processor normalizes casing and delimiter variants of `templatePath` (`TemplatePath`, `template-path`, `template_path`, etc.) for robustness. This is intentional but should not be documented as a feature — the canonical form is `templatePath` only. Documenting the variants would imply they are equally supported by design.
