@@ -29,8 +29,8 @@ If the template has no promptable fields the interface is skipped entirely. For 
 ## Anatomy of the Prompting Interface
 Each field in the prompting interface is rendered as a row with the following elements:
 
-- **Label** – Currently a single text element that shows either the custom `prompt=` text (if set via [[fieldInfo Helper|{{fieldInfo}}]]) or the field name converted to title case (e.g., `projectName` → "Project Name")
-- **Input control** – The widget where you enter data. The control type depends on the field's `type=` parameter. See [[Prompting Interface per Type]] for details on each type.
+- **Label** – Currently a single text element that shows either the custom `prompt` text (if set via [[fieldInfo Helper|{{fieldInfo}}]]) or the field name converted to title case (e.g., `projectName` → "Project Name")
+- **Input control** – The widget where you enter data. The control type depends on the field's `type` parameter. See [[Prompting Interface per Type]] for details on each type.
 - **Reset button** (⟲) – Appears on hover after you've [[Prompt Touching|touched]] a field. Clicking it resets the field to its untouched state, restoring the [[fieldInfo suggest|suggest]] value.
 - **Fallback preview** – When a [[fieldInfo fallback|fallback]] value for a field has been specified and the field's input control has not been interactively touched, a preview appears below the input: "Value if left untouched: *[value]*". This disappears once the field is touched.
 - **Error message** – Appears below the input when validation fails (e.g., invalid number, required field empty).
@@ -52,7 +52,7 @@ The prompting interface uses a colored left border on each field to communicate 
 ## Field Ordering
 Fields appear in the prompting interface in a deliberate order:
 1. **Required fields first** – Fields with the `required` [[fieldInfo directives|directive]] are promoted to the top.
-2. **Dependencies before dependents** – If field B references field A in its `prompt=`, `suggest=`, or `fallback=` parameter, field A appears above field B. This is resolved recursively via topological sort.
+2. **Dependencies before dependents** – If field B references field A in its `prompt`, `suggest`, or `fallback` parameter, field A appears above field B. This is resolved recursively via topological sort.
 3. **Remaining fields** – All other fields appear in their natural declaration order.
 
 This ordering ensures that when you fill in a field, any field that depends on it has already been presented – or will dynamically update as you type.
@@ -61,7 +61,7 @@ This ordering ensures that when you fill in a field, any field that depends on i
 Not every field in a template appears in the prompting interface. A field is **hidden** from the form if:
 - It has the `no-prompt` [[fieldInfo directives|directive]] – explicitly suppresses prompting.
 - It is **unreferenced** in the template body – if the field only appears inside `{{fieldInfo}}` declarations but is never actually used in the output, it's omitted.
-- It has a `value=` parameter – computed fields are resolved automatically and don't need user input.
+- It has a `value` parameter – computed fields are resolved automatically and don't need user input.
 
 Note: These hidden fields still participate in dependency resolution and rendering. They just don't appear in the form.
 
@@ -90,7 +90,7 @@ When validation fails, the form scrolls to the first field with an error and foc
 - [[fieldInfo Helper]] – Full reference for the `{{fieldInfo}}` helper function
 
 > [!DANGER] Notes for Documentation Team
-> - **Title vs. Subtitle**: The current code renders a single label per field (`resolvedPrompt || fieldName` at `src/main.tsx` ~line 4291). When a custom `prompt=` is set, the prettified field name is only accessible via hover text – there is no separate "title" line. The intended design appears to be a title (prettified field name, always shown) with a subtitle (custom prompt text, shown when specified). This needs a code change before the Label bullet point above can be updated to document title/subtitle behavior.
+> - **Title vs. Subtitle**: The current code renders a single label per field (`resolvedPrompt || fieldName` at `src/main.tsx` ~line 4291). When a custom `prompt` is set, the prettified field name is only accessible via hover text – there is no separate "title" line. The intended design appears to be a title (prettified field name, always shown) with a subtitle (custom prompt text, shown when specified). This needs a code change before the Label bullet point above can be updated to document title/subtitle behavior.
 > - The submit button labels are "Submit" and "Submit and Finalize" in the current codebase (~line 4320). See GitHub issue #148 for renaming discussion.
 > - The suggest value currently renders identically to user-typed text in untouched fields – no grayed-out or italic treatment. See GitHub issue #147 for tracking. Once resolved, update the "Visual Indicators" section.
 > - **Field Filtering bug**: The current code at ~line 3935 allows unreferenced fields with a `prompt` directive to appear in the form. This is a bug – unreferenced fields should always be hidden. See GitHub issue #149. The doc above reflects the intended behavior, not the current code.

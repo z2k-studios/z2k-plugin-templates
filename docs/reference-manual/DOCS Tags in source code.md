@@ -69,6 +69,8 @@ This file catalogs all `DOCS:` tags found in the plugin and engine source code. 
 
 > The command processor separates recognized command parameters (like `cmd`, `templatePath`, `destDir`, etc.) from everything else. All unrecognized keys are automatically treated as template field data. Additionally, parameters passed directly in the command override values in `fieldData` / `fieldData64` — direct params take precedence in the merge.
 
+- Status: ✅ Documented — covered by [[JSON Field Data#Deconflicting When Both Methods are Used]]
+
 ---
 
 ## DOCS Tag #5: Field Overrides Override fieldInfo Values
@@ -82,6 +84,8 @@ This file catalogs all `DOCS:` tags found in the plugin and engine source code. 
 - Issue Summary:
 
 > Field overrides (values passed via URI params or JSON command data) are applied after fieldInfo definitions are processed. This means an override will win over a `value:` directive set in a fieldInfo block inside the template. This is the mechanism that lets callers pre-fill or force-set field values from outside the template.
+
+- Status: ✅ Documented — NOTE callout added to [[fieldInfo value#Resolution Priority]]
 
 ---
 

@@ -22,7 +22,7 @@ The following table shows what the prompting interface assumes when no `{{fieldI
 For more information, please see the dedicated [[fieldInfo Helper]] documentation. 
 
 ## Prompt Label Generation
-When no `prompt=` parameter is set, the label shown to the user is derived from the field name using the following rules:
+When no `prompt` parameter is set, the label shown to the user is derived from the field name using the following rules:
 - The first character is capitalized
 - `camelCase` boundaries are split with spaces: `projectName` → "Project Name"
 - Acronym boundaries are preserved: `XMLParser` → "XML Parser", `HTTPServer` → "HTTP Server"

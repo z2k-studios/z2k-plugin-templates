@@ -115,10 +115,10 @@ A more involved example: overriding `{{fileTitle}}` to enforce Zettelkasten-styl
 {{fieldInfo fileTitle value="{{timestamp}}{{#if fileTitlePostFix}} - {{fileTitlePostFix}}{{/if}}"}}
 ```
 
-When `fileTitlePostFix` is provided — say, "Meeting notes" — the file is named `20241113142530 - Meeting notes`. When left blank, the filename is just the timestamp. The `{{#if}}` block helper works inside a `value=` string expression because [[Restricted Functionality Mode]] supports Handlebars block helpers.
+When `fileTitlePostFix` is provided — say, "Meeting notes" — the file is named `20241113142530 - Meeting notes`. When left blank, the filename is just the timestamp. The `{{#if}}` block helper works inside a `value` string expression because [[Restricted Functionality Mode]] supports Handlebars block helpers.
 
 > [!DANGER]
-> **fileTitle + value=**: Unverified. Confirm that `value=` on `{{fileTitle}}` actually sets the output filename, and that the `{{#if fileTitlePostFix}}` block helper inside the string expression evaluates correctly at instantiation time.
+> **fileTitle + value=**: Unverified. Confirm that `value` on `{{fileTitle}}` actually sets the output filename, and that the `{{#if fileTitlePostFix}}` block helper inside the string expression evaluates correctly at instantiation time.
 
 ## Embedding Rich Content
 The `value` parameter is not limited to simple strings. It can hold any text the template engine would otherwise write to the file — including multi-line plugin syntax like Dataview queries.
@@ -146,7 +146,7 @@ The full Dataview block is inserted at render time — one definition, used acro
 This pattern extends to any multi-line markdown content: callouts, table fragments, embedded images with CSS hooks, or repeated boilerplate sections.
 
 > [!DANGER]
-> **Multi-line strings and backtick escaping**: Verify that multi-line `value=` strings with embedded fenced code blocks render correctly. Confirm that inner backticks and quotes do not require additional escaping beyond what is shown above.
+> **Multi-line strings and backtick escaping**: Verify that multi-line `value` strings with embedded fenced code blocks render correctly. Confirm that inner backticks and quotes do not require additional escaping beyond what is shown above.
 
 ## Block Template Composition
 [[Block Templates|Block templates]] can use `value` to inject field values into a shared layout partial — effectively parameterizing a shared visual or structural component from a domain-specific partial.
@@ -185,4 +185,4 @@ The same `Root Level - Header` partial works across all domains — each domain 
 This differs from [[#Hierarchical Value Injection]] (which uses system blocks scoped to folders) in that it operates through explicit partial composition — value injection is controlled by which block templates you include, not which folder a file lives in.
 
 > [!DANGER]
-> **Partial ordering**: Confirm that a `value=` set in one included partial is visible to a subsequent included partial within the same template render pass. This depends on whether the engine resolves values across partials in declaration order.
+> **Partial ordering**: Confirm that a `value` set in one included partial is visible to a subsequent included partial within the same template render pass. This depends on whether the engine resolves values across partials in declaration order.

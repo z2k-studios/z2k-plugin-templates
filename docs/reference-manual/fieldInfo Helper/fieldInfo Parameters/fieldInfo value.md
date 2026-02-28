@@ -48,7 +48,7 @@ The `value` parameter accepts:
 Arrays are not a native literal type, but `value=(arr "a" "b" "c")` works — the [[arr]] helper returns a real array that is stored and passed through the value pipeline intact.
 
 > [!NOTE] Restricted Functionality Mode
-> The `value=` expression is evaluated using [[Restricted Functionality Mode]] — a simplified rendering path. Field references, built-in fields, inline helpers, nested subexpressions, and Handlebars block helpers (`{{#if}}`, `{{#each}}`) all work normally. What does not work: [[Block Templates]] (partials) and `{{fieldInfo}}` declarations embedded inside the expression (they are silently ignored). If your `value=` expression calls another helper that internally tries to use partials, it will fail. See [[Restricted Functionality Mode]] for the complete supported/unsupported feature list.
+> The `value` expression is evaluated using [[Restricted Functionality Mode]] — a simplified rendering path. Field references, built-in fields, inline helpers, nested subexpressions, and Handlebars block helpers (`{{#if}}`, `{{#each}}`) all work normally. What does not work: [[Block Templates]] (partials) and `{{fieldInfo}}` declarations embedded inside the expression (they are silently ignored). If your `value` expression calls another helper that internally tries to use partials, it will fail. See [[Restricted Functionality Mode]] for the complete supported/unsupported feature list.
 
 ## Default Value
 If `value` is omitted, the field has no computed value and behaves normally — the user is prompted as usual.
@@ -65,7 +65,7 @@ If the `value` expression references another field, the engine tracks that field
 {{fieldInfo AuthorURL value="https://author-db.com/{{Author}}"}}
 ```
 
-If `Author` is not yet resolved when `AuthorURL` is first encountered, the computation is deferred. Once `Author` resolves — from user input, another `value=`, through [[Finalization|finalization]],  or an external data source — `AuthorURL` is computed automatically. If `Author` is never provided, `AuthorURL` remains empty.
+If `Author` is not yet resolved when `AuthorURL` is first encountered, the computation is deferred. Once `Author` resolves — from user input, another `value`, through [[Finalization|finalization]],  or an external data source — `AuthorURL` is computed automatically. If `Author` is never provided, `AuthorURL` remains empty.
 
 This means you can safely reference fields defined elsewhere in the template or in higher-priority sources without worrying about declaration order.
 
@@ -76,6 +76,9 @@ When `value` is declared at multiple levels — for example, in the global block
 
 So a main template's `value` overrides a system block's `value`, which overrides the global block's `value`. Only one `value` expression ever reaches the resolution step — the one from the highest-priority source that declared it.
 
+> [!NOTE] External overrides take precedence over `value`
+> Field data supplied externally — via [[URI Actions|URI parameters]] or a [[JSON Packages|JSON Package]] — overrides a `value` declaration, even one in the main template. If you pass `Author="Isaac Asimov"` from a URI and the template declares `{{fi Author value="Anonymous"}}`, the external value wins. This is intentional: it allows automation to pre-fill or override fields in templates that have defaults set via `value`.
+
 For how `value` fits among all field data sources (external data, YAML properties, prompting, etc.), see [[Field Data Sources]].
 
 ## Use Cases
@@ -84,14 +87,14 @@ The `value` parameter enables a wide range of patterns — from simple constants
 ## Closing Comments
 
 > [!WARNING]
-> Overriding built-in fields is a vault-wide change. Any template expecting the standard format will silently receive the override. Document overrides clearly.
+> Overriding built-in fields in a global block is a vault-wide change. Any template expecting the standard format will silently receive the override. Document overrides clearly.
 
 To define entirely new fields that behave like built-ins — rather than overriding existing ones — see [[Custom Built-In Fields]].
 
 
 
 > [!DANGER] NOTES
-> - **fileTitle + value=**: The `fileTitle` override example is unverified. Confirm that `value=` on `{{fileTitle}}` actually sets the output filename, and that the `{{#if fileTitlePostFix}}` block helper inside the string expression evaluates correctly at instantiation time. If `value=` does not work on `fileTitle`, replace the example with `suggest=` and note the difference.
+> - **fileTitle + value**: The `fileTitle` override example is unverified. Confirm that `value` on `{{fileTitle}}` actually sets the output filename, and that the `{{#if fileTitlePostFix}}` block helper inside the string expression evaluates correctly at instantiation time. If `value` does not work on `fileTitle`, replace the example with `suggest` and note the difference.
 > - **timestamp format**: Confirm the exact output format of `{{timestamp}}` for use in filenames — specifically whether it produces a filesystem-safe string (no colons, slashes, etc.).
 > - **Argument order for formatDate**: Examples in this page use `(formatDate "FORMAT")` (one arg, defaults to current date) or `(formatDate "FORMAT" dateExpression)` (format first, then date). Using reversed argument order produces unexpected output — confirm this is clearly documented on the [[formatDate]] reference page.
 > - **fieldOutput and value**: The page states that `value` is supported on `fieldOutput`/`fo`. Verify this is implemented and works correctly in the current engine build.

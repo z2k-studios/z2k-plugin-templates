@@ -29,7 +29,7 @@ For instance, consider a field `{{InOneWeek}}` that always contains the date one
 {{fieldInfo InOneWeek value=(formatDate "YYYY-MM-DD" (dateAdd 7 now))}}
 ```
 
-`{{dateAdd 7 now}}` returns a date seven days out; `{{formatDate}}` renders it as an ISO date string. With `directives="no-prompt"`, no prompt is shown – the value resolves silently. (Note: `value=` automatically applies `no-prompt`, so the directive is technically redundant here but harmless.)
+`{{dateAdd 7 now}}` returns a date seven days out; `{{formatDate}}` renders it as an ISO date string. With `directives="no-prompt"`, no prompt is shown – the value resolves silently. (Note: `value` automatically applies `no-prompt`, so the directive is technically redundant here but harmless.)
 
 > [!INFO] Using `value` suppresses prompting.
 > When you use the [[fieldInfo value|fieldInfo value Parameter]], it automatically applies the `no-prompt` [[fieldInfo directives|directive]] to the field. See the [[fieldInfo value|value]] reference page for details.
@@ -44,7 +44,7 @@ Another example — a field that generates a Wikipedia search link for the `Auth
 `{{wikipedia Author Author}}` generates a Markdown link to a Wikipedia search for whatever `Author` resolves to, using `Author` as both the search term and the display text. If `{{Author}}` is not defined in the template, this field resolves to an empty value and can be safely ignored.
 
 ## Example - Override Built-In Field
-The `value=` parameter can even redefine [[Built-In Fields|built-in fields]], giving you vault-wide control over their format or content. This example replaces the default `today` date format (`YYYY-MM-DD`) with a US-style format:
+The `value` parameter can even redefine [[Built-In Fields|built-in fields]], giving you vault-wide control over their format or content. This example replaces the default `today` date format (`YYYY-MM-DD`) with a US-style format:
 
 ```handlebars
 {{fieldInfo today value=(formatDate "MM-DD-YYYY")}}

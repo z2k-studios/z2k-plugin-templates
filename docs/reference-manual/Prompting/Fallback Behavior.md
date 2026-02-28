@@ -21,7 +21,7 @@ By default, if a field has no value during a processing event, the field is **pr
 ## Order of Precedence
 When a field is finalized without a value, the plugin resolves it using the following order of precedence (highest to lowest):
 
-1. **`fallback=` parameter** on [[fieldInfo Helper|{{fieldInfo}}]] – If specified, this value is used. When multiple `{{fieldInfo}}` declarations exist for the same field (across [[fieldInfo Variations|variations]], [[Block Templates]], or [[Intro to System Blocks|System Blocks]]), the last `fallback` value wins.
+1. **`fallback` parameter** on [[fieldInfo Helper|{{fieldInfo}}]] – If specified, this value is used. When multiple `{{fieldInfo}}` declarations exist for the same field (across [[fieldInfo Variations|variations]], [[Block Templates]], or [[Intro to System Blocks|System Blocks]]), the last `fallback` value wins.
 
 2. **Finalize directive** on [[fieldInfo Helper|{{fieldInfo}}]] – If no `fallback` is specified, the plugin checks for a [[fieldInfo directives|directive]]. The three finalize directives are mutually exclusive – only one can be active per field. If multiple are specified, the most recent one applies.
    - `finalize-suggest` – uses the [[fieldInfo suggest|suggest]] value as the fallback. If no suggest value exists, the field is cleared.
@@ -39,7 +39,7 @@ When a field is finalized without a value, the plugin resolves it using the foll
 4. **Default behavior** – If none of the above are configured, the field is **cleared** from the output.
 
 > [!NOTE]
-> The `fallback=` parameter takes precedence over *all* other mechanisms. If you set `fallback="N/A"`, the field will always resolve to "N/A" on finalization, regardless of directives or YAML settings.
+> The `fallback` parameter takes precedence over *all* other mechanisms. If you set `fallback="N/A"`, the field will always resolve to "N/A" on finalization, regardless of directives or YAML settings.
 
 ## Examples
 

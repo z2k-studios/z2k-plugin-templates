@@ -6,7 +6,7 @@ aliases:
 - input types
 ---
 # Prompting Interface per Type
-The [[Prompting Interface]] renders a different input control for each [[Field Types|field type]]. The type is set via the `type=` parameter on [[fieldInfo Helper|{{fieldInfo}}]]. If no type is specified, the field defaults to `text`.
+The [[Prompting Interface]] renders a different input control for each [[Field Types|field type]]. The type is set via the `type` parameter on [[fieldInfo Helper|{{fieldInfo}}]]. If no type is specified, the field defaults to `text`.
 
 This page shows what each type looks like and how it behaves inside the prompting modal.
 
@@ -135,7 +135,7 @@ Renders as a **group of checkboxes** – one for each option in the [[fieldInfo 
 
 ## See Also
 - [[Prompting Interface]] – Overview of the prompting modal
-- [[fieldInfo type|type Parameter]] – Full documentation of the `type=` parameter
+- [[fieldInfo type|type Parameter]] – Full documentation of the `type` parameter
 - [[fieldInfo opts|opts Parameter]] – How to define options for select types
 
 > [!DANGER] Notes for Documentation Team

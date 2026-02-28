@@ -20,11 +20,11 @@ The [[Prompting Interface]] works out of the box – every [[Template Fields|fie
 
 ## What fieldInfo Controls
 The `{{fieldInfo}}` helper (and its [[fieldInfo Variations|variations]]) lets you configure how each field appears in the prompting interface:
-- **What the user sees** – custom label text via `prompt=`
-- **What value is suggested** – pre-filled content via `suggest=`
-- **What input type is used** – text, number, date, dropdown, checkboxes via `type=`
-- **What happens if the user skips the field** – fallback values via `fallback=`
-- **Whether the field appears at all** – visibility control via `directives=`
+- **What the user sees** – custom label text via `prompt`
+- **What value is suggested** – pre-filled content via `suggest`
+- **What input type is used** – text, number, date, dropdown, checkboxes via `type`
+- **What happens if the user skips the field** – fallback values via `fallback`
+- **Whether the field appears at all** – visibility control via `directives`
 
 ## Quick Examples
 
@@ -51,8 +51,8 @@ The field never appears in the prompting interface – its value is computed aut
 ## How Each Parameter Affects Prompting
 Each `{{fieldInfo}}` parameter maps to a specific aspect of the prompting interface. This section summarizes the prompting-specific effects – see the linked parameter pages for full details.
 
-### prompt= → Label Text
-The `prompt=` parameter controls the **label text** displayed above the field's input control.
+### prompt → Label Text
+The `prompt` parameter controls the **label text** displayed above the field's input control.
 
 ```md
 {{fieldInfo recipeName prompt="What are we cooking today?"}}
@@ -62,8 +62,8 @@ Without this parameter, the label is auto-generated from the field name (e.g., `
 
 See [[fieldInfo prompt|prompt Parameter]] for full details.
 
-### suggest= → Pre-filled Value
-The `suggest=` parameter sets a **pre-filled value** in the input control. The value appears in the field before the user interacts with it.
+### suggest → Pre-filled Value
+The `suggest` parameter sets a **pre-filled value** in the input control. The value appears in the field before the user interacts with it.
 
 ```md
 {{fieldInfo author suggest="{{creator}}"}}
@@ -73,12 +73,12 @@ The suggest value is the starting point, not a commitment. If the user never [[P
 - On **Submit** – the field is deferred (suggest is not written to output)
 - On **Submit and Finalize** – the [[Fallback Behavior]] procedure applies (not the suggest value, unless `finalize-suggest` is set)
 
-If the user touches the field and doesn't change it, the suggest value becomes the committed value. Like `prompt=`, the suggest value can reference other fields and updates dynamically.
+If the user touches the field and doesn't change it, the suggest value becomes the committed value. Like `prompt`, the suggest value can reference other fields and updates dynamically.
 
 See [[fieldInfo suggest|suggest Parameter]] for full details.
 
-### type= → Input Control
-The `type=` parameter determines **which input control** is rendered.
+### type → Input Control
+The `type` parameter determines **which input control** is rendered.
 
 ```md
 {{fieldInfo eventDate type="date"}}
@@ -90,8 +90,8 @@ Available types: `text`, `titleText`, `number`, `date`, `datetime`, `boolean`, `
 
 See [[fieldInfo type|type Parameter]] for full details.
 
-### opts= → Selection Options
-The `opts=` parameter supplies the **list of choices** for `singleSelect` and `multiSelect` fields.
+### opts → Selection Options
+The `opts` parameter supplies the **list of choices** for `singleSelect` and `multiSelect` fields.
 
 ```md
 {{fieldInfo priority type="singleSelect" opts="Low,Medium,High,Critical"}}
@@ -101,7 +101,7 @@ Options can reference other fields – the list updates as dependencies change.
 
 See [[fieldInfo opts|opts Parameter]] for full details.
 
-### directives= → Visibility and Behavior
+### directives → Visibility and Behavior
 The directives relevant to prompting are:
 - **`no-prompt`** – Hides the field from the prompting interface entirely
 - **`prompt`** – Forces the field to appear even if it's not referenced in the template body
@@ -114,8 +114,8 @@ The directives relevant to prompting are:
 
 See [[fieldInfo directives|directives Parameter]] for the full list of available directives.
 
-### fallback= → Untouched Field Value
-The `fallback=` parameter determines the value used when a field is **untouched** and the note is finalized.
+### fallback → Untouched Field Value
+The `fallback` parameter determines the value used when a field is **untouched** and the note is finalized.
 
 ```md
 {{fieldInfo status fallback="Draft"}}
@@ -138,4 +138,4 @@ The `{{fieldInfo}}` helper has extensive documentation in its own section:
 > [!DANGER] Notes for Documentation Team
 > - This page merges the former "Controlling the Prompt with fieldInfo" standalone page. The aliases from that page are preserved in frontmatter above so existing wikilinks (`[[Controlling the Prompt with fieldInfo]]`) still resolve.
 > - The `refhtml` placeholder files (`refhtml - fieldInfo (Prompting).md` and `refhtml - fieldOutput (Prompting).md`) in this folder are Docusaurus redirect placeholders. They should remain unchanged.
-> - The `value=` parameter is not covered here because it bypasses the prompting interface entirely (computed fields are hidden from the form). It's documented in [[fieldInfo value|value Parameter]].
+> - The `value` parameter is not covered here because it bypasses the prompting interface entirely (computed fields are hidden from the form). It's documented in [[fieldInfo value|value Parameter]].

@@ -1389,8 +1389,6 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		}
 
 		// Merge field data
-		// DOCS: All params (except recognized command params) are treated as template data
-		// DOCS: Direct params override values in fieldData
 		const fieldOverrides: Record<string, VarValueType> = { ...additionalFields, ...templateData };
 		// Only convert URI string values, not JSON-sourced values (already typed)
 		const uriKeys: Set<string> = isJsonSource ? new Set() : new Set(Object.keys(templateData));
@@ -2062,7 +2060,6 @@ export default class Z2KTemplatesPlugin extends Plugin {
 					tfi.suggest = opts.sourceFile.basename;
 				}
 			}
-			// DOCS: field overrides override the values specified in fieldinfos
 			this.handleOverrides(state, opts.fieldOverrides, opts.uriKeys ?? new Set(), opts.promptMode || "all");
 
 			if (this.hasFillableFields(state.fieldInfos) && opts.promptMode !== "none") {

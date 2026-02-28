@@ -19,7 +19,7 @@ Built-in fields aren't fixed. Using the [[fieldInfo Helper]], you can change how
 ## How it Works
 Every built-in field has default behavior defined by the engine. But that behavior is just a starting point — it can be replaced, suppressed, or redirected using `{{fieldInfo}}` declarations, exactly as you would configure any other template field.
 
-The key insight: the engine sees a `{{fieldInfo}}` declaration for a built-in field the same way it sees one for a user-defined field. The same parameters apply — `value=`, `directives=`, `suggest=`, and others. You are not patching the built-in; you are declaring how the field should behave at the scope where your `{{fieldInfo}}` for your Built-in field lives.
+The key insight: the engine sees a `{{fieldInfo}}` declaration for a built-in field the same way it sees one for a user-defined field. The same parameters apply — `value`, `directives`, `suggest`, and others. You are not patching the built-in; you are declaring how the field should behave at the scope where your `{{fieldInfo}}` for your Built-in field lives.
 
 **Where to place the declaration:**
 - In the [[Global Block]] to apply vault-wide — every template inherits the behavior
@@ -36,7 +36,7 @@ By default, built-in fields resolve silently — they never appear in the prompt
 {{fieldInfo today directives="yes-prompt" suggest=(formatDate "YYYY-MM-DD" now)}}
 ```
 
-This forces a prompt for `{{today}}`, pre-filling the input with today's date in `YYYY-MM-DD` format. The user can accept it or enter a different date entirely. The `suggest=` here uses a fresh `formatDate` expression with the [[now]] value — not a reference to `today` itself — so there is no circular dependency.
+This forces a prompt for `{{today}}`, pre-filling the input with today's date in `YYYY-MM-DD` format. The user can accept it or enter a different date entirely. The `suggest` here uses a fresh `formatDate` expression with the [[now]] value — not a reference to `today` itself — so there is no circular dependency.
 
 ## Use Case – Overriding a Built-In's Value
 The [[fieldInfo value|value parameter]] replaces a built-in field's default computation with an expression you provide. Declared in the [[Global Block]], the override applies vault-wide.
@@ -104,7 +104,7 @@ What works — use a fresh expression that does not reference the field being ov
 To define entirely new fields that resolve automatically — without modifying existing built-ins — see [[Custom Built-In Fields]].
 
 > [!DANGER] NOTES
-> - **suggest + yes-prompt on built-ins**: Verify that `directives="yes-prompt"` combined with `suggest=` works correctly for built-in fields. Specifically: does the `suggest` value appear pre-filled in the prompt, and does the user's input correctly override it? Also confirm `suggest=(formatDate "MM/DD/YYYY")` does not trigger a circular dependency even though `today` uses the same underlying date.
-> - **fileTitle + fieldInfo**: Verify which `{{fieldInfo}}` parameters apply to `{{fileTitle}}` and title variant fields. Specifically: does `value=` work on `fileTitle` to programmatically set the output filename? This section intentionally omitted until confirmed in source code.
+> - **suggest + yes-prompt on built-ins**: Verify that `directives="yes-prompt"` combined with `suggest` works correctly for built-in fields. Specifically: does the `suggest` value appear pre-filled in the prompt, and does the user's input correctly override it? Also confirm `suggest=(formatDate "MM/DD/YYYY")` does not trigger a circular dependency even though `today` uses the same underlying date.
+> - **fileTitle + fieldInfo**: Verify which `{{fieldInfo}}` parameters apply to `{{fileTitle}}` and title variant fields. Specifically: does `value` work on `fileTitle` to programmatically set the output filename? This section intentionally omitted until confirmed in source code.
 > - **dateAdd argument order**: The working example uses `(dateAdd now 1)` — verify this is correct. Other examples in the docs use `(dateAdd 7 now)` (amount first, then date). If argument order is `(dateAdd amount date)`, then `(dateAdd 1 now)` is correct and `(dateAdd now 1)` should be fixed.
 > - **today override end-to-end**: Verify `value=(formatDate "MM/DD/YYYY" now)` and `value=(formatDate "MM/DD/YYYY")` (no second arg) both work in the current engine build.

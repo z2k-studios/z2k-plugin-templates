@@ -61,7 +61,7 @@ The table below lists the error messages you're most likely to encounter and wha
 | "Contains invalid characters" | Inline (form field) | A title field contains `\ / : * ? " < > \|` | Remove the invalid characters from the title                                                             |
 | "Cannot be just dots" | Inline (form field) | A title field contains only dots (e.g., `...`) | Enter a meaningful title                                                                                 |
 | "Cannot end with a space or dot" | Inline (form field) | A title field ends with a trailing space or period | Remove the trailing space or dot                                                                         |
-| "Circular dependency detected: a -> b -> a" | Error dialog | Computed fields reference each other in a loop | Break the cycle by removing one of the circular `value=` references in your `{{fieldInfo}}` declarations |
+| "Circular dependency detected: a -> b -> a" | Error dialog | Computed fields reference each other in a loop | Break the cycle by removing one of the circular `value` references in your `{{fieldInfo}}` declarations  |
 | `[Error in helperName]` | Template output | A [[Custom Helper Functions\|custom helper function]] threw an error during execution | Check the developer console for the specific JavaScript error, then fix the helper code                  |
 | "Failed to load custom helpers" | Notice popup | The custom helpers JavaScript could not be evaluated | Open the developer console for the specific error, then edit your helpers in [[Settings Page\|Settings]] |
 

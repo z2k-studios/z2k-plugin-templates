@@ -45,13 +45,13 @@ The field remains **unresolved** in the output file. The raw template syntax (e.
 
 ### On Submit and Finalize
 The plugin resolves the field using the [[Fallback Behavior]] procedure:
-1. If a `fallback=` value is specified on [[fieldInfo Helper|{{fieldInfo}}]], that value is used
+1. If a `fallback` value is specified on [[fieldInfo Helper|{{fieldInfo}}]], that value is used
 2. If a `finalize-clear` or `finalize-preserve` [[fieldInfo directives|directive]] is specified, it determines behavior
 3. If the template's YAML contains `z2k_template_default_fallback_handling`, that setting applies
 4. If none of the above, the field is cleared from the output
 
 > [!NOTE]
-> Fields with the advanced `value=` parameter ([[fieldInfo value|computed fields]]) are a special case. Their computed result is always written to the output regardless of touched state, provided no external data overrides them.
+> Fields with the advanced `value` parameter ([[fieldInfo value|computed fields]]) are a special case. Their computed result is always written to the output regardless of touched state, provided no external data overrides them.
 
 ## The Reset Button
 The **⟲** icon appears when you hover over a touched field's label. Clicking it:
