@@ -1,65 +1,16 @@
 ---
 z2k_validation_ok: 4
 ---
-
 # DOCS Tags in Source Code
 
-This file catalogs all `DOCS:` tags found in the plugin and engine source code. These tags mark behaviors, constraints, or design decisions that should be explicitly documented for users.
+This file catalogs all `DOCS:` tags found in the plugin and engine source code. These tags mark behaviors, constraints, or design decisions that should be explicitly documented for users. Tags marked ✅ have been addressed; all others are open.
 
 ---
 
-## DOCS Tag #1: Reduced-Set Templates Don't Support fieldInfos or Blocks
+## DOCS Tag #1: No Blocks Allowed in YAML Frontmatter
 
-- Location: line 366 of z2k-template-engine/src/main.ts
-- Link: [main.ts:366](vscode://file//Users/gp/Vaults/Z2K%20Studios%20Workspace/Code/Obsidian%20Plugins/z2k-template-engine/src/main.ts:366:1)
-- Docs Comment:
-
-> DOCS: fieldInfos and blocks are not supported in reduced-set templates
-
-- Issue Summary:
-
-> The `reducedRenderContent` method runs a stripped-down rendering pass — it processes Handlebars expressions but does not parse or apply fieldInfo definitions, and block syntax is not available. This is a deliberate limitation of the reduced rendering path. Users who rely on fieldInfos or block templates need to use the full rendering pipeline.
-
-- Status: ✅ Documented — see [[Restricted Functionality Mode]]
-
----
-
-## DOCS Tag #2: Single Expression vs. Template Rendering (Type Preservation)
-
-- Location: line 379 of z2k-template-engine/src/main.ts
-- Link: [main.ts:379](vscode://file//Users/gp/Vaults/Z2K%20Studios%20Workspace/Code/Obsidian%20Plugins/z2k-template-engine/src/main.ts:379:1)
-- Docs Comment:
-
-> DOCS: Single Expression vs Template Rendering
-
-- Issue Summary:
-
-> When content is exactly `{{expression}}` with no surrounding text, the engine treats it as an expression evaluation and preserves the native return type (array, number, boolean, etc.). When content contains any text outside the braces — even `Hello {{name}}` or `{{a}} and {{b}}` — it is treated as template rendering and always returns a string. This distinction matters because Handlebars stringifies all output during template rendering. The engine uses an internal `__capture__` helper to preserve types for single-expression evaluation.
-
-- Status: ✅ Documented — see [[Field Types#Type Preservation in Expressions]]
-
----
-
-## DOCS Tag #3: Field Info Priority Chain
-
-- Location: line 555 of z2k-template-engine/src/main.ts
-- Link: [main.ts:555](vscode://file//Users/gp/Vaults/Z2K%20Studios%20Workspace/Code/Obsidian%20Plugins/z2k-template-engine/src/main.ts:555:1)
-- Docs Comment:
-
-> DOCS: field info values override the built-in values
-
-- Issue Summary:
-
-> Field info values are resolved through a priority chain: **built-in < global < system < block < main**. Values defined in the main template body override those from blocks, which override system blocks, which override the global block, which override built-in defaults. This determines which value "wins" when the same field is defined in multiple places.
-
-- Status: ✅ Documented — see [[Global Block and fieldInfo#fieldInfo Resolution Order]]
-
----
-
-## DOCS Tag #4: No Blocks Allowed in YAML Frontmatter
-
-- Location: line 718 of z2k-template-engine/src/main.ts
-- Link: [main.ts:718](vscode://file//Users/gp/Vaults/Z2K%20Studios%20Workspace/Code/Obsidian%20Plugins/z2k-template-engine/src/main.ts:718:1)
+- Location: line 723 of `z2k-template-engine/src/main.ts`
+- Link: [main.ts:723](vscode://file//Users/gp/Vaults/Z2K%20Studios%20Workspace/Code/Obsidian%20Plugins/z2k-template-engine/src/main.ts:723:1)
 - Docs Comment:
 
 > DOCS: No blocks allowed in YAML frontmatter
@@ -72,10 +23,10 @@ This file catalogs all `DOCS:` tags found in the plugin and engine source code. 
 
 ---
 
-## DOCS Tag #5: Dynamic Paths in Expressions Are Not Supported
+## DOCS Tag #2: Dynamic Paths in Expressions Are Not Supported
 
-- Location: line 1424 of z2k-template-engine/src/main.ts
-- Link: [main.ts:1424](vscode://file//Users/gp/Vaults/Z2K%20Studios%20Workspace/Code/Obsidian%20Plugins/z2k-template-engine/src/main.ts:1424:1)
+- Location: line 1429 of `z2k-template-engine/src/main.ts`
+- Link: [main.ts:1429](vscode://file//Users/gp/Vaults/Z2K%20Studios%20Workspace/Code/Obsidian%20Plugins/z2k-template-engine/src/main.ts:1429:1)
 - Docs Comment:
 
 > DOCS: not going to support dynamic paths like `{{(lookup "key").foo}}` or `{{(concat "user").foo}}`
@@ -84,11 +35,13 @@ This file catalogs all `DOCS:` tags found in the plugin and engine source code. 
 
 > Path expressions where the base variable is itself the result of a helper call — e.g., `{{(lookup "key").foo}}` — are not supported and will throw a `TemplateError`. Only top-level variable names are valid as path bases. This is a deliberate scope limitation; dynamic path resolution would require a significantly more complex evaluation model.
 
+- Status: ✅ Documented — see [[Field Syntax#Dot Notation]], [[JSON Field Data#Nested Objects and Dot Notation]], and [[Handlebars and Z2K Templates]] (moved from Untested to Supported)
+
 ---
 
-## DOCS Tag #6: templatePath Parameter Accepts Multiple Naming Forms
+## DOCS Tag #3: templatePath Parameter Accepts Multiple Naming Forms
 
-- Location: lines 1325–1326 of z2k-plugin-templates/src/main.tsx
+- Location: lines 1325–1326 of `z2k-plugin-templates/src/main.tsx`
 - Link: [main.tsx:1325](vscode://file//Users/gp/Vaults/Z2K%20Studios%20Workspace/Code/Obsidian%20Plugins/z2k-plugin-templates/src/main.tsx:1325:1)
 - Docs Comment:
 
@@ -101,9 +54,9 @@ This file catalogs all `DOCS:` tags found in the plugin and engine source code. 
 
 ---
 
-## DOCS Tag #7: All Unrecognized Parameters Are Treated as Template Data
+## DOCS Tag #4: All Unrecognized Parameters Are Treated as Template Data
 
-- Location: lines 1392–1393 of z2k-plugin-templates/src/main.tsx
+- Location: lines 1392–1393 of `z2k-plugin-templates/src/main.tsx`
 - Link: [main.tsx:1392](vscode://file//Users/gp/Vaults/Z2K%20Studios%20Workspace/Code/Obsidian%20Plugins/z2k-plugin-templates/src/main.tsx:1392:1)
 - Docs Comment:
 
@@ -116,9 +69,9 @@ This file catalogs all `DOCS:` tags found in the plugin and engine source code. 
 
 ---
 
-## DOCS Tag #8: Field Overrides Override fieldInfo Values
+## DOCS Tag #5: Field Overrides Override fieldInfo Values
 
-- Location: line 2065 of z2k-plugin-templates/src/main.tsx
+- Location: line 2065 of `z2k-plugin-templates/src/main.tsx`
 - Link: [main.tsx:2065](vscode://file//Users/gp/Vaults/Z2K%20Studios%20Workspace/Code/Obsidian%20Plugins/z2k-plugin-templates/src/main.tsx:2065:1)
 - Docs Comment:
 
@@ -130,9 +83,9 @@ This file catalogs all `DOCS:` tags found in the plugin and engine source code. 
 
 ---
 
-## DOCS Tag #9: Line Number Semantics for Content Insertion
+## DOCS Tag #6: Line Number Semantics for Content Insertion
 
-- Location: lines 2602–2603 of z2k-plugin-templates/src/main.tsx
+- Location: lines 2602–2603 of `z2k-plugin-templates/src/main.tsx`
 - Link: [main.tsx:2602](vscode://file//Users/gp/Vaults/Z2K%20Studios%20Workspace/Code/Obsidian%20Plugins/z2k-plugin-templates/src/main.tsx:2602:1)
 - Docs Comment:
 
@@ -145,9 +98,9 @@ This file catalogs all `DOCS:` tags found in the plugin and engine source code. 
 
 ---
 
-## DOCS Tag #10: YAML Frontmatter Fields Are Automatically Added as Field Values
+## DOCS Tag #7: YAML Frontmatter Fields Are Automatically Added as Field Values
 
-- Location: lines 3172–3178 of z2k-plugin-templates/src/main.tsx
+- Location: lines 3172–3178 of `z2k-plugin-templates/src/main.tsx`
 - Link: [main.tsx:3172](vscode://file//Users/gp/Vaults/Z2K%20Studios%20Workspace/Code/Obsidian%20Plugins/z2k-plugin-templates/src/main.tsx:3172:1)
 - Docs Comment:
 

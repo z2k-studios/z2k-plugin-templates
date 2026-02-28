@@ -57,7 +57,7 @@ Parameters can be positional or named, and can mix field references and string l
 > Z2K Templates also supports embedding field references inside string arguments using the `{{field}}` syntax within the string. For example: `{{helper "Written by {{author}}"}}`. See [[Using Fields in Parameters]] for the full treatment.
 
 ## Dot Notation
-Nested fields are referenced using dot notation:
+When input data contains nested objects, individual properties are accessed using dot notation — each `.` steps one level deeper into the object hierarchy.
 
 ```md
 {{person.firstname}} {{person.lastname}}
@@ -69,7 +69,10 @@ In the template body, dot notation uses curly braces as usual. As a helper param
 {{helper person.firstname}}
 ```
 
-Dot notation is most useful when working with structured data from [[JSON Packages]] or [[URI Actions]], where a single input object may carry multiple named properties.
+Dot notation is most useful when working with structured data from [[JSON Packages]] or [[URI Actions]], where a single input object may carry multiple named properties. See [[JSON Field Data#Nested Objects and Dot Notation|Nested Objects and Dot Notation]] for an example.
+
+> [!NOTE]
+> The path base must be a literal field name. Computed expressions as path bases — e.g., `{{(lookup "key").child}}` — are not supported and will produce an error.
 
 ## Special Forms
 

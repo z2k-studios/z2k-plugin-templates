@@ -61,5 +61,33 @@ For more information, please see the documentation page dedicated for the [[fiel
 ## Deconflicting When Both Methods are Used
 When both top-level field data keys and `fieldData` are present, top-level keys take precedence. See [[fieldData]] for the full merging rules.
 
-For simplicity and clarity, we recommend using only one of the two methods. 
+For simplicity and clarity, we recommend using only one of the two methods.
 
+## Nested Objects and Dot Notation
+Field values in a JSON Package can themselves be nested objects. When they are, the template accesses individual properties using dot notation — `{{object.property}}`.
+
+```json
+{
+  "cmd": "new",
+  "templatePath": "Templates/Research Paper.md",
+  "title": "On the Electrodynamics of Moving Bodies",
+  "author": {
+    "first": "Albert",
+    "last": "Einstein"
+  },
+  "year": 1905
+}
+```
+
+The corresponding template fields:
+
+```md
+# {{title}}
+By {{author.first}} {{author.last}} ({{year}})
+```
+
+Dot notation also works as a helper parameter — without curly braces, as with any field reference:
+
+```md
+{{wikilink author.last}}
+```
