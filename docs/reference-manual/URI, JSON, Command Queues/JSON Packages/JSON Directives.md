@@ -11,6 +11,8 @@ A [[JSON Packages Overview|Z2K Templates JSON Package]] supports a number of dir
 ## Contents
 - [[#Directive Keys]]
 - [[#Template Source]]
+- [[#Location Values]]
+- [[#Line Number Semantics]]
 
 ## Directive Keys
 These keys are recognized as command directives and are separated from field data during processing:
@@ -68,7 +70,24 @@ The `location` directive controls where content is inserted (relevant for `inser
 | `"file-bottom"`   | Insert at the bottom of the file.                                              |
 | `"header-top"`    | Insert at the top of the section under `destHeader`. Requires `destHeader`.    |
 | `"header-bottom"` | Insert at the bottom of the section under `destHeader`. Requires `destHeader`. |
-| `<number>`        | Insert at a specific line number.                                              |
+| `<number>`        | Insert at a specific line number. See [[#Line Number Semantics]].              |
+
+### Line Number Semantics
+Line numbers follow a **1-based insertion-point model** – the number indicates the gap *before* a line, not the line itself.
+
+**Positive numbers** (valid range: `1` to `N+1`, where N is the total line count in the file):
+- `1` – insert before the first line
+- `N` – insert before the last line
+- `N+1` – insert after the last line (append)
+
+**Negative numbers** (valid range: `-1` to `-N`):
+- `-1` – insert before the last line
+- `-2` – insert before the second-to-last line
+- `-N` – insert before the first line (equivalent to `1`)
+
+**`0` is not valid** – it throws an error. Use `1` or `"file-top"` to insert at the top of the file.
+
+Values outside the valid range throw an error that includes the file's actual line count and the valid range.
 
 When `location` is omitted:
 - If `destHeader` is provided, the plugin defaults to `"header-top"` for backward compatibility

@@ -24,7 +24,7 @@ The following [[JSON Directives]] are relevant to the [[JSON Commands|JSON Comma
 | `prompt`           | No          | [[JSON Directives#Prompt Modes\|Prompt mode]]: `"none"`, `"remaining"`, or `"all"`.                                                                           |
 | `finalize`         | No          | Whether to [[Finalization\|finalize]] the inserted block. Default: template's own setting.                                                                    |
 | `fieldData`        | No          | Bundled field data. See [[JSON Field Data]] for how to specify field data.                                                                                    |
-### Ignored Directives
+### Ignored Directives1
 The directives `destDir` and `fileTitle` are ignored for the `insertblock` command. The block is inserted into an existing file, not used to create a new one.
 
 ## Insertion Location
@@ -97,7 +97,7 @@ The `###` prefix restricts the match to H3 headers only — `### Morning` matche
 }
 ```
 
-The block is inserted at line 42 of the file.
+The block is inserted before line 42. For the full line-number model – including negative numbers, append behavior, and valid ranges – see [[JSON Directives#Line Number Semantics|Line Number Semantics]].
 
 ### Fully Automated Batch Insert
 ```json
@@ -135,6 +135,8 @@ No prompting, fully finalized — suitable for batch processing via a [[JSONL Fo
 The block text is rendered with `logEntry` filled in and appended to the bottom of the "Tasks" section. No block template file is needed anywhere in the vault.
 
 > [!DANGER] Internal Notes
-> - ==**#TEST** Confirm what happens when `location` is a line number that exceeds the file's total lines. Does it insert at the end? Does it throw?==
-> - When `location` is omitted and `destHeader` is omitted, the command falls through to editor mode. In a batch context (Command Queue), this would likely throw because there's no active editor. Confirm this error behavior.
-> - The YAML from the block template is merged into the existing file's frontmatter using "last wins" strategy. Worth documenting this YAML merging behavior — it may warrant its own note or cross-reference to [[Merging Multiple YAML Sources]].
+> - Notes:
+>   - Out-of-range line numbers throw a `TemplatePluginError` with a message that includes the file's actual line count and the valid range. This is confirmed in source.
+> - Action Items:
+>   - #AR: When `location` is omitted and `destHeader` is omitted, the command falls through to editor mode. In a batch context (Command Queue), this would likely throw because there's no active editor. Confirm this error behavior.
+>   - #AR: The YAML from the block template is merged into the existing file's frontmatter using "last wins" strategy. Worth documenting this YAML merging behavior — it may warrant its own note or cross-reference to [[Merging Multiple YAML Sources]].

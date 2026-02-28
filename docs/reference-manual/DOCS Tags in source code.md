@@ -102,6 +102,8 @@ This file catalogs all `DOCS:` tags found in the plugin and engine source code. 
 
 > The `location` line number parameter uses a 1-based, insertion-point model rather than a line-content model. Positive values: `1` means before the first line, `N+1` means after the last line (append). Negative values count backward from the end: `-1` inserts before the last line, `-2` before the second-to-last, etc. This needs clear documentation since the semantics differ from typical 0-indexed or line-content-based models.
 
+- Status: ✅ Documented — see [[JSON Directives#Line Number Semantics]], with cross-reference added to [[JSON Command - insertblock#Insert at a Line Number]]
+
 ---
 
 ## DOCS Tag #7: YAML Frontmatter Fields Are Automatically Added as Field Values

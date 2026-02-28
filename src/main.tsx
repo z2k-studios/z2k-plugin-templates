@@ -2596,8 +2596,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		const totalLines = rows.length;
 		let insertIndex: number;
 
-		// DOCS: Positive numbers (1 to N+1): 1 = before first line, N+1 = after last line
-		// DOCS: Negative numbers: -1 = before last line, -2 = before second-to-last, etc.
+		// Positive numbers (1 to N+1): 1 = before first line, N+1 = after last line
+		// Negative numbers: -1 = before last line, -2 = before second-to-last, etc.
 		if (lineNumber > 0) {
 			// Positive numbers: convert to 0-indexed (line 1 = index 0)
 			if (lineNumber > totalLines + 1) {
