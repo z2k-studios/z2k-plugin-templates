@@ -36,6 +36,7 @@ Because `{{fieldInfo}}` is so powerful, its documentation is spread out over sev
 	- [[fieldInfo directives|directives]] Parameter - advanced control of prompting
 	- [[fieldInfo opts|opts]] Parameter - possible field values for singleSelect and multiSelect fields
 	- [[fieldInfo value|value]] Parameter - manually assign values to a field
+- [[fieldInfo value Use Cases|value Use Cases]] - catalog of patterns and examples for the `value` parameter
 - [[fieldInfo Usage Tips|Usage Tips]] - tips to understanding how to use `{{fieldInfo}}` & best practices
 - [[fieldInfo Examples|Examples]] - presents a number of example templates that make use of `{{fieldInfo}}`
 - [[fieldInfo Variations]] - similar functions within the same family of helper functions
