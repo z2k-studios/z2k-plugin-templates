@@ -8,6 +8,5 @@ hide_file : true
 [[Template Organization]]
 [[Silent Helper Functions|Silent Helper Function]]
 [[Using System Blocks and Markdown]]
-[[Installation]]
 [[fieldInfo and Block Templates]]
 

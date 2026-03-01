@@ -21,7 +21,7 @@ The global block is most useful when you have content, field declarations, or YA
 
 - **[[Global Block and Markdown|Insert Global Markdown Content]]** – prepend vault-wide structural text or boilerplate to every file, such as a summary prompt, a copyright notice, or a section divider.
 - **[[Global Block and fieldInfo|Configure Global Field Behavior]]** – declare `{{fieldInfo}}` settings once and have them apply across every template: prompts, types, suggested values, computed fields, and overrides.
-- [[Global Block and Field Values|Set Global Field Values]] - declare new built-in like fields that have preset values, or override the values of existing [[Built-In Fields]].
+- **[[Global Block and Field Values|Set Global Field Values]]** - declare new built-in like fields that have preset values, or override the values of existing [[Built-In Fields]].
 - **[[Global Block and YAML|Insert Global YAML Properties]]** – inject default YAML frontmatter into every file, merged with the template's own frontmatter using a last-wins strategy.
 
 The global block is particularly valuable when designing a cohesive vault where the same vocabulary of fields and structural conventions recurs across many templates.

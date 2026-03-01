@@ -20,7 +20,9 @@ The complete, nested table of contents for the Z2K Templates Reference Manual.
 	- [[Comparison with Templater Plugin]] — A detailed comparison with the popular Templater Plugin
 	- [[The Z2K System]] — Shows how the plugin fits into the greater Z2K framework
 
-2. **[[Installation]] — ==no description==**
+2. **[[Installation]] — Getting Z2K Templates installed in your vault**
+	- [[Installing via Obsidian Community Plugins]] — Install through Obsidian's built-in community plugin browser (available once officially released)
+	- [[Installing via BRAT]] — Advanced: install a pre-release build directly from GitHub using BRAT
 
 
 ## Basics
