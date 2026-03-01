@@ -6,17 +6,20 @@ navbar_section_name: Reference Manual
 aliases:
   - Reference Manual
 ---
-# Z2K Templates Plug-in :: Reference Manual
+# Reference Manual
+*Z2K Templates Obsidian Plug-in*
 
-Welcome to the authoritative source for how to use the **Z2K Templates Obsidian Plug-in**, a tool for automating the process of creating structured, reusable notes in Obsidian. This reference manual covers every nitty gritty detail about the plug-in and gives hundreds of examples of how to use the plug-in in a typical vault. 
+Welcome to the authoritative source for the **Z2K Templates Obsidian Plug-in**, a tool that automates the creation of structured, reusable notes in Obsidian. This reference manual covers every nitty gritty detail about the plug-in and gives hundreds of examples of how to use it. 
 
-Whether you're logging clinical trials, cataloguing fictional characters, or building a personal second brain, Z2K Templates turns Obsidian into a structured note factory — without a single line of JavaScript inside your vault.
+Whether you're logging clinical trials, cataloguing fictional characters, or building a personal Second Brain, Z2K Templates turns Obsidian into a structured note factory — without a single line of JavaScript inside your vault.
 
 New here? [[Introduction]] is the place to start — specifically [[What is Z2K Templates|What is Z2K Templates?]], which connects all the pieces in one read.
 
-For the complete nested table of contents, see [[Table of Contents|Full Table of Contents]].
+See the [[Table of Contents|Full Table of Contents]] (you've been warned) to have a thorough scan of all that the plug-in can do. 
+
 
 ---
+
 
 | Getting Started  | Basics               | Intermediate                    | Advanced                                     |
 | :--------------: | :------------------: | :-----------------------------: | :------------------------------------------: |

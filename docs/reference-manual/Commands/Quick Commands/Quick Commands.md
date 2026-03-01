@@ -1,7 +1,6 @@
 ---
 sidebar_folder_position: 30
 sidebar_position: 1
-sidebar_metacategory: "Basics"
 aliases:
 - quick commands
 - quick create commands

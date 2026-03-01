@@ -1,7 +1,6 @@
 ---
 sidebar_folder_position: 20
 sidebar_position: 1
-sidebar_metacategory: "Basics"
 ---
 # Context Menu Commands
 Z2K Templates adds commands to Obsidian's right-click context menus, giving you quick access to template operations without opening the Command Palette.

@@ -49,7 +49,7 @@ Let's step back and review the top alternatives to **Z2K Templates**:
 
 ## Z2K Templates and Templater
 
-For a more detailed analysis of Z2K Templates in contrast to the popular Templater plugin, continue to the [[Z2K Templates vs. Templater|next page]].
+For a more detailed analysis of Z2K Templates in contrast to the popular Templater plugin, continue to the [[Comparison with Templater Plugin|next page]].
 
 ---
 

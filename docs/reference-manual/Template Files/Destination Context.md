@@ -13,9 +13,9 @@ Throughout the documentation, you will see the reference to knowing the "Destina
 But we call it the Destinattion *Context* to help set an important design philosophy in how templates are used. 
 
 ## Philosophy
-> You must know where you are going in order to begin
+> *You must know where you are going in order to begin*
 
-If an obsidian vault is small or extremely flat (e.g. a true Zettelkasten), then all of your templates could reside into a single root [[Template Folders|templates folder]] and we would be done with it. The destination for all new notes in the system is abundantly clear. 
+If an Obsidian vault is small or extremely flat (e.g. a true Zettelkasten), then all of your templates could reside into a single root [[Template Folders|templates folder]] and we would be done with it. The destination for all new notes in the system is abundantly clear. 
 
 But as you create new folders into your vault, they represent different *contexts*, and thus different modes of thinking or subject areas. Thus, when you create new Templates folders in these subfolders, the templates that go into those subfolders reflect the context held within the name of that subfolder. 
 
