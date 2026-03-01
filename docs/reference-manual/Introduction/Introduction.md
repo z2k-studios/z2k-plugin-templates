@@ -1,8 +1,8 @@
 ---
-sidebar_position: 10
+sidebar_position: 1
 sidebar_folder_position: 10
 doc_state: revised_ai_draft_1
-sidebar_metacategory: "Getting Started"
+sidebar_metacategory: Getting Started
 ---
 # Introduction
 

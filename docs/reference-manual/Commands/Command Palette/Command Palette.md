@@ -1,7 +1,6 @@
 ---
 sidebar_folder_position: 10
 sidebar_position: 1
-sidebar_metacategory: "Basics"
 ---
 # Command Palette Commands
 Z2K Templates integrates with Obsidian's Command Palette (`Ctrl/Cmd + P`) to give you quick access to template operations. These commands let you create new files from templates, insert block templates, convert files between template types, and more.
