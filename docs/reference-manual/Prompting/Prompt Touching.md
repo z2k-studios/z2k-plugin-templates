@@ -77,7 +77,7 @@ That distinction is the foundation of [[Deferred Field Resolution]] and the [[WI
 - [[Fallback Behavior]] – What happens to untouched fields during finalization
 - [[fieldInfo suggest|suggest Parameter]] – The value restored on reset
 
-> [!DANGER] Notes for Documentation Team
+> [!DANGER] INTERNAL NOTES
 > - Touch is tracked per-field via the `touched` boolean in `FieldState` (`src/main.tsx` ~line 4395).
 > - `onFocus` sets `touched=true` (~line 4190); `onChange` also sets `touched=true` (~line 4178).
 > - Reset handler at ~line 4205 sets `touched=false` and restores `value` to `resolvedSuggest`.

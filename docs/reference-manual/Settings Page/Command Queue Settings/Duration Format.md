@@ -21,5 +21,5 @@ Several [[Command Queue Settings]] accept a **duration value** – a number foll
 
 Only one unit per value – `1h30m` is not valid. Use `90m` instead.
 
-> [!DANGER] NOTES
+> [!DANGER] INTERNAL NOTES
 > - Confirm whether `mo` and `y` are valid in the parser or if they are theoretical. The `DURATION_FORMAT_ERROR` constant in `src/main.tsx` (line 100) lists them, but verify against the `parseDuration` implementation.

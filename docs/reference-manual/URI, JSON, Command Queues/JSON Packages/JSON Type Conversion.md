@@ -105,7 +105,7 @@ When used inside a `.json` or `.jsonl` file:
 
 
 
-> [!DANGER] Internal Notes
+> [!DANGER] INTERNAL NOTES
 > - The `fieldData` exception described above needs verification. The code at line 1296 creates `fieldOverrides` by spreading `additionalFields` (from `fieldData`) with `templateData` (top-level non-directive keys). The `uriKeys` set at line 1298 only contains keys from `templateData`, not from `additionalFields`. This means `fieldData` values are *never* subject to URI string conversion, even when the outer transport is a URI. This is arguably correct (the JSON was parsed, so types are preserved), but should be confirmed as intentional.
 > - The auto-conversion behavior for undeclared types is narrow — only `"true"`, `"false"`, and numeric strings are converted. This is different from the generous parsing used for declared `boolean` types. Document whether this asymmetry is intentional or a simplification.
 > - Confirm whether arrays and objects passed via URI `fieldData` (as inline JSON) are handled correctly, or if they're limited to scalar values only.

@@ -90,7 +90,7 @@ This is useful when commands create files that subsequent commands reference –
 > [!WARNING]
 > If the plugin crashes mid-JSONL processing, the `.processing.jsonl` file is recovered on next startup and re-processed from the beginning. Lines that already succeeded will execute again. Design your batch commands to be safe for re-execution when possible, or use individual `.json` files with retry support for exactly-once semantics.
 
-> [!DANGER] Internal Notes
+> [!DANGER] INTERNAL NOTES
 > - The concurrency guard (`_processingQueue`) is an in-memory boolean, not a file lock. It prevents overlapping runs within one Obsidian instance but would not prevent conflicts if two Obsidian instances shared the same queue directory (an unusual but possible scenario with synced vaults).
 > - The scan timer uses `setInterval(1000)` as a meta-timer that checks elapsed time, rather than setting the interval directly to the frequency. This is noted in the code but the user-facing reason is that it allows dynamic frequency changes without restarting the timer.
 > - The `startQueueProcessor()` function is only called once at `onload()`. If `offlineCommandQueueDir` is initially empty and later set in settings, the timer doesn't start until Obsidian is restarted. Confirm whether this is a known limitation or a bug.

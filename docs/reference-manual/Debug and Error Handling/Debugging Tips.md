@@ -65,7 +65,7 @@ The table below lists the error messages you're most likely to encounter and wha
 | `[Error in helperName]` | Template output | A [[Custom Helper Functions\|custom helper function]] threw an error during execution | Check the developer console for the specific JavaScript error, then fix the helper code                  |
 | "Failed to load custom helpers" | Notice popup | The custom helpers JavaScript could not be evaluated | Open the developer console for the specific error, then edit your helpers in [[Settings Page\|Settings]] |
 
-> [!DANGER] Internal Notes
+> [!DANGER] INTERNAL NOTES
 > - The error reference table is curated, not exhaustive. Command queue validation errors (missing `cmd`, invalid `prompt`, template not found, etc.) are fully documented in [[Retry and Error Handling]] and not duplicated here.
 > - Template parsing errors from the Handlebars engine produce varied messages depending on the specific syntax issue (unmatched braces, unknown helpers, malformed expressions). These are shown in the error dialog but are not individually catalogued here because they come from the underlying Handlebars library.
 > - The developer console prefixes mentioned in the "Use the Developer Console" section reflect current code behavior (`console.error("TemplatePluginError: ", ...)`, `console.error("Template error: ", ...)`, `console.error("Helper '${name}' threw:", ...)`). If these change in a future refactor, update this section.

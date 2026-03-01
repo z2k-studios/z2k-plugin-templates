@@ -145,7 +145,7 @@ When a delayed command is archived after successful execution, the `.delay` port
 
 This prevents confusing filenames like `report.2025-06-15.delay.2025-06-15_14-30-00.done.json`.
 
-> [!DANGER] Internal Notes
+> [!DANGER] INTERNAL NOTES
 > - The date parsing regex is: `/\.(\d{4}-\d{2}-\d{2})(?:_(\d{2}-\d{2}-\d{2}))?\.delay\.json$/i`
 > - The pattern match is case-insensitive, so `.DELAY.json` works the same as `.delay.json`
 > - There is no validation that the date is in the future. A past date simply means the command is immediately eligible – it won't fail or warn.

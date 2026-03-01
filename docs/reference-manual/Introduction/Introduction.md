@@ -33,6 +33,6 @@ These guides provide immediate examples of creating a template, using prompts, a
 
 ---
 
-> [!DANGER] INTERNAL NOTE
+> [!DANGER] INTERNAL NOTES
 > - Consider adding a short visual or screenshot placeholder after release (showing prompt modal).  
 

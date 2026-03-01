@@ -42,6 +42,6 @@ If you use a custom CSS theme or snippet that overrides Obsidian's standard code
 
 For finer control, you can target the `cm-hbs` family of classes directly in a CSS snippet.
 
-> [!DANGER]
+> [!DANGER] INTERNAL NOTES
 > - Highlighting applies to all `.md` files in the vault, not only template files. This is a limitation of how Obsidian's CodeMirror extensions work — they are registered globally.
 > - Whether highlighting works on `.template` and `.block` files depends on whether those extensions are currently visible (see [[Obsidian and File Extensions]]). When visible, they are treated as Markdown and highlighting applies. When hidden, they are not.

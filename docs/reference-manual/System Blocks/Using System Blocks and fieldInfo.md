@@ -84,6 +84,6 @@ For the vault-wide equivalent of this pattern using the global block, see [[Glob
 ## See Also
 - [[fieldInfo value Use Cases]] — broader catalog of `value` parameter patterns, including block template composition and rich content embedding
 
-> [!DANGER] NOTES
+> [!DANGER] INTERNAL NOTES
 > - **What happens in unaddressed folders**: In the example above, templates inside `Z2K/Thoughts/` have a system block but no `DataDomain` override. Verify whether they inherit from `my-vault/.system-block.md` (value: `"Unknown"`) or produce an empty field. Clarify the inheritance behavior and add a note if needed.
 > - **Page completeness**: This page covers two use cases. Consider whether additional use cases warrant documentation — e.g., using system blocks to set `type`, `options`, or other `fieldInfo` parameters (not just `value`) in a folder-scoped way.

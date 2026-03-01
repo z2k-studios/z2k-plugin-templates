@@ -21,5 +21,5 @@ The minimum severity level a message must have to be written to the log. Each le
 
 Start with `warn` (the default) for normal use. Switch to `debug` when troubleshooting a specific template or command queue issue, then set it back – debug-level logging can produce a large volume of output.
 
-> [!DANGER] NOTES
+> [!DANGER] INTERNAL NOTES
 > - Verify that the log level descriptions above match the actual log statements in the source code. The descriptions are inferred from the setting's own description text and standard logging conventions. ==In particular, check to make sure it is successive - i.e. Warning covers warnings + Errors==

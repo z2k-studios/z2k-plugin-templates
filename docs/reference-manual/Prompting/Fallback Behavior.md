@@ -111,5 +111,5 @@ See [[Prompt Touching]] for details on how the system distinguishes "deliberatel
 - [[YAML Configuration Properties]] – Template-wide fallback settings
 - [[Deferred Field Resolution]] – The broader concept of iterative field resolution
 
-> [!DANGER] Notes for Documentation Team
+> [!DANGER] INTERNAL NOTES
 > - Submit handling at `src/main.tsx` ~line 4249: untouched fields during finalization use `resolvedFallback` value, but skip `finalize-preserve` fields to let preservation logic handle them.

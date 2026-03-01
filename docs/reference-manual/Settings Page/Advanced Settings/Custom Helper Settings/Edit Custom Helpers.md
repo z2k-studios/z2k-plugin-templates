@@ -67,6 +67,6 @@ Output: `Note A, Note B, Note C, Note D, Note E`
 ## Validation
 The editor validates code before saving. If the code contains syntax errors or fails to execute, the plugin reports the error and the helpers are not loaded.
 
-> [!DANGER] NOTES
+> [!DANGER] INTERNAL NOTES
 > - Verify whether `registerHelper` is the only registration mechanism, or if direct `Handlebars.registerHelper` calls also work.
 > - The validation step (`validateUserHelpers`) is called before saving. Confirm what it actually checks – syntax only, or does it also execute the code in a trial run?

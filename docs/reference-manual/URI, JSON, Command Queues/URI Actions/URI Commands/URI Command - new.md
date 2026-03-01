@@ -174,6 +174,6 @@ obsidian://z2k-templates?cmd=new&templateContents=Hello%20%7B%7BRecipient%7D%7D!
 
 The note is created in the vault root with the text "Hello Emerson!" and no prompting. No template file is needed anywhere in the vault. System blocks are not applied; the global block YAML still is.
 
-> [!DANGER] Internal Notes
+> [!DANGER] INTERNAL NOTES
 > - ==**#TEST** Confirm the behavior when `fileTitle` is not provided and `prompt` is `none`. The JSON Command - new page notes this as an open question (code path through `createCard` → title resolution). The same uncertainty applies to URI invocation.==
 > - ==**#TEST** Confirm that `{{Recipient}}` in `templateContents` survives URI encoding/decoding intact. The `{` and `}` characters encode to `%7B` and `%7D` — verify these round-trip correctly through Obsidian's URI handler.==

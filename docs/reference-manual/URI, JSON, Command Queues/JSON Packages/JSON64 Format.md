@@ -80,5 +80,5 @@ A typical automation flow:
 
 For a complete walkthrough, see [[How-to Pass Create Files from Templates in Apple Shortcuts]].
 
-> [!DANGER] Internal Notes
+> [!DANGER] INTERNAL NOTES
 > - The plugin accepts both standard Base64 (RFC 4648, using `+` and `/`) and URL-safe Base64 (using `-` and `_`). Either variant decodes correctly. URL-safe Base64 is preferable for URI transport since it avoids percent-encoding the `+` character.

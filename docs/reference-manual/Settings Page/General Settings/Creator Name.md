@@ -18,5 +18,5 @@ If you share your templates with others, we highly encourage you to add the crea
 > This field accepts any text, not just a personal name. A copyright notice, a company name, a website URL – anything you want inserted into every new file via `{{creator}}` works here. The reference page for the [[creator|Creator]] built-in field has a number of examples.
 
 
-> [!DANGER] NOTES
+> [!DANGER] INTERNAL NOTES
 > - The `(?)` help link in the settings UI currently points to the Z2K Built-In Template Fields doc page rather than this page. See [GitHub issue #153](https://github.com/z2k-studios/z2k-plugin-templates/issues/153).

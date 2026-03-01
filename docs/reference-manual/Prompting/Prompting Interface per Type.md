@@ -138,7 +138,7 @@ Renders as a **group of checkboxes** – one for each option in the [[fieldInfo 
 - [[fieldInfo type|type Parameter]] – Full documentation of the `type` parameter
 - [[fieldInfo opts|opts Parameter]] – How to define options for select types
 
-> [!DANGER] Notes for Documentation Team
+> [!DANGER] INTERNAL NOTES
 > - All screenshot placeholders need to be captured from a live prompting interface showing each field type.
 > - The `datetime` format depends on whether seconds are zero: `YYYY-MM-DD HH:mm` vs `YYYY-MM-DD HH:mm:ss`. Verify this is intentional or if it should always include seconds for consistency.
 > - The `boolean` type has a unique label layout (label beside checkbox via `boolean-input-container` class). All other types render the label above the input.

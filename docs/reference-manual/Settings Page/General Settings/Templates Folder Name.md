@@ -20,5 +20,5 @@ For example, if this is set to `Templates`, then a folder at `Projects/Blog/Temp
 > [!NOTE]
 > The current settings UI labels this field "Embedded templates folder name." This name is outdated – see the bug note below.
 
-> [!DANGER] NOTES
+> [!DANGER] INTERNAL NOTES
 > - **BUG (source code):** The settings UI label and the source code key (`templatesFolderName`) still use the outdated term "Embedded templates folder name." This should be renamed to "Templates Folder Name" to match the [[Template Folders]] reference manual page. The source code key should also be updated from `templatesFolderName` to `templatesFolderName` (or `templateFolderName`). See GitHub issue #151 and `src/main.tsx` lines 227–248.

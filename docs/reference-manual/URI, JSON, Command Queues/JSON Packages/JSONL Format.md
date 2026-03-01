@@ -81,6 +81,6 @@ For full details on retry behavior and failure states, see the [[Retry and Error
 
 If the first line fails, it will be extracted to its own `.json` file and retried up to 3 times with a 5-second delay between attempts.
 
-> [!DANGER] Internal Notes
+> [!DANGER] INTERNAL NOTES
 > - Crash recovery re-processes the entire `.processing.jsonl` file from the top. There is no line-level checkpoint. This could lead to duplicate notes if `new` commands succeed before a crash. Worth confirming whether this is intended behavior or a known limitation.
 > - The pause between commands is configured globally via the `offlineCommandQueuePause` setting, not per-file or per-line.

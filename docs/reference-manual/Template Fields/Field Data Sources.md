@@ -54,7 +54,7 @@ For more information on how the data from these different field data sources get
 > [!NOTE] Most Built-In Fields
 > Most [[Built-In Fields]] (like `{{date}}` and `{{time}}`) are computed during rendering, not during the value-setting phase. They don't participate in the priority table above – they resolve at render time if no other source has provided a value for them.
 
-> [!DANGER] Notes
+> [!DANGER] INTERNAL NOTES
 > - The execution order in the plugin is: `addYamlFieldValues()` (line 1866), then `addPluginBuiltIns()` (line 1867), then `handleOverrides()` (line 1877). YAML values use a conditional write (skip if value exists), while plugin built-ins and overrides use unconditional writes.
 > - The code comment at plugin line 2908 documents the intended priority as: `Built-ins < YAML fields < fieldInfo.value < Plugin built-ins < Overrides` (where `<` means lower priority).
 > - There is a TODO at plugin line 2912 to refactor this into a `valuesBySource` pattern for more explicit priority ordering.

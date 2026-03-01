@@ -71,7 +71,7 @@ Most error behaviors are documented alongside the feature they belong to. Here's
 - **Fallback behavior** – [[Fallback Behavior]] explains what happens when a field has no value
 - **Template syntax** – [[Handlebars Support]] covers the template language and its constraints
 
-> [!DANGER] Internal Notes
+> [!DANGER] INTERNAL NOTES
 > - The error dialog uses the `TemplateError` class from the engine to show richer descriptions for syntax errors. For other error types, it shows a raw message. This distinction is internal and not documented to users.
 > - The `UserCancelError` class suppresses all error handling when a user cancels a dialog – no logging, no modal, no notice. This is intentional but not surfaced anywhere in docs.
 > - The inline validation for `fileTitle` and `titleText` types share the same rules, but `fileTitle` is always validated regardless of type setting. If these diverge in future, this page will need updating.

@@ -98,6 +98,6 @@ Any parameter that isn't a recognized directive is treated as **field data** –
 
 
 
-> [!DANGER] Internal Notes
+> [!DANGER] INTERNAL NOTES
 > - **Vault parameter** – Obsidian handles `vault` at the app level before routing to plugin handlers via `registerObsidianProtocolHandler()`. The Advanced URI plugin confirms this pattern – it includes `vault` in its documented URI schema but has zero vault-handling code; Obsidian switches vaults before the plugin's handler fires. The Z2K Templates plugin likewise does not need to handle `vault`. **Needs manual testing:** confirm that `vault` is stripped from the params object before reaching the handler (or if it passes through, that it is harmlessly ignored as template field data). If it passes through, consider adding `'vault'` to `knownKeys` and discarding it.
 > - **URI key casing risk** – The plugin normalizes directive keys (case-insensitive, strips non-alphanumeric), but field data keys preserve their original casing because they must match template field names exactly. If any platform or intermediary lowercases the entire URI before Obsidian receives it, field data keys like `meetingType` would arrive as `meetingtype` and fail to match. **Action:** Test URI key casing on macOS, Windows, and iOS to confirm keys are passed through verbatim.

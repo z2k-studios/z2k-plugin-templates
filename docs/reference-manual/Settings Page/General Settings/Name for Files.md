@@ -21,5 +21,5 @@ Some times you just can't get away from a religious disagreement. Obsidian calls
 > [!NOTE] Documentation Note
 > All of the documentation for the plugin refers to individual files as "files", so please note that if you change the name for files in your system, there will be small discrepancies in the interface from the documentation.
 
-> [!DANGER] NOTES
+> [!DANGER] INTERNAL NOTES
 > - The `(?)` help link in the settings UI currently points to Template Folders, which appears to be a placeholder (marked TODO in the source code). It should link to this page once a stable URL is available.

@@ -184,7 +184,7 @@ This syntax is invalid Handlebars – the colon makes Handlebars interpret `YYYY
 {{formatDate "YYYY-MM-DD"}}
 ```
 
-> [!DANGER] Notes for Review
+> [!DANGER] INTERNAL NOTES
 > - Verify the dateAdd examples work as documented – particularly the nested `dateAdd` for end-of-month.
 > - The "Same day last year" example may not handle leap years correctly. Consider noting this.
 > - Test that `{{date}}` vs `{{now}}` behave as described regarding time precision.

@@ -42,5 +42,5 @@ fileStatus: Draft
 
 Every file created from any template will include `fileStatus: Draft` in its frontmatter unless the template overrides it with its own `fileStatus` value.
 
-> [!DANGER] NOTES
+> [!DANGER] INTERNAL NOTES
 > - YAML merge behavior (last-wins, top-level only) was confirmed from engine source analysis. Deep merge is not supported.

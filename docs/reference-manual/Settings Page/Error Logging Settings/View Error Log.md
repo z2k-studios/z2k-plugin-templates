@@ -37,6 +37,6 @@ To prevent unbounded growth, the log is automatically trimmed when it exceeds **
 ## Related Settings
 - [[Error Log Level]] – Controls the minimum severity level that triggers a log entry
 
-> [!DANGER]
+> [!DANGER] INTERNAL NOTES
 > - Confirm the screenshot above matches the actual modal UI.
 > - Verify the polling interval is perceivable as "real-time" in practice — 250ms should be imperceptible but worth noting if there are any observed lags.

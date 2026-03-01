@@ -142,5 +142,5 @@ Directives (`cmd`, `templatePath`, `prompt`, `finalize`) are clearly separated f
 
 If `alice.json` contains `{"name": "Alice Chen", "role": "Engineer"}`, the result will be `name = "Updated Name"` and `role = "Engineer"`.
 
-> [!DANGER] Internal Notes
+> [!DANGER] INTERNAL NOTES
 > - The file path detection heuristic is simple: if the string starts with `{`, it's inline JSON; otherwise it's a file path. This means a file path that starts with `{` (unusual but theoretically possible) would be misinterpreted as JSON. Worth noting as a known edge case.

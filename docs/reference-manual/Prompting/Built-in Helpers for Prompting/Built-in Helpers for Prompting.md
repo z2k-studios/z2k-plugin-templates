@@ -135,7 +135,7 @@ The `{{fieldInfo}}` helper has extensive documentation in its own section:
 - [[Prompting Interface]] – The modal where these helpers take effect
 - [[Prompting Defaults]] – What happens when no `{{fieldInfo}}` is specified
 
-> [!DANGER] Notes for Documentation Team
+> [!DANGER] INTERNAL NOTES
 > - This page merges the former "Controlling the Prompt with fieldInfo" standalone page. The aliases from that page are preserved in frontmatter above so existing wikilinks (`[[Controlling the Prompt with fieldInfo]]`) still resolve.
 > - The `refhtml` placeholder files (`refhtml - fieldInfo (Prompting).md` and `refhtml - fieldOutput (Prompting).md`) in this folder are Docusaurus redirect placeholders. They should remain unchanged.
 > - The `value` parameter is not covered here because it bypasses the prompting interface entirely (computed fields are hidden from the form). It's documented in [[fieldInfo value|value Parameter]].

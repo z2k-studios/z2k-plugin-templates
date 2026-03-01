@@ -94,7 +94,7 @@ These types are strings (or arrays of strings) under the hood. The type declarat
 ### Manual Type Conversion in Templates
 If you need to convert a value between types within a template expression — for example, turning a string into a number for arithmetic — Z2K Templates provides the [[Type Conversion Helpers]]: `{{toNumber}}`, `{{toBool}}`, and `{{toString}}`. These are useful when a value arrives as the wrong type and you need to coerce it explicitly.
 
-> [!DANGER] Internal Notes
+> [!DANGER] INTERNAL NOTES
 > - The `handleOverrides()` function at line 2090 of main.tsx handles URI string conversion. Only `text`, `boolean`, and `number` have explicit conversion logic. All other types (`date`, `datetime`, `filenameText`, `singleSelect`, `multiSelect`) fall through to the auto-conversion branch (lines 2117-2128). This means a `date` field with URI value `"2024-01-15"` goes through auto-conversion and stays as a string (since it's not `"true"`, `"false"`, or a plain number). This is probably correct — dates should stay as strings — but it's implicit rather than explicit.
 > - The fieldInfo type page lists `string` in its syntax example (`type="string"`), but the accepted values table lists `text` as the default. Confirm whether `string` is an alias for `text` or if the example is incorrect.
 > - The `datetime` type's description on the fieldInfo type page says "A time of day" — this is misleading. It should be "A date and time" or "A datetime picker." Worth fixing on that page.

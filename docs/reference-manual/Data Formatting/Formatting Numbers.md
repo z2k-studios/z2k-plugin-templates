@@ -113,7 +113,7 @@ If a field value isn't a valid number, the formatting helpers return the origina
 > [!WARNING]
 > When receiving data from external sources (URIs, JSON), ensure numeric fields are actually numbers, not strings. The string `"1,234"` won't format correctly – commas must be removed first.
 
-> [!DANGER] Notes for Review
+> [!DANGER] INTERNAL NOTES
 > - Verify the file size formatting (`0 b`) works as documented – this is a Numeral.js feature.
 > - The `calc` helper is referenced but not yet documented. Ensure [[calc]] page exists.
 > - Test behavior when field value is a string that looks like a number (e.g., `"1,123"`) - is the warning statement above correct?

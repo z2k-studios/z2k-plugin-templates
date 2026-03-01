@@ -91,6 +91,6 @@ The Base64 string decodes to:
 
 Base64 is useful when the URI needs to be compact or when the generating tool struggles with percent-encoding. See [[URIs with JSON Data#Base64 Encoding]] for details.
 
-> [!DANGER] Internal Notes
+> [!DANGER] INTERNAL NOTES
 > - The recursive call to `processCommand` passes `isJsonSource = true`, meaning all values in the parsed JSON are treated as natively typed. This is correct – the data originates from a JSON string, not from URI parameters.
 > - Confirm whether other top-level params (e.g., `templatePath` alongside `cmd=fromJson`) are truly ignored, or if they're merged somehow. The code at line 1320 returns immediately after the recursive call, so they appear to be ignored.

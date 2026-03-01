@@ -125,6 +125,6 @@ Field data is loaded from a separate file in the vault. See [[fieldData]] for de
 
 The note is created in the vault root (unless `destDir` is specified). System blocks are not applied; the global block YAML still is. This is the simplest possible self-contained command — useful for testing that the system is working before introducing a real template.
 
-> [!DANGER] Internal Notes
+> [!DANGER] INTERNAL NOTES
 > - ==**#TEST** Confirm exact behavior when `prompt` is `"none"`, `fileTitle` is not provided, and no `z2k_template_suggested_title` exists. Does the plugin generate a name from the template filename? Does it throw an error? The code path needs tracing through `createCard` → title resolution.==
 > - The `destDir` auto-creation uses `this.createFolder()` — confirm this works for nested paths (e.g., `"A/B/C"` where none exist).

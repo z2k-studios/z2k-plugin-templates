@@ -261,7 +261,7 @@ Usage:
 - `{{dailyLink -1}}` → `[[2025-01-13]]`
 - `{{dailyLink 7}}` → `[[2025-01-21]]`
 
-> [!DANGER] Notes for Review
+> [!DANGER] INTERNAL NOTES
 > - Verify all example helpers work as documented – especially the Obsidian API examples.
 > - The `recentFiles` example uses `app.vault` directly – confirm this is the correct API.
 > - Test what happens when `registerHelper` is called with a name that conflicts with a built-in helper.

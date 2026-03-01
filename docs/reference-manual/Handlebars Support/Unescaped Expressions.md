@@ -90,7 +90,7 @@ Because Z2K Templates reverses all HTML entity escaping, there is currently no b
 
 
 
-> [!DANGER] Notes for Review
+> [!DANGER] INTERNAL NOTES
 > - ==Needs testing==: Confirm that all 7 Handlebars escapes are fully reversed in actual template output. Code analysis of `unescapeMostHtmlEntities()` (in `z2k-template-engine/src/main.ts`) shows they should be.
 > - ==Needs testing==: Verify that `{{field}}` and `{{{field}}}` produce truly identical output in all cases.
 > - Triple-mustache is listed as "untested" on the [[Handlebars and Z2K Templates]] overview page. If confirmed accurate here, that entry should be moved to the supported list.

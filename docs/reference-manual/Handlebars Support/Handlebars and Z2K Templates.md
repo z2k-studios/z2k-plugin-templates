@@ -70,6 +70,6 @@ For details on specific behavioral differences, see the individual pages in the 
 
 
 
-> [!DANGER] Notes for Review
+> [!DANGER] INTERNAL NOTES
 > - The "Untested" list should be pruned as features are verified. Consider adding a testing pass for each item.
 > - `{{#with}}` passes through to Handlebars and likely works, but no Z2K-specific testing has been done. If confirmed, move to Supported.

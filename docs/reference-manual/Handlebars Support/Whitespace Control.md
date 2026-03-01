@@ -83,5 +83,5 @@ Due: {{dueDate}}
 > Tildes are still useful with silent helpers when they share a line with other content and you want precise control over spacing – but for standalone declarations on a single line, Z2K Templates' automatic line removal is simpler.
 
 
-> [!DANGER] Notes for Review
+> [!DANGER] INTERNAL NOTES
 > - Verify that whitespace control tildes work correctly with `{{fieldOutput}}` / `{{fo}}` as well.

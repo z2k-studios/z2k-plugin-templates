@@ -50,6 +50,6 @@ Once a Z2K Templates JSON Package reaches the plugin — whether through a URI, 
 
 The format of the JSON Package is the same regardless of how it arrives. What differs is the *transport* — and each transport has its own page covering the specifics.
 
-> [!DANGER] Internal Notes
+> [!DANGER] INTERNAL NOTES
 > - There is currently no UI-based command for importing a JSON file into a template (e.g., a command palette action to select a `.json` file and apply it). This would be a useful addition — file a feature request.
 > - Verify that the Apple Shortcuts how-to guide title matches: `[[How-to Pass Create Files from Templates in Apple Shortcuts]]`

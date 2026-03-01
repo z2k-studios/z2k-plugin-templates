@@ -32,4 +32,4 @@ Leave the field blank to disable the inter-command pause entirely. Alternatively
 
 Very short pauses (`100ms`–`500ms`) are enough to give Obsidian's file indexer breathing room between commands. Pauses longer than a few seconds will make large batches noticeably slow without additional benefit. Values above `30s` are rarely appropriate – if commands need that much time between them, consider whether they should be batched at all.
 
-> [!DANGER] NOTES
+> [!DANGER] INTERNAL NOTES

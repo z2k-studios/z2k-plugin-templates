@@ -46,7 +46,7 @@ No prompts are shown. The command runs to completion silently.
 - [[Apply Template to File]] – Applies a template to an existing file, beginning the fill process
 - [[Finalize this file (Context Menu)|Finalize This File (Context Menu)]] – Same operation from the file explorer right-click menu
 
-> [!DANGER]
+> [!DANGER] INTERNAL NOTES
 > - Confirm whether a confirmation dialog is shown before finalizing (issue #134 flagged this as a consideration — "destructive action").
 > - Verify the exact command name as it appears in the Command Palette under different naming settings.
 > - ==do we need to worry about users that use files of extension .txt ==

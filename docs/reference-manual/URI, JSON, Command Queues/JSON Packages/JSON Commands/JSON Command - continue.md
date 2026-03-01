@@ -67,6 +67,6 @@ The fields `actionItems` and `summary` are filled in without any prompting.
 
 No new field data is supplied — this just finalizes the note, resolving all remaining fields using their fallback values.
 
-> [!DANGER] Internal Notes
+> [!DANGER] INTERNAL NOTES
 > - Confirm how the plugin determines the original template for a continued file. It likely reads the `z2k_template_name` or `z2k_template_type` YAML property from the file's frontmatter.
 > - What happens if `existingFilePath` points to a file that was never created from a template (i.e., has no template metadata)? Does it fail gracefully or throw?

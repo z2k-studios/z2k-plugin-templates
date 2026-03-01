@@ -81,5 +81,5 @@ You need to update templates for your person cards:
 - [[Convert to Block Template]] – Create or convert to `.block` files
 
 
-> [!DANGER]
+> [!DANGER] INTERNAL NOTES
 > - Check if hidden templates still appear in Obsidian's search, quick switcher, or graph view

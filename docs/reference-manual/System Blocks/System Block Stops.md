@@ -80,7 +80,7 @@ The stop file has no effect on the [[Global Block Settings|Global Block]], which
 - [[Template Folder Hierarchies]] for how the plugin traverses folder structures
 - [[Global Block Settings]] for the distinction between system blocks and the global block
 
-> [!DANGER] Notes for Review
+> [!DANGER] INTERNAL NOTES
 > - The existing doc referenced GitHub issue #4 (https://github.com/z2k-studios/z2k-plugin-templates/issues/4) as the origin of this feature. That issue was not fetched, so the doc is based purely on code behavior. If the issue contains additional design intent or edge cases, those should be incorporated.
 > - The code checks for the stop file **after** reading the current folder's `.system-block.md`. This means the stop folder's own system block is always included. This behavior is documented above, but worth confirming it matches design intent.
 > - `sidebar_position: 100` was preserved from the original file. The formula would give `60` (entry 6 in section 17). The high value may be intentional to keep this page last in the section – ==confirm whether 100 or 60 is correct==.

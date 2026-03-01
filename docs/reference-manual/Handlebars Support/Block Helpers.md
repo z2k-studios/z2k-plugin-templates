@@ -78,7 +78,7 @@ When rendered, the `prompt` string is compiled by Handlebars, and the `{{#if}}` 
 Like [[Conditionals]] and [[Iterators]], block helpers are block statements – they are not preserved by Z2K Templates' [[Deferred Field Resolution]] logic. If a block helper references an unresolved field, the field will be `undefined` during evaluation.
 ==this needs improved discussion. Are block helpers deferred to finalization?===
 
-> [!DANGER] Notes for Review
+> [!DANGER] INTERNAL NOTES
 > - **Deferred field bug**: Custom block helpers are affected by the same [[Conditionals#Known Issue|block statement preservation bug]] as `{{#if}}` and `{{#each}}`. Block statements referencing unresolved fields are not preserved — they evaluate immediately with `undefined` values. See that page for root cause and desired behavior options.
 > - **Restricted mode correction**: The previous version of this page incorrectly stated that block helpers don't work in restricted mode. Code analysis (tracing `reducedRenderContent` → `Handlebars.compile` path) shows they DO work — the code comment at line 366 ("blocks not supported") refers to block templates (partials), not block helpers. ==Needs testing== to confirm empirically that the `{{#if}}` in prompt parameter example actually works as described.
 > - Custom block helpers are registered via the same `registerHelper` mechanism as inline helpers (lines 801-820 of `z2k-plugin-templates/main.tsx`). The distinction is purely in how the helper function uses `options.fn()`.

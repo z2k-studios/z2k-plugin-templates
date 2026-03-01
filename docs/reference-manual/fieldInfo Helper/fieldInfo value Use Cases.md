@@ -117,7 +117,7 @@ A more involved example: overriding `{{fileTitle}}` to enforce Zettelkasten-styl
 
 When `fileTitlePostFix` is provided — say, "Meeting notes" — the file is named `20241113142530 - Meeting notes`. When left blank, the filename is just the timestamp. The `{{#if}}` block helper works inside a `value` string expression because [[Restricted Functionality Mode]] supports Handlebars block helpers.
 
-> [!DANGER]
+> [!DANGER] INTERNAL NOTES
 > **fileTitle + value=**: Unverified. Confirm that `value` on `{{fileTitle}}` actually sets the output filename, and that the `{{#if fileTitlePostFix}}` block helper inside the string expression evaluates correctly at instantiation time.
 
 ## Embedding Rich Content
@@ -145,7 +145,7 @@ The full Dataview block is inserted at render time — one definition, used acro
 
 This pattern extends to any multi-line markdown content: callouts, table fragments, embedded images with CSS hooks, or repeated boilerplate sections.
 
-> [!DANGER]
+> [!DANGER] INTERNAL NOTES
 > **Multi-line strings and backtick escaping**: Verify that multi-line `value` strings with embedded fenced code blocks render correctly. Confirm that inner backticks and quotes do not require additional escaping beyond what is shown above.
 
 ## Block Template Composition
@@ -184,5 +184,5 @@ The same `Root Level - Header` partial works across all domains — each domain 
 
 This differs from [[#Hierarchical Value Injection]] (which uses system blocks scoped to folders) in that it operates through explicit partial composition — value injection is controlled by which block templates you include, not which folder a file lives in.
 
-> [!DANGER]
+> [!DANGER] INTERNAL NOTES
 > **Partial ordering**: Confirm that a `value` set in one included partial is visible to a subsequent included partial within the same template render pass. This depends on whether the engine resolves values across partials in declaration order.

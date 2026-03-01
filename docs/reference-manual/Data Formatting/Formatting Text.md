@@ -199,7 +199,7 @@ tags:
 {{/each}}
 ```
 
-> [!DANGER] Notes for Review
+> [!DANGER] INTERNAL NOTES
 > - Verify `formatStringSpacify` handles the edge cases listed (HTMLParser, userID).
 > - The `formatString` examples use escaped quotes – test that these render correctly.
 > - Consider adding examples for `formatStringEncodeBase64` if there are common use cases in templates.

@@ -89,7 +89,7 @@ When validation fails, the form scrolls to the first field with an error and foc
 - [[Built-in Helpers for Prompting]] – How `{{fieldInfo}}` parameters shape the prompting interface
 - [[fieldInfo Helper]] – Full reference for the `{{fieldInfo}}` helper function
 
-> [!DANGER] Notes for Documentation Team
+> [!DANGER] INTERNAL NOTES
 > - **Title vs. Subtitle**: The current code renders a single label per field (`resolvedPrompt || fieldName` at `src/main.tsx` ~line 4291). When a custom `prompt` is set, the prettified field name is only accessible via hover text – there is no separate "title" line. The intended design appears to be a title (prettified field name, always shown) with a subtitle (custom prompt text, shown when specified). This needs a code change before the Label bullet point above can be updated to document title/subtitle behavior.
 > - The submit button labels are "Submit" and "Submit and Finalize" in the current codebase (~line 4320). See GitHub issue #148 for renaming discussion.
 > - The suggest value currently renders identically to user-typed text in untouched fields – no grayed-out or italic treatment. See GitHub issue #147 for tracking. Once resolved, update the "Visual Indicators" section.

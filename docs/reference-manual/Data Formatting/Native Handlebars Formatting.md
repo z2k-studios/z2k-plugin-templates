@@ -154,6 +154,6 @@ Native Handlebars features combine freely with Z2K helper functions:
 
 This uses whitespace control, conditional rendering, and a string formatting helper together.
 
-> [!DANGER] Notes for Review
+> [!DANGER] INTERNAL NOTES
 > - All links point to the Handlebars Support section. Verify these pages exist and are current.
 > - Consider whether context switching (`{{#with}}`) should be included here – it's listed as untested in the Handlebars docs.

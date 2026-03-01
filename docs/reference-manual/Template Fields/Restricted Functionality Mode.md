@@ -56,7 +56,7 @@ The restricted rendering path exists because these contexts need to evaluate tem
 ### How It Works Internally
 When a `{{fieldInfo}}` parameter like `prompt="{{#if projectName}}Task for {{projectName}}:{{else}}Task name:{{/if}}"` is parsed, the outer Handlebars parser treats the `prompt` value as a string literal. The inner `{{#if}}` syntax is preserved as raw text. Later, this string is passed through to Handlebars, where the `{{#if}}` is parsed and evaluated as a real block helper.
 
-> [!DANGER] Notes for Review
+> [!DANGER] INTERNAL NOTES
 > - ==Needs testing==: Verify that `{{#if}}` and `{{#each}}` actually work inside fieldInfo parameters (e.g., `prompt="{{#if projectName}}Task for {{projectName}}{{else}}Task name{{/if}}"`). Code analysis confirms the path is: `StringLiteral.value` → `reducedRenderContent` → `Handlebars.compile` → native `#if` evaluation. This should work, but needs empirical verification.
 > - ==Needs testing==: Verify that custom block helpers (user-defined) also work in restricted mode. They are passed via `userHelpers` into `allHelpers`, so they should work.
 > - The code comment at line 366 ("fieldInfos and blocks are not supported") has been clarified in the docs as referring to block templates, not block helpers. Consider updating the code comment to be more precise: "fieldInfo declarations and block templates (partials) are not supported in reduced-set templates."

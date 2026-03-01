@@ -120,7 +120,7 @@ obsidian://z2k-templates?vault=MyVault&cmd=upsert&templatePath=Templates%2FRepor
 
 Whether this URI runs once or ten times, the result is the same: a single finalized note at `Reports/Q4-2025.md`.
 
-> [!DANGER] Internal Notes
+> [!DANGER] INTERNAL NOTES
 > - The "file exists" path calls `continueCard` directly. Confirm that `continueCard` ignores `templatePath` when called from `upsert` — the source shows no explicit guard, but the `continue` command's own `Ignored Directives` note suggests this is safe. Verify there is no template re-application.
 > - The "file doesn't exist" path extracts the basename from `existingFilePath` by stripping `.md` and sets it as `existingTitle` on `createCard`. ==**#TEST Confirm** that this prevents the user being prompted for a title even when `prompt` is not `none`. Does `existingTitle` fully suppress the title prompt?==
 > - `ifExists` directive (e.g., `ifExists=continue|overwrite|fail`) was proposed in issue #131 but deliberately deferred. Current behavior is fixed: file exists → always continue. If the `overwrite` path is later added, this page will need a new section.

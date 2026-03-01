@@ -26,4 +26,4 @@ This setting uses the standard [[Duration Format]] (a number followed by a unit 
 
 We do not recommend using intervals less than 30 seconds - doing so creates constant disk activity with little benefit for most workflows. At the other extreme, setting this to `1w` or longer means the queue processes so rarely that you may forget it is enabled – and return to find a large backlog of commands executing all at once. A frequency in the range of one minute to one hour covers the vast majority of automation use cases.
 
-> [!DANGER] NOTES
+> [!DANGER] INTERNAL NOTES

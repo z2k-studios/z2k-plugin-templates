@@ -105,7 +105,7 @@ To define entirely new fields that resolve automatically — without modifying e
 
 
 
-> [!DANGER] NOTES
+> [!DANGER] INTERNAL NOTES
 > - **suggest + yes-prompt on built-ins**: Verify that `directives="yes-prompt"` combined with `suggest` works correctly for built-in fields. Specifically: does the `suggest` value appear pre-filled in the prompt, and does the user's input correctly override it? Also confirm `suggest=(formatDate "MM/DD/YYYY")` does not trigger a circular dependency even though `today` uses the same underlying date.
 > - **fileTitle + fieldInfo**: Verify which `{{fieldInfo}}` parameters apply to `{{fileTitle}}` and title variant fields. Specifically: does `value` work on `fileTitle` to programmatically set the output filename? This section intentionally omitted until confirmed in source code.
 > - **dateAdd argument order**: The working example uses `(dateAdd now 1)` — verify this is correct. Other examples in the docs use `(dateAdd 7 now)` (amount first, then date). If argument order is `(dateAdd amount date)`, then `(dateAdd 1 now)` is correct and `(dateAdd now 1)` should be fixed.

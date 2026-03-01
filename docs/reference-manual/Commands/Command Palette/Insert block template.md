@@ -63,5 +63,5 @@ You have a block template called "Status Update" containing:
 
 
 
-> [!DANGER]
+> [!DANGER] INTERNAL NOTES
 > - Confirm whether inserting at a selection (when text IS selected) is prevented or handled differently

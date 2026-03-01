@@ -90,6 +90,6 @@ If you need to output a literal `{{` in a field value — so it is not interpret
 
 This outputs `{{not a field}}` verbatim. This applies inside template files, not in externally supplied field data (which is plain text and never parsed as Handlebars expressions).
 
-> [!DANGER] Internal Notes
+> [!DANGER] INTERNAL NOTES
 > - Escape expansion for template expressions (`\n`, `\t`, `\\`) is handled by `processStringEscapes()` in the template engine. It runs on the output of `reducedRenderContent()` when `processEscapes=true`. Confirm that it does NOT run on externally supplied field data (field overrides from URI/JSON) — the data passes through as-is after being substituted into the template during rendering.
 > - ==**#AR** Confirm whether `\n` inside a JSON field value that gets substituted into a YAML frontmatter property causes issues (YAML multiline syntax). A raw newline in a YAML scalar value may be valid but could also silently corrupt the frontmatter.==

@@ -151,5 +151,5 @@ This file is best stored as a `.block` file if you have [[Use Template File Exte
 
 See [[Convert to Block Template]] for the command that assigns this type and (optionally) renames the file.
 
-> [!DANGER] Notes
+> [!DANGER] INTERNAL NOTES
 > - Verify whether `z2k_template_type` should be set on instantiation even when the original template omits it. Currently the plugin only updates it if already present – is this intentional, or should instantiation always stamp the property?

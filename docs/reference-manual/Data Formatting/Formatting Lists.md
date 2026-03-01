@@ -160,7 +160,7 @@ When a multi-select has no selections, or an array is empty:
 {{/if}}
 ```
 
-> [!DANGER] Notes for Review
+> [!DANGER] INTERNAL NOTES
 > - Verify `formatStringBulletize` handles both arrays and multiline strings as described.
 > - The `eq` helper in conditional formatting may not exist – check if this is a built-in or needs documentation.
 > - Test YAML inline array format with values containing commas or special characters.

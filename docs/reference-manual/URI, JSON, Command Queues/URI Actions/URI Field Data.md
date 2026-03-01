@@ -84,6 +84,6 @@ For full details, see [[URI Command - fromJson]] and [[URIs with JSON Data]].
 
 
 
-> [!DANGER] Internal Notes
+> [!DANGER] INTERNAL NOTES
 > - Field data keys preserve their original casing because they must match template field names exactly. Directive keys are case-insensitive.
 > - When `fieldData` is used alongside individual field parameters, the merge order is: `{ ...fieldData, ...individualParams }` (line 1296). Individual parameters win.

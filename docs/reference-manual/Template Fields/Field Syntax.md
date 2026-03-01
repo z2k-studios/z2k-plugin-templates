@@ -99,6 +99,6 @@ Appending `~` inside the braces trims surrounding whitespace on that side:
 
 Useful for controlling line breaks and spacing in tightly formatted output. See [[Whitespace Control]].
 
-> [!DANGER]
+> [!DANGER] INTERNAL NOTES
 > - To output a literal `{{` without it being parsed as a field, use a Raw Block — see [[Raw Blocks]].
 

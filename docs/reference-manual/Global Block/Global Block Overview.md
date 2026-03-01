@@ -48,7 +48,7 @@ For full details on the editor interface – toolbar controls, help panel, valid
 ## What is the Difference between the Global Block and System Blocks?
 ![[Intro to System Blocks#What is the Difference between System Blocks and the Global Block?]]
 
-> [!DANGER] NOTES
+> [!DANGER] INTERNAL NOTES
 > - "All vaults" UI phrasing in the settings is inaccurate — the global block is per-vault. Tracked in GitHub Issue #[156](https://github.com/z2k-studios/z2k-plugin-templates/issues/156).
 > - Scope behavior for URI and command queue was verified in source (`main.tsx` lines 1923, 2114, 1664–1768). Both confirmed to apply the global block for `new` commands.
 > - The block template insertion exception (body not prepended, fieldInfos still applied) was verified at `main.tsx` lines 2037 and 2040–2045.

@@ -271,7 +271,7 @@ On some systems, file permission issues can prevent reading/writing:
 - Ensure command files are readable
 - Check for sync service locks (Dropbox, iCloud, OneDrive)
 
-> [!DANGER] Internal Notes
+> [!DANGER] INTERNAL NOTES
 > - **Feature gap**: There is no UI for viewing queue status, pending commands, retry state, or recent failures. All diagnostics require manual file inspection or console reading. A "Queue Status" panel would significantly improve the debugging experience.
 > - **Feature gap**: Failed files do not include error information. Adding an `_error` field or companion `.error.json` file would make diagnosis much easier without requiring console access.
 > - **Feature gap**: There is no "dry run" mode to validate a command without executing it. This would help catch errors before they result in failed files.

@@ -93,7 +93,7 @@ To define entirely new fields that behave like built-ins — rather than overrid
 
 
 
-> [!DANGER] NOTES
+> [!DANGER] INTERNAL NOTES
 > - **fileTitle + value**: The `fileTitle` override example is unverified. Confirm that `value` on `{{fileTitle}}` actually sets the output filename, and that the `{{#if fileTitlePostFix}}` block helper inside the string expression evaluates correctly at instantiation time. If `value` does not work on `fileTitle`, replace the example with `suggest` and note the difference.
 > - **timestamp format**: Confirm the exact output format of `{{timestamp}}` for use in filenames — specifically whether it produces a filesystem-safe string (no colons, slashes, etc.).
 > - **Argument order for formatDate**: Examples in this page use `(formatDate "FORMAT")` (one arg, defaults to current date) or `(formatDate "FORMAT" dateExpression)` (format first, then date). Using reversed argument order produces unexpected output — confirm this is clearly documented on the [[formatDate]] reference page.

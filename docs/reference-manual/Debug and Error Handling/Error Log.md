@@ -85,7 +85,7 @@ The log file is also a standard Markdown file — open it in Obsidian like any o
 > [!NOTE]
 > The log is automatically trimmed when it exceeds **1 MB** — older entries are removed until the file is approximately 700 KB. You can also clear the log manually at any time via the [[View Error Log|log viewer]].
 
-> [!DANGER] Internal Notes
+> [!DANGER] INTERNAL NOTES
 > - If the log file cannot be written (permissions, disk full), the error is silently logged to the browser console instead. There is no user-visible notification of log write failures.
 > - The format check (`this.settings.errorLogLevel !== "debug"`) determines compact vs. verbose format. Changing the log level mid-session switches format for all subsequent entries but does not retroactively reformat earlier ones.
 > - The log file is initialized with a `# Z2K Templates Error Log` heading when first created. This heading is not re-added if the file is manually cleared to empty — only if the file is deleted.

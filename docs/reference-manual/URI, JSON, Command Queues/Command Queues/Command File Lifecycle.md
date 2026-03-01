@@ -144,7 +144,7 @@ Individual `.json` files do not have this issue – if a crash occurs during pro
 
 
 
-> [!DANGER] Internal Notes
+> [!DANGER] INTERNAL NOTES
 > - The timestamp extraction for cleanup uses a regex on the filename (`/\.(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})\./`). Files with unexpected naming patterns in `done/` are silently ignored.
 > - The `getTimestampedPath()` function strips any `.delay` portion from the filename before adding the archive timestamp. This prevents filenames like `command.2025-06-15.delay.2025-06-15_14-30-00.done.json`.
 > - There is no mechanism to resume a partially-processed JSONL file. If exactly-once execution matters, use individual `.json` files with retry support rather than JSONL batches.

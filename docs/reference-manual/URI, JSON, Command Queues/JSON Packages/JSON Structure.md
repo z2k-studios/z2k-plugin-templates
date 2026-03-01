@@ -107,7 +107,7 @@ No template file needed:
 
 Here, `fieldData` is a vault-relative file path — the plugin reads the file and parses its contents as field data. See [[fieldData]] for the other input forms (inline JSON object, inline JSON string).
 
-> [!DANGER] Internal Notes
+> [!DANGER] INTERNAL NOTES
 > - Confirm whether `destDir` creates the folder if it doesn't exist — the code calls `this.createFolder(cps.destDir)`, which suggests it does. Documented as auto-creating for now.
 > - The key normalization behavior (stripping non-alphanumeric, case-insensitive matching) applies to all known keys equally. Documented the normalization behavior as a general section since it applies uniformly.
 > - The `destHeader` regex uses `escapeRegExp` on the header text and the `"mi"` flag (multiline, case-insensitive). Confirm edge cases: what happens with headers containing special regex characters in their text? `escapeRegExp` should handle this, but worth testing.

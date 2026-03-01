@@ -102,7 +102,7 @@ The log is created on the first run of the week and updated on every subsequent 
 
 `projectName` and `owner` are pre-filled. Any other unresolved fields — whether the file is new or existing — will be prompted for interactively.
 
-> [!DANGER] Internal Notes
+> [!DANGER] INTERNAL NOTES
 > - The "file exists" path calls `continueCard`. Confirm that `templatePath`/`templateContents` is fully ignored in this path — the template should not be re-applied to an existing content file.
 > - The "file doesn't exist" path sets `existingTitle` (from the basename of `existingFilePath`) when calling `createCard`. ==**#TEST Confirm** that this suppresses the title prompt even when `prompt` is not `"none"`.==
 > - `ifExists` directive was proposed in issue #131 (values: `continue`, `overwrite`, `fail`) but deliberately deferred. The current behavior is hardcoded: file exists → always continue. No override is available.

@@ -164,7 +164,7 @@ Additionally, by using the [[Intro to System Blocks|System YAML feature]], you c
 
 ---
 
-> [!DANGER] INTERNAL NOTE
+> [!DANGER] INTERNAL NOTES
 >
 > - Add visuals for data flow and hierarchical template discovery.
 > - Add screenshot examples of modular and partial template use.

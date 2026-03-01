@@ -64,6 +64,6 @@ See [[fieldInfo Parameters]] for the full parameter reference.
 - [[Prompting Interface]] – How the prompting modal works
 - [[Fallback Behavior]] – What happens when no value is provided
 
-> [!DANGER] Notes for Documentation Team
+> [!DANGER] INTERNAL NOTES
 > - The `formatFieldName()` function is at `src/main.tsx` ~line 3895. The regex-based splitting handles camelCase and acronym boundaries. Verify edge cases like single-letter fields or all-caps names.
 > - The "auto-generated from field name" default for `prompt` is applied via `formatFieldName(fieldName)` as a fallback in `computeInitialFieldStates()` and again in `updateFieldStates()`.

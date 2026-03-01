@@ -115,7 +115,7 @@ After all templates are rendered, the engine merges all rendered YAML fragments 
 - **Comments are preserved** – YAML comments in individual sources are carried through the merge process where possible.
 
 
-> [!DANGER] Notes
+> [!DANGER] INTERNAL NOTES
 > - The `mergeLastWins()` implementation is at engine lines 1650-1686.
 > - The merge order during field value resolution (plugin line 2915-2918) places template YAML first and existing file YAML last. This means the existing file's YAML properties override the template's – verify this is the intended behavior for all scenarios.
 > - The "during final YAML assembly" order is based on engine line 1292. Verify this matches the actual rendered output ordering.

@@ -186,7 +186,7 @@ The bookmarklet constructs the daily log filename using today's date (e.g., `Jou
 
 
 
-> [!DANGER] Internal Notes
+> [!DANGER] INTERNAL NOTES
 > - The shell script example uses `python3 -c "import urllib.parse; ..."` for encoding. This is portable but requires Python 3. Alternative: `jq -rn --arg v "value" '$v|@uri'` for systems with jq installed.
 > - On iOS, URIs are triggered through the Shortcuts app or by tapping a link. The `open` command is macOS-specific.
 > - The bookmarklet example uses `window.getSelection()` which captures selected text on the page, not clipboard contents. True clipboard access requires the Clipboard API and user permission, which is unreliable in bookmarklets.

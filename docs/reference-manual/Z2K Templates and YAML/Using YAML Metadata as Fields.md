@@ -81,7 +81,7 @@ YAML values only fill in fields that don't already have a value from a higher-pr
 - ==How does it handle property names with spaces?==
 - ==How does it handle nested YAML Objects?==
 
-> [!DANGER] Notes
+> [!DANGER] INTERNAL NOTES
 > - The `position` exclusion is hardcoded in the plugin at line 2927 of `main.tsx`. Verify whether other Obsidian-internal properties should also be excluded.
 > - YAML nested objects (e.g., `address: { city: "NYC", zip: "10001" }`) become JavaScript objects as field values. Verify how Handlebars renders these – likely `[object Object]` unless accessed with dot notation via `{{#with}}`.
 > - The `no-prompt` directive is added at plugin lines 2932-2937. If the field already has other directives, `no-prompt` is appended without removing them.

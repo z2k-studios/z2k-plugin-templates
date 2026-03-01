@@ -91,5 +91,5 @@ Genre: "{{Genre}}"
 After instantiation, `BookAuthor` in YAML and `{{BookAuthor}}` in a block template are treated as the same field. A mismatch in case – `book_author` vs. `{{BookAuthor}}` – would break the connection and cause the block to prompt the user again.
 
 
-> [!DANGER] Documentation Notes
+> [!DANGER] INTERNAL NOTES
 > - Verify the user YAML field-linked scenario stays accurate if the field-from-YAML mechanism changes (see `addYamlFieldValues()` in the plugin source).

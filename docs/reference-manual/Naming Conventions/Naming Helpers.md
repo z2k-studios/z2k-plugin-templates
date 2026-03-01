@@ -124,6 +124,6 @@ registerHelper('format-currency', (value, currency) => `${currency}${Number(valu
 > [!WARNING]
 > Avoid naming a user-defined helper the same as a built-in helper. User helpers override built-ins – if you register a helper named `wikilink`, your version replaces the built-in one entirely.
 
-> [!DANGER] Documentation Notes
+> [!DANGER] INTERNAL NOTES
 > - Helper registration is in `z2k-template-engine/src/main.ts` (lines 41–358) and `z2k-plugin-templates/src/main.tsx` (~line 858).
 > - The `fi`/`fo` abbreviations are aliases, not separate implementations – they point to the same function as `fieldInfo`/`fieldOutput`.

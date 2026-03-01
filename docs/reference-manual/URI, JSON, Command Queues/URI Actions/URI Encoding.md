@@ -66,5 +66,5 @@ obsidian://z2k-templates?vault=MyVault&cmd=fromJson&jsonData=Commands%2Fmy-comma
 
 See [[URIs with JSON Data]] for details on these approaches.
 
-> [!DANGER] Internal Notes
+> [!DANGER] INTERNAL NOTES
 > - The plugin applies `decodeURIComponent()` to each parameter value (line 1227 of main.tsx).

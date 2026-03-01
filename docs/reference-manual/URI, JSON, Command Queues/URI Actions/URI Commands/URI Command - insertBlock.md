@@ -212,7 +212,7 @@ obsidian://z2k-templates?cmd=insertblock&blockContents=%7B%7Btimestamp%7D%7D%20%
 
 The block text is rendered with `logEntry` filled in and inserted at the bottom of the "Tasks" section. No block template file needed.
 
-> [!DANGER] Internal Notes
+> [!DANGER] INTERNAL NOTES
 > - When `existingFilePath` is omitted in a URI context, the plugin falls through to editor mode (insert at cursor). This is fragile for URI use since the user may not have the expected file open. Consider whether the plugin should throw an error when `existingFilePath` is missing in a URI context rather than silently falling through. Currently the code does not distinguish between URI and interactive invocation at this point.
 > - The block template's YAML frontmatter is merged into the existing file's frontmatter using a "last wins" strategy. This could silently overwrite existing YAML properties. Worth a cross-reference to YAML merging behavior documentation if/when it exists.
 > - Confirm behavior when `location` is a line number that exceeds the file's total lines. The JSON Command - insertblock page notes this as an open question.

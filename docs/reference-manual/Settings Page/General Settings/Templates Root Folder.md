@@ -34,6 +34,6 @@ Setting a Templates Root Folder affects the following behaviors:
 > File creation via [[URI Commands]] and [[Command Queues]] can specify a destination directory directly and may bypass the root folder restriction. All other creation paths enforce it.
 
 
-> [!DANGER] NOTES
+> [!DANGER] INTERNAL NOTES
 > - The contextual "create here" menu item appears on all folders regardless of root folder setting. It only fails at execution time if outside the root. This is a UX gap – ideally the item would be suppressed or grayed out for out-of-scope folders.
 > 	- I believe this is [GitHub issue #152](https://github.com/z2k-studios/z2k-plugin-templates/issues/152)

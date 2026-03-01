@@ -33,7 +33,7 @@ Duration settings accept a number followed by a unit suffix (e.g., `30s`, `5m`, 
 > Failed commands in the `failed/` subfolder are *never* automatically cleaned up regardless of the Archive Duration setting. They persist until manually deleted.
 
 
-> [!DANGER] Internal Notes
+> [!DANGER] INTERNAL NOTES
 > - The duration parser (`parseDuration()`) accepts a `defaultOnError` parameter. In the settings UI, invalid inputs show a validation error message rather than silently falling back. But in the queue processor itself, some calls use a default of `0` on error – meaning an invalid frequency setting silently disables automatic scanning rather than throwing.
 > - The minimum frequency of 5 seconds is enforced in the settings UI but not in `startQueueProcessor()` itself. A manually edited `data.json` could bypass this minimum.
 > - The `offlineCommandQueueEnabled` default is `false` as of issue #154. The queue is opt-in.

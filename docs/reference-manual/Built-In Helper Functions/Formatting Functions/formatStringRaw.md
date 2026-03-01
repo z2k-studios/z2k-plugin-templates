@@ -66,7 +66,7 @@ Both bypass Handlebars' escaping step. The difference is stylistic – `formatSt
 
 
 
-> [!DANGER] Notes for Review
+> [!DANGER] INTERNAL NOTES
 > - ==Needs testing==: Verify the pre-existing HTML entity edge case behaves as described. Test with values like `&amp;`, `&lt;`, and `&#x27;` in both `{{field}}` and `{{formatStringRaw field}}`.
 > - ==Needs testing==: Confirm `formatStringRaw` and `{{{field}}}` produce identical results.
 > - The previous version of this page incorrectly claimed that `{{field}}` escapes Markdown characters like `[[` and `*`. Handlebars only escapes 7 HTML characters – it has no knowledge of Markdown syntax.

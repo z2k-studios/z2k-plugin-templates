@@ -104,7 +104,7 @@ Another example of how storing your field values in YAML code becomes apparent w
 - **Store only what you'll reuse** – there's no need to mirror every field into YAML. Focus on values that block templates or queries will need later.
 - **Combine with Dataview** – since the stored values are standard YAML properties, they're also available to Dataview and Bases queries, giving you the best of both worlds: template-powered creation and query-powered retrieval.
 
-> [!DANGER] Notes
+> [!DANGER] INTERNAL NOTES
 > - This pattern relies on `addYamlFieldValues()` being called during block insertion with the existing file's YAML (plugin line 1984). Verify that this code path is stable and intentional.
 > - When a YAML property and a fieldInfo `value` parameter both exist for the same field, the fieldInfo `value` wins (plugin line 2930). This means a block template that declares `{{fieldInfo "BookAuthor" value="Override"}}` would override the stored YAML value.
 > - If the stored YAML value is not a string (e.g., a number or boolean from unquoted YAML), verify how Handlebars renders it in the block template body.

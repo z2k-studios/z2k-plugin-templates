@@ -82,7 +82,7 @@ This means well-formed camelCase and PascalCase names produce clean, readable pr
 > [!INFO]
 > You can override the display label entirely using the [[fieldInfo prompt|prompt]] parameter of `{{fieldInfo}}`. For example, `{{fieldInfo BookTitle prompt="What is the book's title?"}}` replaces the auto-generated label with your custom text.
 
-> [!DANGER] Documentation Notes
+> [!DANGER] INTERNAL NOTES
 > - The `formatFieldName` function is defined in `main.tsx` (~line 3895). Verify the algorithm description stays accurate if the implementation changes.
 > - The Special Field Characters table should stay synchronized with [[Field Syntax]] and any future parser changes.
 > - The Naming Fields page in section 5 ([[Template Fields]]) links here via `[[Naming Fields]]`. Ensure both pages stay consistent – this page is the canonical reference for field naming; the section 5 page covers field syntax more broadly.

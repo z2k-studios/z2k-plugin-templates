@@ -58,7 +58,7 @@ This means if you rename your template folder setting from `Templates` to anythi
 ## Method 4 - Use Templates Subfolders
 A third approach is to use subfolders inside a root-level templates folder. This is not recommended for vaults that are still in flux as it requires manual updating whenever the folder structure is modified. Please see [[Template Folder Subfolders]] for more details.
 
-> [!DANGER] Internal Notes
+> [!DANGER] INTERNAL NOTES
 > - Method 3 is confirmed in code (`getAllTemplates`, `getBlockCallbackFunc`): the plugin constructs `dotTfn = '.' + this.settings.templatesFolderName` and uses the file adapter to scan for it at each folder level. This bypasses Obsidian's metadata cache entirely.
 > - ==**#TEST** Verify that system blocks inside `.Templates` folders are also discovered correctly. The system block walk (`getSystemBlocks`) should follow the same dot-prefix logic — confirm.==
 > - ==**#TEST** Verify behavior on Windows where dot-prefixed folders are visible in File Explorer but not in Obsidian's explorer. The adapter-based scan should work regardless of OS.==

@@ -60,6 +60,6 @@ For limitations on built-in overrides — including why certain approaches fail 
 ## See Also
 - [[fieldInfo value Use Cases]] — full catalog of patterns for the `value` parameter, including hierarchical injection, block template composition, and embedding rich content
 
-> [!DANGER] NOTES
+> [!DANGER] INTERNAL NOTES
 > - **wikipedia helper behavior**: When `{{Author}}` is not defined, `(wikipedia Author Author)` receives an empty value and `AuthorAtWikipedia` resolves to an empty string. This is acceptable — the field quietly produces nothing. Confirm finalization handles the empty resolution path cleanly and does not leave a `{{AuthorAtWikipedia}}` placeholder in the output.
 > - **Scope of this page**: This page covers computed fields declared in the global block. For folder-scoped computed fields using system blocks, see [[Using System Blocks and fieldInfo]]. For creating custom built-in fields via JavaScript, see [[Custom Built-In Fields]].

@@ -42,6 +42,6 @@ The resulting file will show `2026-07-06` for the date — not July 20th when th
 - [[today]] — the recommended equivalent to `{{date}}`
 - [[fileTitle and Variations|fileTitle]] — the name of the file being operated on
 
-> [!DANGER]
+> [!DANGER] INTERNAL NOTES
 > - The creation date comes from the filesystem via `TFile.stat.ctime`. On some systems or after certain file operations (e.g., copying a file), `ctime` may reflect the copy date rather than the true original creation date.
 > - The value is stored as a pre-formatted `YYYY-MM-DD` string. Unlike `{{now}}`, there is no raw-moment equivalent for the file creation timestamp. Custom date formatting via `{{formatDate}}` may not work as expected — verify against the [[formatDate]] reference if a different format is needed.

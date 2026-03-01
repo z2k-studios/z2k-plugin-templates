@@ -46,7 +46,7 @@ If a parameter key matches a recognized directive (case-insensitive), it is trea
 ## The vault Parameter
 The `vault` parameter is handled by Obsidian itself, not by the Z2K Templates plugin. It tells Obsidian which vault to switch to before executing the command. It is not listed in the directive table above because the plugin never sees it – Obsidian processes it before routing the URI to the plugin. See [[URI Syntax#Vault]] for details.
 
-> [!DANGER] Internal Notes
+> [!DANGER] INTERNAL NOTES
 > - The recognized directive keys are defined in `knownKeys` at line 1331 of main.tsx: `cmd`, `templatePath`, `blockPath`, `templateContents`, `blockContents`, `existingFilePath`, `destDir`, `destHeader`, `prompt`, `finalize`, `location`, `fieldData`, `fieldData64`, `jsonData`, `jsonData64`, `maxRetries`, `retryDelay`.
 > - Directive key normalization (line 1249): `k.replace(/[^a-zA-Z0-9]/g, '').toLowerCase()`. This means `template-path`, `template_path`, `templatePath`, and `TEMPLATEPATH` all match. Field data keys are NOT normalized – they preserve original casing.
 > - Consider whether `vault` should be added to `knownKeys` and silently discarded, in case Obsidian passes it through to the handler rather than stripping it. Without this, a `vault` parameter would be treated as field data.

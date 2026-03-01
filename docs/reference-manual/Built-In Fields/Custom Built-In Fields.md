@@ -91,7 +91,7 @@ See [[Naming Fields]] for the full naming guide.
 
 
 
-> [!DANGER] NOTES
+> [!DANGER] INTERNAL NOTES
 > - **Zero-parameter helper resolution**: Verify that zero-parameter Custom Helper Functions produce identical output to built-in context properties across all template scenarios — single expression (`{{foo}}`), inline in strings (`"value: {{foo}}"`), and nested in subexpressions (`(someHelper foo)`). The engine's single-expression detection logic checks `allHelpers` to determine resolution path; confirm this covers all cases.
 > - **Custom helper scope**: Confirm that helpers registered in the Custom Helpers editor are available globally across all templates, not just the template being instantiated.
 > - **Wikilink: Edit Custom Helpers**: Verify this matches the exact page name in the docs.

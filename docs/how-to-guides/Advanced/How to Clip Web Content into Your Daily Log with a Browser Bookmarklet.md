@@ -92,6 +92,6 @@ The daily log filename is constructed dynamically using today's date — e.g., `
 - **Obsidian must be open** — On some platforms, Obsidian must already be running for `obsidian://` links to route correctly.
 - **Daily log must exist** — The `insertblock` command targets an existing file. It does not create the daily log if it's missing.
 
-> [!DANGER] Internal Notes
+> [!DANGER] INTERNAL NOTES
 > - The `location=file-bottom` in this example inserts at the absolute bottom of the file, below all headers. Consider whether `location=header-bottom` with `destHeader=Clippings` is a better default for precision.
 > - The daily log path pattern (`Journal/YYYY-MM-DD.md`) is hardcoded in the bookmarklet. Consider whether the guide should show a configurable version or reference a companion Apple Shortcut for cross-platform use.

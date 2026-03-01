@@ -185,7 +185,7 @@ Handlebars normally escapes special characters as HTML entities (e.g., `'` becom
 ===I think that the way Z2K Templates handles [[Unescaped Expressions|escaping]] that this whole paragraph is incorrect and can be removed===
 
 
-> [!DANGER] Notes
+> [!DANGER] INTERNAL NOTES
 > - The code comment at engine line 716 reads "DOCS: No blocks allowed in YAML frontmatter" – this is the explicit design intent.
 > 	- But does it actually restrict it?
 > - `preserveExpressionsPreprocess()` uses a `y` prefix for YAML placeholders vs `b` for body, confirming YAML is processed through a separate path.

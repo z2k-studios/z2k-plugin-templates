@@ -138,7 +138,7 @@ If `metadata` is `{ author: "Jane", version: "2.0" }`, this produces:
 This is particularly useful for data coming in through [[JSON Packages Overview|JSON Packages]]
 
 
-> [!DANGER] Notes for Review
+> [!DANGER] INTERNAL NOTES
 > - **Deferred field bug**: `{{#each}}` is affected by the same [[Conditionals#Known Issue|block statement preservation bug]] as `{{#if}}`. See that page for root cause, desired behavior options, and test cases. For iterators specifically, an unresolved field passed to `{{#each}}` is treated as an empty collection, collapsing the block permanently.
 > - The interaction between `{{#each}}` and partials needs testing. The engine renames partials to `block_N` during preprocessing (line 1083 of `z2k-template-engine/src/main.ts`), but it's unclear how this works when the same partial appears multiple times inside a loop.
 > - Data variables (`@index`, `@first`, `@last`, `@key`) are standard Handlebars and should work, but have not been explicitly verified in Z2K Templates.

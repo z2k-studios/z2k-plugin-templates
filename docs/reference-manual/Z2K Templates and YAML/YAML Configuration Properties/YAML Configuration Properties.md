@@ -42,6 +42,6 @@ Most configuration properties are cleaned up automatically as a file moves throu
 | `z2k_template_author`                    | Kept                          | Kept                            | –                    |
 | `z2k_template_default_prompt`            | –                             | –                               | –                    |
 
-> [!DANGER] Notes
+> [!DANGER] INTERNAL NOTES
 > - `z2k_template_default_prompt` is documented but not yet implemented in the codebase. The lifecycle behavior column is blank because there is no code that reads or removes it.
 > - Verify whether `z2k_template_name`, `z2k_template_version`, and `z2k_template_author` should be cleared on finalization – currently they persist into the finalized content file.

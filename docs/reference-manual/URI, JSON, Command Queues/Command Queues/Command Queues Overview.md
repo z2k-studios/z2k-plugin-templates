@@ -74,7 +74,7 @@ The remaining pages in this section cover the command queueing system in detail:
 - [[Debugging Command Queues]] – troubleshooting when things go wrong
 
 
-> [!DANGER] Internal Notes
+> [!DANGER] INTERNAL NOTES
 > - The queue is **disabled** by default as of issue #154 (`offlineCommandQueueEnabled: false`). Users must opt in via settings.
 > - The first automatic scan is delayed by one full frequency interval after plugin load. This means if frequency is 60s, the first scan happens ~60s after Obsidian starts. This is by design to avoid a scan storm on startup, but it's worth noting for users who expect immediate processing.
 > - There is currently no UI feedback (notification or toast) when a queued command succeeds. The user only sees the resulting note appear in the vault. Consider whether a summary notice ("Processed 3 commands from queue") would be useful.

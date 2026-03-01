@@ -134,7 +134,7 @@ No prompting, fully finalized — suitable for batch processing via a [[JSONL Fo
 
 The block text is rendered with `logEntry` filled in and appended to the bottom of the "Tasks" section. No block template file is needed anywhere in the vault.
 
-> [!DANGER] Internal Notes
+> [!DANGER] INTERNAL NOTES
 > - Notes:
 >   - Out-of-range line numbers throw a `TemplatePluginError` with a message that includes the file's actual line count and the valid range. This is confirmed in source.
 > - Action Items:

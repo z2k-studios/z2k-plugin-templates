@@ -18,5 +18,5 @@ The following general settings are available:
 3. [[Templates Folder Name]] – Defines the folder name the plugin uses to identify template folders
 4. [[Name for Files]] – Sets the terminology used for files throughout the plugin interface
 
-> [!DANGER] NOTES
+> [!DANGER] INTERNAL NOTES
 > - The settings UI currently shows no "General" heading above this group of settings. See [GitHub issue #152](https://github.com/z2k-studios/z2k-plugin-templates/issues/152).

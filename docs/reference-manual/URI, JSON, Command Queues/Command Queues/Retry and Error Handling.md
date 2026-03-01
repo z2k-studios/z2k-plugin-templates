@@ -172,7 +172,7 @@ Permanent failures will fail on every retry and eventually exhaust `maxRetries` 
 
 
 
-> [!DANGER] Internal Notes
+> [!DANGER] INTERNAL NOTES
 > - The retry system uses an in-memory check during processing – if a `.retry.json` sidecar is corrupted (invalid JSON), the behavior is undefined. The code reads and parses it but doesn't have explicit error handling for a malformed sidecar.
 > - There is no backoff strategy – `retryDelay` is constant across all attempts. Exponential backoff would require tracking the current attempt count and calculating delay, which isn't implemented.
 > - The failed file contents are identical to the original command – there's no added metadata about what error occurred. Error details are only available in the Obsidian developer console. Consider adding an `error` field to failed files or creating companion `.error` files.

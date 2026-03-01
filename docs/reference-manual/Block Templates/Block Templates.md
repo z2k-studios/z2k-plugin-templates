@@ -40,7 +40,7 @@ Insert it via:
 
 ---
 
-> [!DANGER]
+> [!DANGER] INTERNAL NOTES
 > 
 > ===question===
 > Can you make a partial that is based on a field (eg use a multiselect to allow the user to choose a partial to import)

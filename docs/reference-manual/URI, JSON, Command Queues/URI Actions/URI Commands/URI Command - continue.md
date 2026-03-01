@@ -137,6 +137,6 @@ obsidian://z2k-templates?vault=MyVault&cmd=continue&existingFilePath=Events%2FDi
 
 The `fieldData` value is a URL-encoded JSON object. Once decoded, its keys (`{{seating}}`, `{{dessert}}`, `{{topic}}`, `{{wine}}`) fill the corresponding template fields.
 
-> [!DANGER] Internal Notes
+> [!DANGER] INTERNAL NOTES
 > - The plugin determines the original template from the existing file's frontmatter metadata (likely `z2k_template_name` or `z2k_template_type`). Confirm the exact property name and what happens if it's missing – does the command fail gracefully or throw?
 > - Confirm whether `continue` via URI can target a file that is currently open in the editor. Does it modify the in-memory buffer, or does it write to disk and require a reload?

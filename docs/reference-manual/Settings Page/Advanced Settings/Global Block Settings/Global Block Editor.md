@@ -102,6 +102,6 @@ The token names in these messages refer to specific Handlebars syntax constructs
 
 
 
-> [!DANGER] NOTES
+> [!DANGER] INTERNAL NOTES
 > - The settings UI description says the global block applies "across all vaults." This is inaccurate – the setting is stored in `data.json` inside the plugin folder, which is per-vault. The phrase "all vaults" is misleading and should be corrected in the UI copy. See GitHub Issue #[156](https://github.com/z2k-studios/z2k-plugin-templates/issues/156).
 > - The priority chain `built-in < global < system < block < main` was verified directly in the engine source (`main.ts`, line 1052, with a confirming comment at line 556). The documentation is accurate.

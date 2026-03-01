@@ -112,7 +112,7 @@ Base64 is useful when:
 - The encoded URI needs to be compact (Base64 is often shorter than percent-encoding for data with many special characters)
 - You need to pass moderate amounts of data inside a URI string without writing to an external file
 
-> [!DANGER] Internal Notes
+> [!DANGER] INTERNAL NOTES
 > - `fieldData` inline JSON detection is based on whether the value starts with `{` (line 1265 of main.tsx). A file path that starts with `{` would be misinterpreted as inline JSON.
 > - When `fieldData` is used alongside individual field parameters, the merge order is: `{ ...fieldData, ...individualParams }` (line 1296). Individual parameters win.
 > - The `fromJson` command's recursive call passes `isJsonSource = true`, so all values from the parsed JSON preserve their types.

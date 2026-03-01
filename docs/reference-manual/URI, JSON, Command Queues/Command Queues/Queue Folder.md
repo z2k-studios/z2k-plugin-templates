@@ -97,7 +97,7 @@ cat > "/path/to/vault/.obsidian/plugins/z2k-plugin-templates/command-queue/new-n
 EOF
 ```
 
-> [!DANGER] Internal Notes
+> [!DANGER] INTERNAL NOTES
 > - #TEST Absolute paths on mobile (iOS, Android): the platform sandbox may prevent the plugin from accessing paths outside the vault. Needs testing to confirm whether external absolute paths work on mobile.
 > - The `updateQueueDirPath()` function has a TODO comment for moving existing files when the folder path changes. This is currently unimplemented.
 > - The path resolution logic (`resolveQueueFilePath()`) checks for `/` or drive letter prefixes to distinguish absolute from vault-relative paths. There is no validation that the path actually exists – the queue processor silently skips if the folder is missing.
