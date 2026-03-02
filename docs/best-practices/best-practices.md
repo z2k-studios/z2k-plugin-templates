@@ -30,6 +30,10 @@ Welcome to the **Best Practices** section for [[README|Z2K Templates]]. Included
 	- Use of predefined variables to clean up template text.
 	- Maybe categorize techniques as advanced or intermediate.
 
+- A Guide to Making Multiple Variations of a Template
+	- Example: A Podcast Notes template, with variations for different shows. How to use partials to make this easy to manage and update.
+	- See `Docs/z2k-design-notes/Z2K System - Design Notes/Design Decisions/Template Migration - v2 to v3 - Open Questions.md` for an example of ways to implement.
+
 ## 11. Best Practices
 - Designing Reusable Templates  
 - When to use `preserve` vs `clear`  

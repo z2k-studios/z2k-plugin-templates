@@ -41,6 +41,7 @@ For advanced users, you can also:
 - **Path without a leading slash** (`{{> notes/my-block}}`): Searches for a block whose location ends with the path you specified — useful for narrowing down by subfolder without anchoring to the root. When multiple candidates match, the one closest to the current template wins.
 - **Leading slash** (`{{> /shared/my-block}}`): Resolves the block by its exact location within the [[Templates Root Folder]]. Note: The `/` anchors to your templates root — not the vault root.
 - **Leading `./` or `../`** (`{{> ./my-block}}`): Resolves relative to the folder where the template file itself lives — not the folder of the note being created. This works but is not recommended due to the ambiguity of what it is relative to.
+- **Insert Document Templates**: With the : You can perform an insert block of a document template when using partial notation. It is only the command interface (Method 1 above) that limits you to interactively picking from only a list of block templates. 
 
 
 ## Block Templates and YAML Frontmatter
