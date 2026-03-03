@@ -50,6 +50,7 @@ Positional parameters are ordered in priority of importance and usage - thus all
 ```md
 {{fieldInfo BookTitle "Title for this book?" "Persuasion" "text"}}
 {{fieldInfo BookAuthor "Author of this book?"}}
+{{fieldInfo [Book.Author] "Author of this book?"}}
 ```
 
 **Rules:**

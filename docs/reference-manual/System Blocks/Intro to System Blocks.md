@@ -28,6 +28,17 @@ Some notes on System Block files:
 - The `.system-block.md` files are hidden as a result of having an initial dot in the filename. This was intentional in order to keep the user interface clean. To modify these files, you will need to use an external text editor - or temporarily rename them - to view and edit them inside Obsidian. 
 - Note: Comments in the YAML are routinely removed by Obsidian and other plugins. Do not assume any YAML comments will be persistent.
 
+
+> [!WARNING] Don't Forget the YAML Delimiters!
+>  System blocks are almost always used to insert YAML properties across your vault. A common error is to forget the delimiters. The YAML delimiters, before and after your YAML frontmatter text. 
+>  ```
+>  ---      <-- Don't Forget These
+>  turtles: "All the way down"
+>  ---      <-- Don't Forget These Too!
+>  ```
+
+
+
 ## What is the Difference between System Blocks and the Global Block?
 System Blocks and the [[Global Block]] are quite similar. Both insert blocks of YAML and context text into large swaths of files automatically. But they have different purposes:
 - **System Blocks** are hierarchical and embedded directly into the folder structure. This allows you to adjust the values of YAML settings and `{{fieldInfo}}` commands at the folder level. System Blocks are used by vault designers who have a larger system that they use. 
