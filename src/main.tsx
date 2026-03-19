@@ -156,7 +156,7 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 	plugin: Z2KTemplatesPlugin;
 	private refs = {
 		descTemplatesRootFolder: null as Setting | null,
-		descEmbeddedTemplatesFolderName: null as Setting | null,
+		descTemplatesFolderName: null as Setting | null,
 	}
 
 	constructor(app: App, plugin: Z2KTemplatesPlugin) {
@@ -166,7 +166,7 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 
 	private applyDescs() {
 		this.refs.descTemplatesRootFolder?.setDesc(`Folder where the ${cardRefNameLowerPlural(this.plugin.settings)} will be created (root of the ${cardRefNameLower(this.plugin.settings)} type folders). Leave empty to use vault root.`);
-		this.refs.descEmbeddedTemplatesFolderName?.setDesc(createFragment(f => {
+		this.refs.descTemplatesFolderName?.setDesc(createFragment(f => {
 			f.appendText(`Any ${cardRefNameLowerPlural(this.plugin.settings)} within folders of this name will show up as templates `)
 			f.createEl('a', {
 				text: '(?)',
@@ -180,6 +180,7 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 		containerEl.empty();
 		containerEl.addClass('z2k-settings');
 		containerEl.createEl('h3', {text: 'Z2K Template Settings'});
+		containerEl.createEl('h3', {text: 'General'});
 
 		this.refs.descTemplatesRootFolder = new Setting(containerEl)
 			.setName('Templates root folder')
@@ -226,8 +227,8 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 						await this.plugin.saveData(this.plugin.settings);
 					});
 			});
-		this.refs.descEmbeddedTemplatesFolderName = new Setting(containerEl)
-			.setName('Embedded templates folder name')
+		this.refs.descTemplatesFolderName = new Setting(containerEl)
+			.setName('Templates folder name')
 			.setDesc('') // Description is set dynamically
 			.addText(text => {
 				const input = text
@@ -4505,8 +4506,8 @@ const FieldCollectionForm = ({ templateState, userHelpers, onComplete, onCancel,
 
 			<div className="form-actions">
 				<button type="button" className="btn btn-secondary" onClick={onCancel}>Cancel</button>
-				<button type="submit" className="btn btn-primary">Submit</button>
-				<button type="button" className="btn btn-primary" onClick={(e) => handleSubmit(e, true)}>Submit and Finalize</button>
+				<button type="submit" className="btn btn-primary">Save for Now</button>
+				<button type="button" className="btn btn-primary" onClick={(e) => handleSubmit(e, true)}>Finalize</button>
 			</div>
 		</form>
 	);
