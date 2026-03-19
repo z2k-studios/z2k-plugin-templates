@@ -179,10 +179,12 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 		const {containerEl} = this;
 		containerEl.empty();
 		containerEl.addClass('z2k-settings');
-		containerEl.createEl('h3', {text: 'Z2K Template Settings'});
-		containerEl.createEl('h3', {text: 'General'});
+		// --- General ---
+		const generalGroup = containerEl.createDiv({ cls: 'setting-group' });
+		new Setting(generalGroup).setHeading().setName('General');
+		const generalItems = generalGroup.createDiv({ cls: 'setting-items' });
 
-		this.refs.descTemplatesRootFolder = new Setting(containerEl)
+		this.refs.descTemplatesRootFolder = new Setting(generalItems)
 			.setName('Templates root folder')
 			.setDesc('') // Description is set dynamically
 			.setClass('setting-full-width')
@@ -202,7 +204,7 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 						await this.plugin.saveData(this.plugin.settings);
 					});
 			});
-		new Setting(containerEl)
+		new Setting(generalItems)
 			.setName('Creator name')
 			.setDesc(createFragment(f => {
 				f.appendText(`Name to use for the built-in {{creator}} fields `)
@@ -227,7 +229,7 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 						await this.plugin.saveData(this.plugin.settings);
 					});
 			});
-		this.refs.descTemplatesFolderName = new Setting(containerEl)
+		this.refs.descTemplatesFolderName = new Setting(generalItems)
 			.setName('Templates folder name')
 			.setDesc('') // Description is set dynamically
 			.addText(text => {
@@ -249,7 +251,7 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 						await this.plugin.saveData(this.plugin.settings);
 					});
 			});
-		new Setting(containerEl)
+		new Setting(generalItems)
 			.setName('Name for files')
 			.setDesc(createFragment(f => {
 				f.appendText("This is the name to use when referring to files in the system. ('note', 'card', 'file', etc.) ");
@@ -276,10 +278,200 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 						this.plugin.queueRefreshCommands();
 					});
 			});
-		const visibilitySettingContainer = containerEl.createDiv();
-		let visibilityToggle: ToggleComponent | null = null;
 
-		new Setting(containerEl)
+		// --- Command Queue ---
+		const queueGroup = containerEl.createDiv({ cls: 'setting-group' });
+		new Setting(queueGroup).setHeading().setName('Command Queue');
+		const queueItems = queueGroup.createDiv({ cls: 'setting-items' });
+
+		const queueSubSettings: Setting[] = [];
+		const toggleQueueSettings = (show: boolean) => {
+			for (const s of queueSubSettings) { s.settingEl.toggle(show); }
+		};
+
+		new Setting(queueItems)
+			.setName('Enable command queue')
+			.setDesc('Process queued JSON command files automatically.')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.offlineCommandQueueEnabled)
+				.onChange(async (value) => {
+					this.plugin.settings.offlineCommandQueueEnabled = value;
+					await this.plugin.saveData(this.plugin.settings);
+					toggleQueueSettings(value);
+				}));
+
+		queueSubSettings.push(new Setting(queueItems)
+			.setName('Queue folder')
+			.setDesc('Folder for queued command files (JSON/JSONL) - vault-relative or absolute.')
+			.setClass('setting-full-width')
+			.addText(text => {
+				const input = text
+					.setValue(this.plugin.settings.offlineCommandQueueDir)
+					.inputEl;
+				this.validateTextInput(input,
+					(value) => {
+						if (value && /[*?"<>|]/.test(value)) { return "Invalid characters in file path"; }
+						return null;
+					},
+					async (validValue) => {
+						await this.plugin.updateQueueDirPath(validValue);
+					});
+			}));
+
+		queueSubSettings.push(new Setting(queueItems)
+			.setName('Scan frequency')
+			.setDesc('How often to scan for new commands. Blank = manual only.')
+			.addText(text => {
+				const input = text
+					.setValue(this.plugin.settings.offlineCommandQueueFrequency)
+					.inputEl;
+				this.validateTextInput(input,
+					(value) => {
+						const trimmed = value.trim();
+						if (trimmed === '') return null; // Blank = manual only
+						try {
+							const ms = parseDuration(trimmed);
+							if (ms < 5000) return "Minimum is 5 seconds";
+							return null;
+						} catch (e: any) {
+							return e.message;
+						}
+					},
+					async (validValue) => {
+						this.plugin.settings.offlineCommandQueueFrequency = validValue;
+						await this.plugin.saveData(this.plugin.settings);
+					});
+			}));
+
+		queueSubSettings.push(new Setting(queueItems)
+			.setName('Pause between commands')
+			.setDesc('Delay between processing each command. Blank = no pause.')
+			.addText(text => {
+				const input = text
+					.setValue(this.plugin.settings.offlineCommandQueuePause)
+					.inputEl;
+				this.validateTextInput(input,
+					(value) => {
+						const trimmed = value.trim();
+						if (trimmed === '') return null; // Blank = no pause
+						try {
+							parseDuration(trimmed);
+							return null;
+						} catch (e: any) {
+							return e.message;
+						}
+					},
+					async (validValue) => {
+						this.plugin.settings.offlineCommandQueuePause = validValue;
+						await this.plugin.saveData(this.plugin.settings);
+					});
+			}));
+
+		queueSubSettings.push(new Setting(queueItems)
+			.setName('Archive duration')
+			.setDesc('How long to keep processed files. Blank = delete immediately.')
+			.addText(text => {
+				const input = text
+					.setValue(this.plugin.settings.offlineCommandQueueArchiveDuration)
+					.inputEl;
+				this.validateTextInput(input,
+					(value) => {
+						const trimmed = value.trim();
+						if (trimmed === '') return null; // Blank = delete immediately
+						try {
+							parseDuration(trimmed);
+							return null;
+						} catch (e: any) {
+							return e.message;
+						}
+					},
+					async (validValue) => {
+						this.plugin.settings.offlineCommandQueueArchiveDuration = validValue;
+						await this.plugin.saveData(this.plugin.settings);
+					});
+			}));
+
+		toggleQueueSettings(this.plugin.settings.offlineCommandQueueEnabled);
+
+		// --- Error Logging ---
+		const errorGroup = containerEl.createDiv({ cls: 'setting-group' });
+		new Setting(errorGroup).setHeading().setName('Error Logging');
+		const errorItems = errorGroup.createDiv({ cls: 'setting-items' });
+
+		// Log path setting removed from UI — uses default path in plugin folder.
+		// new Setting(errorItems)
+		// 	.setName('Error log file')
+		// 	.setDesc('Path to error log file (vault-relative or absolute).')
+		// 	.setClass('setting-full-width')
+		// 	.addText(text => {
+		// 		const input = text
+		// 			.setValue(this.plugin.settings.errorLogPath)
+		// 			.inputEl;
+		//
+		// 		this.validateTextInput(input,
+		// 			(value) => {
+		// 				if (value && /[*?"<>|]/.test(value)) { return "Invalid characters in file path"; }
+		// 				return null;
+		// 			},
+		// 			async (validValue) => {
+		// 				this.plugin.settings.errorLogPath = validValue;
+		// 				await this.plugin.saveData(this.plugin.settings);
+		// 			});
+		// 	});
+
+		new Setting(errorItems)
+			.setName('Error log level')
+			.setDesc('Minimum severity level to log. "none" disables logging, "error" logs only errors, "warn" includes warnings, "info" includes informational messages, "debug" logs everything.')
+			.addDropdown(dropdown => dropdown
+				.addOption('none', 'None')
+				.addOption('error', 'Error')
+				.addOption('warn', 'Warning')
+				.addOption('info', 'Info')
+				.addOption('debug', 'Debug')
+				.setValue(this.plugin.settings.errorLogLevel)
+				.onChange(async (value) => {
+					this.plugin.settings.errorLogLevel = value as "none" | "error" | "warn" | "info" | "debug";
+					await this.plugin.saveData(this.plugin.settings);
+				}));
+
+		new Setting(errorItems)
+			.setName('Error log')
+			.setDesc('View the error log file.')
+			.addButton(button => button
+				.setButtonText('View Error Log')
+				.onClick(() => {
+					new LogViewerModal(this.app, {
+						title: 'Error Log',
+						logPath: this.plugin.settings.errorLogPath,
+						emptyMessage: 'No log entries yet.',
+						onClear: () => this.plugin.errorLogger.clearLog(),
+					}).open();
+				}));
+
+		// --- Quick Commands ---
+		const quickGroup = containerEl.createDiv({ cls: 'setting-group' });
+		new Setting(quickGroup).setHeading().setName('Quick Commands');
+		const quickItems = quickGroup.createDiv({ cls: 'setting-items' });
+
+		new Setting(quickItems)
+			.setName('Quick Commands')
+			.setDesc('Commands for quickly creating files or inserting blocks from the command palette.')
+			.addButton(button => button
+				.setButtonText('Edit Quick Commands')
+				.onClick(() => {
+					new QuickCommandsModal(this.app, this.plugin).open();
+				})
+			);
+
+		// --- Advanced ---
+		const advancedGroup = containerEl.createDiv({ cls: 'setting-group' });
+		new Setting(advancedGroup).setHeading().setName('Advanced');
+		const advancedItems = advancedGroup.createDiv({ cls: 'setting-items' });
+
+		let visibilityToggle: ToggleComponent | null = null;
+		let visibilitySetting: Setting;
+
+		new Setting(advancedItems)
 			.setName('Use template file extensions')
 			.setDesc(createFragment(f => {
 				f.appendText('Use .template and .block file extensions to hide template files from Obsidian. ');
@@ -321,12 +513,10 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 					this.plugin.settings.useTemplateFileExtensions = value;
 					await this.plugin.saveData(this.plugin.settings);
 					this.plugin.queueRefreshCommands();
-					visibilitySettingContainer.toggle(value);
+					visibilitySetting.settingEl.toggle(value);
 				}));
 
-		containerEl.appendChild(visibilitySettingContainer);
-		visibilitySettingContainer.toggle(this.plugin.settings.useTemplateFileExtensions);
-		new Setting(visibilitySettingContainer)
+		visibilitySetting = new Setting(advancedItems)
 			.setName('Template files visible in file explorer')
 			.setDesc('When off, .template and .block files are hidden from the file explorer.')
 			.addToggle(toggle => {
@@ -336,182 +526,9 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 						await this.plugin.setTemplateExtensionsVisible(value);
 					});
 			});
+		visibilitySetting.settingEl.toggle(this.plugin.settings.useTemplateFileExtensions);
 
-		containerEl.createEl('h3', {text: 'Command Queue'});
-
-		const queueSettingsContainer = containerEl.createDiv();
-		queueSettingsContainer.toggle(this.plugin.settings.offlineCommandQueueEnabled);
-
-		new Setting(containerEl)
-			.setName('Enable command queue')
-			.setDesc('Process queued JSON command files automatically.')
-			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.offlineCommandQueueEnabled)
-				.onChange(async (value) => {
-					this.plugin.settings.offlineCommandQueueEnabled = value;
-					await this.plugin.saveData(this.plugin.settings);
-					queueSettingsContainer.toggle(value);
-				}));
-
-		containerEl.appendChild(queueSettingsContainer);
-
-		new Setting(queueSettingsContainer)
-			.setName('Queue folder')
-			.setDesc('Folder for queued command files (JSON/JSONL) - vault-relative or absolute.')
-			.setClass('setting-full-width')
-			.addText(text => {
-				const input = text
-					.setValue(this.plugin.settings.offlineCommandQueueDir)
-					.inputEl;
-				this.validateTextInput(input,
-					(value) => {
-						if (value && /[*?"<>|]/.test(value)) { return "Invalid characters in file path"; }
-						return null;
-					},
-					async (validValue) => {
-						await this.plugin.updateQueueDirPath(validValue);
-					});
-			});
-
-		new Setting(queueSettingsContainer)
-			.setName('Scan frequency')
-			.setDesc('How often to scan for new commands. Blank = manual only.')
-			.addText(text => {
-				const input = text
-					.setValue(this.plugin.settings.offlineCommandQueueFrequency)
-					.inputEl;
-				this.validateTextInput(input,
-					(value) => {
-						const trimmed = value.trim();
-						if (trimmed === '') return null; // Blank = manual only
-						try {
-							const ms = parseDuration(trimmed);
-							if (ms < 5000) return "Minimum is 5 seconds";
-							return null;
-						} catch (e: any) {
-							return e.message;
-						}
-					},
-					async (validValue) => {
-						this.plugin.settings.offlineCommandQueueFrequency = validValue;
-						await this.plugin.saveData(this.plugin.settings);
-					});
-			});
-
-		new Setting(queueSettingsContainer)
-			.setName('Pause between commands')
-			.setDesc('Delay between processing each command. Blank = no pause.')
-			.addText(text => {
-				const input = text
-					.setValue(this.plugin.settings.offlineCommandQueuePause)
-					.inputEl;
-				this.validateTextInput(input,
-					(value) => {
-						const trimmed = value.trim();
-						if (trimmed === '') return null; // Blank = no pause
-						try {
-							parseDuration(trimmed);
-							return null;
-						} catch (e: any) {
-							return e.message;
-						}
-					},
-					async (validValue) => {
-						this.plugin.settings.offlineCommandQueuePause = validValue;
-						await this.plugin.saveData(this.plugin.settings);
-					});
-			});
-
-		new Setting(queueSettingsContainer)
-			.setName('Archive duration')
-			.setDesc('How long to keep processed files. Blank = delete immediately.')
-			.addText(text => {
-				const input = text
-					.setValue(this.plugin.settings.offlineCommandQueueArchiveDuration)
-					.inputEl;
-				this.validateTextInput(input,
-					(value) => {
-						const trimmed = value.trim();
-						if (trimmed === '') return null; // Blank = delete immediately
-						try {
-							parseDuration(trimmed);
-							return null;
-						} catch (e: any) {
-							return e.message;
-						}
-					},
-					async (validValue) => {
-						this.plugin.settings.offlineCommandQueueArchiveDuration = validValue;
-						await this.plugin.saveData(this.plugin.settings);
-					});
-			});
-
-		containerEl.createEl('h3', {text: 'Error Logging'});
-
-		// Log path setting removed from UI — uses default path in plugin folder.
-		// new Setting(containerEl)
-		// 	.setName('Error log file')
-		// 	.setDesc('Path to error log file (vault-relative or absolute).')
-		// 	.setClass('setting-full-width')
-		// 	.addText(text => {
-		// 		const input = text
-		// 			.setValue(this.plugin.settings.errorLogPath)
-		// 			.inputEl;
-		//
-		// 		this.validateTextInput(input,
-		// 			(value) => {
-		// 				if (value && /[*?"<>|]/.test(value)) { return "Invalid characters in file path"; }
-		// 				return null;
-		// 			},
-		// 			async (validValue) => {
-		// 				this.plugin.settings.errorLogPath = validValue;
-		// 				await this.plugin.saveData(this.plugin.settings);
-		// 			});
-		// 	});
-
-		new Setting(containerEl)
-			.setName('Error log level')
-			.setDesc('Minimum severity level to log. "none" disables logging, "error" logs only errors, "warn" includes warnings, "info" includes informational messages, "debug" logs everything.')
-			.addDropdown(dropdown => dropdown
-				.addOption('none', 'None')
-				.addOption('error', 'Error')
-				.addOption('warn', 'Warning')
-				.addOption('info', 'Info')
-				.addOption('debug', 'Debug')
-				.setValue(this.plugin.settings.errorLogLevel)
-				.onChange(async (value) => {
-					this.plugin.settings.errorLogLevel = value as "none" | "error" | "warn" | "info" | "debug";
-					await this.plugin.saveData(this.plugin.settings);
-				}));
-
-		new Setting(containerEl)
-			.setName('Error log')
-			.setDesc('View the error log file.')
-			.addButton(button => button
-				.setButtonText('View Error Log')
-				.onClick(() => {
-					new LogViewerModal(this.app, {
-						title: 'Error Log',
-						logPath: this.plugin.settings.errorLogPath,
-						emptyMessage: 'No log entries yet.',
-						onClear: () => this.plugin.errorLogger.clearLog(),
-					}).open();
-				}));
-
-		containerEl.createEl('h3', {text: 'Quick Commands'});
-		new Setting(containerEl)
-			.setName('Quick Commands')
-			.setDesc('Commands for quickly creating files or inserting blocks from the command palette.')
-			.addButton(button => button
-				.setButtonText('Edit Quick Commands')
-				.onClick(() => {
-					new QuickCommandsModal(this.app, this.plugin).open();
-				})
-			);
-
-		containerEl.createEl('h3', {text: 'Advanced'});
-
-		new Setting(containerEl)
+		new Setting(advancedItems)
 			.setName('Global Block')
 			.setDesc('Template content that is prepended to all templates across all vaults.')
 			.addButton(button => button
@@ -544,7 +561,7 @@ Example:
 				})
 			);
 
-		new Setting(containerEl)
+		new Setting(advancedItems)
 			.setName('Custom Helpers')
 			.setDesc('Register custom Handlebars helper functions using JavaScript.')
 			.addToggle(toggle => toggle
@@ -586,7 +603,7 @@ Example:
 				})
 			);
 		if (this.plugin.settings.customHelpersEnabled) {
-			const editSetting = new Setting(containerEl)
+			const editSetting = new Setting(advancedItems)
 				.setName('Edit Custom Helpers')
 				.addButton(button => button
 					.setButtonText('Edit Custom Helpers')
