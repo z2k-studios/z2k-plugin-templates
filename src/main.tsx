@@ -16,6 +16,8 @@ import { javascript } from "@codemirror/lang-javascript"; // npm i @codemirror/l
 import { handlebarsLanguage } from "@xiechao/codemirror-lang-handlebars"; // npm i @xiechao/codemirror-lang-handlebars
 import { highlightTree, classHighlighter } from "@lezer/highlight"; // npm i @lezer/highlight
 
+const DOCS_BASE_URL = 'https://z2k-studios.github.io/z2k-plugin-templates-docs/docs/reference-manual';
+
 interface Z2KTemplatesPluginSettings {
 	templatesRootFolder: string;
 	creator: string;
@@ -170,7 +172,7 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 			f.appendText(`Any ${cardRefNameLowerPlural(this.plugin.settings)} within folders of this name will show up as templates `)
 			f.createEl('a', {
 				text: '(?)',
-				href: 'https://z2k-studios.github.io/z2k-plugin-templates-docs/docs/reference-manual/Template%20Folders',
+				href: `${DOCS_BASE_URL}/settings-page/general-settings/templates-folder-name`,
 			});
 		}));
 	}
@@ -210,7 +212,7 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 				f.appendText(`Name to use for the built-in {{creator}} fields `)
 				f.createEl('a', {
 					text: '(?)',
-					href: 'https://z2k-studios.github.io/z2k-plugin-templates-docs/docs/reference-manual/Z2K%20Built-In%20Template%20Fields',
+					href: `${DOCS_BASE_URL}/settings-page/general-settings/creator-name`,
 				});
 			}))
 			.addText(text => {
@@ -257,7 +259,7 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 				f.appendText("This is the name to use when referring to files in the system. ('note', 'card', 'file', etc.) ");
 				f.createEl('a', {
 					text: '(?)',
-					href: 'https://z2k-studios.github.io/z2k-plugin-templates-docs/docs/reference-manual/Template%20Folders', // TODO
+					href: `${DOCS_BASE_URL}/settings-page/general-settings/name-for-files`,
 				})
 			}))
 			.addText(text => {
@@ -477,7 +479,7 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 				f.appendText('Use .template and .block file extensions to hide template files from Obsidian. ');
 				f.createEl('a', {
 					text: '(?)',
-					href: 'https://z2k-studios.github.io/z2k-plugin-templates-docs/docs/reference-manual/Template%20File%20Extensions',
+					href: `${DOCS_BASE_URL}/settings-page/advanced-settings/file-extension-settings/use-template-file-extensions`,
 				});
 			}))
 			.addToggle(toggle => toggle
@@ -495,7 +497,7 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 									message: <>
 										<p>We recommend that you convert your existing .template and .block files back to markdown before disabling Template File Extensions.</p>
 										<p>If you do not convert them to markdown, then these templates will not be easily accessible inside Obsidian for updates and changes.</p>
-										<p><a href="https://z2k-studios.github.io/z2k-plugin-templates-docs/docs/reference-manual/Template%20File%20Extensions" target="_blank">See docs for more details.</a></p>
+										<p><a href={`${DOCS_BASE_URL}/settings-page/advanced-settings/file-extension-settings/use-template-file-extensions`} target="_blank">See docs for more details.</a></p>
 									</>,
 									confirmText: 'Disable Anyway',
 									cancelText: 'Cancel',
@@ -530,7 +532,13 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 
 		new Setting(advancedItems)
 			.setName('Global Block')
-			.setDesc('Template content that is prepended to all templates across all vaults.')
+			.setDesc(createFragment(f => {
+				f.appendText('Template content prepended to every template in this vault before rendering. Field declarations here can be overridden by system blocks or the template itself. ');
+				f.createEl('a', {
+					text: '(?)',
+					href: `${DOCS_BASE_URL}/settings-page/advanced-settings/global-block-settings/global-block-editor`,
+				});
+			}))
 			.addButton(button => button
 				.setButtonText('Edit Global Block')
 				.onClick(() => {
@@ -539,7 +547,7 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 						initialContent: this.plugin.settings.globalBlock,
 						language: 'handlebars',
 						helpText: `The global block works like a system block but applies to all templates
-across all vaults. Content here is prepended to every template before rendering.
+in this vault. Content here is prepended to every template before rendering.
 
 Use it for:
 - Field-info declarations that should be available everywhere
