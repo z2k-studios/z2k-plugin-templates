@@ -167,7 +167,13 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 	}
 
 	private applyDescs() {
-		this.refs.descTemplatesRootFolder?.setDesc(`Folder where the ${cardRefNameLowerPlural(this.plugin.settings)} will be created (root of the ${cardRefNameLower(this.plugin.settings)} type folders). Leave empty to use vault root.`);
+		this.refs.descTemplatesRootFolder?.setDesc(createFragment(f => {
+			f.appendText(`Folder where the ${cardRefNameLowerPlural(this.plugin.settings)} will be created (root of the ${cardRefNameLower(this.plugin.settings)} type folders). Leave empty to use vault root. `);
+			f.createEl('a', {
+				text: '(?)',
+				href: `${DOCS_BASE_URL}/settings-page/general-settings/templates-root-folder`,
+			});
+		}));
 		this.refs.descTemplatesFolderName?.setDesc(createFragment(f => {
 			f.appendText(`Any ${cardRefNameLowerPlural(this.plugin.settings)} within folders of this name will show up as templates `)
 			f.createEl('a', {
@@ -293,7 +299,13 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 
 		new Setting(queueItems)
 			.setName('Enable command queue')
-			.setDesc('Process queued JSON command files automatically.')
+			.setDesc(createFragment(f => {
+				f.appendText('Process queued JSON command files automatically. ');
+				f.createEl('a', {
+					text: '(?)',
+					href: `${DOCS_BASE_URL}/settings-page/command-queue-settings/enable-command-queue`,
+				});
+			}))
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.offlineCommandQueueEnabled)
 				.onChange(async (value) => {
@@ -304,7 +316,13 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 
 		queueSubSettings.push(new Setting(queueItems)
 			.setName('Queue folder')
-			.setDesc('Folder for queued command files (JSON/JSONL) - vault-relative or absolute.')
+			.setDesc(createFragment(f => {
+				f.appendText('Folder for queued command files (JSON/JSONL) - vault-relative or absolute. ');
+				f.createEl('a', {
+					text: '(?)',
+					href: `${DOCS_BASE_URL}/settings-page/command-queue-settings/queue-folder-settings`,
+				});
+			}))
 			.setClass('setting-full-width')
 			.addText(text => {
 				const input = text
@@ -322,7 +340,13 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 
 		queueSubSettings.push(new Setting(queueItems)
 			.setName('Scan frequency')
-			.setDesc('How often to scan for new commands. Blank = manual only.')
+			.setDesc(createFragment(f => {
+				f.appendText('How often to scan for new commands. Blank = manual only. ');
+				f.createEl('a', {
+					text: '(?)',
+					href: `${DOCS_BASE_URL}/settings-page/command-queue-settings/scan-frequency`,
+				});
+			}))
 			.addText(text => {
 				const input = text
 					.setValue(this.plugin.settings.offlineCommandQueueFrequency)
@@ -347,7 +371,13 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 
 		queueSubSettings.push(new Setting(queueItems)
 			.setName('Pause between commands')
-			.setDesc('Delay between processing each command. Blank = no pause.')
+			.setDesc(createFragment(f => {
+				f.appendText('Delay between processing each command. Blank = no pause. ');
+				f.createEl('a', {
+					text: '(?)',
+					href: `${DOCS_BASE_URL}/settings-page/command-queue-settings/pause-between-commands`,
+				});
+			}))
 			.addText(text => {
 				const input = text
 					.setValue(this.plugin.settings.offlineCommandQueuePause)
@@ -371,7 +401,13 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 
 		queueSubSettings.push(new Setting(queueItems)
 			.setName('Archive duration')
-			.setDesc('How long to keep processed files. Blank = delete immediately.')
+			.setDesc(createFragment(f => {
+				f.appendText('How long to keep processed files. Blank = delete immediately. ');
+				f.createEl('a', {
+					text: '(?)',
+					href: `${DOCS_BASE_URL}/settings-page/command-queue-settings/archive-duration`,
+				});
+			}))
 			.addText(text => {
 				const input = text
 					.setValue(this.plugin.settings.offlineCommandQueueArchiveDuration)
@@ -423,7 +459,13 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 
 		new Setting(errorItems)
 			.setName('Error log level')
-			.setDesc('Minimum severity level to log. "none" disables logging, "error" logs only errors, "warn" includes warnings, "info" includes informational messages, "debug" logs everything.')
+			.setDesc(createFragment(f => {
+				f.appendText('Minimum severity level to log. "none" disables logging, "error" logs only errors, "warn" includes warnings, "info" includes informational messages, "debug" logs everything. ');
+				f.createEl('a', {
+					text: '(?)',
+					href: `${DOCS_BASE_URL}/settings-page/error-logging-settings/error-log-level`,
+				});
+			}))
 			.addDropdown(dropdown => dropdown
 				.addOption('none', 'None')
 				.addOption('error', 'Error')
@@ -438,7 +480,13 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 
 		new Setting(errorItems)
 			.setName('Error log')
-			.setDesc('View the error log file.')
+			.setDesc(createFragment(f => {
+				f.appendText('View the error log file. ');
+				f.createEl('a', {
+					text: '(?)',
+					href: `${DOCS_BASE_URL}/settings-page/error-logging-settings/view-error-log`,
+				});
+			}))
 			.addButton(button => button
 				.setButtonText('View Error Log')
 				.onClick(() => {
@@ -457,7 +505,13 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 
 		new Setting(quickItems)
 			.setName('Quick Commands')
-			.setDesc('Commands for quickly creating files or inserting blocks from the command palette.')
+			.setDesc(createFragment(f => {
+				f.appendText('Commands for quickly creating files or inserting blocks from the command palette. ');
+				f.createEl('a', {
+					text: '(?)',
+					href: `${DOCS_BASE_URL}/settings-page/quick-commands-settings/edit-quick-commands`,
+				});
+			}))
 			.addButton(button => button
 				.setButtonText('Edit Quick Commands')
 				.onClick(() => {
@@ -520,7 +574,13 @@ class Z2KTemplatesSettingTab extends PluginSettingTab {
 
 		visibilitySetting = new Setting(advancedItems)
 			.setName('Template files visible in file explorer')
-			.setDesc('When off, .template and .block files are hidden from the file explorer.')
+			.setDesc(createFragment(f => {
+				f.appendText('When off, .template and .block files are hidden from the file explorer. ');
+				f.createEl('a', {
+					text: '(?)',
+					href: `${DOCS_BASE_URL}/settings-page/advanced-settings/file-extension-settings/template-files-visible-in-file-explorer`,
+				});
+			}))
 			.addToggle(toggle => {
 				visibilityToggle = toggle;
 				toggle.setValue(this.plugin.settings.templateExtensionsVisible)
@@ -571,7 +631,13 @@ Example:
 
 		new Setting(advancedItems)
 			.setName('Custom Helpers')
-			.setDesc('Register custom Handlebars helper functions using JavaScript.')
+			.setDesc(createFragment(f => {
+				f.appendText('Register custom Handlebars helper functions using JavaScript. ');
+				f.createEl('a', {
+					text: '(?)',
+					href: `${DOCS_BASE_URL}/settings-page/advanced-settings/custom-helper-settings/enable-custom-helpers`,
+				});
+			}))
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.customHelpersEnabled)
 				.onChange(async (value) => {
@@ -660,7 +726,11 @@ registerHelper('recentFiles', () => {
 			const warningDesc = createFragment(f => {
 				const warn = f.createSpan({ text: 'Warning: ' });
 				warn.style.color = 'var(--text-warning, #e0a530)';
-				f.appendText('Custom helpers execute arbitrary JavaScript with full access to your vault and Obsidian API.');
+				f.appendText('Custom helpers run arbitrary JavaScript with full access to your vault and Obsidian API. ');
+				f.createEl('a', {
+					text: '(?)',
+					href: `${DOCS_BASE_URL}/settings-page/advanced-settings/custom-helper-settings/edit-custom-helpers`,
+				});
 			});
 			editSetting.setDesc(warningDesc);
 		}
