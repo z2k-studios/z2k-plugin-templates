@@ -4216,7 +4216,7 @@ const FieldCollectionForm = ({ templateState, userHelpers, onComplete, onCancel,
 
 			initialFieldStates[fieldName] = {
 				value: currentValue,
-				omitFromForm: (fieldInfo.directives?.includes('no-prompt') || (!templateState.referencedFields.has(fieldName) && !fieldInfo.directives?.includes('prompt'))) ?? false,
+				omitFromForm: (fieldInfo.directives?.includes('no-prompt') || !templateState.referencedFields.has(fieldName)) ?? false,
 				touched: false,
 				focused: false,
 				hasError: false,
