@@ -1041,7 +1041,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			{
 				id: 'z2k-continue-filling-card',
 				name: `Continue Filling ${cardRefNameUpper(this.settings)}`,
-				editorCheckCallback: (checking, editor) => {
+				checkCallback: (checking) => {
 					const activeFile = this.app.workspace.getActiveFile();
 					if (checking) { return !!activeFile && activeFile.extension === 'md'; }
 					this.continueCard({ existingFile: activeFile as TFile });
@@ -1176,11 +1176,24 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		// Quick Commands for creating cards or inserting blocks
 		for (const cmd of this.settings.quickCommands) {
 			if (!cmd.id || !cmd.name) { continue; }
-			this.addCommand({
-				id: cmd.id,
-				name: cmd.name,
-				callback: () => this.executeQuickCommand(cmd),
-			});
+			if (cmd.action === "insert") {
+				// Insert commands require an active editor (for cursor position)
+				this.addCommand({
+					id: cmd.id,
+					name: cmd.name,
+					editorCheckCallback: (checking) => {
+						const file = this.app.workspace.getActiveFile();
+						if (checking) { return !!file && file.extension === 'md'; }
+						this.executeQuickCommand(cmd);
+					},
+				});
+			} else {
+				this.addCommand({
+					id: cmd.id,
+					name: cmd.name,
+					callback: () => this.executeQuickCommand(cmd),
+				});
+			}
 		}
 	}
 	async executeQuickCommand(cmd: Z2KTemplatesPluginSettings["quickCommands"][number]) {
@@ -1686,7 +1699,12 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		}
 
 		if (cmd === "insertblock") {
-			// Validate location and destHeader
+			if (!existingFile) {
+				throw new TemplatePluginError("Command: 'insertblock' cmd requires 'existingFilePath'");
+			}
+			if (location === undefined && !cps.destHeader) {
+				throw new TemplatePluginError("Command: 'insertblock' cmd requires 'location' or 'destHeader'");
+			}
 			if (location === "header-top" || location === "header-bottom") {
 				if (!cps.destHeader) {
 					throw new TemplatePluginError(`Command: destHeader is required when location is '${location}'`);
@@ -2110,8 +2128,10 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				opts.fieldOverrides.sourceText = await this.app.vault.read(opts.sourceFile);
 			}
 			if (opts.fromSelection) {
-				const editor = this.getEditorOrThrow();
-				opts.fieldOverrides.sourceText = editor.getSelection();
+				const editor = this.app.workspace.getActiveViewOfType(MarkdownView)?.editor;
+				if (editor) {
+					opts.fieldOverrides.sourceText = editor.getSelection();
+				}
 			}
 
 			if (!opts.templateContent) {
@@ -2172,8 +2192,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			let contentOut = Z2KYamlDoc.joinFrontmatter(fmOut, bodyOut);
 			let title = this.getTitle(state.resolvedValues);
 			if (opts.fromSelection) {
-				const editor = this.getEditorOrThrow();
-				editor.replaceSelection("");
+				const editor = this.app.workspace.getActiveViewOfType(MarkdownView)?.editor;
+				if (editor) { editor.replaceSelection(""); }
 			}
 			if (opts.sourceFile) {
 				// Rename-based flow: modify content, then rename/move (updates links)
@@ -2242,7 +2262,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			if (!opts.fieldOverrides) { opts.fieldOverrides = {}; }
 			if (!opts.existingFile) { opts.existingFile = this.getOpenFileOrThrow(); }
 			if (!opts.templateFile && !opts.templateContent) {
-				const scopeDir = opts.blockTypeFolder ?? pathFolderFromTFolder(this.getOpenFileOrThrow().parent as TFolder);
+				const scopeDir = opts.blockTypeFolder ?? pathFolderFromTFolder(opts.existingFile.parent as TFolder);
 				opts.templateFile = await this.promptForTemplateFile(scopeDir, "block-template");
 			}
 			let editor: Editor | null = null;
@@ -2622,7 +2642,10 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	async promptForTemplateFile(cardType: PathFolder, type: "document-template" | "block-template"): Promise<PathFile> {
 		const templates = await this.getAssociatedTemplates(type, cardType);
 		if (templates.length === 0) {
-			throw new Error(`No ${type === "document-template" ? "" : "block "}templates available in the selected ${cardRefNameLower(this.settings)} type folder.`);
+			if (type === "block-template") {
+				throw new Error(`No block templates found for this ${cardRefNameLower(this.settings)}.`);
+			}
+			throw new Error(`No templates found in this ${cardRefNameLower(this.settings)} type folder.`);
 		}
 		return new Promise<PathFile>((resolve, reject) => {
 			new TemplateSelectionModal(this.app, templates, this.settings, resolve, reject).open();
