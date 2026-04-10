@@ -16,6 +16,7 @@ import { javascript } from "@codemirror/lang-javascript"; // npm i @codemirror/l
 import { handlebarsLanguage } from "@xiechao/codemirror-lang-handlebars"; // npm i @xiechao/codemirror-lang-handlebars
 import { highlightTree, classHighlighter } from "@lezer/highlight"; // npm i @lezer/highlight
 
+// Paths use kebab-case mirroring the doc file tree, e.g. settings-page/general-settings/creator-name
 const DOCS_BASE_URL = 'https://z2k-studios.github.io/z2k-plugin-templates-docs/docs/reference-manual';
 
 interface Z2KTemplatesPluginSettings {
@@ -723,6 +724,7 @@ registerHelper('recentFiles', () => {
 						}).open();
 					})
 				);
+			// This overwrites the initial .setDesc(), so any description content (including docs links) must go here
 			const warningDesc = createFragment(f => {
 				const warn = f.createSpan({ text: 'Warning: ' });
 				warn.style.color = 'var(--text-warning, #e0a530)';
@@ -2157,6 +2159,9 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				content = await this.app.vault.adapter.read(opts.templateFile!.path);
 			}
 			let { fm, body } = Z2KYamlDoc.splitFrontmatter(content);
+			if (fm.includes("{{>")) {
+				throw new TemplatePluginError("Block template partials ({{> ...}}) cannot be used in frontmatter.");
+			}
 			fm = this.updateYamlOnCreate(fm, templateFileForParse.basename);
 			content = Z2KYamlDoc.joinFrontmatter(fm, body);
 			let systemBlocksContent = opts.templateFile
@@ -2261,16 +2266,24 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			if (!opts) { opts = {}; }
 			if (!opts.fieldOverrides) { opts.fieldOverrides = {}; }
 			if (!opts.existingFile) { opts.existingFile = this.getOpenFileOrThrow(); }
-			if (!opts.templateFile && !opts.templateContent) {
-				const scopeDir = opts.blockTypeFolder ?? pathFolderFromTFolder(opts.existingFile.parent as TFolder);
-				opts.templateFile = await this.promptForTemplateFile(scopeDir, "block-template");
-			}
 			let editor: Editor | null = null;
 			if (!opts.location && !opts.destHeader) {
 				editor = this.getEditorOrThrow();
+				// Guard: don't allow insertion into frontmatter
+				const fmEnd = this.app.metadataCache.getFileCache(opts.existingFile)?.frontmatterPosition?.end?.line ?? -1;
+				if (fmEnd >= 0) {
+					const checkLine = opts.fromSelection ? editor.getCursor("from").line : editor.getCursor().line;
+					if (checkLine <= fmEnd) {
+						throw new TemplatePluginError("Block templates cannot be inserted into frontmatter.");
+					}
+				}
 				if (opts.fromSelection) {
 					opts.fieldOverrides.sourceText = editor.getSelection();
 				}
+			}
+			if (!opts.templateFile && !opts.templateContent) {
+				const scopeDir = opts.blockTypeFolder ?? pathFolderFromTFolder(opts.existingFile.parent as TFolder);
+				opts.templateFile = await this.promptForTemplateFile(scopeDir, "block-template");
 			}
 
 			// Parse and resolve block
@@ -3471,8 +3484,9 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			await this.log("error", context, error.message, error);
 		} else {
 			console.error("Unexpected error: ", error);
-			const wrappedError = new TemplatePluginError("An unexpected error occurred", error);
-			await this.log("error", context, "An unexpected error occurred", wrappedError);
+			const message = error instanceof Error ? error.message : "An unexpected error occurred";
+			const wrappedError = new TemplatePluginError(message, error);
+			await this.log("error", context, message, wrappedError);
 		}
 	}
 
