@@ -3378,7 +3378,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		}
 	}
 
-	// Walks upward from cardTypeFolder to the vault root, collecting .system-block.md files.
+	// Walks upward from cardTypeFolder to the vault root, collecting system block files.
+	// Recognizes both .system-block.md and system-block.md (dot-prefixed takes priority).
 	// At each ancestor level, also checks for Templates/.Templates subfolders and walks down
 	// through the corresponding path structure inside them. Each block gets a depth integer
 	// (0 = card type folder level, higher = more general). Stop files remove all blocks with
@@ -3426,13 +3427,21 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		adapter: DataAdapter, folderPath: string, depth: number,
 		blocks: { content: string, depth: number }[], stopDepths: number[]
 	) {
-		const blockFile = joinPath(folderPath, '.system-block.md');
+		// Dot-prefixed version takes priority; fall back to non-dot version
+		const dotBlock = joinPath(folderPath, '.system-block.md');
+		const plainBlock = joinPath(folderPath, 'system-block.md');
 		try {
-			// Need to use adapter because the usual file read doesn't work for files that start with .
-			blocks.push({ content: await adapter.read(blockFile), depth });
-		} catch {} // Can't find/read the file
-		const stopFile = joinPath(folderPath, '.system-block-stop');
-		if (await adapter.exists(stopFile)) { stopDepths.push(depth); }
+			blocks.push({ content: await adapter.read(dotBlock), depth });
+		} catch {
+			try {
+				blocks.push({ content: await adapter.read(plainBlock), depth });
+			} catch {} // Neither exists
+		}
+		const dotStop = joinPath(folderPath, '.system-block-stop');
+		const plainStop = joinPath(folderPath, 'system-block-stop');
+		if (await adapter.exists(dotStop) || await adapter.exists(plainStop)) {
+			stopDepths.push(depth);
+		}
 	}
 
 	// Logging and error handling
