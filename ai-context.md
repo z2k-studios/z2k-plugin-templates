@@ -33,7 +33,7 @@ Z2K Templates sits between Core Templates (too simple) and Templater (requires J
 ## Code Structure
 
 - **Source:** `src/` — plugin source files
-- **Template engine:** Uses `z2k-template-engine` package (separate repo) for parsing/rendering
+- **Template engine:** `src/template-engine/main.ts` — Handlebars-based parsing/rendering (merged from former `z2k-template-engine` repo)
 - **Docs:** `docs/` folder contains full reference manual in Markdown (exported to Docusaurus site)
 - **Design notes:** `design-notes/` folder contains developer notes
 
@@ -46,3 +46,10 @@ Z2K Templates sits between Core Templates (too simple) and Templater (requires J
 - **Automatic builds:** Projects build automatically via watch mode. Don't run build commands manually.
 - **TypeScript errors:** Use IDE diagnostics (returned with each edit) to check for errors. Don't run `tsc`, `npm run build`, or similar commands to verify compilation.
 - **Testing:** All testing lives in `Data/Vaults/z2k-testing-vaults/`. Read that repository's `ai-context.md` for test structure, conventions, and how to run tests.
+
+## Release
+
+- **GitHub repo:** `z2k-studios/z2k-plugin-templates`
+- **Release script:** `npm run release <version>` (runs `release.mjs` — bumps version, builds, commits, tags, pushes)
+- **Assets:** `main.js`, `manifest.json`, `styles.css`, `z2k-plugin-templates.zip`
+- **Prerelease:** yes (all releases are pre-release until public launch)
