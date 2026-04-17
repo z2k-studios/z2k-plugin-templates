@@ -4899,7 +4899,7 @@ const FieldInput = ({ name, label, fieldInfo, fieldState, onChange, onFocus, onB
 				return (
 					<input
 						type="text"
-						className={`title-text-input ${fieldState.hasError ? 'has-error' : ''}`}
+						className={`title-text-input ${fieldState.hasError ? 'has-error' : ''} ${!fieldState.touched && fieldState.resolvedSuggest ? 'showing-suggest' : ''}`}
 						value={toInputDisplayValue(fieldState.value)}
 						onChange={(e) => onChange(e.target.value)}
 						{...commonProps}
@@ -4909,7 +4909,7 @@ const FieldInput = ({ name, label, fieldInfo, fieldState, onChange, onFocus, onB
 			case 'text':
 				return (
 					<textarea
-						className={`text-input ${fieldState.hasError ? 'has-error' : ''}`}
+						className={`text-input ${fieldState.hasError ? 'has-error' : ''} ${!fieldState.touched && fieldState.resolvedSuggest ? 'showing-suggest' : ''}`}
 						value={toInputDisplayValue(fieldState.value)}
 						onChange={(e) => onChange(e.target.value)}
 						{...commonProps}
@@ -4920,7 +4920,7 @@ const FieldInput = ({ name, label, fieldInfo, fieldState, onChange, onFocus, onB
 				return (
 					<input
 						type="number"
-						className={`number-input ${fieldState.hasError ? 'has-error' : ''}`}
+						className={`number-input ${fieldState.hasError ? 'has-error' : ''} ${!fieldState.touched && fieldState.resolvedSuggest ? 'showing-suggest' : ''}`}
 						value={toInputDisplayValue(fieldState.value)}
 						onChange={(e) => {
 							const num = Number(e.target.value);

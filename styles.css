@@ -485,6 +485,11 @@
 	transition: all 0.15s ease;
 }
 
+.z2k .showing-suggest {
+	color: var(--text-muted);
+	font-style: italic;
+}
+
 .z2k textarea {
 	resize: vertical;
 	height: 37px;
