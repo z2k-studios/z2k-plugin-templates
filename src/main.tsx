@@ -1,7 +1,7 @@
 
 import { App, Plugin, Modal, Notice, TAbstractFile, TFolder, TFile, PluginSettingTab, Setting, MarkdownView, Editor, Command, ToggleComponent, setIcon, DataAdapter } from 'obsidian';
 import * as obsidian from 'obsidian';
-import { Z2KTemplateEngine, Z2KYamlDoc, TemplateState, VarValueType, FieldInfo, TemplateError, Handlebars } from 'z2k-template-engine';
+import { Z2KTemplateEngine, Z2KYamlDoc, TemplateState, VarValueType, FieldInfo, TemplateError, Handlebars } from './template-engine/main';
 import { PathFile, PathFolder, pathFileFrom, pathFolderFrom, pathFileFromTFile, pathFolderFromTFolder, normalizeFullPath, isSubPathOf, joinPath } from './paths';
 import React, { useState, useEffect, useRef, Component, ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
