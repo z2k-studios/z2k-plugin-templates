@@ -54,7 +54,7 @@ class Z2KTemplateEngine {
 			let value:  unknown = options.hash?.value  ?? getArg(args, 1, null);
 			// If no value provided, use current date/time
 			const dateValue = value == null ? new Date() : value;
-			const m = moment(dateValue);
+			const m = moment(dateValue as moment.MomentInput);
 			if (!m.isValid()) { return dateValue; }
 			const formatStr = typeof format === 'string' ? format : "YYYY-MM-DD";
 			return m.format(formatStr);
@@ -1808,10 +1808,12 @@ class TemplateError extends Error {
 export {
 	Z2KTemplateEngine,
 	Z2KYamlDoc,
+	TemplateError,
+	Handlebars,
+};
+export type {
 	TemplateState,
 	DataType,
 	VarValueType,
 	FieldInfo,
-	TemplateError,
-	Handlebars,
 };
