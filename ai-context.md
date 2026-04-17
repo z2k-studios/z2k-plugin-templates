@@ -32,8 +32,16 @@ Z2K Templates sits between Core Templates (too simple) and Templater (requires J
 
 ## Code Structure
 
-- **Source:** `src/` — plugin source files
-- **Template engine:** `src/template-engine/main.ts` — Handlebars-based parsing/rendering (merged from former `z2k-template-engine` repo)
+- **Source:** `src/`
+  - `main.tsx` — Z2KTemplatesPlugin class, command processing, template resolution
+  - `utils.ts` — shared types (settings, errors), utility functions
+  - `settings.tsx` — settings tab UI
+  - `syntax-highlighting.ts` — CodeMirror handlebars overlay
+  - `paths.ts` — path utilities
+  - `modals/simple-modals.tsx` — card type selection, template selection, confirmation, error, log viewer modals
+  - `modals/field-collection.tsx` — field collection modal, dependency helpers
+  - `modals/editor-modals.tsx` — code editor, quick commands modals
+  - `template-engine/main.ts` — Handlebars-based parsing/rendering (merged from former `z2k-template-engine` repo)
 - **Docs:** `docs/` folder contains full reference manual in Markdown (exported to Docusaurus site)
 - **Design notes:** `design-notes/` folder contains developer notes
 
