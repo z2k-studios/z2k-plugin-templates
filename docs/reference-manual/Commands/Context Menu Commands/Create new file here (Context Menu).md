@@ -3,9 +3,9 @@ sidebar_position: 40
 sidebar_class_name: z2k-code
 sidebar_label: Create new file here
 aliases:
-- create new file here
-- create new note here
-- create new card here
+- Create new file here
+- Create new note here
+- Create new card here
 ---
 # Create new file here
 Creates a new templated file directly in the folder you right-clicked, skipping the destination selection step.

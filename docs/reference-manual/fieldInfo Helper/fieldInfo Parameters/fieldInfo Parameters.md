@@ -4,6 +4,7 @@ sidebar_folder_position: 40
 doc_state: initial_ai_draft
 title: fieldInfo Parameters
 sidebar_label: fieldInfo Parameters
+z2k_validation_ok: 2
 ---
 # fieldInfo Parameters
 

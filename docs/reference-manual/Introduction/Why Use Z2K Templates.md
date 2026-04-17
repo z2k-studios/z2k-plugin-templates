@@ -49,11 +49,11 @@ Let's step back and review the top alternatives to **Z2K Templates**:
 
 ## Z2K Templates and Templater
 
-For a more detailed analysis of Z2K Templates in contrast to the popular Templater plugin, continue to the [[Z2K Templates vs. Templater|next page]].
+For a more detailed analysis of Z2K Templates in contrast to the popular Templater plugin, continue to the [[Comparison with Templater Plugin|next page]].
 
 ---
 
-> [!DANGER] INTERNAL NOTE
+> [!DANGER] INTERNAL NOTES
 >
 > - Re‑verify example parity against the latest Templater docs. If needed, add a more exact citation for each snippet and a screenshot of the equivalent Z2K prompt.
 > - Confirm “custom user functions” status in Z2K (helpers registration roadmap) before publishing.

@@ -49,7 +49,7 @@ Look for the logged values in the **Console** tab. They appear during the templa
 - The log helper is a [[Silent Helper Functions|silent helper]] – it produces no output in the rendered template and will follow the [[Whitespace Control]] rules for silent helper functions.
 
 
-> [!DANGER] Notes for Review
+> [!DANGER] INTERNAL NOTES
 > - Z2K Templates does not register a custom `log` helper – this is pure Handlebars passthrough. Verified by searching `z2k-template-engine/src/main.ts` for any log-related helper registration.
 > - Handlebars supports log levels (`{{log "message" level="warn"}}`), but this has not been tested in the Obsidian/Electron environment. It may or may not map to `console.warn()`.
 > - Consider whether a future Z2K-specific debug helper that outputs to the template (rather than console) would be valuable – this could be noted as a potential enhancement.

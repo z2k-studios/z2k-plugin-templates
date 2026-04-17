@@ -2,6 +2,7 @@
 sidebar_position: 120
 sidebar_class_name: z2k-code
 sidebar_label: "{{formatStringToLower}}"
+z2k_validation_ok: 5
 ---
 # formatStringToLower Helper
 Use the `formatStringToLower` Helper function to format a Template Field into all lowercase letters.

@@ -50,6 +50,19 @@ z2k_template_type: finalized-content-file
 
 The field values are now stored as standard YAML properties – visible in Obsidian's Properties panel, queryable by Dataview, and available to any block template inserted later.
 
+## Use of Quotes
+===flesh out===
+- Use of `` inside ""
+- Escape characters… some support -- investigate
+
+```
+Title: "{{fieldOutput BookTitle directives='required'}}"
+Author: "{{fieldOutput AuthorName prompt='What is the full name of the author?'}}"
+Genre: "{{fieldOutput Genre type='singleSelect:Fiction,Nonfiction,Poetry'}}"
+```
+
+
+
 ## Next - Insert a Block Template
 When a block template is inserted into an existing file, the plugin collects YAML frontmatter from the file and makes all properties available as field values (see [[Using YAML Metadata as Fields]]). Because the YAML property names match the field names the block template expects, the block's `{{field}}` expressions resolve automatically – no prompting needed.
 
@@ -91,7 +104,7 @@ Another example of how storing your field values in YAML code becomes apparent w
 - **Store only what you'll reuse** – there's no need to mirror every field into YAML. Focus on values that block templates or queries will need later.
 - **Combine with Dataview** – since the stored values are standard YAML properties, they're also available to Dataview and Bases queries, giving you the best of both worlds: template-powered creation and query-powered retrieval.
 
-> [!DANGER] Notes
+> [!DANGER] INTERNAL NOTES
 > - This pattern relies on `addYamlFieldValues()` being called during block insertion with the existing file's YAML (plugin line 1984). Verify that this code path is stable and intentional.
 > - When a YAML property and a fieldInfo `value` parameter both exist for the same field, the fieldInfo `value` wins (plugin line 2930). This means a block template that declares `{{fieldInfo "BookAuthor" value="Override"}}` would override the stored YAML value.
 > - If the stored YAML value is not a string (e.g., a number or boolean from unquoted YAML), verify how Handlebars renders it in the block template body.

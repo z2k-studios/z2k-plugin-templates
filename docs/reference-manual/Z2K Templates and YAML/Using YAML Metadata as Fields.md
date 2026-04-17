@@ -18,7 +18,7 @@ This works across all YAML sources – the template's own frontmatter, [[Block T
 - [[#Priority Among Data Sources]]
 
 ## How It Works
-During template processing, the plugin collects YAML frontmatter from all relevant sources (template file, inserted [[Block Templates]], [[Intro to System Blocks|System Blocks]], the [[Global Block]]) and merges the YAML properties using a [[Merging Multiple YAML Sources|last-wins strategy]]. The merged YAML is then parsed into native JavaScript values, and each top-level key becomes a field value in the template state.
+During template processing, the plugin collects YAML frontmatter from all relevant sources (template file, inserted [[Block Templates]], [[Intro to System Blocks|System Blocks]], the [[Global Block Editor]]) and merges the YAML properties using a [[Merging Multiple YAML Sources|last-wins strategy]]. The merged YAML is then parsed into native JavaScript values, and each top-level key becomes a field value in the template state.
 
 For example, given this template:
 
@@ -57,8 +57,10 @@ YAML supports richer types than plain strings – numbers, booleans, arrays, and
 
 This matters when using fields inside [[Conditionals|conditional expressions]] (`{{#if}}`) or [[Iterators|iterators]] (`{{#each}}`). An array value from YAML works naturally with `{{#each}}`, and a boolean value works naturally with `{{#if}}`.
 
+That said, when a value is rendered directly as `{{field}}`, it is always output as a string – the number `42` becomes the text `"42"`, and the boolean `true` becomes the text `"true"`. For the full picture of how native and string types behave throughout the data pipeline, see [[Field Types#Native Types vs. String Types|Native Types vs. String Types]].
+
 ## The Prompting Implication
-Here's a detail that can surprise you: when a YAML property provides a value for a field, **that field is not prompted for**.
+Here's a detail that can surprise you: when a YAML property provides a value for a field, **that field will not be prompted for**.
 
 The plugin automatically adds the `no-prompt` [[fieldInfo directives|directive]] to any field whose value comes from YAML. This makes sense – if the data is already present in the frontmatter, there's no reason to ask the user for it again. But it means that a YAML property can silently suppress a prompt you might have expected to see.
 
@@ -79,7 +81,7 @@ YAML values only fill in fields that don't already have a value from a higher-pr
 - ==How does it handle property names with spaces?==
 - ==How does it handle nested YAML Objects?==
 
-> [!DANGER] Notes
+> [!DANGER] INTERNAL NOTES
 > - The `position` exclusion is hardcoded in the plugin at line 2927 of `main.tsx`. Verify whether other Obsidian-internal properties should also be excluded.
 > - YAML nested objects (e.g., `address: { city: "NYC", zip: "10001" }`) become JavaScript objects as field values. Verify how Handlebars renders these – likely `[object Object]` unless accessed with dot notation via `{{#with}}`.
 > - The `no-prompt` directive is added at plugin lines 2932-2937. If the field already has other directives, `no-prompt` is appended without removing them.

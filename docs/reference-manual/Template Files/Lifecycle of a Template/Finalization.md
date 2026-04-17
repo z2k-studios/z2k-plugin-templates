@@ -26,8 +26,8 @@ The simplest way to finalize a content file is through the Finalize button on th
 
 In addition, there are other ways that finalization can occur, including :
 - Using other [[Command Palette]] comands
-- Using [[Quick Create Commands]]
-- Using [[URI Calls]]
+- Using [[Quick Commands]]
+- Using [[URI Actions]]
 - Using [[Command Queues]]
 
 ## What Exactly Happens During Finalization?

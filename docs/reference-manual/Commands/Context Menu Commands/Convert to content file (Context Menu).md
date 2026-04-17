@@ -2,11 +2,12 @@
 sidebar_position: 80
 sidebar_class_name: z2k-code
 sidebar_label: Convert to content file
+z2k_validation_ok: 5
 aliases:
 - convert to content file context menu
 ---
 # Convert to content file
-Removes template status from a file directly from Obsidian's file explorer.
+This converts a file identified in Obsidian File Navigation panel and that is currently marked as a [[Template Files|Template File]] and then converts it into a content file. The file will no longer appear in template pickers or function as a template. 
 
 ## Where It Appears
 

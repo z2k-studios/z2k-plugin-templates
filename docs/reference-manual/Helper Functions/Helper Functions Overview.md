@@ -38,4 +38,4 @@ In this case, `wikilink` is the name of a helper called [[wikilink]]. It is fo
 To learn more about building powerful Helpers, please see the following pages:
 - [[Using Fields in Parameters]]
 - [[Using Nested Helper Functions]]
-- [[User Defined Helper Functions]]
+- [[Custom Helper Functions]]

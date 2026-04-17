@@ -5,12 +5,11 @@ aliases:
 - note vs file vs card
 - card reference name
 ---
-
 # File Naming in Commands
 Z2K Templates lets you choose what to call the files you create. Commands adapt their names to match your preference.
 
 ## The Setting
-In the [[Settings Page]], you can configure the **Card Reference Name** setting. This controls the terminology used throughout the plugin:
+In the [[Name for Files|Settings Page]], you can configure the **Name for Files** setting. This controls the terminology used throughout the plugin:
 
 - **File** (default) – commands say "Create new file," "Continue filling file," etc.
 - **Note** – commands say "Create new note," "Continue filling note," etc.
@@ -24,6 +23,8 @@ Different knowledge management systems use different terminology:
 - Obsidian's core uses "note"
 - Zettelkasten practitioners often use "card" or "slip"
 - Technical users may prefer the neutral "file"
+- OneNote users may prefer the term "page"
+- [[Name for Files|Some]] may even prefer the word "noodle", so you never know...
 
 Z2K Templates adapts to your vocabulary so the plugin feels native to your workflow.
 
@@ -42,14 +43,9 @@ Commands that don't reference content files – like [[Insert Block Template]] o
 ## Changing the Setting
 
 1. Open **Settings** → **Z2K Templates**
-2. Find **Card Reference Name** under General Settings
+2. Find **[[Name for Files]]** under General Settings
 3. Enter your preferred term (e.g., "note" or "card")
 4. Close settings – commands update immediately
 
 > [!NOTE]
 > This setting affects command names, prompts, and error messages throughout the plugin. It does not rename any actual files in your vault.
-
-> [!DANGER]
-> - Verify the exact setting name in the Settings Page code – it may be "Card Reference Name" or similar
-> - Confirm whether the setting accepts any string or only predefined options
-> - Add a screenshot of the settings UI showing this option

@@ -22,7 +22,7 @@ A system block is a `.system-block.md` file that can contain both YAML frontmatt
 Because YAML properties are automatically available as [[Using YAML Metadata as Fields|field values]], system block YAML effectively lets you set default field values for an entire subtree of your vault. A system block at your vault root might define `default-content-author: "Anthropic Claude"`, and every template in the vault would have `{{default-content-author}}` resolve to "Anthropic Claude" – unless a deeper system block or the template itself overrides it. You can imagine using this technique to signify that all new files created in that vault was created by Claude.
 
 ## Discovery and Inheritance
-The plugin discovers system blocks by walking **up** the folder tree from the template's location toward the [[Template Folder Hierarchies|Templates Root Folder]]. Every `.system-block.md` file encountered along this path is collected. The walk stops when it reaches the Templates Root, or when it encounters a `.system-block-stop` file (which prevents inheritance from parent folders).
+The plugin discovers system blocks by walking **up** the folder tree from the template's location toward the [[Templates Root Folder]]. Every `.system-block.md` file encountered along this path is collected. The walk stops when it reaches the Templates Root, or when it encounters a `.system-block-stop` file (which prevents inheritance from parent folders).
 
 The collected system blocks are then ordered **root-first, leaf-last** – so the most specific (deepest) folder's values override the most general (shallowest) folder's values.
 

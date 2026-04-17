@@ -52,13 +52,12 @@ The following Handlebars features are supported but have enhancements, behaviora
 - [[Raw Blocks]] – syntax is recognized, but behavior differs from standard Handlebars
 - [[Block Helpers]] – supported in full templates, with limitations in certain contexts
 - [[Partials]] – supported with Z2K-specific resolution rules for [[Block Templates|block templates]]
+- [Nested input objects](https://handlebarsjs.com/guide/#nested-input-objects) – dot notation (`{{person.lastname}}`) works when the path base is a literal field name; computed path bases are unsupported. See [[Field Syntax#Dot Notation|Dot Notation]] for details.
 
 ## Untested Handlebars Features
 The following Handlebars features have not been systematically tested with Z2K Templates. They may work, they may not – use at your discretion:
 
-- [Nested input objects](https://handlebarsjs.com/guide/#nested-input-objects) when passed external [[URI, JSON, Command Queues|JSON data packets]] – e.g. `{{person.lastname}}`
 - [Inline partials](https://handlebarsjs.com/guide/partials.html#inline-partials) (`{{#* inline "name"}}...{{/inline}}`)
-- [[Helper Functions#Z2K Custom Helper Functions|Custom Helper Functions]]
 - [[Helper Functions#Usage - Nested Helper Functions|Nested Helper Functions]]
 - [Context switching](https://handlebarsjs.com/guide/builtin-helpers.html#with) (`{{#with}}`)
 
@@ -71,6 +70,6 @@ For details on specific behavioral differences, see the individual pages in the 
 
 
 
-> [!DANGER] Notes for Review
+> [!DANGER] INTERNAL NOTES
 > - The "Untested" list should be pruned as features are verified. Consider adding a testing pass for each item.
 > - `{{#with}}` passes through to Handlebars and likely works, but no Z2K-specific testing has been done. If confirmed, move to Supported.

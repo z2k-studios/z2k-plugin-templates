@@ -23,7 +23,7 @@ These are example uses of passing a field by name to a Helper Function:
 - {{formatStringBulletize KeyPoints}}
 ```  
 
-It may take some getting use to see fields be referenced by Helper Functions without their curly braces. This was a design decision made by the original handlebars.js spec. 
+It may take some getting use to see fields be referenced by Helper Functions without their curly braces. This was a design decision made by the original handlebars.js spec. See [[Field Syntax]] for more details and examples.
 
 ## Passing Fields By Quoted String
 If you wish to pass a `{{fieldName}}` to a helper function with some extra text around the field value, you can construct a string and reference the field within the string using `{{`curly braces`}}`.
@@ -38,7 +38,7 @@ These are example uses of passing a field by name to a Helper Function:
   - This is functionally equivalent to the version above that does not use curly braces.
 ```  
 
-Note: You can use either `"`double quotes or `'` single quotes to delimit the string. 
+Note: You can use either `"`double quotes or `'` single quotes to delimit the string.  
 
 > [!Tip] Delimeters
 > If you are trying to capture a string that contains double quotes, use single quote delimeters, and vice versa. 

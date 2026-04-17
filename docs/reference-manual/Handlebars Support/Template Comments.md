@@ -127,5 +127,6 @@ tags: research
 - [ ] Write outline (due: 2025-01-15)
 ```
 
-> [!DANGER] Notes for Review
-> - Verify whether comments inside YAML frontmatter are preserved or stripped differently – the engine has special YAML handling, but comment behavior in YAML was not explicitly tested.
+> [!DANGER] INTERNAL NOTES
+> - #TEST Verify whether comments inside YAML frontmatter are preserved or stripped differently – the engine has special YAML handling, but comment behavior in YAML was not explicitly tested.
+> - #TEST Verify that {{! Comments }} persist until finalization.

@@ -13,7 +13,7 @@ The optional `opts` parameter in the [[reference-manual/fieldInfo Helper/fieldIn
 If the corresponding field has a type of something other than `singleSelect` or `multiSelect`, the `opts` parameter will be ignored. 
 
 ## Syntax
-The `opts` parameter must be prefaced with the `opts=` keyword assignment, i.e. it is a [[fieldInfo Syntax#Named Parameters|Named Parameter]]. For example:
+The `opts` parameter must be prefaced with the `opts` keyword assignment, i.e. it is a [[fieldInfo Syntax#Named Parameters|Named Parameter]]. For example:
 
 ```md title="Sample opts parameter"
 {{fieldInfo BestPet prompt="What makes for the best pet?" type="singleSelect" opts="Dogs, Cats, Iguanas"}}

@@ -12,6 +12,7 @@ Every [[Template Fields Overview|template field]] in Z2K Templates has a type. T
 ## Contents
 - [[#Available Types]]
 - [[#Native Types vs. String Types]]
+- [[#Type Preservation in Expressions]]
 - [[#Caveats on Z2K Templates Loose Typing]]
 
 ## Available Types
@@ -42,6 +43,24 @@ Z2K Templates has a loose type system — most fields are strings, and the type 
 - A `filenameText` field is a string with UI-level character restrictions
 
 The type declaration tells the prompting UI what widget to show (date picker, checkbox, dropdown), but once the value is captured, it enters the template as text. This is by design — the final output is always Markdown, and Markdown is text.
+
+## Type Preservation in Expressions
+Native types are preserved when values flow through expressions **by reference** — passed directly to a helper by name, without quotes or curly braces. When a value is embedded inside a quoted string, it is first rendered to a string before being passed, discarding any native type.
+
+**By reference — type-preserving:**
+```handlebars
+{{formatNumber rating}}
+{{wikilink today}}
+```
+`rating` and `today` are passed as their native values. A number stays a number; an array stays an array.
+
+**Embedded in a string — always a string:**
+```handlebars
+{{formatNumber "{{rating}}"}}
+```
+The inner `{{rating}}` is rendered to a string first. The helper receives `"4.5"` instead of the number `4.5`. For most helpers this is harmless — but for helpers that branch on type, or for `fieldInfo` parameters that expect arrays, it matters.
+
+**Prefer passing by reference.** Reserve `"{{field}}"` string interpolation for when you genuinely need to construct dynamic text combining multiple values. For everything else — helper arguments, `fieldInfo` parameters, subexpressions — the by-reference form is cleaner, type-safe, and more readable.
 
 ## Caveats on Z2K Templates Loose Typing
 The string-centric design keeps things simple, but there are edges worth knowing about.
@@ -75,8 +94,8 @@ These types are strings (or arrays of strings) under the hood. The type declarat
 ### Manual Type Conversion in Templates
 If you need to convert a value between types within a template expression — for example, turning a string into a number for arithmetic — Z2K Templates provides the [[Type Conversion Helpers]]: `{{toNumber}}`, `{{toBool}}`, and `{{toString}}`. These are useful when a value arrives as the wrong type and you need to coerce it explicitly.
 
-> [!DANGER] Internal Notes
+> [!DANGER] INTERNAL NOTES
 > - The `handleOverrides()` function at line 2090 of main.tsx handles URI string conversion. Only `text`, `boolean`, and `number` have explicit conversion logic. All other types (`date`, `datetime`, `filenameText`, `singleSelect`, `multiSelect`) fall through to the auto-conversion branch (lines 2117-2128). This means a `date` field with URI value `"2024-01-15"` goes through auto-conversion and stays as a string (since it's not `"true"`, `"false"`, or a plain number). This is probably correct — dates should stay as strings — but it's implicit rather than explicit.
 > - The fieldInfo type page lists `string` in its syntax example (`type="string"`), but the accepted values table lists `text` as the default. Confirm whether `string` is an alias for `text` or if the example is incorrect.
 > - The `datetime` type's description on the fieldInfo type page says "A time of day" — this is misleading. It should be "A date and time" or "A datetime picker." Worth fixing on that page.
-> - Confirm whether `multiSelect` values arriving from a URI are handled as comma-separated strings that get split into arrays, or if they need to be passed as JSON arrays via `templateJsonData`. The prompting UI produces an array, but URI transport produces a flat string.
+> - Confirm whether `multiSelect` values arriving from a URI are handled as comma-separated strings that get split into arrays, or if they need to be passed as JSON arrays via `fieldData`. The prompting UI produces an array, but URI transport produces a flat string.

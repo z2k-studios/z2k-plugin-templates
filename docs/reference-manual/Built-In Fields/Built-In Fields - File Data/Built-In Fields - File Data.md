@@ -19,3 +19,4 @@ The plugin has a number of [[Built-In Fields|Built-In Fields]] associated with t
 | --------------------------------------------- | --------------------------------------- | ----------------------------------------------------------- |
 | `{{fileTitle}}, {{cardTitle}}, {{noteTitle}}` | [[fileTitle and Variations\|fileTitle]] | Represents the name of the content file being created       |
 | `{{creator}}`                                 | [[creator]]                             | Name of the card creator specified in the [[Settings Page]] |
+| `{{fileCreationDate}}`                        | [[fileCreationDate]]                    | Creation date of the file being operated on (`YYYY-MM-DD`)  |

@@ -31,7 +31,7 @@ The `suggest` value can accept either a string, number, boolean or list - depend
 {{fieldInfo WorkoutDuration type="number" suggest=60}}
 {{fieldInfo HitPeakHR type="boolean" suggest=false}}
 {{fieldInfo TimeInPeak type="singleSelect" opts="15,30,45" suggest=15}}
-{{fieldInfo WorkoutType type="multiSelect" opts="cardio, aerobic" suggest="cardio"}}
+{{fieldInfo WorkoutType type="multiSelect" opts="cardio,aerobic" suggest="cardio"}}
 {{fieldInfo WorkoutDate type="date" suggest="{{today}}"}}
 {{fieldInfo WorkoutTime type="datetime" suggest="12:15 PM"}}
 ```

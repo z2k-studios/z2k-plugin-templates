@@ -51,6 +51,18 @@ The intended behavior is that `{{#each}}` blocks referencing unresolved fields s
 > [!WARNING]
 > Until the deferred-block bug is fixed, ensure that any data used with `{{#each}}` is available at the time of rendering. Unlike standalone `{{field}}` expressions, iterators are not currently deferred. The workaround is to mark the relevant fields as [[fieldInfo directives#required|required]].
 
+## Iterators Inside fieldInfo Parameters
+Iterators can be embedded inside `{{fieldInfo}}` string parameters. This is possible because `{{#each}}` is a native Handlebars construct that is processed identically everywhere — inside fieldInfo parameter strings and in the main template body alike.
+
+A more common pattern is building option lists inline using the [[arr]] helper directly in the `opts` parameter — no `{{#each}}` needed:
+
+```handlebars
+{{fieldInfo statusTag type="select" prompt="Pick a status" opts=(arr "active" "paused" "done")}}
+```
+
+> [!NOTE]
+> Don't confuse this with [[Block Templates]] (`{{> block-name}}`), which are **not** available inside fieldInfo parameter strings. See [[Restricted Functionality Mode#Block Helpers vs Block Templates]] for the distinction.
+
 ## Iterators with the arr Helper
 Z2K Templates provides the `arr` helper for constructing arrays inline. This is useful when you want to iterate over a fixed set of values without requiring external data:
 
@@ -126,7 +138,7 @@ If `metadata` is `{ author: "Jane", version: "2.0" }`, this produces:
 This is particularly useful for data coming in through [[JSON Packages Overview|JSON Packages]]
 
 
-> [!DANGER] Notes for Review
+> [!DANGER] INTERNAL NOTES
 > - **Deferred field bug**: `{{#each}}` is affected by the same [[Conditionals#Known Issue|block statement preservation bug]] as `{{#if}}`. See that page for root cause, desired behavior options, and test cases. For iterators specifically, an unresolved field passed to `{{#each}}` is treated as an empty collection, collapsing the block permanently.
 > - The interaction between `{{#each}}` and partials needs testing. The engine renames partials to `block_N` during preprocessing (line 1083 of `z2k-template-engine/src/main.ts`), but it's unclear how this works when the same partial appears multiple times inside a loop.
 > - Data variables (`@index`, `@first`, `@last`, `@key`) are standard Handlebars and should work, but have not been explicitly verified in Z2K Templates.

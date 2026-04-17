@@ -1,6 +1,6 @@
 {
 	"name": "z2k-plugin-templates",
-	"version": "0.2.5",
+	"version": "0.3.0",
 	"description": "Provides template functionality for Z2K and more, allowing you to create new cards and perform other actions using templates and blocks.",
 	"main": "main.js",
 	"scripts": {
@@ -13,6 +13,7 @@
 	"license": "MIT",
 	"devDependencies": {
 		"@types/node": "^16.11.6",
+		"@types/numeral": "^2.0.5",
 		"@types/react": "^19.0.10",
 		"@types/react-dom": "^19.0.4",
 		"@typescript-eslint/eslint-plugin": "5.29.0",
@@ -29,9 +30,15 @@
 		"@codemirror/lang-javascript": "^6.2.3",
 		"@codemirror/lang-markdown": "^6.3.4",
 		"@codemirror/language": "^6.10.8",
+		"@handlebars/parser": "^2.2.1",
 		"@lezer/markdown": "^1.4.3",
 		"@xiechao/codemirror-lang-handlebars": "^1.0.4",
+		"handlebars": "^4.7.8",
+		"mathjs": "^15.1.0",
+		"moment": "^2.30.1",
+		"numeral": "^2.0.6",
 		"react": "^19.0.0",
-		"react-dom": "^19.0.0"
+		"react-dom": "^19.0.0",
+		"yaml": "^2.8.1"
 	}
 }

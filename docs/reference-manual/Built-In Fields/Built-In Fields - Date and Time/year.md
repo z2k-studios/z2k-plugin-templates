@@ -2,6 +2,7 @@
 sidebar_position: 100
 sidebar_class_name: z2k-code
 sidebar_label: "{{year}}"
+z2k_validation_ok: 5
 ---
 # year Built-In Field
 The `{{year}}` built-in field returns the current year in the format "`YYYY`". 

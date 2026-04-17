@@ -4,6 +4,7 @@ sidebar_position: 20
 sidebar_label: "{{fi}}"
 sidebar_class_name: z2k-code
 doc_state: initial_ai_draft
+z2k_validation_ok: "3,5"
 aliases:
 - fi Helper Function
 - fi

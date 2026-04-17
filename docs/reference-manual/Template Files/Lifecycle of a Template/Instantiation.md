@@ -24,8 +24,8 @@ The most basic and common way to instantiate a new content file from a template 
 
 There are many other more advanced ways to cause an instantiation:
 - Using other [[Command Palette]] comands
-- Using [[Quick Create Commands]]
-- Using [[URI Calls]]
+- Using [[Quick Commands]]
+- Using [[URI Actions]]
 - Using [[Command Queues]]
 
 ## What Exactly Happens During Instantiation?

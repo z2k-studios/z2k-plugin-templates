@@ -108,6 +108,6 @@ For more control over list rendering – bullets, spaced commas, iteration – s
 The value renders as-is with the same whitespace and escaping rules as [[#Text Fields|text fields]].
 
 
-> [!DANGER] Notes for Review
+> [!DANGER] INTERNAL NOTES
 > - The `formatString-escape-markdown` enhancement is tracked as GitHub issue #141 (milestone 2.0).
 > - Verify that user-provided date fields truly pass through as-is vs. having any parsing applied.

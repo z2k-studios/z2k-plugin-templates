@@ -1,8 +1,8 @@
 ---
-sidebar_position: 10
+sidebar_position: 1
 sidebar_folder_position: 10
 doc_state: revised_ai_draft_1
-sidebar_metacategory: "Getting Started"
+sidebar_metacategory: Getting Started
 ---
 # Introduction
 
@@ -33,6 +33,6 @@ These guides provide immediate examples of creating a template, using prompts, a
 
 ---
 
-> [!DANGER] INTERNAL NOTE
+> [!DANGER] INTERNAL NOTES
 > - Consider adding a short visual or screenshot placeholder after release (showing prompt modal).  
 

@@ -67,10 +67,11 @@ Captured: {{date}}
 
 ## Notes
 A few things of note:
-- The clipboard content is captured at template render time, not at prompt time, unless a prompt uses the clipboard. 
+- The clipboard content is captured at template render time, not at prompt time, unless a prompt uses the clipboard
 - Only text content is supported; binary data (images, files) will result in an empty value
 - Clipboard access requires the appropriate browser/system permissions
 - The field is automatically set to `no-prompt` (you cannot be prompted to enter clipboard content)
+- Some operating systems may require permission for the clipboard to be accessed
 
 ## See Also
 - [[sourceText|sourceText]] for capturing selected text

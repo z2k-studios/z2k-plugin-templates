@@ -172,7 +172,7 @@ Authorization: Basic {{formatStringEncodeBase64 (formatString credentials ":" ""
 - URL: [View online](https://projects.example.com/{{projectSlug}})
 ```
 
-> [!DANGER] Notes for Review
+> [!DANGER] INTERNAL NOTES
 > - Verify the exact characters removed by `formatStringFileFriendly` – the list may be incomplete.
 > - Test `formatStringSlugify` with non-ASCII characters (accents, CJK, emoji).
 > - The Basic auth example assumes a `formatString` with empty suffix – verify this syntax works.

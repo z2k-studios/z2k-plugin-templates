@@ -21,6 +21,12 @@ The key commands you can use to change the file extensions in the file navigatio
     - If the file currently has either a `.template` or `.block` file extension, it will rename it to be `.md`.
     - *Note:* If the file lives inside a template folder, you may still need to manually move it elsewhere.
 
+- **[[Switch to .md extension]]**
+    - Changes the file extension from `.template` or `.block` back to `.md`
+    - Does **not** change `z2k_template_type` — the template's identity (document or block) is preserved exactly as it was
+    - If `z2k_template_type` is absent, it is inferred from the old extension and added before the rename (a preservation step, not a conversion)
+    - Unlike the "Convert to..." commands, this command's only purpose is the extension change itself
+
 ## Warnings and Reminders
 
 > [!NOTE] File Extensions Must Be Enabled

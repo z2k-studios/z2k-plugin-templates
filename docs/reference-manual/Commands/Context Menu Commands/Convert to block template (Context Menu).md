@@ -2,6 +2,7 @@
 sidebar_position: 60
 sidebar_class_name: z2k-code
 sidebar_label: Convert to block template
+z2k_validation_ok: 5
 aliases:
 - convert to block template context menu
 ---

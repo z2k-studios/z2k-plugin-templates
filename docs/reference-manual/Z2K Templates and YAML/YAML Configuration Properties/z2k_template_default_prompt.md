@@ -38,6 +38,6 @@ With this setting, a field named `{{ProjectName}}` would display the prompt: "Pl
 | [[Finalization]]                  | ==To be determined==                             |
 | [[Block Templates\|Block Insert]] | ==To be determined==                             |
 
-> [!DANGER] Notes
+> [!DANGER] INTERNAL NOTES
 > - This property is not implemented in either `main.tsx` or the template engine (`src/main.ts`). No code reads, processes, or removes it.
 > - The `{{FieldName}}` placeholder is not documented in [[Built-In Fields]]. If this feature is implemented, determine whether `{{FieldName}}` should be added there or treated as a special interpolation token specific to this property.

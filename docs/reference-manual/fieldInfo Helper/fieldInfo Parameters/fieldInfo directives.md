@@ -73,7 +73,7 @@ Note: this will force all `{{fieldInfo}}` (and variants) referencing the field t
 
 **When this is useful**: 
 - When you have fields that you want to persist long after finalization. 
-- ==Would be good to give an example==
+- ===Would be good to give an example, even if just descriptive===
 
 ## finalize-clear
 The `"finalize-clear"` specifies that, upon [[Finalization|finalization]], if the user has not provide a value for the field, the plug-in will "clear" this field in the final output. All references to the `{{fieldName}}` will be cleared out with an empty string. Please see [[Fallback Behavior]] for more details.
@@ -105,7 +105,7 @@ The `"not-required"` directive overrides a `"required"` directive and resets it 
 The `"no-prompt"` directive instructs the [[Prompting Interface]] to skip presenting a user interface query for this field. This effectively hides the field from the user, causing the field to only be filled in through some other means.
 
 **When this is useful**: Suppressing prompting can be useful in these types of situations:
-- When fields are being filled in through some other means, like through separate automated [[URI Calls]] or [[Command Queues]].
+- When fields are being filled in through some other means, like through separate automated [[URI Actions]] or [[Command Queues]].
 - Sometimes it is helpful to use [[System Blocks]] to define a field and its value, so that any templates lower in the [[Template Folder Hierarchies]] can use the values as if they were user-entered fields. In this case, you will want to suppress prompting for them.
 
 ## yes-prompt

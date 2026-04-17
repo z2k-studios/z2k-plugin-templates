@@ -1,7 +1,6 @@
 ---
 sidebar_folder_position: 10
 sidebar_position: 1
-sidebar_metacategory: "Basics"
 ---
 # Command Palette Commands
 Z2K Templates integrates with Obsidian's Command Palette (`Ctrl/Cmd + P`) to give you quick access to template operations. These commands let you create new files from templates, insert block templates, convert files between template types, and more.
@@ -24,6 +23,7 @@ Commands for creating new files from templates.
 | [[Create File From Selected Text]]          | Text selected   | Creates a new file, passing the selection as data                    |
 | [[Apply Template to File]] | Active .md file | Applies a template to an existing file                               |
 | [[Continue Filling File]]                   | Active .md file | Resumes prompting for [[Deferred Field Resolution\|deferred fields]] |
+| [[Finalize File]]                           | Active .md file | Finalizes a file immediately using fallbacks — no prompting          |
 
 ## Block Template Commands
 Commands for inserting reusable content blocks.
@@ -40,7 +40,7 @@ Commands for changing a file's template type or file extension.
 | ------------------------------------------------------ | ------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
 | [[Convert to Document Template]]                       | File not already a document template                          | Marks the file as a [[Types of Template Files#Document Templates\|document template]] |
 | [[Convert to Block Template]]                          | File not already a block template                             | Marks the file as a [[Types of Template Files#Block Templates\|block template]]       |
-| [[Convert to Markdown Template]]                       | File has `.template` or `.block` extension                    | Changes extension back to `.md` while keeping template status                         |
+| [[Switch to .md extension]]                            | File has `.template` or `.block` extension                    | Changes extension back to `.md` without changing template type                        |
 | [[Convert to Content File]]                            | File not already a content file                               | Removes template status, making it a normal file                                      |
 | [[Make .template and .block Templates Visible-Hidden]] | [[Use Template File Extensions\|Template extensions enabled]] | Toggles visibility of `.template` and `.block` files                                  |
 
@@ -52,7 +52,7 @@ Additional commands for advanced workflows.
 | [[Process Command Queue Now]] | [[Command Queues\|Offline queue enabled]] | Immediately processes any queued template commands |
 
 ## Custom Commands to Specific Templates
-You can also design your own commands to interface with specific templates. Please see the [[Quick Create Commands]] for more details. 
+You can also design your own commands to interface with specific templates. Please see the [[Quick Commands]] for more details. 
 
 ## Assigning Commands to Hotkeys
 Any command can be assigned a keyboard shortcut in Obsidian:

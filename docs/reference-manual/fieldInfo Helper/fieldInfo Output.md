@@ -4,7 +4,6 @@ doc_state: initial_ai_draft
 title: fieldInfo Output
 sidebar_label: fieldInfo Output
 ---
-
 # fieldInfo Output
 `{{fieldInfo}}` is a [[Silent Helper Functions|Silent Helper Function]], meaning that it does not have any output when it is finalized. Instead it simply disappears when then resultant file is [[Finalization|finalized]] or when the corresponding field is fully resolved. 
 
@@ -12,7 +11,7 @@ sidebar_label: fieldInfo Output
 If you wish to specify the [[fieldInfo Parameters]] but want it to also emit the field value once the user specifies it, then use the [[fieldOutput Helper Variation]] instead.
 
 ## Whitespace
-The `{{fieldInfo}}` helper function will remove any whitespace after it up until the end of the line, and will remove the ending "new line" (return/enter) at the end of the line. This effectively makes a line
+The `{{fieldInfo}}` helper function will remove any whitespace after it, up until the end of the line, and will remove the ending "new line" (return/enter) at the end of the line. This effectively makes a line containing a fieldInfo to be completely removed.
 
 
 > [!TIP] Multiple Lines of Whitespace

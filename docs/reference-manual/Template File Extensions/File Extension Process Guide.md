@@ -89,7 +89,7 @@ Still, we encourage converging on a consistent long-term pattern to reduce cogni
 ## Conclusion
 Your chosen method depends on how much [[Template Pollution|Pollution]] you are willing to accept and how clean you want your vault’s working surface to be.
 
-> [!DANGER]
+> [!DANGER] INTERNAL NOTES
 > - Verify that all linked pages—such as “Convert to Block Template” and visibility commands—use the correct final page names in the Reference Manual.
 > - Confirm the final names of visibility commands as these may shift during development.
 > - This guide assumes `.template` and `.block` extensions are fully supported by the plugin after the extension rewrite; update behavior descriptions if Obsidian’s treatment of non‑`.md` files is modified in future builds.

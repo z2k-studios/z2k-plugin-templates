@@ -48,7 +48,7 @@ Z2K Templates and the broader Z2K System are designed to work hand-in-hand. When
 
 ---
 
-> [!DANGER] INTERNAL NOTE
+> [!DANGER] INTERNAL NOTES
 > - Confirm final list of Z2K YAML fields once the Z2K Core schema documentation is finalized.  
 > - Add crosslinks to the Z2K Core Plugin documentation and System YAML schema table once available.  
 > - Verify example field names (`Z2KType`, `Z2KCategory`, etc.) against official schema naming conventions.

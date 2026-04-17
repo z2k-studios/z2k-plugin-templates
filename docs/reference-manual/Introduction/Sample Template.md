@@ -78,7 +78,7 @@ I started reading a fiction book titled *The Great Gatsby* by [[F. Scott Fitzger
 
 ---
 
-> [!DANGER] INTERNAL NOTE
+> [!DANGER] INTERNAL NOTES
 > - I want the example to have the filename be set to "`{{BookTitle}} - {{AuthorName}}.md`" - how do i do that? Find out, add it, and then add it to the description
 > - Verify the conditional rendering example (`{{#if Review}}`) matches plugin’s supported subset of Handlebars.
 > - Consider adding a visual flow diagram later to illustrate parse → prompt → resolve → render steps.

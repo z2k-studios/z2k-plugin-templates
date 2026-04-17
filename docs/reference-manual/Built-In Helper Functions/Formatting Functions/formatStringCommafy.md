@@ -39,7 +39,7 @@ For non-array values, the helper returns the value converted to a string. For nu
 ## When to Use It
 Use `formatStringCommafy` when you want a readable inline list. For other list formats – bullets, custom delimiters, or iteration – see [[Formatting Lists]].
 
-> [!DANGER]
+> [!DANGER] INTERNAL NOTES
 > - Consider adding a separator parameter? Add to github and list here and encourage people to "vote" for the feature if they want to see it written.
 
 

@@ -1,5 +1,5 @@
 ---
-sidebar_position: 30
+sidebar_position: 60
 ---
 # Template Field Data Sources
 Z2K Templates is all about taking data in from a source and then inserting that information into templates to make new files in your vault. The information that can be inserted into [[Template Fields]] can come from a variety of places.
@@ -12,11 +12,12 @@ Here are the different ways in which data can be inserted into a template using 
 | ------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
 | **Prompting**       | User        | User is prompted via the prompting interface for any missing data.                                                           | [[Prompting]]                                      |
 | **Built-Ins**       | Computed    | Built-in fields and helper functions — values like `{{date}}` or computed values from helper functions.                      | [[Built-In Fields]], [[Built-In Helper Functions]] |
-| **Defaults**        | User        | User can use `{{fieldInfo}}` to specify the default value for each field                                                    | [[fieldInfo suggest]]                             |
+| **Value Overrides** | Computed    | Templates can specify a field value via the `value` parameter of `{{fieldInfo}}`                                             | [[fieldInfo value]]                                |
+| **Defaults**        | User        | User can use `{{fieldInfo}}` to specify the default value for each field                                                     | [[fieldInfo suggest]]                              |
 | **Fallbacks**       | User        | The user can specify fallback values to use when all other data sources fail.                                                | [[Fallback Behavior]]                              |
 | **YAML Properties** | The Vault   | YAML frontmatter properties from the file, system blocks, or block templates are automatically available as field values.    | [[Using YAML Metadata as Fields]]                  |
 | **Existing Files**  | The Vault   | Other vault files can be fed into a template via the `{{sourceText}}` field, or through the use of block templates.          | [[sourceText\|sourceText]], [[Block Templates]]    |
-| **URI Calls**       | External    | Other applications (e.g. Apple Shortcuts, batch scripts) can insert data into templates to create new files via URI calls.   | [[URI Calls]]                                      |
+| **URI Calls**       | External    | Other applications (e.g. Apple Shortcuts, batch scripts) can insert data into templates to create new files via URI calls.   | [[URI Actions]]                                    |
 | **JSON Packages**   | External    | 3rd party applications (e.g. Apple Shortcuts) can create actions inside JSON files that will be read by the Templates Plugin | [[JSON Packages]]                                  |
 | **Command Queues**  | External    | Offline and programmatic template invocation that occurs asynchronously                                                      | [[Command Queues]]                                 |
 
@@ -40,9 +41,9 @@ Field values are set through a series of steps. Each step either checks whether 
 
 | Priority    | Source                                                                                                                          | Behavior                                                                                      |
 | ----------- | ------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| **Highest** | **External overrides** – values from [[JSON Packages]] or [[URI Calls]]                                                         | Unconditionally overwrites any existing value                                                 |
+| **Highest** | **External overrides** – values from [[JSON Packages]] or [[URI Actions]]                                                       | Unconditionally overwrites any existing value                                                 |
 |             | **Plugin-managed built-ins** – `{{templateName}}`, `{{templateVersion}}`, `{{templateAuthor}}`, `{{sourceText}}`, `{{creator}}` | Unconditionally overwrites – ensures these fields always reflect the actual template metadata |
-|             | **fieldInfo `value` parameter** – explicit values set via `{{fieldInfo}}` with [[fieldInfo value]]                           | Set during parsing, before YAML values are applied                                            |
+|             | **fieldInfo `value` parameter** – explicit values set via `{{fieldInfo}}` with [[fieldInfo value]]                              | Set during parsing, before YAML values are applied                                            |
 |             | **YAML property values** – from merged YAML frontmatter (see [[Using YAML Metadata as Fields]])                                 | Only fills in fields that don't already have a value – skips if fieldInfo already set one    |
 | **Lowest**  | **Prompting** – user input via the [[Prompting Interface]]                                                                      | Only runs for fields that still have no value after all the above                             |
 
@@ -53,7 +54,8 @@ For more information on how the data from these different field data sources get
 > [!NOTE] Most Built-In Fields
 > Most [[Built-In Fields]] (like `{{date}}` and `{{time}}`) are computed during rendering, not during the value-setting phase. They don't participate in the priority table above – they resolve at render time if no other source has provided a value for them.
 
-> [!DANGER] Notes
+> [!DANGER] INTERNAL NOTES
 > - The execution order in the plugin is: `addYamlFieldValues()` (line 1866), then `addPluginBuiltIns()` (line 1867), then `handleOverrides()` (line 1877). YAML values use a conditional write (skip if value exists), while plugin built-ins and overrides use unconditional writes.
 > - The code comment at plugin line 2908 documents the intended priority as: `Built-ins < YAML fields < fieldInfo.value < Plugin built-ins < Overrides` (where `<` means lower priority).
 > - There is a TODO at plugin line 2912 to refactor this into a `valuesBySource` pattern for more explicit priority ordering.
+> - A test case where {{year}} is used in yaml frontmatter to define a property, and that year both means a local property in the front matter, but also the built-in. If someone is trying to store it, then what takes priority. We decided…. (still trying to resolve - see issue #xx)

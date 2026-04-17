@@ -64,19 +64,20 @@ This is a deliberate design choice that keeps the merge behavior predictable. If
 
 
 > [!WARNING] Avoid merging tags and aliases properties
-> Unfortunately, with the current approach, the `tags` and `aliases` YAML properties used by Obsidian are at risk for being replaced in hierarchical merging. Contents are not additive, but rather replacing. For this reason, we recommend using these two properties only in your final document template. 
+> Unfortunately, with the current approach, the `tags` and `aliases` YAML properties used by Obsidian are at risk for being replaced in hierarchical merging. We hope to support arrays in the future, but for now, array contents are not additive, but rather replacing. For this reason, we recommend using these two properties only in your final document template. 
 
 
 ## Merge Sources and Order
 The merge order depends on the operation being performed. In all cases, sources listed later override earlier ones.
 
 ### During Template Parsing
-When the engine parses a template, it merges system block YAML with the template's own YAML:
+When the engine parses a template, it merges the global block, system blocks, and the template's own YAML — in that order:
 
 | Order | Source | Notes |
 | ----- | ------ | ----- |
-| 1 | [[Intro to System Blocks\|System Block]] YAML | Hierarchical, folder-scoped defaults |
-| 2 | Template YAML | The document template's own frontmatter – overrides system blocks |
+| 1 | [[Global Block]] YAML | Applied globally to all templates across all folders |
+| 2 | [[Intro to System Blocks\|System Block]] YAML | Hierarchical, folder-scoped defaults – overrides global block |
+| 3 | Template YAML | The document template's own frontmatter – overrides all above |
 
 ### During Field Value Resolution
 When the plugin resolves field values, it merges all available YAML sources:
@@ -114,7 +115,7 @@ After all templates are rendered, the engine merges all rendered YAML fragments 
 - **Comments are preserved** – YAML comments in individual sources are carried through the merge process where possible.
 
 
-> [!DANGER] Notes
+> [!DANGER] INTERNAL NOTES
 > - The `mergeLastWins()` implementation is at engine lines 1650-1686.
 > - The merge order during field value resolution (plugin line 2915-2918) places template YAML first and existing file YAML last. This means the existing file's YAML properties override the template's – verify this is the intended behavior for all scenarios.
 > - The "during final YAML assembly" order is based on engine line 1292. Verify this matches the actual rendered output ordering.

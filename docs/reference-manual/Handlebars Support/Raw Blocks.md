@@ -11,7 +11,7 @@ In standard Handlebars, raw blocks (`{{{{rawblock}}}}...{{{{/rawblock}}}}`) prev
 For the standard Handlebars behavior, see the [Handlebars Raw Blocks documentation](https://handlebarsjs.com/guide/expressions.html#literal-segments).
 
 ## Known Issue: Raw Blocks Do Not Suppress Evaluation
-==This is a **bug**. Raw blocks should prevent template processing of their contents, matching standard Handlebars behavior. Currently, the syntax highlighter recognizes raw block syntax but the template engine does not implement the semantics.==
+==This is a **bug**. Raw blocks should prevent template processing of their contents, matching standard Handlebars behavior. Currently, the syntax highlighter recognizes raw block syntax but the template engine does not implement the semantics. Is there a bug filed?==
 
 In standard Handlebars, a raw block like this:
 
@@ -41,7 +41,7 @@ Until raw blocks are fixed, if you need literal mustache syntax to appear in you
 
 - **Template comments** with the example in the comment text (though comments are removed on [[Finalization]])
 
-> [!DANGER] Notes for Review
+> [!DANGER] INTERNAL NOTES
 > - **This is a confirmed bug.** See GitHub issue in z2k-template-engine for tracking.
 > - The syntax highlighter recognizes raw blocks at lines 3285-3299 of `z2k-plugin-templates/main.tsx`, including whitespace control variants (`{{{{~raw~}}}}`). However, the template engine does not implement raw block semantics.
 > - The Handlebars library itself supports raw blocks natively. The likely cause is that Z2K's AST preprocessing step interferes with or strips the raw block markers before Handlebars can handle them. Investigation needed.

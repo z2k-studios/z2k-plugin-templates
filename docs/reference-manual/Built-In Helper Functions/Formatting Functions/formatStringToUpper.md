@@ -2,6 +2,8 @@
 sidebar_position: 110
 sidebar_class_name: z2k-code
 sidebar_label: "{{formatStringToUpper}}"
+z2k_validation_ok: 5
+
 ---
 # formatStringToUpper Helper
 If you want to force the data being used for a Z2K Template Field to be rendered in all caps, use the `formatStringToUpper` Helper function:

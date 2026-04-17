@@ -61,7 +61,7 @@ A "Callout" block template that wraps selected text:
 - [[Insert Block Template]] – Insert a block without using a selection
 - [[Create File From Selected Text]] – Create a new file from selected text instead of inserting a block
 
-> [!DANGER]
+> [!DANGER] INTERNAL NOTES
 > - Check if multi-line selections work correctly, especially with indentation
 > - Consider adding a how-to guide for callout example for general use. Consider adding to Z2K System.
 > - Build a test case for the callout example as it is so useful

@@ -18,3 +18,5 @@ Wanting to up your game and use some of the more advanced features of [[README|Z
 	- then use the [[chatgpt]] helper and reference the prompt
 	- Can you use {{systemData}} to pass the contents of a file?
 	- Can you pass the filename as a sluggified value into the chat?
+- how to guide for creating automated summaries of app usage using Apple shortcuts and command lists
+- Add a how to guide for creating AI driven summaries of web browsing to the logs using Apple shortcuts and command list

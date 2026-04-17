@@ -2,6 +2,7 @@
 sidebar_position: 1
 sidebar_folder_position: 30
 sidebar_label: "Template Data"
+z2k_validation_ok: 5
 ---
 # Template Related Built-In Fields
 

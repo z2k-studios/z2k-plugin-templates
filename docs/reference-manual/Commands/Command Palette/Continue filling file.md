@@ -13,7 +13,7 @@ Resumes the prompting process for a file that has unfilled [[Template Fields]]. 
 > This command appears as "Continue filling file," "Continue filling note," or "Continue filling card" depending on your [[File Naming in Commands|settings]].
 
 ## Availability
-Available in the Command Palette when the **active file is a markdown file** (`.md`).
+Available in the **Command Palette** when the active file is a markdown file (`.md`). Also available from the **file explorer context menu** — right-click any `.md` file to run [[Continue Filling This File (Context Menu)]] without opening it first.
 
 ## What It Does
 When you run this command:
@@ -49,6 +49,7 @@ An example of a workflow for tracking tasks:
 ## Related Commands
 - [[Create New File]] – Initial file creation where deferral begins
 - [[Finalize file]] – Finalizes a file to remove all remaining unknown fields
+- [[Continue Filling This File (Context Menu)]] – Same operation from the file explorer without opening the file first
 - [[Insert Block Template]] – Block templates can also have deferred fields
 
 

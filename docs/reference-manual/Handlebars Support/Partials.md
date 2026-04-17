@@ -140,7 +140,7 @@ The double brackets are stripped before resolution. This can be useful for maint
 - [[Iterators]] for considerations when using partials inside `{{#each}}` loops
 
 
-> [!DANGER] Notes for Review
+> [!DANGER] INTERNAL NOTES
 > - The existing chicken scratch notes mentioned `{{> (random "BlockA.md" "BlockB.md")}}` as working for dynamic block selection. However, the source code at line 1073 of `z2k-template-engine/src/main.ts` explicitly throws an error for SubExpression-based partial names: "Dynamic block names are not supported." This is a **discrepancy** – either the code changed after the notes were written, or the notes were aspirational. Verify which is correct.
 > - The resolution order described here comes from the chicken scratch notes. Verify against the actual block resolution logic in `z2k-plugin-templates/main.tsx` (the `getBlockCallback` function).
 > - Partial parameters are passed through to Handlebars and should work, but the interaction with Z2K Templates' fieldInfo system (do parameters override fieldInfo declarations in the block?) needs verification.

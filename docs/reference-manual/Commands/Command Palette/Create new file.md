@@ -30,7 +30,7 @@ When you run this command:
 *(Screenshot: Template selection modal)*
 
 ## Why Ask for Destination First Then Template?
-Asking for the destination before the template points to a fundamental design decision for Z2K Templates. The destination folder is more than just a folder to receive a file, but points to the [[Destination Context|context]] of the content you wish to create. Then, [[Template Folder Hierarchies|based on that content]], the plugin will present the available set of templates that are relevant to that context using [[Template Folder Hierarchies]]. Specifically, templates in [[Template Folders]] along the path from the destination to the [[Template Folders#Template Root Folder|templates root folder]] appear - see [[Template Discovery]] for the full algorithm.
+Asking for the destination before the template points to a fundamental design decision for Z2K Templates. The destination folder is more than just a folder to receive a file, but points to the [[Destination Context|context]] of the content you wish to create. Then, [[Template Folder Hierarchies|based on that content]], the plugin will present the available set of templates that are relevant to that context using [[Template Folder Hierarchies]]. Specifically, templates in [[Template Folders]] along the path from the destination to the [[Templates Root Folder]] appear - see [[Template Discovery]] for the full algorithm.
 
 ## Example Workflow
 Here is a typical way to create a new file from a template
@@ -46,7 +46,7 @@ Here are some tips for making this most important command even easier to use:
 - Assign this command to `Ctrl/Cmd + N` to replace Obsidian's default new note behavior
 - You can also right click on a folder in the folder view and use the [[Create New File Here]] command to skip the destination context query.
 - If no templates appear, check that you have [[Template Folders]] configured correctly
-- For frequently-used templates, consider setting up [[Quick Create Commands]] instead
+- For frequently-used templates, consider setting up [[Quick Commands]] instead
 
 ## Related Commands
 
@@ -55,7 +55,7 @@ Here are some tips for making this most important command even easier to use:
 
 
 
-> [!DANGER]
+> [!DANGER] INTERNAL NOTES
 > - Confirm the exact modal titles shown in the UI
 > 	- Did it get updated to "Destination Context" and if so, update the screen shot?
 

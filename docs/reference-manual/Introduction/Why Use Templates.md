@@ -111,7 +111,7 @@ And extra note on AI: building your own AI systems work best when your source da
 
 
 ---
-> [!DANGER] INTERNAL NOTE
+> [!DANGER] INTERNAL NOTES
 >
 > - Confirm `SystemData` example accurately reflects current engine behavior.
 > - Add screenshot examples showing hierarchical and modular template menus.

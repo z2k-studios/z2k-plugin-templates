@@ -88,6 +88,6 @@ source: "Neuromancer"
 > In the example above, the original `book` tag was lost because the block's `tags` array replaced the file's `tags` array. The merge operates at the top-level key only – it does not merge arrays or nested objects. If you need to preserve existing tags, avoid declaring `tags` in your block template's YAML.
 > ==Is this true? Are they not merged?==
 
-> [!DANGER] Notes
+> [!DANGER] INTERNAL NOTES
 > - Only top-level keys are merged. Nested objects and arrays are replaced wholesale – not recursively merged. This is a fundamental limitation of the `mergeLastWins()` algorithm.
 > - Verify whether block YAML properties that contain `{{field}}` expressions are rendered before or after merging. The code suggests rendering happens first (line 1997), then cleanup (line 1999), then merge (line 2008).

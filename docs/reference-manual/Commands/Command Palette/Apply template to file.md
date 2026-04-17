@@ -158,6 +158,6 @@ You will still need to manually delete the portions of the old content file at t
 - [[Continue Filling File]] – Resume filling deferred fields in any templated file
 
 
-> [!DANGER]
+> [!DANGER] INTERNAL NOTES
 > - `{{fileCreationDate}}` is a proposed built-in field – see [GitHub issue #133](https://github.com/z2k-studios/z2k-plugin-templates/issues/133). Verify if implemented before publishing.
 > - Confirm both of these examples work! 
