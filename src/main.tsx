@@ -4234,8 +4234,7 @@ const FieldCollectionForm = ({ templateState, userHelpers, onComplete, onCancel,
 		const initialFieldStates: Record<string, FieldState> = {};
 
 		for (const [fieldName, fieldInfo] of Object.entries(templateState.fieldInfos)) {
-			// Get dependencies using shared helper
-			const dependencies = getFieldDependencies(fieldInfo);
+			const dependencies = Z2KTemplateEngine.getFieldInfoDependencies(fieldInfo);
 
 			// Determine if field is already specified externally
 			const wasSpecified = fieldName in templateState.resolvedValues;
@@ -4735,34 +4734,10 @@ interface FieldState {
 	selectedIndices?: number[]; // Selected option indices (for singleSelect this is an array of size 1, for multiSelect it can be multiple)
 }
 
-function getFieldDependencies(fieldInfo: FieldInfo): string[] {
-	const deps: string[] = [];
-	if (fieldInfo.prompt) {
-		deps.push(...Z2KTemplateEngine.reducedGetDependencies(fieldInfo.prompt));
-	}
-	if (fieldInfo.suggest) {
-		deps.push(...Z2KTemplateEngine.reducedGetDependencies(fieldInfo.suggest));
-	}
-	if (fieldInfo.fallback) {
-		deps.push(...Z2KTemplateEngine.reducedGetDependencies(fieldInfo.fallback));
-	}
-	if (fieldInfo.value) {
-		deps.push(...Z2KTemplateEngine.reducedGetDependencies(fieldInfo.value));
-	}
-	if (fieldInfo.opts) {
-		for (const opt of fieldInfo.opts) {
-			if (opt) {
-				deps.push(...Z2KTemplateEngine.reducedGetDependencies(opt));
-			}
-		}
-	}
-	return [...new Set(deps)];
-}
-
 function buildDependencyMap(fieldInfos: Record<string, FieldInfo>): Record<string, string[]> {
 	const deps: Record<string, string[]> = {};
 	for (const [fieldName, fieldInfo] of Object.entries(fieldInfos)) {
-		deps[fieldName] = getFieldDependencies(fieldInfo);
+		deps[fieldName] = Z2KTemplateEngine.getFieldInfoDependencies(fieldInfo);
 	}
 	return deps;
 }
