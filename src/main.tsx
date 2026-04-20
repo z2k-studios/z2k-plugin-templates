@@ -2442,6 +2442,9 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				tfi.directives.push("no-prompt");
 			}
 		}
+		if (tfi.suggest === undefined && tfi.value === undefined && !opts.existingTitle) {
+			tfi.suggest = "Untitled";
+		}
 		state.fieldInfos["fileTitle"] = tfi;
 
 		// clipboard
