@@ -79,16 +79,27 @@ const CardTypeSelector = ({ cardTypes, settings, onConfirm, onCancel }: CardType
 			e.preventDefault();
 			const newIndex = Math.min(selectedIndex + 1, cardTypes.length - 1);
 			setSelectedIndex(newIndex);
+			scrollToItem(newIndex);
 		} else if (e.key === 'ArrowUp') {
 			e.preventDefault();
 			const newIndex = Math.max(selectedIndex - 1, 0);
 			setSelectedIndex(newIndex);
+			scrollToItem(newIndex);
 		} else if (e.key === 'Enter') {
 			e.preventDefault();
 			onConfirm(cardTypes[selectedIndex]);
 		} else if (e.key === 'Escape') {
 			e.preventDefault();
 			onCancel();
+		}
+	};
+
+	const scrollToItem = (index: number) => {
+		if (index >= 0 && listRef.current) {
+			const items = listRef.current.querySelectorAll('.selection-item');
+			if (items[index]) {
+				items[index].scrollIntoView({ block: 'nearest' });
+			}
 		}
 	};
 
@@ -127,11 +138,6 @@ const CardTypeSelector = ({ cardTypes, settings, onConfirm, onCancel }: CardType
 						</div>
 					))
 				)}
-			</div>
-			<div className="selection-actions">
-				<button className="btn btn-secondary" onClick={onCancel}>
-					Cancel
-				</button>
 			</div>
 		</div>
 	);
@@ -179,6 +185,11 @@ export class TemplateSelectionModal extends Modal {
 				/>
 			</ErrorBoundary>
 		);
+		// Lock dimensions after initial render so search filtering doesn't shrink the modal
+		requestAnimationFrame(() => {
+			this.modalEl.style.minWidth = this.modalEl.offsetWidth + 'px';
+			this.modalEl.style.minHeight = this.modalEl.offsetHeight + 'px';
+		});
 	}
 
 	onClose() {
@@ -263,7 +274,7 @@ const TemplateSelector = ({ templates, settings, onConfirm, onCancel }: Template
 
 	const scrollToItem = (index: number) => {
 		if (index >= 0 && listRef.current) {
-			const items = listRef.current.querySelectorAll('.template-item');
+			const items = listRef.current.querySelectorAll('.selection-item');
 			if (items[index]) {
 				items[index].scrollIntoView({ block: 'nearest' });
 			}
@@ -332,18 +343,6 @@ const TemplateSelector = ({ templates, settings, onConfirm, onCancel }: Template
 						</div>
 					))
 				)}
-			</div>
-			<div className="selection-actions">
-				<button className="btn btn-secondary" onClick={onCancel}>
-					Cancel
-				</button>
-				<button
-					className="btn btn-primary"
-					onClick={() => onConfirm(filteredItems[selectedIndex].file)}
-					disabled={filteredItems.length === 0}
-				>
-					Select
-				</button>
 			</div>
 		</div>
 	);

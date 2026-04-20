@@ -212,8 +212,20 @@
 .z2k.card-type-selection-modal {
 	width: fit-content;
 	min-width: 400px;
+	min-height: 400px;
 	max-width: 80vw;
-	overflow: hidden;
+	max-height: 80vh;
+	resize: both;
+	overflow: auto;
+}
+.z2k.template-selection-modal .modal-content,
+.z2k.card-type-selection-modal .modal-content {
+	height: 100%;
+	max-height: none;
+}
+.z2k.template-selection-modal .selection-list,
+.z2k.card-type-selection-modal .selection-list {
+	max-height: none;
 }
 .z2k .modal-content {
 	background-color: var(--background-primary);
@@ -276,7 +288,7 @@
 	overflow-y: auto;
 	border: 1px solid var(--background-modifier-border);
 	border-radius: 4px;
-	max-height: 300px;
+	max-height: 450px;
 	min-height: 30px;
 	position: relative;
 }
@@ -327,12 +339,6 @@
 	text-overflow: ellipsis;
 	white-space: nowrap;
 	text-align: right;
-}
-
-.z2k .selection-actions {
-	padding: 12px 0 0 0;
-	display: flex;
-	justify-content: flex-end;
 }
 
 .z2k .selection-empty-state {
