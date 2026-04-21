@@ -342,11 +342,12 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		// Quick Commands for creating cards or inserting blocks
 		for (const cmd of this.settings.quickCommands) {
 			if (!cmd.id || !cmd.name) { continue; }
+			const displayName = `Quick: ${cmd.name}`;
 			if (cmd.action === "insert") {
 				// Insert commands require an active editor (for cursor position)
 				this.addCommand({
 					id: cmd.id,
-					name: cmd.name,
+					name: displayName,
 					editorCheckCallback: (checking) => {
 						const file = this.app.workspace.getActiveFile();
 						if (checking) { return !!file && file.extension === 'md'; }
@@ -356,28 +357,80 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			} else {
 				this.addCommand({
 					id: cmd.id,
-					name: cmd.name,
+					name: displayName,
 					callback: () => this.executeQuickCommand(cmd),
 				});
 			}
 		}
+	}
+	// Resolve a folder reference that may be a full path, partial path, or just a name
+	private resolveQuickCommandFolder(input: string): TFolder | null | 'ambiguous' {
+		const normalized = normalizeFullPath(input);
+		// Try exact path first
+		const exact = this.getFolder(normalized);
+		if (exact) { return exact; }
+		// Search by name/suffix match
+		const matches: TFolder[] = [];
+		for (const f of this.app.vault.getAllLoadedFiles()) {
+			if (!(f instanceof TFolder) || f.isRoot()) { continue; }
+			if (f.name === normalized || f.path.endsWith('/' + normalized)) {
+				matches.push(f);
+			}
+		}
+		if (matches.length === 1) { return matches[0]; }
+		if (matches.length > 1) { return 'ambiguous'; }
+		return null;
+	}
+	// Resolve a template reference that may be a full path, basename, or partial path
+	private async resolveQuickCommandTemplate(input: string): Promise<PathFile | null | 'ambiguous'> {
+		// Try exact path with extension resolution
+		const resolved = await this.tryResolveWithExtensions(normalizeFullPath(input));
+		if (resolved) { return resolved; }
+		// Search by basename/suffix across all templates
+		const normalized = normalizeFullPath(input);
+		const templates = await this.getAllTemplates();
+		const matches: PathFile[] = [];
+		for (const t of templates) {
+			if (t.file.basename === normalized || t.file.path.endsWith('/' + normalized) ||
+				t.file.path.endsWith('/' + normalized + '.md') ||
+				t.file.path.endsWith('/' + normalized + '.template') ||
+				t.file.path.endsWith('/' + normalized + '.block')) {
+				matches.push(t.file);
+			}
+		}
+		if (matches.length === 1) { return matches[0]; }
+		if (matches.length > 1) { return 'ambiguous'; }
+		return null;
 	}
 	async executeQuickCommand(cmd: Z2KTemplatesPluginSettings["quickCommands"][number]) {
 		try {
 			// Resolve folder (empty = prompt via createCard/insertBlock defaults)
 			let folder: PathFolder | undefined;
 			if (cmd.targetFolder) {
-				const tf = this.getFolder(cmd.targetFolder);
-				if (!tf) {
-					await this.logWarn(`Target folder not found: ${cmd.targetFolder}`);
+				const result = this.resolveQuickCommandFolder(cmd.targetFolder);
+				if (result === 'ambiguous') {
+					new ErrorModal(this.app, new Error(`Multiple folders match '${cmd.targetFolder}' — use a more specific path in Quick Command settings.`)).open();
 					return;
 				}
-				folder = pathFolderFromTFolder(tf);
+				if (!result) {
+					new ErrorModal(this.app, new Error(`Target folder not found: ${cmd.targetFolder}`)).open();
+					return;
+				}
+				folder = pathFolderFromTFolder(result);
 			}
 			// Resolve template (empty = prompt via createCard/insertBlock defaults)
 			let template: PathFile | undefined;
 			if (cmd.templateFile) {
-				template = pathFileFrom(cmd.templateFile);
+				const result = await this.resolveQuickCommandTemplate(cmd.templateFile);
+				if (result === 'ambiguous') {
+					new ErrorModal(this.app, new Error(`Multiple templates match '${cmd.templateFile}' — use a more specific path in Quick Command settings.`)).open();
+					return;
+				}
+				if (!result) {
+					new ErrorModal(this.app, new Error(`Template not found: ${cmd.templateFile}`)).open();
+					return;
+				}
+				template = result;
 			}
 			// Resolve source text
 			let fieldOverrides: Record<string, VarValueType> = {};

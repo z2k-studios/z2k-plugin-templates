@@ -39,6 +39,14 @@
 	flex-direction: column;
 	gap: 12px;
 }
+.quick-commands-list {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	max-height: 50vh;
+	overflow-y: auto;
+	padding-bottom: 4px;
+}
 .quick-commands-empty {
 	color: var(--text-muted);
 	padding: 16px 0;
@@ -102,9 +110,79 @@
 .quick-commands-footer {
 	display: flex;
 	justify-content: flex-end;
+	align-items: center;
 	gap: 8px;
 	padding-top: 12px;
 	border-top: 1px solid var(--background-modifier-border);
+}
+.quick-commands-error {
+	color: var(--text-error);
+	font-size: var(--font-ui-small);
+	margin-right: auto;
+}
+.quick-command-card.is-invalid {
+	border-color: var(--text-error);
+}
+
+/* Suggest Input Component */
+.suggest-input-container {
+	position: relative;
+	flex: 1;
+	min-width: 0;
+}
+.suggest-input-container input[type="text"] {
+	width: 100%;
+	height: var(--input-height);
+	background: var(--background-modifier-form-field);
+	border: var(--input-border-width) solid var(--background-modifier-border);
+	padding: var(--input-padding);
+	font-size: var(--font-ui-small);
+	border-radius: var(--input-radius);
+	font-family: inherit;
+}
+.suggest-input-dropdown {
+	position: absolute;
+	top: 100%;
+	left: 0;
+	right: 0;
+	z-index: var(--layer-popover);
+	max-height: 240px;
+	overflow-y: auto;
+	background: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--input-radius);
+	box-shadow: var(--shadow-s);
+	margin-top: 2px;
+}
+.suggest-input-item {
+	display: flex;
+	flex-direction: column;
+	padding: 6px 8px;
+	cursor: pointer;
+	gap: 1px;
+}
+.suggest-input-item.is-highlighted {
+	background: var(--background-modifier-hover);
+}
+.suggest-input-label {
+	font-size: var(--font-ui-small);
+	color: var(--text-normal);
+}
+.suggest-input-detail {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+}
+.suggest-input-item mark {
+	background: var(--text-highlight-bg);
+	color: inherit;
+	border-radius: 2px;
+}
+.suggest-input-loading,
+.suggest-input-empty {
+	padding: 8px;
+	font-size: var(--font-ui-small);
+	color: var(--text-muted);
+	text-align: center;
 }
 
 

@@ -1,4 +1,4 @@
-import { App, Modal, Notice } from 'obsidian';
+import { App, Modal, Notice, TFolder } from 'obsidian';
 import React, { useState, useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import { EditorView, keymap, lineNumbers, highlightActiveLine, highlightActiveLineGutter } from "@codemirror/view";
@@ -9,6 +9,7 @@ import { tags } from "@lezer/highlight";
 import { javascript } from "@codemirror/lang-javascript";
 import { handlebarsOverlay } from '../syntax-highlighting';
 import { Z2KTemplatesPluginSettings, ErrorBoundary } from '../utils';
+import { SuggestInput, SuggestItem } from '../components/suggest-input';
 import type Z2KTemplatesPlugin from '../main';
 
 // ------------------------------------------------------------------------------------------------
@@ -244,11 +245,51 @@ function newQuickCommand(): QuickCommand {
 		sourceText: 'none',
 	};
 }
-function QuickCommandsModalContent({ initialCommands, onSave, onCancel }: {
+// Sort template items by proximity to a target folder.
+// Templates whose card type (detail) matches the target come first, then root-level, then rest.
+function sortTemplatesByProximity(items: SuggestItem[], targetFolder: string, templatesRoot: string): SuggestItem[] {
+	if (!targetFolder.trim()) { return items; }
+	// Strip templates root from target to get effective card type path
+	let target = targetFolder;
+	if (templatesRoot && target.startsWith(templatesRoot + '/')) {
+		target = target.substring(templatesRoot.length + 1);
+	} else if (target === templatesRoot) {
+		target = '';
+	}
+	if (!target) { return items; }
+	const segCount = (p: string) => p === '' || p === '/' ? 0 : p.split('/').length;
+	const targetSegs = segCount(target);
+	// Rank each template: distance = how many segments the card type is above the target
+	// Only count as related if card type is a prefix of (or equal to) target
+	const ranked = items.map(item => {
+		const cardType = item.detail === '/' ? '' : (item.detail || '');
+		const isAncestor = cardType === '' || target === cardType || target.startsWith(cardType + '/');
+		const distance = isAncestor ? targetSegs - segCount(cardType) : Infinity;
+		return { item, distance };
+	});
+	ranked.sort((a, b) => a.distance - b.distance);
+	return ranked.map(r => r.item);
+}
+
+function QuickCommandsModalContent({ initialCommands, onSave, onCancel, loadSuggestItems }: {
 	initialCommands: QuickCommand[];
 	onSave: (commands: QuickCommand[]) => void;
 	onCancel: () => void;
+	loadSuggestItems: () => Promise<{ folderItems: SuggestItem[]; templateItems: SuggestItem[]; templatesRoot: string }>;
 }) {
+	const [folderItems, setFolderItems] = useState<SuggestItem[] | null>(null);
+	const [templateItems, setTemplateItems] = useState<SuggestItem[] | null>(null);
+	const [templatesRoot, setTemplatesRoot] = useState('');
+	useEffect(() => {
+		loadSuggestItems().then(result => {
+			setFolderItems(result.folderItems);
+			setTemplateItems(result.templateItems);
+			setTemplatesRoot(result.templatesRoot);
+		}).catch(() => {
+			setFolderItems([]);
+			setTemplateItems([]);
+		});
+	}, []);
 	const [commands, setCommands] = useState<QuickCommand[]>(() =>
 		initialCommands.map(c => ({...c}))
 	);
@@ -274,91 +315,94 @@ function QuickCommandsModalContent({ initialCommands, onSave, onCancel }: {
 			return next;
 		});
 	};
+	const hasEmptyNames = commands.some(c => !c.name.trim());
 	return (
 		<div className="quick-commands-editor">
-			{commands.length === 0 && (
-				<div className="quick-commands-empty">No quick commands configured.</div>
-			)}
-			{commands.map((cmd, i) => (
-				<div key={cmd.id} className="quick-command-card">
-					<div className="quick-command-fields">
-						<label>
-							Name
-							<input
-								type="text"
-								value={cmd.name}
-								placeholder="New Thought"
-								onChange={e => updateCommand(i, {name: e.target.value})}
-							/>
-						</label>
-						<label>
-							Action
-							<select
-								className="dropdown"
-								value={cmd.action}
-								onChange={e => updateCommand(i, {action: e.target.value as QuickCommand["action"]})}
-							>
-								<option value="create">Create New File</option>
-								<option value="insert">Insert Block</option>
-							</select>
-						</label>
-						<label>
-							Target Folder
-							<input
-								type="text"
-								value={cmd.targetFolder}
-								placeholder="Leave empty to prompt, / for vault root"
-								onChange={e => updateCommand(i, {targetFolder: e.target.value})}
-							/>
-						</label>
-						<label>
-							Template File
-							<input
-								type="text"
-								value={cmd.templateFile}
-								placeholder="Leave empty to prompt"
-								onChange={e => updateCommand(i, {templateFile: e.target.value})}
-							/>
-						</label>
-						<label>
-							Source Text
-							<select
-								className="dropdown"
-								value={cmd.sourceText}
-								onChange={e => updateCommand(i, {sourceText: e.target.value as QuickCommand["sourceText"]})}
-							>
-								<option value="none">None</option>
-								<option value="selection">Selection</option>
-								<option value="clipboard">Clipboard</option>
-							</select>
-						</label>
+			<div className="quick-commands-list">
+				{commands.length === 0 && (
+					<div className="quick-commands-empty">No quick commands configured.</div>
+				)}
+				{commands.map((cmd, i) => (
+					<div key={cmd.id} className={`quick-command-card${!cmd.name.trim() && commands.length > 0 ? ' is-invalid' : ''}`}>
+						<div className="quick-command-fields">
+							<label>
+								Name
+								<input
+									type="text"
+									value={cmd.name}
+									placeholder="New Thought"
+									onChange={e => updateCommand(i, {name: e.target.value})}
+								/>
+							</label>
+							<label>
+								Action
+								<select
+									className="dropdown"
+									value={cmd.action}
+									onChange={e => updateCommand(i, {action: e.target.value as QuickCommand["action"]})}
+								>
+									<option value="create">Create New File</option>
+									<option value="insert">Insert Block</option>
+								</select>
+							</label>
+							<label>
+								Target Folder
+								<SuggestInput
+									value={cmd.targetFolder}
+									onChange={v => updateCommand(i, {targetFolder: v})}
+									items={folderItems}
+									placeholder="Folder name or path (empty = prompt)"
+								/>
+							</label>
+							<label>
+								Template File
+								<SuggestInput
+									value={cmd.templateFile}
+									onChange={v => updateCommand(i, {templateFile: v})}
+									items={templateItems ? sortTemplatesByProximity(templateItems, cmd.targetFolder, templatesRoot) : null}
+									placeholder="Template name or path (empty = prompt)"
+								/>
+							</label>
+							<label>
+								Source Text
+								<select
+									className="dropdown"
+									value={cmd.sourceText}
+									onChange={e => updateCommand(i, {sourceText: e.target.value as QuickCommand["sourceText"]})}
+								>
+									<option value="none">None</option>
+									<option value="selection">Selection</option>
+									<option value="clipboard">Clipboard</option>
+								</select>
+							</label>
+						</div>
+						<div className="quick-command-controls">
+							<button
+								className="clickable-icon"
+								aria-label="Move up"
+								disabled={i === 0}
+								onClick={() => moveCommand(i, -1)}
+							>↑</button>
+							<button
+								className="clickable-icon"
+								aria-label="Move down"
+								disabled={i === commands.length - 1}
+								onClick={() => moveCommand(i, 1)}
+							>↓</button>
+							<button
+								className="clickable-icon"
+								aria-label="Insert below"
+								onClick={() => insertCommand(i)}
+							>+</button>
+							<button
+								className="clickable-icon"
+								aria-label="Delete"
+								onClick={() => removeCommand(i)}
+							>×</button>
+						</div>
 					</div>
-					<div className="quick-command-controls">
-						<button
-							className="clickable-icon"
-							aria-label="Move up"
-							disabled={i === 0}
-							onClick={() => moveCommand(i, -1)}
-						>↑</button>
-						<button
-							className="clickable-icon"
-							aria-label="Move down"
-							disabled={i === commands.length - 1}
-							onClick={() => moveCommand(i, 1)}
-						>↓</button>
-						<button
-							className="clickable-icon"
-							aria-label="Insert below"
-							onClick={() => insertCommand(i)}
-						>+</button>
-						<button
-							className="clickable-icon"
-							aria-label="Delete"
-							onClick={() => removeCommand(i)}
-						>×</button>
-					</div>
-				</div>
-			))}
+				))}
+			</div>
 			<div className="quick-commands-actions">
 				<button
 					className="mod-cta"
@@ -368,8 +412,9 @@ function QuickCommandsModalContent({ initialCommands, onSave, onCancel }: {
 				</button>
 			</div>
 			<div className="quick-commands-footer">
+				{hasEmptyNames && <span className="quick-commands-error">All commands need a name</span>}
 				<button className="btn btn-secondary" onClick={onCancel}>Cancel</button>
-				<button className="btn btn-primary" onClick={() => onSave(commands)}>Save</button>
+				<button className="btn btn-primary" onClick={() => onSave(commands)} disabled={hasEmptyNames}>Save</button>
 			</div>
 		</div>
 	);
@@ -391,6 +436,7 @@ export class QuickCommandsModal extends Modal {
 			<ErrorBoundary onError={(error) => { new Notice(`Quick Commands error: ${error.message}`); this.close(); }}>
 				<QuickCommandsModalContent
 					initialCommands={this.plugin.settings.quickCommands}
+					loadSuggestItems={() => this.buildSuggestItems()}
 					onCancel={() => this.close()}
 					onSave={async (commands) => {
 						this.plugin.settings.quickCommands = commands;
@@ -401,6 +447,44 @@ export class QuickCommandsModal extends Modal {
 				/>
 			</ErrorBoundary>
 		);
+	}
+	private async buildSuggestItems(): Promise<{ folderItems: SuggestItem[]; templateItems: SuggestItem[]; templatesRoot: string }> {
+		// Build folder suggestions from all vault folders (excluding template folders)
+		const folderItems: SuggestItem[] = [];
+		const tfn = this.plugin.settings.templatesFolderName;
+		const allFiles = this.app.vault.getAllLoadedFiles();
+		for (const f of allFiles) {
+			if (!(f instanceof TFolder)) { continue; }
+			if (f.isRoot()) { continue; }
+			if (f.path.startsWith('.')) { continue; } // Skip dot-prefixed system folders
+			if (f.name === tfn || f.name === '.' + tfn) { continue; } // Skip template folders
+			folderItems.push({
+				label: f.path,
+				value: f.path,
+			});
+		}
+		// Build template suggestions
+		const templateItems: SuggestItem[] = [];
+		const templates = await this.plugin.getAllTemplates();
+		const baseNameCount = new Map<string, number>();
+		for (const t of templates) {
+			baseNameCount.set(t.file.basename, (baseNameCount.get(t.file.basename) || 0) + 1);
+		}
+		const dotTfn = '.' + tfn;
+		for (const t of templates) {
+			const isAmbiguous = (baseNameCount.get(t.file.basename) || 0) > 1;
+			// Strip templates folder name from end of parent path to show card type
+			let detail = t.file.parentPath || '/';
+			if (detail.endsWith('/' + tfn)) { detail = detail.slice(0, -(tfn.length + 1)); }
+			else if (detail.endsWith('/' + dotTfn)) { detail = detail.slice(0, -(dotTfn.length + 1)); }
+			else if (detail === tfn || detail === dotTfn) { detail = '/'; }
+			templateItems.push({
+				label: t.file.basename,
+				value: isAmbiguous ? t.file.path : t.file.basename,
+				detail: detail || '/',
+			});
+		}
+		return { folderItems, templateItems, templatesRoot: this.plugin.settings.templatesRootFolder };
 	}
 	onClose() {
 		if (this.root) { this.root.unmount(); }
