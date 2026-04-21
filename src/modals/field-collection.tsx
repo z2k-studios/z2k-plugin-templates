@@ -112,7 +112,7 @@ const FieldCollectionForm = ({ templateState, userHelpers, onComplete, onCancel,
 
 			initialFieldStates[fieldName] = {
 				value: currentValue,
-				omitFromForm: (fieldInfo.directives?.includes('no-prompt') || !templateState.referencedFields.has(fieldName)) ?? false,
+				omitFromForm: (fieldInfo.directives?.includes('no-prompt') || (fieldName !== 'fileTitle' && !templateState.referencedFields.has(fieldName))) ?? false,
 				touched: false,
 				focused: false,
 				hasError: false,
@@ -304,7 +304,7 @@ const FieldCollectionForm = ({ templateState, userHelpers, onComplete, onCancel,
 		for (const fieldName of Object.keys(newFieldStates)) {
 			const fieldInfo = templateState.fieldInfos[fieldName];
 			if (!fieldInfo) {
-				console.error(`Field ${fieldName} not found in fieldInfos`);
+				console.error(`[Z2K Templates] Field ${fieldName} not found in fieldInfos`);
 				return true; // Skip validation if field not found
 			}
 

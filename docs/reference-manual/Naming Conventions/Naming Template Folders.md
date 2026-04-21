@@ -9,7 +9,7 @@ aliases:
 [[Template Folders]] hold your template files and determine which templates are available in a given context.
 
 ## The Default Folder Name
-The default embedded template folder name is `Templates`. For most users, this is all you need to know.
+The default template folder name is `Templates`. For most users, this is all you need to know.
 
 ## Changing the Folder Name
 If `Templates` doesn't suit your vault, you can configure a different name in [[General Settings]]. There are no conventions or restrictions on style – use whatever makes sense for your vault.

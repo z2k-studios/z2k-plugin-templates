@@ -69,7 +69,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			try {
 				return fn(...args);
 			} catch (e: any) {
-				console.error(`Helper '${name}' threw:`, e);
+				console.error(`[Z2K Templates] Helper '${name}' threw:`, e);
 				this.errorLogger?.log({
 					severity: 'error',
 					message: `Custom helper '${name}' threw an error: ${e.message}`,
@@ -151,7 +151,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			const result = this.loadUserHelpers(this.settings.userHelpers);
 			if (!result.valid) {
 				new Notice('Failed to load custom helpers - check console for details');
-				console.error('Custom helpers error:', result.error);
+				console.error('[Z2K Templates] Custom helpers error:', result.error);
 			}
 		}
 		this.refreshMainCommands(false); // Don't delete existing, since none exist yet
@@ -342,11 +342,12 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		// Quick Commands for creating cards or inserting blocks
 		for (const cmd of this.settings.quickCommands) {
 			if (!cmd.id || !cmd.name) { continue; }
+			const displayName = `Quick: ${cmd.name}`;
 			if (cmd.action === "insert") {
 				// Insert commands require an active editor (for cursor position)
 				this.addCommand({
 					id: cmd.id,
-					name: cmd.name,
+					name: displayName,
 					editorCheckCallback: (checking) => {
 						const file = this.app.workspace.getActiveFile();
 						if (checking) { return !!file && file.extension === 'md'; }
@@ -356,28 +357,80 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			} else {
 				this.addCommand({
 					id: cmd.id,
-					name: cmd.name,
+					name: displayName,
 					callback: () => this.executeQuickCommand(cmd),
 				});
 			}
 		}
+	}
+	// Resolve a folder reference that may be a full path, partial path, or just a name
+	private resolveQuickCommandFolder(input: string): TFolder | null | 'ambiguous' {
+		const normalized = normalizeFullPath(input);
+		// Try exact path first
+		const exact = this.getFolder(normalized);
+		if (exact) { return exact; }
+		// Search by name/suffix match
+		const matches: TFolder[] = [];
+		for (const f of this.app.vault.getAllLoadedFiles()) {
+			if (!(f instanceof TFolder) || f.isRoot()) { continue; }
+			if (f.name === normalized || f.path.endsWith('/' + normalized)) {
+				matches.push(f);
+			}
+		}
+		if (matches.length === 1) { return matches[0]; }
+		if (matches.length > 1) { return 'ambiguous'; }
+		return null;
+	}
+	// Resolve a template reference that may be a full path, basename, or partial path
+	private async resolveQuickCommandTemplate(input: string): Promise<PathFile | null | 'ambiguous'> {
+		// Try exact path with extension resolution
+		const resolved = await this.tryResolveWithExtensions(normalizeFullPath(input));
+		if (resolved) { return resolved; }
+		// Search by basename/suffix across all templates
+		const normalized = normalizeFullPath(input);
+		const templates = await this.getAllTemplates();
+		const matches: PathFile[] = [];
+		for (const t of templates) {
+			if (t.file.basename === normalized || t.file.path.endsWith('/' + normalized) ||
+				t.file.path.endsWith('/' + normalized + '.md') ||
+				t.file.path.endsWith('/' + normalized + '.template') ||
+				t.file.path.endsWith('/' + normalized + '.block')) {
+				matches.push(t.file);
+			}
+		}
+		if (matches.length === 1) { return matches[0]; }
+		if (matches.length > 1) { return 'ambiguous'; }
+		return null;
 	}
 	async executeQuickCommand(cmd: Z2KTemplatesPluginSettings["quickCommands"][number]) {
 		try {
 			// Resolve folder (empty = prompt via createCard/insertBlock defaults)
 			let folder: PathFolder | undefined;
 			if (cmd.targetFolder) {
-				const tf = this.getFolder(cmd.targetFolder);
-				if (!tf) {
-					await this.logWarn(`Target folder not found: ${cmd.targetFolder}`);
+				const result = this.resolveQuickCommandFolder(cmd.targetFolder);
+				if (result === 'ambiguous') {
+					new ErrorModal(this.app, new Error(`Multiple folders match '${cmd.targetFolder}' — use a more specific path in Quick Command settings.`)).open();
 					return;
 				}
-				folder = pathFolderFromTFolder(tf);
+				if (!result) {
+					new ErrorModal(this.app, new Error(`Target folder not found: ${cmd.targetFolder}`)).open();
+					return;
+				}
+				folder = pathFolderFromTFolder(result);
 			}
 			// Resolve template (empty = prompt via createCard/insertBlock defaults)
 			let template: PathFile | undefined;
 			if (cmd.templateFile) {
-				template = pathFileFrom(cmd.templateFile);
+				const result = await this.resolveQuickCommandTemplate(cmd.templateFile);
+				if (result === 'ambiguous') {
+					new ErrorModal(this.app, new Error(`Multiple templates match '${cmd.templateFile}' — use a more specific path in Quick Command settings.`)).open();
+					return;
+				}
+				if (!result) {
+					new ErrorModal(this.app, new Error(`Template not found: ${cmd.templateFile}`)).open();
+					return;
+				}
+				template = result;
 			}
 			// Resolve source text
 			let fieldOverrides: Record<string, VarValueType> = {};
@@ -2061,23 +2114,39 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	// Returns templates sorted by proximity: closest card type first, alphabetical within each level.
 	// Distance = how many path segments the template's card type is above the requested card type.
 	// e.g. for card type "a/b": templates with card type "a/b" → distance 0, "a" → 1, "" → 2.
-	async getAssociatedTemplates(filter: "document-template" | "block-template", cardType: PathFolder): Promise<PathFile[]> {
+	// Templates with z2k_default: true in frontmatter rise to top within their distance group.
+	async getAssociatedTemplates(filter: "document-template" | "block-template", cardType: PathFolder): Promise<{ file: PathFile, isDefault: boolean }[]> {
 		const templatesRootPath = this.getTemplatesRootFolder().path;
 		if (!isSubPathOf(cardType.path, templatesRootPath)) {
 			throw new Error(`The selected ${cardRefNameLower(this.settings)} type folder is not inside your templates root folder.`);
 		}
 		const segCount = (p: string) => p === '' ? 0 : p.split('/').length;
 		const targetSegCount = segCount(cardType.path);
-		let ranked: { file: PathFile, distance: number }[] = [];
+		let ranked: { file: PathFile, distance: number, isDefault: boolean }[] = [];
 		for (const t of await this.getAllTemplates()) {
 			if (t.type !== filter) { continue; }
 			const tCardType = this.getTemplateCardType(t.file);
 			// Only include templates whose card type is an ancestor of (or equal to) the target
 			if (!isSubPathOf(cardType.path, tCardType.path)) { continue; }
-			ranked.push({ file: t.file, distance: targetSegCount - segCount(tCardType.path) });
+			let isDefault = false;
+			const tFile = this.app.vault.getAbstractFileByPath(t.file.path);
+			if (tFile instanceof TFile) {
+				isDefault = this.app.metadataCache.getFileCache(tFile)?.frontmatter?.["z2k_default"] === true;
+			} else {
+				try {
+					const content = await this.app.vault.adapter.read(t.file.path);
+					const { fm } = Z2KYamlDoc.splitFrontmatter(content);
+					if (fm) { isDefault = Z2KYamlDoc.fromString(fm).get("z2k_default") === true; }
+				} catch {}
+			}
+			ranked.push({ file: t.file, distance: targetSegCount - segCount(tCardType.path), isDefault });
 		}
-		ranked.sort((a, b) => a.distance - b.distance || a.file.path.localeCompare(b.file.path));
-		return ranked.map(r => r.file);
+		ranked.sort((a, b) =>
+			a.distance - b.distance ||
+			(a.isDefault === b.isDefault ? 0 : a.isDefault ? -1 : 1) ||
+			a.file.path.localeCompare(b.file.path)
+		);
+		return ranked.map(r => ({ file: r.file, isDefault: r.isDefault }));
 	}
 	// Derives the card type folder from a template's path by stripping the templates root prefix
 	// and at most one templates-named subfolder segment. Only one level of templates subfolder
@@ -2442,6 +2511,9 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				tfi.directives.push("no-prompt");
 			}
 		}
+		if (tfi.suggest === undefined && tfi.value === undefined && !opts.existingTitle) {
+			tfi.suggest = "Untitled";
+		}
 		state.fieldInfos["fileTitle"] = tfi;
 
 		// clipboard
@@ -2648,15 +2720,15 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	private async handleErrors(error: unknown, context: "user" | "batch" = 'user') {
 		// Display error messages to the user and log them
 		if (error instanceof TemplatePluginError) {
-			console.error("TemplatePluginError: ", error.message);
+			console.error("[Z2K Templates] TemplatePluginError:", error.message);
 			await this.log("error", context, error.userMessage || error.message, error);
 		} else if (error instanceof UserCancelError) {
 			// Just exit, no need to show a message or log
 		} else if (error instanceof TemplateError) {
-			console.error("Template error: ", error.message);
+			console.error("[Z2K Templates] Template error:", error.message);
 			await this.log("error", context, error.message, error);
 		} else {
-			console.error("Unexpected error: ", error);
+			console.error("[Z2K Templates] Unexpected error:", error);
 			const message = error instanceof Error ? error.message : "An unexpected error occurred";
 			const wrappedError = new TemplatePluginError(message, error);
 			await this.log("error", context, message, wrappedError);
