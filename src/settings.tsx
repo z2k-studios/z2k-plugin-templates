@@ -516,7 +516,7 @@ Example:
 								const result = this.plugin.loadUserHelpers(this.plugin.settings.userHelpers);
 								if (!result.valid) {
 									new Notice('Failed to load custom helpers - check console');
-									console.error('Custom helpers error:', result.error);
+									console.error('[Z2K Templates] Custom helpers error:', result.error);
 								}
 							}
 							this.display(); // Re-render to show editor button
@@ -571,7 +571,7 @@ registerHelper('recentFiles', () => {
 								const result = this.plugin.loadUserHelpers(content);
 								if (!result.valid) {
 									new Notice('Failed to load custom helpers - check console');
-									console.error('Custom helpers error:', result.error);
+									console.error('[Z2K Templates] Custom helpers error:', result.error);
 								}
 							}
 						}).open();

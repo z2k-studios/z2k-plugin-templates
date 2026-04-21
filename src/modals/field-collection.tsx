@@ -304,7 +304,7 @@ const FieldCollectionForm = ({ templateState, userHelpers, onComplete, onCancel,
 		for (const fieldName of Object.keys(newFieldStates)) {
 			const fieldInfo = templateState.fieldInfos[fieldName];
 			if (!fieldInfo) {
-				console.error(`Field ${fieldName} not found in fieldInfos`);
+				console.error(`[Z2K Templates] Field ${fieldName} not found in fieldInfos`);
 				return true; // Skip validation if field not found
 			}
 

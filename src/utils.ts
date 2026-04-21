@@ -143,7 +143,7 @@ export class ErrorLogger {
 		try {
 			await this.app.vault.adapter.write(this.settings.errorLogPath, '');
 		} catch (error) {
-			console.error("Failed to clear error log:", error);
+			console.error("[Z2K Templates] Failed to clear error log:", error);
 		}
 	}
 
@@ -160,7 +160,7 @@ export class ErrorLogger {
 			await this.app.vault.adapter.write(logPath, newContent);
 			await this.truncateIfNeeded(logPath, newContent);
 		} catch (error) {
-			console.error("Failed to write to error log:", error);
+			console.error("[Z2K Templates] Failed to write to error log:", error);
 		}
 	}
 

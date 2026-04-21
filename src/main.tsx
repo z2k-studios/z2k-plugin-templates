@@ -69,7 +69,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			try {
 				return fn(...args);
 			} catch (e: any) {
-				console.error(`Helper '${name}' threw:`, e);
+				console.error(`[Z2K Templates] Helper '${name}' threw:`, e);
 				this.errorLogger?.log({
 					severity: 'error',
 					message: `Custom helper '${name}' threw an error: ${e.message}`,
@@ -151,7 +151,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			const result = this.loadUserHelpers(this.settings.userHelpers);
 			if (!result.valid) {
 				new Notice('Failed to load custom helpers - check console for details');
-				console.error('Custom helpers error:', result.error);
+				console.error('[Z2K Templates] Custom helpers error:', result.error);
 			}
 		}
 		this.refreshMainCommands(false); // Don't delete existing, since none exist yet
@@ -2720,15 +2720,15 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	private async handleErrors(error: unknown, context: "user" | "batch" = 'user') {
 		// Display error messages to the user and log them
 		if (error instanceof TemplatePluginError) {
-			console.error("TemplatePluginError: ", error.message);
+			console.error("[Z2K Templates] TemplatePluginError:", error.message);
 			await this.log("error", context, error.userMessage || error.message, error);
 		} else if (error instanceof UserCancelError) {
 			// Just exit, no need to show a message or log
 		} else if (error instanceof TemplateError) {
-			console.error("Template error: ", error.message);
+			console.error("[Z2K Templates] Template error:", error.message);
 			await this.log("error", context, error.message, error);
 		} else {
-			console.error("Unexpected error: ", error);
+			console.error("[Z2K Templates] Unexpected error:", error);
 			const message = error instanceof Error ? error.message : "An unexpected error occurred";
 			const wrappedError = new TemplatePluginError(message, error);
 			await this.log("error", context, message, wrappedError);
