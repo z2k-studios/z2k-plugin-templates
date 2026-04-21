@@ -358,7 +358,7 @@ export class Z2KTemplatesSettingTab extends PluginSettingTab {
 		const quickItems = quickGroup.createDiv({ cls: 'setting-items' });
 
 		new Setting(quickItems)
-			.setName('Quick Commands')
+			.setName('Quick commands')
 			.setDesc(createFragment(f => {
 				f.appendText('Commands for quickly creating files or inserting blocks from the command palette. ');
 				f.createEl('a', {
@@ -445,7 +445,7 @@ export class Z2KTemplatesSettingTab extends PluginSettingTab {
 		visibilitySetting.settingEl.toggle(this.plugin.settings.useTemplateFileExtensions);
 
 		new Setting(advancedItems)
-			.setName('Global Block')
+			.setName('Global block')
 			.setDesc(createFragment(f => {
 				f.appendText('Template content prepended to every template in this vault before rendering. Field declarations here can be overridden by system blocks or the template itself. ');
 				f.createEl('a', {
@@ -484,7 +484,7 @@ Example:
 			);
 
 		new Setting(advancedItems)
-			.setName('Custom Helpers')
+			.setName('Custom helpers')
 			.setDesc(createFragment(f => {
 				f.appendText('Register custom Handlebars helper functions using JavaScript. ');
 				f.createEl('a', {
@@ -532,7 +532,7 @@ Example:
 			);
 		if (this.plugin.settings.customHelpersEnabled) {
 			const editSetting = new Setting(advancedItems)
-				.setName('Edit Custom Helpers')
+				.setName('Edit custom helpers')
 				.addButton(button => button
 					.setButtonText('Edit Custom Helpers')
 					.onClick(() => {
