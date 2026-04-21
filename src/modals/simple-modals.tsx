@@ -149,13 +149,13 @@ const CardTypeSelector = ({ cardTypes, settings, onConfirm, onCancel }: CardType
 // Template Selection Modal
 // ------------------------------------------------------------------------------------------------
 export class TemplateSelectionModal extends Modal {
-	templates: PathFile[];
+	templates: { file: PathFile, isDefault: boolean }[];
 	settings: Z2KTemplatesPluginSettings;
 	resolve: (template: PathFile) => void;
 	reject: (error: Error) => void;
 	root: any; // For React root
 
-	constructor(app: App, templates: PathFile[], settings: Z2KTemplatesPluginSettings, resolve: (template: PathFile) => void, reject: (error: Error) => void){
+	constructor(app: App, templates: { file: PathFile, isDefault: boolean }[], settings: Z2KTemplatesPluginSettings, resolve: (template: PathFile) => void, reject: (error: Error) => void){
 		super(app);
 		this.templates = templates;
 		this.settings = settings;
@@ -199,7 +199,7 @@ export class TemplateSelectionModal extends Modal {
 }
 
 interface TemplateSelectorProps {
-	templates: PathFile[];
+	templates: { file: PathFile, isDefault: boolean }[];
 	settings: Z2KTemplatesPluginSettings;
 	onConfirm: (template: PathFile) => void;
 	onCancel: () => void;
@@ -207,33 +207,28 @@ interface TemplateSelectorProps {
 
 // React component for the modal content
 const TemplateSelector = ({ templates, settings, onConfirm, onCancel }: TemplateSelectorProps) => {
-	const getItems = (): { file: PathFile, name: string, cardType: string }[] => {
+	const getItems = (): { file: PathFile, name: string, cardType: string, isDefault: boolean }[] => {
 		const rootPath = normalizeFullPath(settings.templatesRootFolder);
-		return templates.map((template: PathFile) => {
-			let parentPath = normalizeFullPath(template.parentPath);
+		return templates.map((t) => {
+			let parentPath = normalizeFullPath(t.file.parentPath);
 			// Show path relative to templates root
 			if (rootPath && parentPath.startsWith(rootPath + '/')) {
 				parentPath = parentPath.slice(rootPath.length + 1);
 			} else if (parentPath === rootPath) {
 				parentPath = "";
 			}
-			return { file: template, name: template.basename, cardType: parentPath }
+			return { file: t.file, name: t.file.basename, cardType: parentPath, isDefault: t.isDefault }
 		});
 	}
 
 	const [searchTerm, setSearchTerm] = useState<string>('');
-	const [filteredItems, setFilteredItems] = useState<{ file: PathFile, name: string, cardType: string }[]>(getItems());
+	const [filteredItems, setFilteredItems] = useState<{ file: PathFile, name: string, cardType: string, isDefault: boolean }[]>(getItems());
 	const [selectedIndex, setSelectedIndex] = useState<number>(0);
 	const searchInputRef = useRef<HTMLInputElement>(null);
 	const listRef = useRef<HTMLDivElement>(null);
 
 	// Filter templates when search term changes
 	useEffect(() => {
-		// const filtered = templates.filter((template: PathFile) => {
-		// 	const nameMatch = template.basename.toLowerCase().includes(searchTerm.toLowerCase());
-		// 	const pathMatch = template.parentPath.toLowerCase().includes(searchTerm.toLowerCase()) || false;
-		// 	return nameMatch || pathMatch;
-		// });
 		setFilteredItems(
 			getItems().filter(item => {
 				const nameMatch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -325,17 +320,16 @@ const TemplateSelector = ({ templates, settings, onConfirm, onCancel }: Template
 				{filteredItems.length === 0 ? (
 					<div className="selection-empty-state template-list-empty-state">No templates found</div>
 				) : (
-					filteredItems.map((item: { file: PathFile, name: string, cardType: string }, index: number) => (
+					filteredItems.map((item, index) => (
 						<div
 							key={item.file.path}
 							className={`selection-item ${selectedIndex === index ? 'selected' : ''}`}
 							onClick={() => onConfirm(item.file)}
 							tabIndex={index + 2} // +2 because search is tabIndex 1
 						>
-							{/* <span className="selection-primary">{template.basename}</span>
-							<span className="selection-secondary">{template.parentPath || ''}</span> */}
 							<span className="selection-primary">
 								{highlightMatch(item.name, searchTerm)}
+								{item.isDefault && <span className="template-default-indicator" title="Default template">★</span>}
 							</span>
 							<span className="selection-secondary" title={item.cardType}>
 								{highlightMatch(item.cardType, searchTerm)}

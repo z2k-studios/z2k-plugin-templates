@@ -419,6 +419,14 @@
 	text-align: right;
 }
 
+.z2k .template-default-indicator {
+	margin-left: 6px;
+	font-size: 13px;
+	opacity: 0.45;
+	position: relative;
+	top: -1px;
+}
+
 .z2k .selection-empty-state {
 	display: flex;
 	align-items: center;

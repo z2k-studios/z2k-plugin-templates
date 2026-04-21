@@ -2114,23 +2114,39 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	// Returns templates sorted by proximity: closest card type first, alphabetical within each level.
 	// Distance = how many path segments the template's card type is above the requested card type.
 	// e.g. for card type "a/b": templates with card type "a/b" → distance 0, "a" → 1, "" → 2.
-	async getAssociatedTemplates(filter: "document-template" | "block-template", cardType: PathFolder): Promise<PathFile[]> {
+	// Templates with z2k_default: true in frontmatter rise to top within their distance group.
+	async getAssociatedTemplates(filter: "document-template" | "block-template", cardType: PathFolder): Promise<{ file: PathFile, isDefault: boolean }[]> {
 		const templatesRootPath = this.getTemplatesRootFolder().path;
 		if (!isSubPathOf(cardType.path, templatesRootPath)) {
 			throw new Error(`The selected ${cardRefNameLower(this.settings)} type folder is not inside your templates root folder.`);
 		}
 		const segCount = (p: string) => p === '' ? 0 : p.split('/').length;
 		const targetSegCount = segCount(cardType.path);
-		let ranked: { file: PathFile, distance: number }[] = [];
+		let ranked: { file: PathFile, distance: number, isDefault: boolean }[] = [];
 		for (const t of await this.getAllTemplates()) {
 			if (t.type !== filter) { continue; }
 			const tCardType = this.getTemplateCardType(t.file);
 			// Only include templates whose card type is an ancestor of (or equal to) the target
 			if (!isSubPathOf(cardType.path, tCardType.path)) { continue; }
-			ranked.push({ file: t.file, distance: targetSegCount - segCount(tCardType.path) });
+			let isDefault = false;
+			const tFile = this.app.vault.getAbstractFileByPath(t.file.path);
+			if (tFile instanceof TFile) {
+				isDefault = this.app.metadataCache.getFileCache(tFile)?.frontmatter?.["z2k_default"] === true;
+			} else {
+				try {
+					const content = await this.app.vault.adapter.read(t.file.path);
+					const { fm } = Z2KYamlDoc.splitFrontmatter(content);
+					if (fm) { isDefault = Z2KYamlDoc.fromString(fm).get("z2k_default") === true; }
+				} catch {}
+			}
+			ranked.push({ file: t.file, distance: targetSegCount - segCount(tCardType.path), isDefault });
 		}
-		ranked.sort((a, b) => a.distance - b.distance || a.file.path.localeCompare(b.file.path));
-		return ranked.map(r => r.file);
+		ranked.sort((a, b) =>
+			a.distance - b.distance ||
+			(a.isDefault === b.isDefault ? 0 : a.isDefault ? -1 : 1) ||
+			a.file.path.localeCompare(b.file.path)
+		);
+		return ranked.map(r => ({ file: r.file, isDefault: r.isDefault }));
 	}
 	// Derives the card type folder from a template's path by stripping the templates root prefix
 	// and at most one templates-named subfolder segment. Only one level of templates subfolder
