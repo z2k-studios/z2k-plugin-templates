@@ -48,6 +48,17 @@ interface RetryMetadata {
 	nextRetryAfter: number;  // Timestamp (ms since epoch)
 }
 
+// Mirrors TemplateMetadata keys — runtime counterpart since TS interfaces aren't available at runtime
+const TEMPLATE_METADATA_KEYS = new Set([
+	"z2k_template_name",
+	"z2k_template_version",
+	"z2k_template_author",
+	"z2k_template_suggested_title",
+	"z2k_template_description",
+	"z2k_template_type",
+	"z2k_template_default_fallback_handling",
+	"z2k_default",
+]);
 
 export default class Z2KTemplatesPlugin extends Plugin {
 	templateEngine: Z2KTemplateEngine;
@@ -1385,12 +1396,12 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				? await this.GetSystemBlocksContent(opts.cardTypeFolder)
 				: "";
 			let state = await this.parseTemplate(content, systemBlocksContent, this.settings.globalBlock, templateFileForParse);
+			this.extractTemplateMetadata(state);
 			let hadSourceTextField = !!state.fieldInfos["sourceText"];
 			// Convert sourceText to string for addPluginBuiltIns (handles all VarValueType cases)
 			const sourceTextStr = opts.fieldOverrides.sourceText != null ? String(opts.fieldOverrides.sourceText) : undefined;
 			await this.addYamlFieldValues(state); // System blocks already in state from parseTemplate
 			await this.addPluginBuiltIns(state, { sourceText: sourceTextStr, templateName: templateFileForParse.basename, fileCreationDate: opts.sourceFile?.stat.ctime, existingTitle: opts.existingTitle });
-			this.setSuggestedTitleFromYaml(state);
 			// For sourceFile: use original filename as suggestion if template doesn't specify one
 			if (opts.sourceFile) {
 				const tfi = state.fieldInfos["fileTitle"];
@@ -1442,6 +1453,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		try {
 			let content = await this.app.vault.read(opts.existingFile);
 			let state = await this.parseTemplate(content, "", "", pathFileFromTFile(opts.existingFile));
+			this.extractTemplateMetadata(state);
 			// Add global block YAML for field values (system blocks already in note from creation)
 			let globalBlockYaml = Z2KYamlDoc.splitFrontmatter(this.settings.globalBlock).fm;
 			await this.addYamlFieldValues(state, [globalBlockYaml]);
@@ -1512,6 +1524,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				content = await this.app.vault.adapter.read(opts.templateFile!.path);
 			}
 			let state = await this.parseTemplate(content, "", "", templateFileForParse);
+			this.extractTemplateMetadata(state);
 			let hadSourceTextField = !!state.fieldInfos["sourceText"];
 			// Add global block, system blocks, and existing file YAML for field values
 			let globalBlockYaml = Z2KYamlDoc.splitFrontmatter(this.settings.globalBlock).fm;
@@ -1884,7 +1897,11 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	async promptForFieldCollection(templateState: TemplateState): Promise<boolean> {
 		// Errors (including circular dependency errors) propagate to caller for handling
 		return await new Promise<boolean>((resolve, reject) => {
-			new FieldCollectionModal(this.app, `Field Collection for ${cardRefNameUpper(this.settings)}`, templateState, this.activeHelpers, resolve, reject).open();
+			const templateName = templateState.metadata.z2k_template_name;
+			const title = templateName
+				? `New ${cardRefNameUpper(this.settings)}: ${templateName}`
+				: `New ${cardRefNameUpper(this.settings)}`;
+			new FieldCollectionModal(this.app, title, templateState, this.activeHelpers, resolve, reject).open();
 		});
 	}
 	// Helpers
@@ -2115,38 +2132,47 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	// Distance = how many path segments the template's card type is above the requested card type.
 	// e.g. for card type "a/b": templates with card type "a/b" → distance 0, "a" → 1, "" → 2.
 	// Templates with z2k_default: true in frontmatter rise to top within their distance group.
-	async getAssociatedTemplates(filter: "document-template" | "block-template", cardType: PathFolder): Promise<{ file: PathFile, isDefault: boolean }[]> {
+	async getAssociatedTemplates(filter: "document-template" | "block-template", cardType: PathFolder): Promise<{ file: PathFile, isDefault: boolean, description?: string }[]> {
 		const templatesRootPath = this.getTemplatesRootFolder().path;
 		if (!isSubPathOf(cardType.path, templatesRootPath)) {
 			throw new Error(`The selected ${cardRefNameLower(this.settings)} type folder is not inside your templates root folder.`);
 		}
 		const segCount = (p: string) => p === '' ? 0 : p.split('/').length;
 		const targetSegCount = segCount(cardType.path);
-		let ranked: { file: PathFile, distance: number, isDefault: boolean }[] = [];
+		let ranked: { file: PathFile, distance: number, isDefault: boolean, description?: string }[] = [];
 		for (const t of await this.getAllTemplates()) {
 			if (t.type !== filter) { continue; }
 			const tCardType = this.getTemplateCardType(t.file);
 			// Only include templates whose card type is an ancestor of (or equal to) the target
 			if (!isSubPathOf(cardType.path, tCardType.path)) { continue; }
 			let isDefault = false;
+			let description: string | undefined;
 			const tFile = this.app.vault.getAbstractFileByPath(t.file.path);
 			if (tFile instanceof TFile) {
-				isDefault = this.app.metadataCache.getFileCache(tFile)?.frontmatter?.["z2k_default"] === true;
+				const fmCache = this.app.metadataCache.getFileCache(tFile)?.frontmatter;
+				isDefault = fmCache?.["z2k_default"] === true;
+				const desc = fmCache?.["z2k_template_description"];
+				if (typeof desc === "string") { description = desc; }
 			} else {
 				try {
 					const content = await this.app.vault.adapter.read(t.file.path);
 					const { fm } = Z2KYamlDoc.splitFrontmatter(content);
-					if (fm) { isDefault = Z2KYamlDoc.fromString(fm).get("z2k_default") === true; }
+					if (fm) {
+						const yaml = Z2KYamlDoc.fromString(fm);
+						isDefault = yaml.get("z2k_default") === true;
+						const desc = yaml.get("z2k_template_description");
+						if (typeof desc === "string") { description = desc; }
+					}
 				} catch {}
 			}
-			ranked.push({ file: t.file, distance: targetSegCount - segCount(tCardType.path), isDefault });
+			ranked.push({ file: t.file, distance: targetSegCount - segCount(tCardType.path), isDefault, description });
 		}
 		ranked.sort((a, b) =>
 			a.distance - b.distance ||
 			(a.isDefault === b.isDefault ? 0 : a.isDefault ? -1 : 1) ||
 			a.file.path.localeCompare(b.file.path)
 		);
-		return ranked.map(r => ({ file: r.file, isDefault: r.isDefault }));
+		return ranked.map(r => ({ file: r.file, isDefault: r.isDefault, description: r.description }));
 	}
 	// Derives the card type folder from a template's path by stripping the templates root prefix
 	// and at most one templates-named subfolder segment. Only one level of templates subfolder
@@ -2406,18 +2432,30 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		}
 		return fullPath;
 	}
-	setSuggestedTitleFromYaml(state: TemplateState) {
-		// look through all the yaml (including from blocks) and find any z2k_template_suggested_title field
+	// One-pass extraction of all plugin-reserved YAML keys into state.metadata.
+	// First-match-wins across all YAML sources (template + blocks).
+	extractTemplateMetadata(state: TemplateState) {
 		for (const yamlStr of state.templatesYaml) {
-			let yaml = Z2KYamlDoc.fromString(yamlStr);
-
-			let suggestedTitle = yaml.get("z2k_template_suggested_title");
-			if (suggestedTitle === undefined) { continue; } // not found in this yaml
-			if (typeof suggestedTitle !== "string") {
-				throw new TemplatePluginError(`z2k_template_suggested_title must be a string (got a ${typeof suggestedTitle})`);
+			const yaml = Z2KYamlDoc.fromString(yamlStr);
+			for (const key of TEMPLATE_METADATA_KEYS) {
+				if (key in state.metadata) { continue; } // first-match-wins
+				const value = yaml.get(key);
+				if (value === undefined) { continue; }
+				// Type validation for active metadata fields
+				if (key === "z2k_template_name" || key === "z2k_template_author" || key === "z2k_template_suggested_title" || key === "z2k_template_description") {
+					if (typeof value !== "string") {
+						throw new TemplatePluginError(`${key} must be a string (got a ${typeof value})`);
+					}
+				}
+				if (key === "z2k_template_version") {
+					if (typeof value !== "string" && typeof value !== "number") {
+						throw new TemplatePluginError(`${key} must be a string or number (got a ${typeof value})`);
+					}
+					(state.metadata as any)[key] = String(value);
+					continue;
+				}
+				(state.metadata as any)[key] = value;
 			}
-			state.fieldInfos["fileTitle"].suggest = suggestedTitle;
-			break; // take the first one we find
 		}
 	}
 	async addPluginBuiltIns(state: TemplateState, opts: { sourceText?: string, existingTitle?: string, templateName?: string, templateVersion?: string, templateAuthor?: string, fileCreationDate?: number } = {}) {
@@ -2437,65 +2475,28 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			value: this.settings.creator || "",
 		};
 
-		// template name
-		// try getting existing template name from yaml if not provided
-		if (!opts.templateName) {
-			for (const yamlStr of state.templatesYaml) {
-				let yaml = Z2KYamlDoc.fromString(yamlStr);
-				let templateName = yaml.get("z2k_template_name");
-				if (templateName === undefined) { continue; } // not found in this yaml
-				if (typeof templateName !== "string") {
-					throw new TemplatePluginError(`z2k_template_name must be a string (got a ${typeof templateName})`);
-				}
-				opts.templateName = templateName;
-				break; // take the first one we find
-			}
-		}
+		// templateName — opts take priority, then state.metadata
 		state.fieldInfos["templateName"] = {
 			fieldName: "templateName",
 			type: "text",
 			directives: ['no-prompt'],
-			value: opts.templateName || "",
+			value: opts.templateName || state.metadata.z2k_template_name || "",
 		};
 
-		// templateVersion - get from yaml if not provided
-		if (!opts.templateVersion) {
-			for (const yamlStr of state.templatesYaml) {
-				let yaml = Z2KYamlDoc.fromString(yamlStr);
-				let templateVersion = yaml.get("z2k_template_version");
-				if (templateVersion === undefined) { continue; }
-				if (typeof templateVersion !== "string" && typeof templateVersion !== "number") {
-					throw new TemplatePluginError(`z2k_template_version must be a string or number (got a ${typeof templateVersion})`);
-				}
-				opts.templateVersion = String(templateVersion);
-				break;
-			}
-		}
+		// templateVersion
 		state.fieldInfos["templateVersion"] = {
 			fieldName: "templateVersion",
 			type: "text",
 			directives: ['no-prompt'],
-			value: opts.templateVersion || "",
+			value: opts.templateVersion || state.metadata.z2k_template_version || "",
 		};
 
-		// templateAuthor - get from yaml if not provided
-		if (!opts.templateAuthor) {
-			for (const yamlStr of state.templatesYaml) {
-				let yaml = Z2KYamlDoc.fromString(yamlStr);
-				let templateAuthor = yaml.get("z2k_template_author");
-				if (templateAuthor === undefined) { continue; }
-				if (typeof templateAuthor !== "string") {
-					throw new TemplatePluginError(`z2k_template_author must be a string (got a ${typeof templateAuthor})`);
-				}
-				opts.templateAuthor = templateAuthor;
-				break;
-			}
-		}
+		// templateAuthor
 		state.fieldInfos["templateAuthor"] = {
 			fieldName: "templateAuthor",
 			type: "text",
 			directives: ['no-prompt'],
-			value: opts.templateAuthor || "",
+			value: opts.templateAuthor || state.metadata.z2k_template_author || "",
 		};
 
 		// fileTitle (aliased as noteTitle and cardTitle)
@@ -2513,6 +2514,10 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		}
 		if (tfi.suggest === undefined && tfi.value === undefined && !opts.existingTitle) {
 			tfi.suggest = "Untitled";
+		}
+		// Apply suggested title from metadata (overrides "Untitled" fallback when present)
+		if (state.metadata.z2k_template_suggested_title) {
+			tfi.suggest = state.metadata.z2k_template_suggested_title;
 		}
 		state.fieldInfos["fileTitle"] = tfi;
 
@@ -2538,7 +2543,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		// This allows templates to reference metadata from template files, system blocks, and existing files.
 		// YAML fields are added with 'no-prompt' directive to avoid re-prompting for existing data.
 		// Priority order: Built-ins < YAML fields < fieldInfo.value < Plugin built-ins < Overrides
-		// All frontmatter fields are included except Obsidian internal fields (currently only 'position').
+		// Plugin-reserved keys (TEMPLATE_METADATA_KEYS) are skipped — they live in state.metadata.
 		// User-facing fields like 'tags', 'aliases', and 'cssclasses' are included as they represent user data.
 		// Values are passed through with their native YAML types (string, number, array, etc.)
 		// TODO: Refactor to use valuesBySource pattern for explicit priority ordering instead of relying on call order
@@ -2555,8 +2560,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		if (!yamlData || typeof yamlData !== 'object') return;
 
 		for (const [key, value] of Object.entries(yamlData)) {
-			// Skip Obsidian internal fields
-			if (key === 'position') continue;
+			if (TEMPLATE_METADATA_KEYS.has(key)) { continue; }
 
 			// Skip if fieldInfo already has a value property (higher priority)
 			if (state.fieldInfos[key]?.value !== undefined) continue;
@@ -2580,9 +2584,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		if (doc.get("z2k_template_type") !== undefined) {
 			doc.set("z2k_template_type", "wip-content-file");
 		}
-		doc.del("z2k_template_suggested_title");
-		// NOTE: Do NOT delete z2k_template_default_fallback_handling here - the engine needs it for parsing
-		// It will be deleted later during finalization in cleanupYamlAfterFinalize
+		// NOTE: Do NOT delete z2k_template_suggested_title or z2k_template_default_fallback_handling here —
+		// extractTemplateMetadata needs them in the parsed YAML. Stripped in cleanupYamlAfterFinalize.
 		return doc.toString();
 	}
 	cleanupYamlAfterFinalize(fm: string): string {
@@ -2590,6 +2593,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		// Remove template-only YAML properties that should not appear in finalized output
 		const doc = Z2KYamlDoc.fromString(fm);
 		doc.del("z2k_template_default_fallback_handling");
+		doc.del("z2k_template_suggested_title");
+		doc.del("z2k_template_description");
 		// Only update z2k_template_type if it already exists
 		if (doc.get("z2k_template_type") !== undefined) {
 			doc.set("z2k_template_type", "finalized-content-file");
@@ -2602,6 +2607,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		doc.del("z2k_template_type");
 		doc.del("z2k_template_suggested_title");
 		doc.del("z2k_template_default_fallback_handling");
+		doc.del("z2k_template_description");
 		return doc.toString();
 	}
 	ensureSourceText(content: string, hadSourceTextField: boolean, sourceText: string): string {

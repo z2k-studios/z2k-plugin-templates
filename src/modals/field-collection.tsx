@@ -482,6 +482,9 @@ const FieldCollectionForm = ({ templateState, userHelpers, onComplete, onCancel,
 
 	return (
 		<form onSubmit={handleSubmit} className="field-collection-form">
+			{templateState.metadata.z2k_template_description && (
+				<div className="template-description">{templateState.metadata.z2k_template_description}</div>
+			)}
 			{templateState.fieldInfos['fileTitle'] && fieldStates['fileTitle']?.omitFromForm !== true && (
 				<div className="field-title-container">{getFieldContainer('fileTitle')}</div>
 			)}

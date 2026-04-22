@@ -569,6 +569,7 @@ class Z2KTemplateEngine {
 			fieldInfos: {},
 			referencedFields: new Set(),
 			resolvedValues: {},
+			metadata: {},
 		}
 
 		// Priority chain: built-in < global < system < block < main
@@ -1746,6 +1747,18 @@ class Z2KYamlDoc {
 	}
 }
 
+// All plugin-reserved YAML keys — one struct, not separate "metadata" vs "skip list"
+interface TemplateMetadata {
+	z2k_template_name?: string;
+	z2k_template_version?: string;
+	z2k_template_author?: string;
+	z2k_template_suggested_title?: string;
+	z2k_template_description?: string;
+	z2k_template_type?: string;
+	z2k_template_default_fallback_handling?: string;
+	z2k_default?: boolean;
+}
+
 interface TemplateState {
 	templates: string[];
 	templateASTs: AST.Program[];
@@ -1758,6 +1771,7 @@ interface TemplateState {
 	fieldInfos: Record<string, FieldInfo>; // There should be a fieldInfo for every field (so we can know what fields are in the template)
 	referencedFields: Set<string>; // Fields actually used in template (not just declared via fi)
 	resolvedValues: Record<string, VarValueType>;
+	metadata: TemplateMetadata;
 }
 
 type DataType = "text" | "number" | "date" | "datetime" | "boolean" | "singleSelect" | "multiSelect" | "titleText";
@@ -1813,6 +1827,7 @@ export {
 };
 export type {
 	TemplateState,
+	TemplateMetadata,
 	DataType,
 	VarValueType,
 	FieldInfo,
