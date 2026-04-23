@@ -1464,8 +1464,12 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			this.handleOverrides(state, opts.fieldOverrides, opts.uriKeys ?? new Set(), opts.promptMode || "all");
 			let hasFillableFields = this.hasFillableFields(state.fieldInfos);
 			// TODO: handle the case where fieldOverrides fills all fields and promptMode is "remaining"
-			if (!hasFillableFields && !opts.fieldOverrides) {
-				await this.logInfo("No fillable fields found in the template.");
+			if (!hasFillableFields && !opts.fieldOverrides && !opts.finalize) {
+				const hasAnyField = state.referencedFields.size > 0 || state.declaredFields.size > 0;
+				const msg = hasAnyField
+					? "Nothing to fill in — run Finalize Card to commit computed values."
+					: "No fields found in this note.";
+				await this.logInfo(msg);
 				return;
 			}
 			if (hasFillableFields && opts.promptMode !== "none") {

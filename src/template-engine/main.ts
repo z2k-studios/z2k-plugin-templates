@@ -568,6 +568,7 @@ class Z2KTemplateEngine {
 
 			fieldInfos: {},
 			referencedFields: new Set(),
+			declaredFields: new Set(),
 			resolvedValues: {},
 			metadata: {},
 		}
@@ -1230,6 +1231,7 @@ class Z2KTemplateEngine {
 		// Collect all fields actually referenced in template body (not just declared via fi)
 		// This is used to determine which fields should be prompted
 		const refs = state.referencedFields;
+		const decls = state.declaredFields;
 
 		function addIfFieldRef(node: AST.Node | undefined) {
 			if (node?.type === 'PathExpression') {
@@ -1239,6 +1241,19 @@ class Z2KTemplateEngine {
 					refs.add(path.parts[0]);
 				}
 			}
+		}
+
+		function getDeclaredFieldName(stmt: AST.MustacheStatement | AST.SubExpression): string | undefined {
+			// fi/fo field name comes from first positional param or hash `fieldName=`
+			const namedPair = stmt.hash?.pairs?.find(p => p.key === 'fieldName');
+			if (namedPair && namedPair.value.type === 'PathExpression') {
+				return (namedPair.value as AST.PathExpression).original;
+			}
+			const first = stmt.params?.[0];
+			if (first?.type === 'PathExpression') {
+				return (first as AST.PathExpression).original;
+			}
+			return undefined;
 		}
 
 		function visit(node: AST.Node) {
@@ -1253,7 +1268,9 @@ class Z2KTemplateEngine {
 					const helperName = stmt.path.type === 'PathExpression' ? (stmt.path as AST.PathExpression).original : '';
 					const isFieldInfoHelper = ['fi', 'fo', 'fieldInfo', 'fieldOutput'].includes(helperName);
 					if (isFieldInfoHelper) {
-						// fi/fo are declarations - don't count their params as references
+						// fi/fo are declarations - record name in declaredFields, don't count params as references
+						const declaredName = getDeclaredFieldName(stmt);
+						if (declaredName) { decls.add(declaredName); }
 						// But DO add the field to referencedFields for fo (it outputs the value)
 						if ((helperName === 'fo' || helperName === 'fieldOutput') && stmt.params?.[0]?.type === 'PathExpression') {
 							addIfFieldRef(stmt.params[0]);
@@ -1770,6 +1787,7 @@ interface TemplateState {
 
 	fieldInfos: Record<string, FieldInfo>; // There should be a fieldInfo for every field (so we can know what fields are in the template)
 	referencedFields: Set<string>; // Fields actually used in template (not just declared via fi)
+	declaredFields: Set<string>; // Fields declared via fi/fo helpers (not necessarily referenced)
 	resolvedValues: Record<string, VarValueType>;
 	metadata: TemplateMetadata;
 }
