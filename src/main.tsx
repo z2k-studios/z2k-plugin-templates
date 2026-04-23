@@ -11,6 +11,7 @@ import { Z2KTemplatesSettingTab } from './settings';
 import { CardTypeSelectionModal, TemplateSelectionModal, ConfirmationModal, ErrorModal, LogViewerModal } from './modals/simple-modals';
 import { FieldCollectionModal, buildDependencyMap, detectCircularDependencies, calculateFieldDependencyOrder } from './modals/field-collection';
 import { EditorModal, QuickCommandsModal } from './modals/editor-modals';
+import { createApi, Z2KTemplatesApi } from './api';
 
 
 // Command parameter interface for processCommand()
@@ -64,6 +65,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	templateEngine: Z2KTemplateEngine;
 	settings: Z2KTemplatesPluginSettings;
 	errorLogger: ErrorLogger;
+	api: Z2KTemplatesApi;
 	userHelperFunctions: Record<string, Function> = {};
 	// Returns user helpers only when the feature is enabled; empty object otherwise
 	get activeHelpers(): Record<string, Function> {
@@ -155,6 +157,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 
 	async onload() {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+		this.api = createApi(this);
 		this.templateEngine = new Z2KTemplateEngine();
 		this.errorLogger = new ErrorLogger(this.app, this.settings);
 		// Load user-defined custom helpers (only when enabled)
