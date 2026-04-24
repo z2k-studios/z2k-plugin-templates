@@ -18,6 +18,7 @@ Methods are grouped into namespaced sub-objects (e.g. `api.meta.*`). Groupings a
 
 Current namespaces:
 - `meta` — plugin identity (version, nomenclature)
+- `commands` — execute JSON command packages (create / continue / upsert / insertblock)
 
 ## Feature detection
 
@@ -50,6 +51,26 @@ this.register(dispose);
 ```
 
 Without this, stale registrations accumulate across reloads.
+
+## Commands namespace
+
+`api.commands.performJsonPackage(pkg)` executes a JSON command package using the same pipeline as URI and JSON-queue invocations. Errors propagate as rejected promises — no toasts. Returns `{ kind, filePath, finalized }`.
+
+```ts
+const result = await api.commands.performJsonPackage({
+    cmd: 'new',
+    templatePath: 'Templates/Meeting.md',
+    topic: 'Budget review',
+});
+// result.filePath  — path of the created file
+// result.finalized — true if all fields were resolved; false if the file is still WIP
+```
+
+The API defaults the `prompt` directive to `"remaining"` (prompt only when data is actually missing) and `openInEditor` to `false` (don't auto-switch the user's editor). Callers set either explicitly in the package to override.
+
+`api.commands.isEnabled()` returns `true` today. It's reserved for the per-plugin consent toggles in #195 — once that lands, callers should check it before performing commands. `performJsonPackage` throws `CommandsDisabledError` (exported from `'z2k-plugin-templates'`'s API) when disabled.
+
+The `fromJson` command is a URI-only wrapper for encoding a JSON string into a URI; it is rejected at the API entry point. Pass the inner package directly.
 
 ## Consent / awareness
 

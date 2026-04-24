@@ -12,6 +12,7 @@ import { CardTypeSelectionModal, TemplateSelectionModal, ConfirmationModal, Erro
 import { FieldCollectionModal, buildDependencyMap, detectCircularDependencies, calculateFieldDependencyOrder } from './modals/field-collection';
 import { EditorModal, QuickCommandsModal } from './modals/editor-modals';
 import { createApi, Z2KTemplatesApi } from './api';
+import { CommandResult } from './api/commands';
 
 
 // Command parameter interface for processCommand()
@@ -32,7 +33,8 @@ interface CommandParams {
 	finalize?: boolean | string;  // Can be boolean (from JSON) or string "true"/"false" (from URI)
 	location?: "file-top" | "file-bottom" | "header-top" | "header-bottom" | number | string;  // Allow any string/number
 	// Additional field data - can be string (JSON) or already parsed object
-	fieldData?: string | Record<string, VarValueType>;
+	// Values are typed as unknown here; processCommand narrows and validates them at runtime
+	fieldData?: string | Record<string, unknown>;
 	fieldData64?: string;  // Base64-encoded JSON (standard or URL-safe)
 	// For fromJson command
 	jsonData?: string;
@@ -197,7 +199,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			{
 				id: 'z2k-create-new-card',
 				name: `Create New ${cardRefNameUpper(this.settings)}`,
-				callback: () => this.createCard(),
+				callback: () => this.runWithErrorHandling(() => this.createCard({ openInEditor: true })),
 			},
 			{
 				id: 'z2k-create-card-from-selected-text',
@@ -205,7 +207,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				editorCheckCallback: (checking, editor) => {
 					const selectedText = editor.getSelection();
 					if (checking) { return selectedText.length > 0; } // Only enable if text is selected
-					this.createCard({ fromSelection: true });
+					this.runWithErrorHandling(() => this.createCard({ fromSelection: true, openInEditor: true }));
 				},
 			},
 			{
@@ -215,7 +217,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 					const activeFile = this.app.workspace.getActiveFile();
 					// Only enable if there's an active file and it's a markdown file
 					if (checking) { return !!activeFile && activeFile.extension === 'md'; }
-					this.createCard({ sourceFile: activeFile as TFile });
+					this.runWithErrorHandling(() => this.createCard({ sourceFile: activeFile as TFile, openInEditor: true }));
 				},
 			},
 			{
@@ -224,7 +226,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				checkCallback: (checking) => {
 					const activeFile = this.app.workspace.getActiveFile();
 					if (checking) { return !!activeFile && activeFile.extension === 'md'; }
-					this.continueCard({ existingFile: activeFile as TFile });
+					this.runWithErrorHandling(() => this.continueCard({ existingFile: activeFile as TFile }));
 				},
 			},
 			{
@@ -233,7 +235,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				checkCallback: (checking) => {
 					const activeFile = this.app.workspace.getActiveFile();
 					if (checking) { return !!activeFile && activeFile.extension === 'md'; }
-					this.continueCard({ existingFile: activeFile as TFile, promptMode: "none", finalize: true });
+					this.runWithErrorHandling(() => this.continueCard({ existingFile: activeFile as TFile, promptMode: "none", finalize: true }));
 				},
 			},
 			{
@@ -245,7 +247,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 						// Only enable if there's an active markdown file and no text is selected
 						return !!file && file.extension === 'md' && editor.getSelection().length === 0;
 					}
-					this.insertBlock();
+					this.runWithErrorHandling(() => this.insertBlock());
 				}
 			},
 			{
@@ -257,7 +259,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 						// Only enable if there's an active markdown file and text is selected
 						return !!file && file.extension === 'md' && editor.getSelection().length > 0;
 					}
-					this.insertBlock({ fromSelection: true });
+					this.runWithErrorHandling(() => this.insertBlock({ fromSelection: true }));
 				}
 			},
 			{
@@ -467,6 +469,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 					templateFile: template,
 					fieldOverrides,
 					fromSelection,
+					openInEditor: true,
 				});
 			}
 		} catch (error) { this.handleErrors(error); }
@@ -491,7 +494,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				menu.addItem((item) => {
 					item.setTitle(`Z2K: Create ${cardRefNameUpper(this.settings)} From Selection...`)
 						.onClick(() => {
-							this.createCard({ fromSelection: true });
+							this.runWithErrorHandling(() => this.createCard({ fromSelection: true, openInEditor: true }));
 						});
 				});
 			})
@@ -502,7 +505,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				if (!(folder instanceof TFolder)) return;
 				menu.addItem((item) => {
 					item.setTitle(`Z2K: Create New ${cardRefNameUpper(this.settings)} Here...`)
-						.onClick(() => this.createCard({ cardTypeFolder: pathFolderFromTFolder(folder as TFolder) }));
+						.onClick(() => this.runWithErrorHandling(() => this.createCard({ cardTypeFolder: pathFolderFromTFolder(folder as TFolder), openInEditor: true })));
 				});
 			})
 		);
@@ -517,7 +520,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				menu.addItem((item) => {
 					item.setTitle("Z2K: Insert Block Template...")
 						.onClick(() => {
-							this.insertBlock();
+							this.runWithErrorHandling(() => this.insertBlock());
 						});
 				});
 			})
@@ -533,7 +536,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				menu.addItem((item) => {
 					item.setTitle("Z2K: Insert Block Template Using Selection...")
 						.onClick(() => {
-							this.insertBlock({ fromSelection: true });
+							this.runWithErrorHandling(() => this.insertBlock({ fromSelection: true }));
 						});
 				});
 			})
@@ -628,7 +631,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				if (!(file instanceof TFile) || file.extension !== "md") { return; }
 				menu.addItem((item) => {
 					item.setTitle(`Z2K: Continue Filling This ${cardRefNameUpper(this.settings)}`)
-						.onClick(() => this.continueCard({ existingFile: file as TFile }));
+						.onClick(() => this.runWithErrorHandling(() => this.continueCard({ existingFile: file as TFile })));
 				});
 			})
 		);
@@ -637,7 +640,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				if (!(file instanceof TFile) || file.extension !== "md") { return; }
 				menu.addItem((item) => {
 					item.setTitle(`Z2K: Finalize This ${cardRefNameUpper(this.settings)}`)
-						.onClick(() => this.continueCard({ existingFile: file as TFile, promptMode: "none", finalize: true }));
+						.onClick(() => this.runWithErrorHandling(() => this.continueCard({ existingFile: file as TFile, promptMode: "none", finalize: true })));
 				});
 			})
 		);
@@ -645,14 +648,14 @@ export default class Z2KTemplatesPlugin extends Plugin {
 
 	registerURIHandler() {
 		this.registerObsidianProtocolHandler("z2k-templates", async (rawParams) => {
-			try {
+			await this.runWithErrorHandling(async () => {
 				// URL-decode all parameters and pass to processCommand
 				const cmdParams: CommandParams = {};
 				for (const key in rawParams) {
 					cmdParams[key] = decodeURIComponent(rawParams[key]);
 				}
-				await this.processCommand(cmdParams, 'user');
-			} catch (e) { this.handleErrors(e); }
+				await this.processCommand(cmdParams, true);
+			});
 		});
 	}
 
@@ -666,13 +669,14 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	// Called by: registerURIHandler (from URI), processQueueFile (from offline queue)
 	// Non-field parameters can be templatePath, TemplatePath, template-path, template_path, etc. for robustness
 	// but we should just say templatePath in the docs for simplicity in the docs.
-	private async processCommand(rawParams: CommandParams, context: "user" | "batch", isJsonSource: boolean = false): Promise<void> {
+	async processCommand(rawParams: CommandParams, showNotices: boolean, isJsonSource: boolean = false): Promise<CommandResult> {
 		const cps: Record<string, any> = {};  // Command parameters
 		const templateData: Record<string, any> = {};  // Template field data (preserves original keys)
 
 		const knownKeys = ['cmd', 'templatePath', 'blockPath', 'templateContents', 'blockContents',
 			'existingFilePath', 'destDir', 'destHeader', 'prompt', 'finalize', 'location',
 			'fieldData', 'fieldData64', 'jsonData', 'jsonData64',
+			'openInEditor',
 			'maxRetries', 'retryDelay'];
 
 		// Separate command params from template data
@@ -763,8 +767,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				if (!parsedParams || typeof parsedParams !== "object" || Array.isArray(parsedParams)) {
 					throw new TemplatePluginError("Command: 'jsonData' must be a valid JSON object (not array or null)");
 				}
-				// Recursive call with parsed JSON (inherit context, mark as JSON source)
-				return await this.processCommand(parsedParams as CommandParams, context, true);
+				// Recursive call with parsed JSON (inherit showNotices, mark as JSON source)
+				return await this.processCommand(parsedParams as CommandParams, showNotices, true);
 			} catch (e) {
 				if (e instanceof TemplatePluginError) throw e;
 				throw new TemplatePluginError("Command: Invalid jsonData (must be valid JSON)");
@@ -797,6 +801,25 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				}
 			} else {
 				throw new TemplatePluginError(`Command: Invalid finalize type (must be boolean or string)`);
+			}
+		}
+
+		// Validate and convert openInEditor (can be boolean or string "true"/"false")
+		let openInEditor: boolean = false;
+		if (cps.openInEditor !== undefined) {
+			if (typeof cps.openInEditor === 'boolean') {
+				openInEditor = cps.openInEditor;
+			} else if (typeof cps.openInEditor === 'string') {
+				const oieStr = cps.openInEditor.toLowerCase();
+				if (["true", "1", "yes"].includes(oieStr)) {
+					openInEditor = true;
+				} else if (["false", "0", "no"].includes(oieStr)) {
+					openInEditor = false;
+				} else {
+					throw new TemplatePluginError(`Command: Invalid openInEditor value '${cps.openInEditor}' (must be boolean or 'true'/'false')`);
+				}
+			} else {
+				throw new TemplatePluginError(`Command: Invalid openInEditor type (must be boolean or string)`);
 			}
 		}
 
@@ -873,7 +896,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			const cardTypeFolder = templateFile
 				? this.getTemplateCardType(templateFile)
 				: (destDir ?? pathFolderFrom(""));
-			await this.createCard({
+			return await this.createCard({
 				cardTypeFolder,
 				templateFile,
 				templateContent,
@@ -881,23 +904,25 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				uriKeys,
 				promptMode,
 				destDir,
-				finalize
+				finalize,
+				openInEditor,
+				showNotices,
 			});
-			return;
 		}
 
 		if (cmd === "continue") {
 			if (!existingFile) {
 				throw new TemplatePluginError("Command: 'continue' cmd requires 'existingFilePath'");
 			}
-			await this.continueCard({
+			return await this.continueCard({
 				existingFile,
 				fieldOverrides,
 				uriKeys,
 				promptMode,
-				finalize
+				finalize,
+				openInEditor,
+				showNotices,
 			});
-			return;
 		}
 
 		if (cmd === "upsert") {
@@ -909,8 +934,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			}
 			if (existingFile) {
 				// File exists → continue path
-				await this.continueCard({
-					existingFile, fieldOverrides, uriKeys, promptMode, finalize
+				return await this.continueCard({
+					existingFile, fieldOverrides, uriKeys, promptMode, finalize, openInEditor, showNotices,
 				});
 			} else {
 				// File doesn't exist → create at exact path
@@ -922,13 +947,14 @@ export default class Z2KTemplatesPlugin extends Plugin {
 					? this.getTemplateCardType(templateFile)
 					: (destDir ?? pathFolderFrom(""));
 				const targetFolder = pathFolderFromTFolder(await this.createFolder(folderPath));
-				await this.createCard({
+				return await this.createCard({
 					cardTypeFolder, templateFile, templateContent, fieldOverrides, uriKeys,
 					promptMode, destDir: targetFolder, finalize,
 					existingTitle: basename,
+					openInEditor,
+					showNotices,
 				});
 			}
-			return;
 		}
 
 		if (cmd === "insertblock") {
@@ -944,7 +970,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				}
 			}
 
-			await this.insertBlock({
+			return await this.insertBlock({
 				templateFile,
 				templateContent,
 				existingFile,
@@ -953,9 +979,10 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				fieldOverrides,
 				uriKeys,
 				promptMode,
-				finalize
+				finalize,
+				openInEditor,
+				showNotices,
 			});
-			return;
 		}
 
 		throw new TemplatePluginError(`Command: Unknown cmd '${cmd}'`);
@@ -1035,7 +1062,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		// Verify it's actually a directory
 		const stat = await adapter.stat(dirPath);
 		if (!stat || stat.type !== 'folder') {
-			await this.log('error', 'batch', `Queue path is not a directory: ${dirPath}`);
+			await this.log('error', false, `Queue path is not a directory: ${dirPath}`);
 			return;
 		}
 		this._processingQueue = true;
@@ -1110,7 +1137,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			cmdParams = JSON.parse(content) as CommandParams;
 		} catch (parseError) {
 			// Invalid JSON - log and rename to .TIMESTAMP.failed.json
-			await this.log('error', 'batch', `Invalid JSON in command file ${filePath}`);
+			await this.log('error', false, `Invalid JSON in command file ${filePath}`);
 			const failedPath = await this.getFailedPath(filePath);
 			await adapter.rename(filePath, failedPath);
 			return;
@@ -1118,7 +1145,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 
 		try {
 			// Execute command (JSON source - don't convert string types)
-			await this.processCommand(cmdParams, 'batch', true);
+			await this.processCommand(cmdParams, false, true);
 			// Success - archive or delete based on setting
 			const archiveDurationMs = parseDuration(this.settings.offlineCommandQueueArchiveDuration, 0);
 			if (archiveDurationMs > 0) {
@@ -1163,7 +1190,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 					cmdParams = JSON.parse(line) as CommandParams;
 				} catch (parseError) {
 					// Invalid JSON - log and collect
-					await this.log('error', 'batch', `Invalid JSON in command queue: ${line}`);
+					await this.log('error', false, `Invalid JSON in command queue: ${line}`);
 					failedLines.push(line);
 					if (pauseMs > 0 && i < lines.length - 1) {
 						await sleep(pauseMs);
@@ -1171,7 +1198,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 					continue;
 				}
 				try {
-					await this.processCommand(cmdParams, 'batch', true);
+					await this.processCommand(cmdParams, false, true);
 					succeededLines.push(line);
 				} catch (e) {
 					// Command execution failed - check if it has retry config
@@ -1191,7 +1218,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 						await this.handleCommandFailure(retryFilePath, e, cmdParams);
 					} else {
 						// No retries - collect failed line
-						await this.handleErrors(e, 'batch');
+						await this.handleErrors(e, false);
 						failedLines.push(line);
 					}
 				}
@@ -1228,7 +1255,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		const adapter = this.app.vault.adapter;
 
 		// Log error
-		await this.handleErrors(error, 'batch');
+		await this.handleErrors(error, false);
 
 		// Read command to check retry config if not provided
 		if (!cmdParams) {
@@ -1269,7 +1296,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			await adapter.rename(filePath, failedPath);
 			await adapter.remove(retryPath);
 
-			await this.log('error', 'batch', `Command failed after ${retryData.attempts} attempts: ${filePath}`);
+			await this.log('error', false, `Command failed after ${retryData.attempts} attempts: ${filePath}`);
 		} else {
 			// Schedule next retry
 			retryData.nextRetryAfter = Date.now() + retryDelayMs;
@@ -1353,98 +1380,106 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		fromSelection?: boolean,
 		finalize?: boolean,
 		existingTitle?: string, // Pre-set fileTitle (used by upsert to match target path)
-	}) {
-		try {
-			if (!opts) { opts = {}; }
-			if (!opts.fieldOverrides) { opts.fieldOverrides = {}; }
-			if (opts.sourceFile) {
-				opts.fieldOverrides.sourceText = await this.app.vault.read(opts.sourceFile);
+		openInEditor?: boolean, // When true, opens the resulting file in the workspace
+		showNotices?: boolean, // When true, errors/info messages show user-visible notices. Default true.
+	}): Promise<CommandResult> {
+		if (!opts) { opts = {}; }
+		if (!opts.fieldOverrides) { opts.fieldOverrides = {}; }
+		if (opts.sourceFile) {
+			opts.fieldOverrides.sourceText = await this.app.vault.read(opts.sourceFile);
+		}
+		if (opts.fromSelection) {
+			const editor = this.app.workspace.getActiveViewOfType(MarkdownView)?.editor;
+			if (editor) {
+				opts.fieldOverrides.sourceText = editor.getSelection();
 			}
-			if (opts.fromSelection) {
-				const editor = this.app.workspace.getActiveViewOfType(MarkdownView)?.editor;
-				if (editor) {
-					opts.fieldOverrides.sourceText = editor.getSelection();
-				}
-			}
+		}
 
-			if (!opts.templateContent) {
-				if (!opts.cardTypeFolder) {
-					opts.cardTypeFolder = await this.promptForCardTypeFolder();
-				}
-				if (!opts.templateFile) {
-					opts.templateFile = await this.promptForTemplateFile(opts.cardTypeFolder, "document-template");
-				}
-			}
+		if (!opts.templateContent) {
 			if (!opts.cardTypeFolder) {
-				opts.cardTypeFolder = pathFolderFrom("");
+				opts.cardTypeFolder = await this.promptForCardTypeFolder();
 			}
-			if (!opts.destDir) {
-				opts.destDir = opts.cardTypeFolder;
+			if (!opts.templateFile) {
+				opts.templateFile = await this.promptForTemplateFile(opts.cardTypeFolder, "document-template");
 			}
+		}
+		if (!opts.cardTypeFolder) {
+			opts.cardTypeFolder = pathFolderFrom("");
+		}
+		if (!opts.destDir) {
+			opts.destDir = opts.cardTypeFolder;
+		}
 
-			let content: string;
-			const templateFileForParse = opts.templateFile ?? pathFileFrom("(inline)");
-			if (opts.templateContent) {
-				content = opts.templateContent;
-			} else {
-				content = await this.app.vault.adapter.read(opts.templateFile!.path);
+		let content: string;
+		const templateFileForParse = opts.templateFile ?? pathFileFrom("(inline)");
+		if (opts.templateContent) {
+			content = opts.templateContent;
+		} else {
+			content = await this.app.vault.adapter.read(opts.templateFile!.path);
+		}
+		let { fm, body } = Z2KYamlDoc.splitFrontmatter(content);
+		if (fm.includes("{{>")) {
+			throw new TemplatePluginError("Block template partials ({{> ...}}) cannot be used in frontmatter.");
+		}
+		fm = this.updateYamlOnCreate(fm, templateFileForParse.basename);
+		content = Z2KYamlDoc.joinFrontmatter(fm, body);
+		let systemBlocksContent = opts.templateFile
+			? await this.GetSystemBlocksContent(opts.cardTypeFolder)
+			: "";
+		let state = await this.parseTemplate(content, systemBlocksContent, this.settings.globalBlock, templateFileForParse);
+		this.extractTemplateMetadata(state);
+		let hadSourceTextField = !!state.fieldInfos["sourceText"];
+		// Convert sourceText to string for addPluginBuiltIns (handles all VarValueType cases)
+		const sourceTextStr = opts.fieldOverrides.sourceText != null ? String(opts.fieldOverrides.sourceText) : undefined;
+		await this.addYamlFieldValues(state); // System blocks already in state from parseTemplate
+		await this.addPluginBuiltIns(state, { sourceText: sourceTextStr, templateName: templateFileForParse.basename, fileCreationDate: opts.sourceFile?.stat.ctime, existingTitle: opts.existingTitle });
+		// For sourceFile: use original filename as suggestion if template doesn't specify one
+		if (opts.sourceFile) {
+			const tfi = state.fieldInfos["fileTitle"];
+			if (tfi && tfi.value === undefined && tfi.suggest === undefined) {
+				tfi.suggest = opts.sourceFile.basename;
 			}
-			let { fm, body } = Z2KYamlDoc.splitFrontmatter(content);
-			if (fm.includes("{{>")) {
-				throw new TemplatePluginError("Block template partials ({{> ...}}) cannot be used in frontmatter.");
-			}
-			fm = this.updateYamlOnCreate(fm, templateFileForParse.basename);
-			content = Z2KYamlDoc.joinFrontmatter(fm, body);
-			let systemBlocksContent = opts.templateFile
-				? await this.GetSystemBlocksContent(opts.cardTypeFolder)
-				: "";
-			let state = await this.parseTemplate(content, systemBlocksContent, this.settings.globalBlock, templateFileForParse);
-			this.extractTemplateMetadata(state);
-			let hadSourceTextField = !!state.fieldInfos["sourceText"];
-			// Convert sourceText to string for addPluginBuiltIns (handles all VarValueType cases)
-			const sourceTextStr = opts.fieldOverrides.sourceText != null ? String(opts.fieldOverrides.sourceText) : undefined;
-			await this.addYamlFieldValues(state); // System blocks already in state from parseTemplate
-			await this.addPluginBuiltIns(state, { sourceText: sourceTextStr, templateName: templateFileForParse.basename, fileCreationDate: opts.sourceFile?.stat.ctime, existingTitle: opts.existingTitle });
-			// For sourceFile: use original filename as suggestion if template doesn't specify one
-			if (opts.sourceFile) {
-				const tfi = state.fieldInfos["fileTitle"];
-				if (tfi && tfi.value === undefined && tfi.suggest === undefined) {
-					tfi.suggest = opts.sourceFile.basename;
-				}
-			}
-			this.handleOverrides(state, opts.fieldOverrides, opts.uriKeys ?? new Set(), opts.promptMode || "all");
+		}
+		this.handleOverrides(state, opts.fieldOverrides, opts.uriKeys ?? new Set(), opts.promptMode || "remaining");
 
-			if (this.hasFillableFields(state.fieldInfos) && opts.promptMode !== "none") {
-				opts.finalize = await this.promptForFieldCollection(state);
-			} else {
-				this.resolveComputedFieldValues(state, opts.finalize ?? false);
-			}
+		if (this.hasFillableFields(state.fieldInfos) && opts.promptMode !== "none") {
+			opts.finalize = await this.promptForFieldCollection(state);
+		} else {
+			this.resolveComputedFieldValues(state, opts.finalize ?? false);
+		}
 
-			let { fm: fmOut, body: bodyOut } = Z2KTemplateEngine.renderTemplate(state, opts.finalize ?? false, this.activeHelpers);
-			if (opts.finalize) { fmOut = this.cleanupYamlAfterFinalize(fmOut); }
-			if (!hadSourceTextField && opts.fieldOverrides.sourceText != null) {
-				bodyOut += `\n\n${String(opts.fieldOverrides.sourceText)}\n`;
+		let { fm: fmOut, body: bodyOut } = Z2KTemplateEngine.renderTemplate(state, opts.finalize ?? false, this.activeHelpers);
+		if (opts.finalize) { fmOut = this.cleanupYamlAfterFinalize(fmOut); }
+		if (!hadSourceTextField && opts.fieldOverrides.sourceText != null) {
+			bodyOut += `\n\n${String(opts.fieldOverrides.sourceText)}\n`;
+		}
+		let contentOut = Z2KYamlDoc.joinFrontmatter(fmOut, bodyOut);
+		let title = this.getTitle(state.resolvedValues);
+		if (opts.fromSelection) {
+			const editor = this.app.workspace.getActiveViewOfType(MarkdownView)?.editor;
+			if (editor) { editor.replaceSelection(""); }
+		}
+		let filePath: string;
+		if (opts.sourceFile) {
+			// Rename-based flow: modify content, then rename/move (updates links)
+			await this.app.vault.modify(opts.sourceFile, contentOut);
+			const filename = this.getValidFilename(title);
+			const newPath = this.generateUniqueFilePath(opts.destDir.path, filename);
+			if (newPath !== opts.sourceFile.path) {
+				await this.app.fileManager.renameFile(opts.sourceFile, newPath);
 			}
-			let contentOut = Z2KYamlDoc.joinFrontmatter(fmOut, bodyOut);
-			let title = this.getTitle(state.resolvedValues);
-			if (opts.fromSelection) {
-				const editor = this.app.workspace.getActiveViewOfType(MarkdownView)?.editor;
-				if (editor) { editor.replaceSelection(""); }
+			filePath = opts.sourceFile.path;
+			if (opts.openInEditor) {
+				await this.app.workspace.openLinkText(filePath, "");
 			}
-			if (opts.sourceFile) {
-				// Rename-based flow: modify content, then rename/move (updates links)
-				await this.app.vault.modify(opts.sourceFile, contentOut);
-				const filename = this.getValidFilename(title);
-				const newPath = this.generateUniqueFilePath(opts.destDir.path, filename);
-				if (newPath !== opts.sourceFile.path) {
-					await this.app.fileManager.renameFile(opts.sourceFile, newPath);
-				}
-				await this.app.workspace.openLinkText(opts.sourceFile.path, "");
-			} else {
-				let newFile = await this.createFile(opts.destDir, title, contentOut);
-				await this.app.workspace.openLinkText(newFile.path, "");
+		} else {
+			let newFile = await this.createFile(opts.destDir, title, contentOut);
+			filePath = newFile.path;
+			if (opts.openInEditor) {
+				await this.app.workspace.openLinkText(filePath, "");
 			}
-		} catch (error) { this.handleErrors(error); }
+		}
+		return { kind: 'create', filePath, finalized: !!opts.finalize };
 	}
 	async continueCard(opts: {
 		existingFile: TFile,
@@ -1452,38 +1487,42 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		uriKeys?: Set<string>,
 		promptMode?: "none"|"remaining"|"all",
 		finalize?: boolean,
-	}) {
-		try {
-			let content = await this.app.vault.read(opts.existingFile);
-			let state = await this.parseTemplate(content, "", "", pathFileFromTFile(opts.existingFile));
-			this.extractTemplateMetadata(state);
-			// Add global block YAML for field values (system blocks already in note from creation)
-			let globalBlockYaml = Z2KYamlDoc.splitFrontmatter(this.settings.globalBlock).fm;
-			await this.addYamlFieldValues(state, [globalBlockYaml]);
-			await this.addPluginBuiltIns(state, { existingTitle: opts.existingFile.basename, fileCreationDate: opts.existingFile.stat.ctime });
-			this.handleOverrides(state, opts.fieldOverrides, opts.uriKeys ?? new Set(), opts.promptMode || "all");
-			let hasFillableFields = this.hasFillableFields(state.fieldInfos);
-			// TODO: handle the case where fieldOverrides fills all fields and promptMode is "remaining"
-			if (!hasFillableFields && !opts.fieldOverrides && !opts.finalize) {
-				const hasAnyField = state.referencedFields.size > 0 || state.declaredFields.size > 0;
-				const msg = hasAnyField
-					? "Nothing to fill in — run Finalize Card to commit computed values."
-					: "No fields found in this note.";
-				await this.logInfo(msg);
-				return;
-			}
-			if (hasFillableFields && opts.promptMode !== "none") {
-				opts.finalize = await this.promptForFieldCollection(state);
-			} else {
-				this.resolveComputedFieldValues(state, opts.finalize ?? false);
-			}
+		openInEditor?: boolean, // When true, brings the target file to focus after the write
+		showNotices?: boolean, // When true, errors/info messages show user-visible notices. Default true.
+	}): Promise<CommandResult> {
+		let content = await this.app.vault.read(opts.existingFile);
+		let state = await this.parseTemplate(content, "", "", pathFileFromTFile(opts.existingFile));
+		this.extractTemplateMetadata(state);
+		// Add global block YAML for field values (system blocks already in note from creation)
+		let globalBlockYaml = Z2KYamlDoc.splitFrontmatter(this.settings.globalBlock).fm;
+		await this.addYamlFieldValues(state, [globalBlockYaml]);
+		await this.addPluginBuiltIns(state, { existingTitle: opts.existingFile.basename, fileCreationDate: opts.existingFile.stat.ctime });
+		this.handleOverrides(state, opts.fieldOverrides, opts.uriKeys ?? new Set(), opts.promptMode || "remaining");
+		let hasFillableFields = this.hasFillableFields(state.fieldInfos);
+		// TODO: handle the case where fieldOverrides fills all fields and promptMode is "remaining"
+		if (!hasFillableFields && !opts.fieldOverrides && !opts.finalize) {
+			const hasAnyField = state.referencedFields.size > 0 || state.declaredFields.size > 0;
+			const msg = hasAnyField
+				? "Nothing to fill in — run Finalize Card to commit computed values."
+				: "No fields found in this note.";
+			await this.logInfo(msg, opts.showNotices ?? true);
+			return { kind: 'continue', filePath: opts.existingFile.path, finalized: !!opts.finalize };
+		}
+		if (hasFillableFields && opts.promptMode !== "none") {
+			opts.finalize = await this.promptForFieldCollection(state);
+		} else {
+			this.resolveComputedFieldValues(state, opts.finalize ?? false);
+		}
 
-			let { fm, body } = Z2KTemplateEngine.renderTemplate(state, opts.finalize ?? false, this.activeHelpers);
-			if (opts.finalize) { fm = this.cleanupYamlAfterFinalize(fm); }
-			let contentOut = Z2KYamlDoc.joinFrontmatter(fm, body);
-			let title = this.getTitle(state.resolvedValues);
-			await this.updateTitleAndContent(opts.existingFile, title, contentOut);
-		} catch (error) { this.handleErrors(error); }
+		let { fm, body } = Z2KTemplateEngine.renderTemplate(state, opts.finalize ?? false, this.activeHelpers);
+		if (opts.finalize) { fm = this.cleanupYamlAfterFinalize(fm); }
+		let contentOut = Z2KYamlDoc.joinFrontmatter(fm, body);
+		let title = this.getTitle(state.resolvedValues);
+		await this.updateTitleAndContent(opts.existingFile, title, contentOut);
+		if (opts.openInEditor) {
+			await this.app.workspace.openLinkText(opts.existingFile.path, "");
+		}
+		return { kind: 'continue', filePath: opts.existingFile.path, finalized: !!opts.finalize };
 	}
 	async insertBlock(opts?: {
 		templateFile?: PathFile,
@@ -1497,114 +1536,121 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		promptMode?: "none"|"remaining"|"all",
 		fromSelection?: boolean,
 		finalize?: boolean,
-	}) {
-		try {
-			if (!opts) { opts = {}; }
-			if (!opts.fieldOverrides) { opts.fieldOverrides = {}; }
-			if (!opts.existingFile) { opts.existingFile = this.getOpenFileOrThrow(); }
-			let editor: Editor | null = null;
-			if (!opts.location && !opts.destHeader) {
-				editor = this.getEditorOrThrow();
-				// Guard: don't allow insertion into frontmatter
-				const fmEnd = this.app.metadataCache.getFileCache(opts.existingFile)?.frontmatterPosition?.end?.line ?? -1;
-				if (fmEnd >= 0) {
-					const checkLine = opts.fromSelection ? editor.getCursor("from").line : editor.getCursor().line;
-					if (checkLine <= fmEnd) {
-						throw new TemplatePluginError("Block templates cannot be inserted into frontmatter.");
-					}
-				}
-				if (opts.fromSelection) {
-					opts.fieldOverrides.sourceText = editor.getSelection();
+		openInEditor?: boolean, // When true, brings the target file to focus after the write
+		showNotices?: boolean, // When true, errors/info messages show user-visible notices. Default true.
+	}): Promise<CommandResult> {
+		if (!opts) { opts = {}; }
+		if (!opts.fieldOverrides) { opts.fieldOverrides = {}; }
+		if (!opts.existingFile) { opts.existingFile = this.getOpenFileOrThrow(); }
+		let editor: Editor | null = null;
+		if (!opts.location && !opts.destHeader) {
+			editor = this.getEditorOrThrow();
+			// Guard: don't allow insertion into frontmatter
+			const fmEnd = this.app.metadataCache.getFileCache(opts.existingFile)?.frontmatterPosition?.end?.line ?? -1;
+			if (fmEnd >= 0) {
+				const checkLine = opts.fromSelection ? editor.getCursor("from").line : editor.getCursor().line;
+				if (checkLine <= fmEnd) {
+					throw new TemplatePluginError("Block templates cannot be inserted into frontmatter.");
 				}
 			}
-			if (!opts.templateFile && !opts.templateContent) {
-				const scopeDir = opts.blockTypeFolder ?? pathFolderFromTFolder(opts.existingFile.parent as TFolder);
-				opts.templateFile = await this.promptForTemplateFile(scopeDir, "block-template");
+			if (opts.fromSelection) {
+				opts.fieldOverrides.sourceText = editor.getSelection();
 			}
+		}
+		if (!opts.templateFile && !opts.templateContent) {
+			const scopeDir = opts.blockTypeFolder ?? pathFolderFromTFolder(opts.existingFile.parent as TFolder);
+			opts.templateFile = await this.promptForTemplateFile(scopeDir, "block-template");
+		}
 
-			// Parse and resolve block
-			const templateFileForParse = opts.templateFile ?? pathFileFrom("(inline)");
-			let content: string;
-			if (opts.templateContent) {
-				content = opts.templateContent;
+		// Parse and resolve block
+		const templateFileForParse = opts.templateFile ?? pathFileFrom("(inline)");
+		let content: string;
+		if (opts.templateContent) {
+			content = opts.templateContent;
+		} else {
+			content = await this.app.vault.adapter.read(opts.templateFile!.path);
+		}
+		let state = await this.parseTemplate(content, "", "", templateFileForParse);
+		this.extractTemplateMetadata(state);
+		let hadSourceTextField = !!state.fieldInfos["sourceText"];
+		// Add global block, system blocks, and existing file YAML for field values
+		let globalBlockYaml = Z2KYamlDoc.splitFrontmatter(this.settings.globalBlock).fm;
+		let systemBlocksContent = opts.templateFile
+			? await this.GetSystemBlocksContent(this.getTemplateCardType(opts.templateFile))
+			: "";
+		let systemBlocksYaml = Z2KYamlDoc.splitFrontmatter(systemBlocksContent).fm;
+		let existingFileContent = await this.app.vault.read(opts.existingFile);
+		let existingFileYaml = Z2KYamlDoc.splitFrontmatter(existingFileContent).fm;
+		await this.addYamlFieldValues(state, [globalBlockYaml, systemBlocksYaml, existingFileYaml]);
+		// Convert sourceText to string for addPluginBuiltIns (handles all VarValueType cases)
+		const sourceTextStr = opts.fieldOverrides.sourceText != null ? String(opts.fieldOverrides.sourceText) : undefined;
+		await this.addPluginBuiltIns(state, { sourceText: sourceTextStr, existingTitle: opts.existingFile.basename, fileCreationDate: opts.existingFile.stat.ctime });
+		this.handleOverrides(state, opts.fieldOverrides, opts.uriKeys ?? new Set(), opts.promptMode || "remaining");
+
+		// if (this.hasFillableFields(state.fieldInfos) && opts.promptMode !== "none") {
+		if (opts.promptMode !== "none") {
+			opts.finalize = await this.promptForFieldCollection(state);
+		} else {
+			this.resolveComputedFieldValues(state, opts.finalize ?? false);
+		}
+
+		let { fm: blockFm, body: blockBody } = Z2KTemplateEngine.renderTemplate(state, opts.finalize ?? false, this.activeHelpers);
+		if (opts.finalize) { blockFm = this.cleanupYamlAfterFinalize(blockFm); }
+		blockFm = this.updateBlockYamlOnInsert(blockFm);
+		if (!hadSourceTextField && opts.fieldOverrides.sourceText != null) {
+			blockBody += `\n\n${String(opts.fieldOverrides.sourceText)}\n`;
+		}
+
+		// Insert into body: file position, header position, line number, or editor mode
+		let newFileContent: string;
+		const fileContent = await this.app.vault.read(opts.existingFile);
+		const { fm: fileFm, body: fileBody } = Z2KYamlDoc.splitFrontmatter(fileContent);
+		const mergedFm = Z2KYamlDoc.mergeLastWins([fileFm, blockFm]);
+
+		let newBody: string;
+		if (opts.location === "file-top") {
+			// Insert at top of file (first line of content after frontmatter)
+			newBody = blockBody + fileBody;
+		} else if (opts.location === "file-bottom") {
+			// Insert at bottom of file
+			newBody = fileBody + "\n" + blockBody;
+		} else if (opts.location === "header-top" || opts.location === "header-bottom") {
+			// Insert at header position
+			if (!opts.destHeader) {
+				throw new TemplatePluginError("destHeader is required when location is 'header-top' or 'header-bottom'");
+			}
+			newBody = this.insertIntoHeaderSection(fileBody, opts.destHeader, blockBody, opts.location);
+		} else if (typeof opts.location === "number") {
+			// Insert at specific line number
+			newBody = this.insertAtLineNumber(fileBody, opts.location, blockBody);
+		} else if (opts.destHeader) {
+			// Backward compatibility: if destHeader is specified without location, use header-top
+			newBody = this.insertIntoHeaderSection(fileBody, opts.destHeader, blockBody, "header-top");
+		} else {
+			// Editor mode: insert at cursor or replace selection
+			const editor = this.getEditorOrThrow();
+			if (opts.fromSelection) {
+				editor.replaceSelection(blockBody);
 			} else {
-				content = await this.app.vault.adapter.read(opts.templateFile!.path);
+				editor.replaceRange(blockBody, editor.getCursor());
 			}
-			let state = await this.parseTemplate(content, "", "", templateFileForParse);
-			this.extractTemplateMetadata(state);
-			let hadSourceTextField = !!state.fieldInfos["sourceText"];
-			// Add global block, system blocks, and existing file YAML for field values
-			let globalBlockYaml = Z2KYamlDoc.splitFrontmatter(this.settings.globalBlock).fm;
-			let systemBlocksContent = opts.templateFile
-				? await this.GetSystemBlocksContent(this.getTemplateCardType(opts.templateFile))
-				: "";
-			let systemBlocksYaml = Z2KYamlDoc.splitFrontmatter(systemBlocksContent).fm;
-			let existingFileContent = await this.app.vault.read(opts.existingFile);
-			let existingFileYaml = Z2KYamlDoc.splitFrontmatter(existingFileContent).fm;
-			await this.addYamlFieldValues(state, [globalBlockYaml, systemBlocksYaml, existingFileYaml]);
-			// Convert sourceText to string for addPluginBuiltIns (handles all VarValueType cases)
-			const sourceTextStr = opts.fieldOverrides.sourceText != null ? String(opts.fieldOverrides.sourceText) : undefined;
-			await this.addPluginBuiltIns(state, { sourceText: sourceTextStr, existingTitle: opts.existingFile.basename, fileCreationDate: opts.existingFile.stat.ctime });
-			this.handleOverrides(state, opts.fieldOverrides, opts.uriKeys ?? new Set(), opts.promptMode || "all");
-
-			// if (this.hasFillableFields(state.fieldInfos) && opts.promptMode !== "none") {
-			if (opts.promptMode !== "none") {
-				opts.finalize = await this.promptForFieldCollection(state);
-			} else {
-				this.resolveComputedFieldValues(state, opts.finalize ?? false);
-			}
-
-			let { fm: blockFm, body: blockBody } = Z2KTemplateEngine.renderTemplate(state, opts.finalize ?? false, this.activeHelpers);
-			if (opts.finalize) { blockFm = this.cleanupYamlAfterFinalize(blockFm); }
-			blockFm = this.updateBlockYamlOnInsert(blockFm);
-			if (!hadSourceTextField && opts.fieldOverrides.sourceText != null) {
-				blockBody += `\n\n${String(opts.fieldOverrides.sourceText)}\n`;
-			}
-
-			// Insert into body: file position, header position, line number, or editor mode
-			let newFileContent: string;
-			const fileContent = await this.app.vault.read(opts.existingFile);
-			const { fm: fileFm, body: fileBody } = Z2KYamlDoc.splitFrontmatter(fileContent);
-			const mergedFm = Z2KYamlDoc.mergeLastWins([fileFm, blockFm]);
-
-			let newBody: string;
-			if (opts.location === "file-top") {
-				// Insert at top of file (first line of content after frontmatter)
-				newBody = blockBody + fileBody;
-			} else if (opts.location === "file-bottom") {
-				// Insert at bottom of file
-				newBody = fileBody + "\n" + blockBody;
-			} else if (opts.location === "header-top" || opts.location === "header-bottom") {
-				// Insert at header position
-				if (!opts.destHeader) {
-					throw new TemplatePluginError("destHeader is required when location is 'header-top' or 'header-bottom'");
-				}
-				newBody = this.insertIntoHeaderSection(fileBody, opts.destHeader, blockBody, opts.location);
-			} else if (typeof opts.location === "number") {
-				// Insert at specific line number
-				newBody = this.insertAtLineNumber(fileBody, opts.location, blockBody);
-			} else if (opts.destHeader) {
-				// Backward compatibility: if destHeader is specified without location, use header-top
-				newBody = this.insertIntoHeaderSection(fileBody, opts.destHeader, blockBody, "header-top");
-			} else {
-				// Editor mode: insert at cursor or replace selection
-				const editor = this.getEditorOrThrow();
-				if (opts.fromSelection) {
-					editor.replaceSelection(blockBody);
-				} else {
-					editor.replaceRange(blockBody, editor.getCursor());
-				}
-				const full = editor.getValue();
-				const { fm: fileFm2, body: newBody2 } = Z2KYamlDoc.splitFrontmatter(full);
-				const mergedFm2 = Z2KYamlDoc.mergeLastWins([fileFm2, blockFm]);
-				newFileContent = Z2KYamlDoc.joinFrontmatter(mergedFm2, newBody2);
-				await this.app.vault.modify(opts.existingFile, newFileContent);
-				return;
-			}
-
-			newFileContent = Z2KYamlDoc.joinFrontmatter(mergedFm, newBody);
+			const full = editor.getValue();
+			const { fm: fileFm2, body: newBody2 } = Z2KYamlDoc.splitFrontmatter(full);
+			const mergedFm2 = Z2KYamlDoc.mergeLastWins([fileFm2, blockFm]);
+			newFileContent = Z2KYamlDoc.joinFrontmatter(mergedFm2, newBody2);
 			await this.app.vault.modify(opts.existingFile, newFileContent);
-		} catch (error) { this.handleErrors(error); }
+			if (opts.openInEditor) {
+				await this.app.workspace.openLinkText(opts.existingFile.path, "");
+			}
+			return { kind: 'insertBlock', filePath: opts.existingFile.path, finalized: !!opts.finalize };
+		}
+
+		newFileContent = Z2KYamlDoc.joinFrontmatter(mergedFm, newBody);
+		await this.app.vault.modify(opts.existingFile, newFileContent);
+		if (opts.openInEditor) {
+			await this.app.workspace.openLinkText(opts.existingFile.path, "");
+		}
+		return { kind: 'insertBlock', filePath: opts.existingFile.path, finalized: !!opts.finalize };
 	}
 
 	// de-duplication helper functions
@@ -2694,16 +2740,16 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	}
 
 	// Logging and error handling
-	async logWarn(message: string, context: "user" | "batch" = 'user') {
-		await this.log("warn", context, message);
+	async logWarn(message: string, showNotices: boolean = true) {
+		await this.log("warn", showNotices, message);
 	}
-	async logInfo(message: string, context: "user" | "batch" = 'user') {
-		await this.log("info", context, message);
+	async logInfo(message: string, showNotices: boolean = true) {
+		await this.log("info", showNotices, message);
 	}
-	async logDebug(message: string, context: "user" | "batch" = 'user') {
-		await this.log("debug", context, message);
+	async logDebug(message: string, showNotices: boolean = true) {
+		await this.log("debug", showNotices, message);
 	}
-	async log(severity: ErrorSeverity, context: "user" | "batch", message: string, error?: Error) {
+	async log(severity: ErrorSeverity, showNotices: boolean, message: string, error?: Error) {
 		// Don't log UserCancelError (user intentionally cancelled)
 		if (error instanceof UserCancelError) {
 			return;
@@ -2716,9 +2762,9 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			error
 		});
 
-		// Handle user notifications (only for user-initiated commands)
-		if (context === 'batch') {
-			return; // Batch mode - no notifications
+		// UI notifications only when requested (suppressed for batch / API / any programmatic caller)
+		if (!showNotices) {
+			return;
 		}
 
 		// Show modal for errors
@@ -2730,21 +2776,32 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			new Notice(message);
 		}
 	}
-	private async handleErrors(error: unknown, context: "user" | "batch" = 'user') {
+	// Runs an async operation and routes any errors through handleErrors.
+	// Use at call sites that want the standard user-facing error handling (toast / modal / log).
+	// Callers that want errors to propagate (e.g. the plugin API) should skip this and invoke directly.
+	async runWithErrorHandling<T>(fn: () => Promise<T>, showNotices: boolean = true): Promise<T | undefined> {
+		try {
+			return await fn();
+		} catch (error) {
+			await this.handleErrors(error, showNotices);
+			return undefined;
+		}
+	}
+	private async handleErrors(error: unknown, showNotices: boolean = true) {
 		// Display error messages to the user and log them
 		if (error instanceof TemplatePluginError) {
 			console.error("[Z2K Templates] TemplatePluginError:", error.message);
-			await this.log("error", context, error.userMessage || error.message, error);
+			await this.log("error", showNotices, error.userMessage || error.message, error);
 		} else if (error instanceof UserCancelError) {
 			// Just exit, no need to show a message or log
 		} else if (error instanceof TemplateError) {
 			console.error("[Z2K Templates] Template error:", error.message);
-			await this.log("error", context, error.message, error);
+			await this.log("error", showNotices, error.message, error);
 		} else {
 			console.error("[Z2K Templates] Unexpected error:", error);
 			const message = error instanceof Error ? error.message : "An unexpected error occurred";
 			const wrappedError = new TemplatePluginError(message, error);
-			await this.log("error", context, message, wrappedError);
+			await this.log("error", showNotices, message, wrappedError);
 		}
 	}
 
