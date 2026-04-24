@@ -11,7 +11,7 @@ import { Z2KTemplatesSettingTab } from './settings';
 import { CardTypeSelectionModal, TemplateSelectionModal, ConfirmationModal, ErrorModal, LogViewerModal } from './modals/simple-modals';
 import { FieldCollectionModal, buildDependencyMap, detectCircularDependencies, calculateFieldDependencyOrder } from './modals/field-collection';
 import { EditorModal, QuickCommandsModal } from './modals/editor-modals';
-import { createApi, Z2KTemplatesApi } from './api';
+import { createApi, Z2KTemplatesApi, BuiltInContext, BuiltInProvider } from './api';
 import { CommandResult } from './api/commands';
 
 
@@ -69,10 +69,151 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	errorLogger: ErrorLogger;
 	api: Z2KTemplatesApi;
 	userHelperFunctions: Record<string, Function> = {};
-	// Returns user helpers only when the feature is enabled; empty object otherwise
+
+	// Plugin-registered helpers and built-in fields (issue #169).
+	// Outer Map key is the registering plugin's id; inner Map is name -> fn/provider.
+	// Insertion order is preserved, which bare-name transfer-on-unregister relies on.
+	private pluginHelpers: Map<string, Map<string, Function>> = new Map();
+	private pluginBuiltIns: Map<string, Map<string, BuiltInProvider>> = new Map();
+	// Reverse lookup: who currently owns the bare (unprefixed) helper/built-in name.
+	// User-written helpers always win over plugins; user ownership is implicit
+	// (checked via userHelperFunctions) rather than stored here.
+	private bareHelperOwner: Map<string, string> = new Map();
+	private bareBuiltInOwner: Map<string, string> = new Map();
+
+	// Returns the merged set of helpers available to the engine:
+	// user-written helpers (if enabled) plus plugin-registered helpers (if master + per-plugin enabled),
+	// with collision resolution already baked in — user helpers claim bare names outright; plugins
+	// get their bare name only when no one else has claimed it, and always get their prefixed name.
 	get activeHelpers(): Record<string, Function> {
-		return this.settings.customHelpersEnabled ? this.userHelperFunctions : {};
+		const out: Record<string, Function> = {};
+		if (this.settings.pluginHelpersEnabled) {
+			for (const [pluginId, helpers] of this.pluginHelpers) {
+				if (!this.isPluginRegistrationEnabled(pluginId)) { continue; }
+				for (const [name, fn] of helpers) {
+					out[this.pluginPrefixedName(pluginId, name)] = fn;
+					if (this.bareHelperOwner.get(name) === pluginId) {
+						out[name] = fn;
+					}
+				}
+			}
+		}
+		if (this.settings.userHelpersEnabled) {
+			for (const [name, fn] of Object.entries(this.userHelperFunctions)) {
+				out[name] = fn; // user helpers override any bare-name plugin registration
+			}
+		}
+		return out;
 	}
+
+	// Build the Handlebars-safe prefixed name for a plugin-registered helper/built-in.
+	// Obsidian plugin ids are kebab-case by convention, but Handlebars path expressions only
+	// allow [a-zA-Z0-9_], so any non-identifier characters in the id are rewritten to '_'.
+	// The internal tracking maps stay keyed by the real pluginId — only the template-facing
+	// name goes through this sanitizer.
+	private pluginPrefixedName(pluginId: string, name: string): string {
+		return `${pluginId.replace(/[^a-zA-Z0-9_]/g, '_')}__${name}`;
+	}
+
+	isPluginRegistrationEnabled(pluginId: string): boolean {
+		if (!this.settings.pluginHelpersEnabled) { return false; }
+		const perPlugin = this.settings.perPluginEnabled[pluginId];
+		return perPlugin !== false; // missing or true = enabled
+	}
+
+	hasPluginHelper(pluginId: string, name: string): boolean {
+		return this.pluginHelpers.get(pluginId)?.has(name) ?? false;
+	}
+
+	hasPluginBuiltIn(pluginId: string, name: string): boolean {
+		return this.pluginBuiltIns.get(pluginId)?.has(name) ?? false;
+	}
+
+	registerPluginHelper(pluginId: string, name: string, fn: Function): void {
+		const wrapped = this.wrapHelper(this.pluginPrefixedName(pluginId, name), fn);
+		let plugMap = this.pluginHelpers.get(pluginId);
+		if (!plugMap) {
+			plugMap = new Map();
+			this.pluginHelpers.set(pluginId, plugMap);
+		}
+		plugMap.set(name, wrapped);
+		const userHelperClaims = this.settings.userHelpersEnabled && name in this.userHelperFunctions;
+		this.claimBareName(this.bareHelperOwner, pluginId, name, 'helper', userHelperClaims);
+	}
+
+	unregisterPluginHelper(pluginId: string, name: string): void {
+		const plugMap = this.pluginHelpers.get(pluginId);
+		if (!plugMap || !plugMap.has(name)) { return; }
+		plugMap.delete(name);
+		if (plugMap.size === 0) { this.pluginHelpers.delete(pluginId); }
+		this.transferBareName(this.bareHelperOwner, this.pluginHelpers, pluginId, name, 'helper');
+	}
+
+	registerPluginBuiltIn(pluginId: string, name: string, provider: BuiltInProvider): void {
+		let plugMap = this.pluginBuiltIns.get(pluginId);
+		if (!plugMap) {
+			plugMap = new Map();
+			this.pluginBuiltIns.set(pluginId, plugMap);
+		}
+		plugMap.set(name, provider);
+		this.claimBareName(this.bareBuiltInOwner, pluginId, name, 'built-in field', false);
+	}
+
+	unregisterPluginBuiltIn(pluginId: string, name: string): void {
+		const plugMap = this.pluginBuiltIns.get(pluginId);
+		if (!plugMap || !plugMap.has(name)) { return; }
+		plugMap.delete(name);
+		if (plugMap.size === 0) { this.pluginBuiltIns.delete(pluginId); }
+		this.transferBareName(this.bareBuiltInOwner, this.pluginBuiltIns, pluginId, name, 'built-in field');
+	}
+
+	private claimBareName(
+		ownerMap: Map<string, string>,
+		pluginId: string,
+		name: string,
+		kind: 'helper' | 'built-in field',
+		blockedByUser: boolean,
+	): void {
+		const prefixed = this.pluginPrefixedName(pluginId, name);
+		if (blockedByUser) {
+			this.errorLogger?.log({
+				severity: 'warn',
+				message: `Plugin '${pluginId}' registered ${kind} '${name}', but a user-written custom helper already claims that bare name. Only '${prefixed}' is available.`,
+			});
+			return;
+		}
+		const currentOwner = ownerMap.get(name);
+		if (currentOwner === undefined) {
+			ownerMap.set(name, pluginId);
+		} else if (currentOwner !== pluginId) {
+			this.errorLogger?.log({
+				severity: 'warn',
+				message: `Plugin '${pluginId}' registered ${kind} '${name}', but the bare name is already owned by plugin '${currentOwner}'. Only '${prefixed}' is available.`,
+			});
+		}
+	}
+
+	private transferBareName(
+		ownerMap: Map<string, string>,
+		sourceMap: Map<string, Map<string, unknown>>,
+		pluginId: string,
+		name: string,
+		kind: 'helper' | 'built-in field',
+	): void {
+		if (ownerMap.get(name) !== pluginId) { return; }
+		ownerMap.delete(name);
+		for (const [otherPluginId, otherMap] of sourceMap) {
+			if (otherMap.has(name)) {
+				ownerMap.set(name, otherPluginId);
+				this.errorLogger?.log({
+					severity: 'info',
+					message: `Bare ${kind} name '${name}' transferred from '${pluginId}' to '${otherPluginId}' on unregister.`,
+				});
+				return;
+			}
+		}
+	}
+
 	private _refreshTimer: number | null = null;
 	private _queueCheckInterval: number | null = null;
 	private _processingQueue: boolean = false;
@@ -109,8 +250,42 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		};
 		try {
 			new Function(...Object.keys(context), code)(...Object.values(context));
+			const previousNames = Object.keys(this.userHelperFunctions);
+			const newNames = Object.keys(newHelpers);
 			this.userHelperFunctions = newHelpers;
-			return { valid: true, helperNames: Object.keys(newHelpers) };
+
+			// User helpers win over plugins for bare names — demote any plugin currently holding
+			// a bare name that a new user helper just claimed.
+			for (const name of newNames) {
+				const priorOwner = this.bareHelperOwner.get(name);
+				if (priorOwner !== undefined) {
+					this.bareHelperOwner.delete(name);
+					this.errorLogger?.log({
+						severity: 'warn',
+						message: `User-written helper '${name}' is now claiming the bare name; plugin '${priorOwner}' is demoted to '${this.pluginPrefixedName(priorOwner, name)}' only.`,
+					});
+				}
+			}
+
+			// For names the user just released, grant bare to the first plugin (insertion order)
+			// that still has a registration for that name. Keeps "first waiting in line wins"
+			// consistent whether the released owner was a plugin or a user helper.
+			for (const name of previousNames) {
+				if (name in newHelpers) { continue; }
+				if (this.bareHelperOwner.has(name)) { continue; }
+				for (const [otherPluginId, otherMap] of this.pluginHelpers) {
+					if (otherMap.has(name)) {
+						this.bareHelperOwner.set(name, otherPluginId);
+						this.errorLogger?.log({
+							severity: 'info',
+							message: `Bare helper name '${name}' reclaimed by plugin '${otherPluginId}' after user-written helper was removed.`,
+						});
+						break;
+					}
+				}
+			}
+
+			return { valid: true, helperNames: newNames };
 		} catch (e: any) {
 			return { valid: false, error: e.message };
 		}
@@ -163,7 +338,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		this.templateEngine = new Z2KTemplateEngine();
 		this.errorLogger = new ErrorLogger(this.app, this.settings);
 		// Load user-defined custom helpers (only when enabled)
-		if (this.settings.customHelpersEnabled && this.settings.userHelpers && this.settings.userHelpers.trim() !== "") {
+		if (this.settings.userHelpersEnabled && this.settings.userHelpers && this.settings.userHelpers.trim() !== "") {
 			const result = this.loadUserHelpers(this.settings.userHelpers);
 			if (!result.valid) {
 				new Notice('Failed to load custom helpers - check console for details');
@@ -1432,7 +1607,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		// Convert sourceText to string for addPluginBuiltIns (handles all VarValueType cases)
 		const sourceTextStr = opts.fieldOverrides.sourceText != null ? String(opts.fieldOverrides.sourceText) : undefined;
 		await this.addYamlFieldValues(state); // System blocks already in state from parseTemplate
-		await this.addPluginBuiltIns(state, { sourceText: sourceTextStr, templateName: templateFileForParse.basename, fileCreationDate: opts.sourceFile?.stat.ctime, existingTitle: opts.existingTitle });
+		await this.addPluginBuiltIns(state, { sourceText: sourceTextStr, templateName: templateFileForParse.basename, fileCreationDate: opts.sourceFile?.stat.ctime, existingTitle: opts.existingTitle, sourceFile: opts.sourceFile, templatePath: templateFileForParse.path });
 		// For sourceFile: use original filename as suggestion if template doesn't specify one
 		if (opts.sourceFile) {
 			const tfi = state.fieldInfos["fileTitle"];
@@ -1464,8 +1639,9 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			// Rename-based flow: modify content, then rename/move (updates links)
 			await this.app.vault.modify(opts.sourceFile, contentOut);
 			const filename = this.getValidFilename(title);
-			const newPath = this.generateUniqueFilePath(opts.destDir.path, filename);
-			if (newPath !== opts.sourceFile.path) {
+			const targetPath = joinPath(opts.destDir.path, filename + '.md');
+			if (targetPath !== opts.sourceFile.path) {
+				const newPath = this.generateUniqueFilePath(opts.destDir.path, filename);
 				await this.app.fileManager.renameFile(opts.sourceFile, newPath);
 			}
 			filePath = opts.sourceFile.path;
@@ -1496,7 +1672,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		// Add global block YAML for field values (system blocks already in note from creation)
 		let globalBlockYaml = Z2KYamlDoc.splitFrontmatter(this.settings.globalBlock).fm;
 		await this.addYamlFieldValues(state, [globalBlockYaml]);
-		await this.addPluginBuiltIns(state, { existingTitle: opts.existingFile.basename, fileCreationDate: opts.existingFile.stat.ctime });
+		await this.addPluginBuiltIns(state, { existingTitle: opts.existingFile.basename, fileCreationDate: opts.existingFile.stat.ctime, existingFile: opts.existingFile, templatePath: opts.existingFile.path });
 		this.handleOverrides(state, opts.fieldOverrides, opts.uriKeys ?? new Set(), opts.promptMode || "remaining");
 		let hasFillableFields = this.hasFillableFields(state.fieldInfos);
 		// TODO: handle the case where fieldOverrides fills all fields and promptMode is "remaining"
@@ -1584,7 +1760,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		await this.addYamlFieldValues(state, [globalBlockYaml, systemBlocksYaml, existingFileYaml]);
 		// Convert sourceText to string for addPluginBuiltIns (handles all VarValueType cases)
 		const sourceTextStr = opts.fieldOverrides.sourceText != null ? String(opts.fieldOverrides.sourceText) : undefined;
-		await this.addPluginBuiltIns(state, { sourceText: sourceTextStr, existingTitle: opts.existingFile.basename, fileCreationDate: opts.existingFile.stat.ctime });
+		await this.addPluginBuiltIns(state, { sourceText: sourceTextStr, existingTitle: opts.existingFile.basename, fileCreationDate: opts.existingFile.stat.ctime, existingFile: opts.existingFile, templatePath: templateFileForParse.path });
 		this.handleOverrides(state, opts.fieldOverrides, opts.uriKeys ?? new Set(), opts.promptMode || "remaining");
 
 		// if (this.hasFillableFields(state.fieldInfos) && opts.promptMode !== "none") {
@@ -1773,17 +1949,22 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			// Resolve value= if present (and not overridden by external data)
 			// NOTE: Similar logic in handleSubmit() - keep in sync
 			if (fieldInfo.value !== undefined && !(fieldName in state.resolvedValues)) {
-				const valueDeps = Z2KTemplateEngine.reducedGetDependencies(fieldInfo.value);
-				const allDepsExist = valueDeps.every(dep => dep in context);
-				if (allDepsExist) {
-					const resolved = Z2KTemplateEngine.reducedRenderContent(fieldInfo.value, context, true, this.activeHelpers);
-					if (resolved === undefined) {
-						delete state.resolvedValues[fieldName];
-					} else {
-						state.resolvedValues[fieldName] = resolved;
+				if (fieldInfo.directives?.includes('raw-content')) {
+					// Raw-content fields (clipboard, sourceText, etc.) are used verbatim, never interpreted.
+					state.resolvedValues[fieldName] = fieldInfo.value;
+				} else {
+					const valueDeps = Z2KTemplateEngine.reducedGetDependencies(fieldInfo.value);
+					const allDepsExist = valueDeps.every(dep => dep in context);
+					if (allDepsExist) {
+						const resolved = Z2KTemplateEngine.reducedRenderContent(fieldInfo.value, context, true, this.activeHelpers);
+						if (resolved === undefined) {
+							delete state.resolvedValues[fieldName];
+						} else {
+							state.resolvedValues[fieldName] = resolved;
+						}
 					}
+					// Else: deps missing, leave unspecified (don't set key)
 				}
-				// Else: deps missing, leave unspecified (don't set key)
 			}
 
 			// Apply fallback value for unspecified fields when finalizing
@@ -2481,7 +2662,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		let fullPath = joinPath(folderPath, filename);
 		let counter = 1;
 		while (this.getFile(fullPath)) {
-			fullPath = joinPath(folderPath, `${basename} (${counter++}).md`);
+			fullPath = joinPath(folderPath, `${basename} ${counter++}.md`);
 		}
 		return fullPath;
 	}
@@ -2511,12 +2692,15 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			}
 		}
 	}
-	async addPluginBuiltIns(state: TemplateState, opts: { sourceText?: string, existingTitle?: string, templateName?: string, templateVersion?: string, templateAuthor?: string, fileCreationDate?: number } = {}) {
-		// sourceText
+	async addPluginBuiltIns(state: TemplateState, opts: { sourceText?: string, existingTitle?: string, templateName?: string, templateVersion?: string, templateAuthor?: string, fileCreationDate?: number, sourceFile?: TFile, existingFile?: TFile, templatePath?: string } = {}) {
+		// sourceText — always used as literal text (editor selection or pasted content).
+		// The 'raw-content' directive prevents the resolver from trying to parse the value
+		// as Handlebars, which is important because external content can contain '{{', quotes,
+		// or anything else that isn't valid template syntax.
 		state.fieldInfos["sourceText"] = {
 			fieldName: "sourceText",
 			type: "text",
-			directives: ['no-prompt'],
+			directives: ['no-prompt', 'raw-content'],
 			value: opts.sourceText || "",
 		};
 
@@ -2574,11 +2758,12 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		}
 		state.fieldInfos["fileTitle"] = tfi;
 
-		// clipboard
+		// clipboard — always used as literal text. See sourceText note above: 'raw-content'
+		// prevents the resolver from parsing external content as Handlebars.
 		state.fieldInfos["clipboard"] = {
 			fieldName: "clipboard",
 			type: "text",
-			directives: ['no-prompt'],
+			directives: ['no-prompt', 'raw-content'],
 			value: await navigator.clipboard.readText(),
 		};
 
@@ -2589,6 +2774,52 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			directives: ['no-prompt'],
 			value: moment(opts.fileCreationDate ?? Date.now()).format("YYYY-MM-DD"),
 		};
+
+		// Plugin-registered built-in fields (issue #169). Populates both the prefixed name
+		// (`pluginId__name`) and — when this plugin owns the bare name — the bare name itself,
+		// unconditionally overwriting any prior fieldInfo. Matches the behavior of the reserved
+		// built-ins above (sourceText, creator, etc.); template references to the bare name create
+		// a stub fieldInfo during parse, so a skip-if-exists policy would defeat itself.
+		if (this.settings.pluginHelpersEnabled && this.pluginBuiltIns.size > 0) {
+			const ctx: BuiltInContext = {
+				sourceFile: opts.sourceFile,
+				existingFile: opts.existingFile,
+				templateName: opts.templateName ?? state.metadata.z2k_template_name ?? "",
+				templatePath: opts.templatePath ?? "",
+			};
+			for (const [pluginId, providers] of this.pluginBuiltIns) {
+				if (!this.isPluginRegistrationEnabled(pluginId)) { continue; }
+				for (const [name, provider] of providers) {
+					const prefixed = this.pluginPrefixedName(pluginId, name);
+					let value: unknown;
+					try {
+						value = provider(ctx);
+					} catch (e: any) {
+						console.error(`[Z2K Templates] Built-in '${prefixed}' threw:`, e);
+						this.errorLogger?.log({
+							severity: 'error',
+							message: `Plugin '${pluginId}' built-in field '${name}' threw: ${e.message}`,
+							error: e,
+						});
+						value = `[Error in ${prefixed}]`;
+					}
+					state.fieldInfos[prefixed] = {
+						fieldName: prefixed,
+						type: "text",
+						directives: ['no-prompt'],
+						value: value as VarValueType,
+					};
+					if (this.bareBuiltInOwner.get(name) === pluginId) {
+						state.fieldInfos[name] = {
+							fieldName: name,
+							type: "text",
+							directives: ['no-prompt'],
+							value: value as VarValueType,
+						};
+					}
+				}
+			}
+		}
 	}
 
 	async addYamlFieldValues(state: TemplateState, additionalYamlSources?: string[]): Promise<void> {

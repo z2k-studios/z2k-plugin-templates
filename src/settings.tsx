@@ -484,16 +484,16 @@ Example:
 			);
 
 		new Setting(advancedItems)
-			.setName('Custom helpers')
+			.setName('User-written custom helpers')
 			.setDesc(createFragment(f => {
-				f.appendText('Register custom Handlebars helper functions using JavaScript. ');
+				f.appendText('Register custom Handlebars helper functions by writing JavaScript in settings. ');
 				f.createEl('a', {
 					text: '(?)',
 					href: `${DOCS_BASE_URL}/settings-page/advanced-settings/custom-helper-settings/enable-custom-helpers`,
 				});
 			}))
 			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.customHelpersEnabled)
+				.setValue(this.plugin.settings.userHelpersEnabled)
 				.onChange(async (value) => {
 					if (value) {
 						// Show ACE warning before enabling
@@ -509,7 +509,7 @@ Example:
 							}, resolve).open();
 						});
 						if (confirmed) {
-							this.plugin.settings.customHelpersEnabled = true;
+							this.plugin.settings.userHelpersEnabled = true;
 							await this.plugin.saveData(this.plugin.settings);
 							// Load helpers now that feature is enabled
 							if (this.plugin.settings.userHelpers && this.plugin.settings.userHelpers.trim() !== "") {
@@ -524,13 +524,13 @@ Example:
 							toggle.setValue(false); // Reset toggle
 						}
 					} else {
-						this.plugin.settings.customHelpersEnabled = false;
+						this.plugin.settings.userHelpersEnabled = false;
 						await this.plugin.saveData(this.plugin.settings);
 						this.display(); // Re-render to hide editor button
 					}
 				})
 			);
-		if (this.plugin.settings.customHelpersEnabled) {
+		if (this.plugin.settings.userHelpersEnabled) {
 			const editSetting = new Setting(advancedItems)
 				.setName('Edit custom helpers')
 				.addButton(button => button
@@ -589,6 +589,17 @@ registerHelper('recentFiles', () => {
 			});
 			editSetting.setDesc(warningDesc);
 		}
+
+		new Setting(advancedItems)
+			.setName('Plugin-registered helpers and built-in fields')
+			.setDesc('Allow other installed plugins (such as Z2K Core) to register custom Handlebars helpers and built-in fields with this plugin. Per-plugin controls will be added in a later release.')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.pluginHelpersEnabled)
+				.onChange(async (value) => {
+					this.plugin.settings.pluginHelpersEnabled = value;
+					await this.plugin.saveData(this.plugin.settings);
+				})
+			);
 
 		this.applyDescs(); // Apply dynamic descriptions
 	}

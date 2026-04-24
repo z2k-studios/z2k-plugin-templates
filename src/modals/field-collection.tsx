@@ -224,12 +224,17 @@ const FieldCollectionForm = ({ templateState, userHelpers, onComplete, onCancel,
 
 			// Resolve value= if present (and not overridden by external data or user input)
 			if (fieldInfo.value !== undefined && !(fieldName in templateState.resolvedValues) && !newFieldStates[fieldName].touched) {
-				const valueDeps = Z2KTemplateEngine.reducedGetDependencies(fieldInfo.value);
-				const allDepsExist = valueDeps.every(dep => dep in context);
-				if (allDepsExist) {
-					newFieldStates[fieldName].value = Z2KTemplateEngine.reducedRenderContent(fieldInfo.value, context, true, userHelpers);
+				if (fieldInfo.directives?.includes('raw-content')) {
+					// Raw-content fields (clipboard, sourceText, etc.) are used verbatim, never interpreted.
+					newFieldStates[fieldName].value = fieldInfo.value;
 				} else {
-					newFieldStates[fieldName].value = undefined;
+					const valueDeps = Z2KTemplateEngine.reducedGetDependencies(fieldInfo.value);
+					const allDepsExist = valueDeps.every(dep => dep in context);
+					if (allDepsExist) {
+						newFieldStates[fieldName].value = Z2KTemplateEngine.reducedRenderContent(fieldInfo.value, context, true, userHelpers);
+					} else {
+						newFieldStates[fieldName].value = undefined;
+					}
 				}
 			}
 

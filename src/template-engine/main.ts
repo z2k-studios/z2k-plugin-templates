@@ -400,7 +400,16 @@ class Z2KTemplateEngine {
 		//
 		// We use the AST to detect single expressions rather than regex, because regex can't
 		// reliably distinguish `{{a}}` from `{{a}} and {{b}}` or handle nested braces correctly.
-		let ast = parse(content);
+		// If content isn't parseable as Handlebars (e.g., raw user content in clipboard/sourceText
+		// that happens to contain '{{' or unmatched quotes), it has no template expressions to
+		// evaluate — return it as-is. Genuine template bugs in author-declared content will still
+		// surface during the main render pass over the template body.
+		let ast: AST.Program;
+		try {
+			ast = parse(content);
+		} catch {
+			return content;
+		}
 		const isSingleExpression = ast.body.length === 1 && ast.body[0].type === 'MustacheStatement';
 		if (isSingleExpression) {
 			const mustache = ast.body[0] as AST.MustacheStatement;
@@ -536,13 +545,24 @@ class Z2KTemplateEngine {
 			}
 			return Array.from(new Set(dependencies));
 		} else if (typeof val === 'string') {
-			return this.getVarReferences(parse(val));
+			// Values can legitimately hold raw user content (clipboard, sourceText, creator, etc.)
+			// that isn't valid Handlebars. A value that can't be parsed has no discoverable
+			// template references — return []. Genuine template bugs in author-declared field
+			// values will still surface at render time.
+			try {
+				return this.getVarReferences(parse(val));
+			} catch {
+				return [];
+			}
 		} else {
 			return [];
 		}
 	}
 	// Collects all field names referenced in a fieldInfo's string properties
 	static getFieldInfoDependencies(fieldInfo: FieldInfo): string[] {
+		// Raw-content fields (clipboard, sourceText, and anything tagged by the author)
+		// never contain intentional template expressions, so they have no discoverable deps.
+		if (fieldInfo.directives?.includes('raw-content')) { return []; }
 		const deps: string[] = [];
 		const scan = (val: VarValueType | undefined) => {
 			if (val !== undefined) { deps.push(...this.reducedGetDependencies(val)); }
@@ -1795,8 +1815,8 @@ interface TemplateState {
 type DataType = "text" | "number" | "date" | "datetime" | "boolean" | "singleSelect" | "multiSelect" | "titleText";
 let DataTypeValues: DataType[] = ["text", "number", "date", "datetime", "boolean", "singleSelect", "multiSelect", "titleText"];
 
-type Directive = "required" | "not-required" | "prompt" | "no-prompt" | "finalize-clear" | "finalize-preserve" | "finalize-suggest";
-let DirectiveValues: Directive[] = ["required", "not-required", "prompt", "no-prompt", "finalize-clear", "finalize-preserve", "finalize-suggest"];
+type Directive = "required" | "not-required" | "prompt" | "no-prompt" | "finalize-clear" | "finalize-preserve" | "finalize-suggest" | "raw-content";
+let DirectiveValues: Directive[] = ["required", "not-required", "prompt", "no-prompt", "finalize-clear", "finalize-preserve", "finalize-suggest", "raw-content"];
 const DirectiveCounterparts: Record<string, Directive[]> = {
 	"required": ["not-required"],
 	"not-required": ["required"],
