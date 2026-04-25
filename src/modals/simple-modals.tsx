@@ -381,10 +381,6 @@ const TemplateSelector = ({ templates, settings, onConfirm, onCancel }: Template
 
 
 
-// TODO: Save the state of the modal to prevent large data loss on accidental close
-// I tried a long time to block the closing upon clicking outside the modal but was not able to do so.
-
-
 // ------------------------------------------------------------------------------------------------
 // Confirmation Modal
 // ------------------------------------------------------------------------------------------------
