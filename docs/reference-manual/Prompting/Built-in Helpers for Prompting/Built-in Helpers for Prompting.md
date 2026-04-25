@@ -70,8 +70,8 @@ The `suggest` parameter sets a **pre-filled value** in the input control. The va
 ```
 
 The suggest value is the starting point, not a commitment. If the user never [[Prompt Touching|touches]] the field:
-- On **Submit** – the field is deferred (suggest is not written to output)
-- On **Submit and Finalize** – the [[Fallback Behavior]] procedure applies (not the suggest value, unless `finalize-suggest` is set)
+- On **Save for Now** – the field is deferred (suggest is not written to output)
+- On **Finalize** – the [[Fallback Behavior]] procedure applies (not the suggest value, unless `finalize-suggest` is set)
 
 If the user touches the field and doesn't change it, the suggest value becomes the committed value. Like `prompt`, the suggest value can reference other fields and updates dynamically.
 
