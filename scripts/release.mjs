@@ -90,9 +90,9 @@ if (upstream) {
 }
 
 // Check tag doesn't already exist
-const tagExists = runSilent(`git rev-parse "v${v}" --`);
+const tagExists = runSilent(`git rev-parse "${v}" --`);
 if (tagExists) {
-	console.error(`Tag v${v} already exists. Choose a different version.`);
+	console.error(`Tag ${v} already exists. Choose a different version.`);
 	process.exit(1);
 }
 
@@ -172,7 +172,7 @@ try {
 	run('git add package.json package-lock.json manifest.json');
 	fileAddIfExists("versions.json");
 	run(`git commit -m "release: v${v}"`);
-	run(`git tag "v${v}"`);
+	run(`git tag "${v}"`);
 	commitMade = true;
 
 	// --- 6) push ---
@@ -197,7 +197,7 @@ try {
 		// Commit was made but push failed
 		console.error("\nCommit was created but push failed. To recover:");
 		console.error(`  git reset --soft HEAD~1`);
-		console.error(`  git tag -d v${v}`);
+		console.error(`  git tag -d ${v}`);
 		console.error(`  git checkout -- ${changedFiles.join(" ")}`);
 	} else if (changedFiles.length > 0) {
 		// Files were modified but no commit yet
