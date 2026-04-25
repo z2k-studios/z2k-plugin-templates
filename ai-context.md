@@ -59,5 +59,6 @@ Z2K Templates sits between Core Templates (too simple) and Templater (requires J
 
 - **GitHub repo:** `z2k-studios/z2k-plugin-templates`
 - **Release script:** `npm run release <version>` (runs `scripts/release.mjs` — bumps version, builds, commits, tags, pushes)
-- **Assets:** `main.js`, `manifest.json`, `styles.css`, `z2k-plugin-templates.zip`
+- **Tag format:** plain semver, no `v` prefix (e.g. `0.4.0`)
+- **Assets:** `release/main.js`, `manifest.json`, `styles.css`
 - **Prerelease:** yes (all releases are pre-release until public launch)
