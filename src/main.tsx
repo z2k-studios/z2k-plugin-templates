@@ -7,6 +7,7 @@ import { type Extension } from "@codemirror/state";
 import moment from 'moment';
 import { Z2KTemplatesPluginSettings, DEFAULT_SETTINGS, ErrorLogger, UserCancelError, TemplatePluginError, rethrowWithMessage, escapeRegExp, cardRefNameUpper, cardRefNameLower, parseDuration, parseDelayFromFilename, sleep, type ErrorSeverity } from './utils';
 import { handlebarsOverlay } from './syntax-highlighting';
+import { TemplateValidationController } from './template-validation';
 import { Z2KTemplatesSettingTab } from './settings';
 import { CardTypeSelectionModal, TemplateSelectionModal, ConfirmationModal, ErrorModal, LogViewerModal } from './modals/simple-modals';
 import { FieldCollectionModal, buildDependencyMap, detectCircularDependencies, calculateFieldDependencyOrder } from './modals/field-collection';
@@ -219,6 +220,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	private _processingQueue: boolean = false;
 	private _lastQueueCheck: number = 0;
 	private _statusBarItem: HTMLElement | null = null;
+	private _templateValidation: TemplateValidationController | null = null;
 
 	private wrapHelper(name: string, fn: Function): Function {
 		return (...args: unknown[]) => {
@@ -350,6 +352,12 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		this.registerEvents();
 		this.addSettingTab(new Z2KTemplatesSettingTab(this.app, this));
 		this.registerEditorExtension(handlebarsOverlay());
+		this._templateValidation = new TemplateValidationController(this);
+		this.registerEditorExtension(this._templateValidation.getEditorExtensions());
+		this.registerEvent(this.app.workspace.on('active-leaf-change', () => this._templateValidation?.onActiveLeafChange()));
+		this.registerEvent(this.app.vault.on('modify', (f) => {
+			if (f instanceof TFile) { this._templateValidation?.onFileModify(f); }
+		}));
 		this.registerURIHandler();
 		this._statusBarItem = this.addStatusBarItem();
 
@@ -367,6 +375,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			window.clearInterval(this._queueCheckInterval);
 			this._queueCheckInterval = null;
 		}
+		this._templateValidation?.destroy();
+		this._templateValidation = null;
 	}
 
 	refreshMainCommands(deleteExisting: boolean = true) {

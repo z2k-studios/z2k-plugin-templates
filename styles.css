@@ -997,3 +997,41 @@
 	gap: 8px;
 	padding-top: 8px;
 }
+
+/*
+--------------------------------------------------------------------------------------------------------------------------------
+	Template Validation Status Bar
+--------------------------------------------------------------------------------------------------------------------------------
+*/
+
+.z2k-template-validation-status {
+	font-family: var(--font-monospace);
+	min-width: 14em;
+	text-align: left;
+}
+.z2k-template-validation-status.z2k-template-valid {
+	color: var(--color-green, #00c853);
+}
+.z2k-template-validation-status.z2k-template-invalid {
+	color: var(--text-error);
+	cursor: pointer;
+}
+.z2k-template-validation-status.z2k-template-waiting {
+	color: var(--text-muted);
+}
+
+/* Theme the lint hover tooltip for dark mode — CM6's default is light. */
+.cm-tooltip.cm-tooltip-hover {
+	background: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	max-width: 600px;
+}
+.cm-tooltip.cm-tooltip-hover .cm-diagnostic-error {
+	color: var(--text-error);
+	border-left: none;
+}
+.cm-tooltip.cm-tooltip-hover .cm-diagnosticText {
+	font-family: var(--font-monospace);
+	font-size: 12px;
+}
+
