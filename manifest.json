@@ -6,7 +6,7 @@
 	"description": "Create structured notes from declarative templates. Interactive prompts, smart field replacement, YAML merging across folders, and reusable blocks.",
 	"author": "Z2K",
 	"authorUrl": "https://z2k.dev/",
-	"isDesktopOnly": false,
+	"isDesktopOnly": true,
 	"styles": [
 		"styles.css"
 	]
