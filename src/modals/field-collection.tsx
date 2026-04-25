@@ -19,6 +19,7 @@ export class FieldCollectionModal extends Modal {
 	resolve: (finalize: boolean) => void;
 	reject: (error: Error) => void;
 	root: any; // React root
+	private settled = false;
 
 	constructor(app: App, title: string, templateState: TemplateState, userHelpers: Record<string, Function>, resolve: (finalize: boolean) => void, reject: (error: Error) => void) {
 		super(app);
@@ -29,24 +30,36 @@ export class FieldCollectionModal extends Modal {
 		this.reject = reject;
 	}
 
+	private settleResolve(value: boolean) {
+		if (this.settled) { return; }
+		this.settled = true;
+		this.resolve(value);
+	}
+
+	private settleReject(error: Error) {
+		if (this.settled) { return; }
+		this.settled = true;
+		this.reject(error);
+	}
+
 	onOpen() {
 		this.modalEl.addClass('z2k', 'field-collection-modal');
 		this.titleEl.setText(this.title);
 		this.contentEl.empty();
 		this.contentEl.addClass('modal-content');
 		this.root = createRoot(this.contentEl);
-		const handleError = (error: Error) => { this.reject(error); this.close(); };
+		const handleError = (error: Error) => { this.settleReject(error); this.close(); };
 		this.root.render(
 			<ErrorBoundary onError={handleError}>
 				<FieldCollectionForm
 					templateState={this.templateState}
 					userHelpers={this.userHelpers}
 					onComplete={(finalize) => {
-						this.resolve(finalize);
+						this.settleResolve(finalize);
 						this.close();
 					}}
 					onCancel={() => {
-						this.reject(new UserCancelError("User cancelled field collection"));
+						this.settleReject(new UserCancelError("User cancelled field collection"));
 						this.close();
 					}}
 					onError={handleError}
@@ -56,6 +69,8 @@ export class FieldCollectionModal extends Modal {
 	}
 
 	onClose() {
+		// Outside-click / Escape closes the modal without going through our handlers; treat as cancel.
+		this.settleReject(new UserCancelError("User cancelled field collection"));
 		if (this.root) { this.root.unmount(); }
 		this.contentEl.empty();
 	}

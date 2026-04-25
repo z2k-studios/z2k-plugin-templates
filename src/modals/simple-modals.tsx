@@ -14,6 +14,7 @@ export class CardTypeSelectionModal extends Modal {
 	resolve: (cardType: PathFolder) => void;
 	reject: (error: Error) => void;
 	root: any; // For React root
+	private settled = false;
 
 	constructor(app: App, cardTypes: PathFolder[], settings: Z2KTemplatesPluginSettings, resolve: (cardType: PathFolder) => void, reject: (error: Error) => void) {
 		super(app);
@@ -23,6 +24,18 @@ export class CardTypeSelectionModal extends Modal {
 		this.reject = reject;
 	}
 
+	private settleResolve(value: PathFolder) {
+		if (this.settled) { return; }
+		this.settled = true;
+		this.resolve(value);
+	}
+
+	private settleReject(error: Error) {
+		if (this.settled) { return; }
+		this.settled = true;
+		this.reject(error);
+	}
+
 	onOpen() {
 		this.modalEl.addClass('z2k', 'card-type-selection-modal');
 		this.titleEl.setText(`Select ${cardRefNameUpper(this.settings)} Type`);
@@ -30,16 +43,16 @@ export class CardTypeSelectionModal extends Modal {
 		this.contentEl.addClass('modal-content');
 		this.root = createRoot(this.contentEl);
 		this.root.render(
-			<ErrorBoundary onError={(error) => { this.reject(error); this.close(); }}>
+			<ErrorBoundary onError={(error) => { this.settleReject(error); this.close(); }}>
 				<CardTypeSelector
 					cardTypes={this.cardTypes}
 					settings={this.settings}
 					onConfirm={(cardType: PathFolder) => {
-						this.resolve(cardType);
+						this.settleResolve(cardType);
 						this.close();
 					}}
 					onCancel={() => {
-						this.reject(new UserCancelError(`User cancelled ${cardRefNameLower(this.settings)} type selection`));
+						this.settleReject(new UserCancelError(`User cancelled ${cardRefNameLower(this.settings)} type selection`));
 						this.close();
 					}}
 				/>
@@ -48,6 +61,8 @@ export class CardTypeSelectionModal extends Modal {
 	}
 
 	onClose() {
+		// Outside-click / Escape closes the modal without going through our handlers; treat as cancel.
+		this.settleReject(new UserCancelError(`User cancelled ${cardRefNameLower(this.settings)} type selection`));
 		if (this.root) { this.root.unmount(); }
 		this.contentEl.empty();
 	}
@@ -153,6 +168,7 @@ export class TemplateSelectionModal extends Modal {
 	resolve: (template: PathFile) => void;
 	reject: (error: Error) => void;
 	root: any; // For React root
+	private settled = false;
 
 	constructor(app: App, templates: { file: PathFile, isDefault: boolean, description?: string }[], settings: Z2KTemplatesPluginSettings, resolve: (template: PathFile) => void, reject: (error: Error) => void){
 		super(app);
@@ -162,6 +178,18 @@ export class TemplateSelectionModal extends Modal {
 		this.reject = reject;
 	}
 
+	private settleResolve(value: PathFile) {
+		if (this.settled) { return; }
+		this.settled = true;
+		this.resolve(value);
+	}
+
+	private settleReject(error: Error) {
+		if (this.settled) { return; }
+		this.settled = true;
+		this.reject(error);
+	}
+
 	onOpen() {
 		this.modalEl.addClass('z2k', 'template-selection-modal');
 		this.titleEl.setText('Select Template');
@@ -169,16 +197,16 @@ export class TemplateSelectionModal extends Modal {
 		this.contentEl.addClass('modal-content');
 		this.root = createRoot(this.contentEl);
 		this.root.render(
-			<ErrorBoundary onError={(error) => { this.reject(error); this.close(); }}>
+			<ErrorBoundary onError={(error) => { this.settleReject(error); this.close(); }}>
 				<TemplateSelector
 					templates={this.templates}
 					settings={this.settings}
 					onConfirm={(template: PathFile) => {
-						this.resolve(template);
+						this.settleResolve(template);
 						this.close();
 					}}
 					onCancel={() => {
-						this.reject(new UserCancelError("User cancelled template selection"));
+						this.settleReject(new UserCancelError("User cancelled template selection"));
 						this.close();
 					}}
 				/>
@@ -192,6 +220,8 @@ export class TemplateSelectionModal extends Modal {
 	}
 
 	onClose() {
+		// Outside-click / Escape closes the modal without going through our handlers; treat as cancel.
+		this.settleReject(new UserCancelError("User cancelled template selection"));
 		if (this.root) { this.root.unmount(); }
 		this.contentEl.empty();
 	}
