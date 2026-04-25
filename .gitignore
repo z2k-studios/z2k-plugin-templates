@@ -12,6 +12,9 @@ node_modules
 # They should be uploaded to GitHub releases instead.
 main.js
 
+# Production build output (separate from dev watcher to avoid contention)
+release/
+
 # Exclude the zip file of the plugin too
 *.zip
 
