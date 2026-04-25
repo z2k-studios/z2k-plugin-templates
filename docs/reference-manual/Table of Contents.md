@@ -206,6 +206,7 @@ The complete, nested table of contents for the Z2K Templates Reference Manual.
 	- [[fieldInfo Cheat Sheet|Cheat Sheet]] — A brief one-page summary of the `{{fieldInfo}}` helper function
 	- [[fieldInfo Syntax|Syntax]] — Syntax of the underlying helper function
 	- [[fieldInfo Output|Output]] — What does the `{{fieldInfo}}` helper output?
+	- [[fieldInfo Lifecycle|Lifecycle]] — When `{{fieldInfo}}`, `{{fieldOutput}}`, and `{{var}}` references are evaluated, preserved, or cleared across pre-finalization and finalization
 	- [[fieldInfo Parameters|Parameters]] — Steps through `{{fieldInfo}}` (and `{{fieldOutput}}`) parameters
 		- [[fieldInfo fieldName|fieldName]] — The name of the field you are providing data for (required)
 		- [[fieldInfo prompt|prompt]] — The prompt message displayed to the user
