@@ -41,7 +41,7 @@ export const DEFAULT_SETTINGS: Z2KTemplatesPluginSettings = {
 	templatesRootFolder: '',
 	creator: '',
 	templatesFolderName: 'Templates',
-	cardReferenceName: 'note',
+	cardReferenceName: 'file',
 	quickCommands: [],
 	offlineCommandQueueEnabled: false,
 	offlineCommandQueueDir: '.obsidian/plugins/z2k-plugin-templates/command-queue',

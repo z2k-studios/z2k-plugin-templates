@@ -1717,8 +1717,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		if (!hasFillableFields && !opts.fieldOverrides && !opts.finalize) {
 			const hasAnyField = state.referencedFields.size > 0 || state.declaredFields.size > 0;
 			const msg = hasAnyField
-				? "Nothing to fill in — run Finalize Card to commit computed values."
-				: "No fields found in this note.";
+				? `Nothing to fill in — run Finalize ${cardRefNameUpper(this.settings)} to commit computed values.`
+				: `No fields found in this ${cardRefNameLower(this.settings)}.`;
 			await this.logInfo(msg, opts.showNotices ?? true);
 			return { kind: 'continue', filePath: opts.existingFile.path, finalized: !!opts.finalize };
 		}

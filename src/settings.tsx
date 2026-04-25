@@ -116,7 +116,7 @@ export class Z2KTemplatesSettingTab extends PluginSettingTab {
 		new Setting(generalItems)
 			.setName('Name for files')
 			.setDesc(createFragment(f => {
-				f.appendText("This is the name to use when referring to files in the system. ('note', 'card', 'file', etc.) ");
+				f.appendText("This is the name to use when referring to files in the system. ('file', 'note', 'card', etc.) ");
 				f.createEl('a', {
 					text: '(?)',
 					href: `${DOCS_BASE_URL}/settings-page/general-settings/name-for-files`,
