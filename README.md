@@ -15,7 +15,7 @@ Z2K Templates sits between Obsidian's Core Templates (too simple for structured 
 ---
 ## Purpose
 
-The **Z2K Templates Plugin** supercharges Obsidian by providing an advanced templating language. Features including smart field replacement, prompting, formatting helpers, YAML integration, block templates, and URI automation.
+The **Z2K Templates Plugin** supercharges Obsidian by providing an advanced templating language. Features include smart field replacement, prompting, formatting helpers, YAML integration, block templates, and URI automation.
 
 ---
 
@@ -38,17 +38,11 @@ The **Z2K Templates Plugin** supercharges Obsidian by providing an advanced temp
     - Required fields
     - Data types: text, titleText, number, date, boolean, singleSelect, multiSelect
 
-## Built-In Fields and Functions
-- The Z2K Template Plugin provides a rich set of built-in fields and helper functions that enable automation, consistency, and semantic structure in your notes.
-	- **Built-in fields** include automatically generated values such as timestamps, dates, card titles, and references to related files (e.g., today's journal or log). These fields are available out of the box and require no user input, making template-driven note creation fast and consistent.
-		- `{{today}}`, `{{timestamp}}`, `{{cardTitle}}`
-
-	- **Helper functions** transform and format data during template rendering. They support operations like string casing, date formatting, whitespace control, bulletizing multiline text, and linking fields as Obsidian wikilinks or URLs. These functions follow a Handlebars-inspired syntax and can be nested for advanced logic.
-	    - `formatDate`, `formatString`, `formatStringToUpper`, `wikilink`, `url`, `formatStringRaw`
-
-### Formatting & Helper Functions
-- Built-in helpers for formatting and linking:
-- Supports nested helper functions
+### Built-In Fields and Functions
+- **Built-in fields** are auto-populated values that require no user input — timestamps, dates, card titles, references to related files (e.g., today's journal or log).
+	- `{{today}}`, `{{timestamp}}`, `{{cardTitle}}`
+- **Helper functions** transform and format data during rendering: string casing, date formatting, whitespace control, bulletizing multiline text, and linking fields as wikilinks or URLs. Helpers follow Handlebars syntax and can be nested.
+	- `formatDate`, `formatString`, `formatStringToUpper`, `wikilink`, `url`, `formatStringRaw`
 
 ### Block Templates
 - Reusable template fragments
