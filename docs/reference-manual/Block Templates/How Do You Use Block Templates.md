@@ -22,8 +22,8 @@ This method is useful for interactive block insertions, for example, sections th
 
 For more information, please see the [[Insert Block Template]] command's documentation.
 
-## Method 2: Via Handlebars Partial Syntax
-Block templates can also be inserted by using Handlebars [[Partials]] syntax:
+## Method 2: Via Block Syntax
+Block templates can also be inserted by using Handlebars [[Partials|block syntax]]:
 
 ```handlebars
 {{> block-template-name}}
@@ -41,15 +41,15 @@ For advanced users, you can also:
 - **Path without a leading slash** (`{{> notes/my-block}}`): Searches for a block whose location ends with the path you specified — useful for narrowing down by subfolder without anchoring to the root. When multiple candidates match, the one closest to the current template wins.
 - **Leading slash** (`{{> /shared/my-block}}`): Resolves the block by its exact location within the [[Templates Root Folder]]. Note: The `/` anchors to your templates root — not the vault root.
 - **Leading `./` or `../`** (`{{> ./my-block}}`): Resolves relative to the folder where the template file itself lives — not the folder of the note being created. This works but is not recommended due to the ambiguity of what it is relative to.
-- **Insert Document Templates**: With the : You can perform an insert block of a document template when using partial notation. It is only the command interface (Method 1 above) that limits you to interactively picking from only a list of block templates. 
+- **Insert Document Templates**: With the : You can perform an insert block of a document template when using block syntax. It is only the command interface (Method 1 above) that limits you to interactively picking from only a list of block templates. 
 
 
 ## Block Templates and YAML Frontmatter
 
 > [!WARNING] Block Templates Cannot Be Used in YAML Frontmatter
-> `{{> block-name}}` syntax is not supported inside the YAML frontmatter section of a template due to it being a [[Restricted Functionality Mode]]. The YAML section is processed independently and partials are not resolved there. If you place a partial expression inside YAML, it will not be rendered — it will appear as literal text and produce invalid YAML.
+> `{{> block-name}}` syntax is not supported inside the YAML frontmatter section of a template due to it being a [[Restricted Functionality Mode]]. The YAML section is processed independently and blocks are not resolved there. If you place a block expression inside YAML, it will not be rendered — it will appear as literal text and produce invalid YAML.
 >
-> If you need data from a block template to appear in a file's YAML, define it directly in the block template's own YAML frontmatter. When the block is then inserted into the body of the destination file, its YAML is automatically merged into the file's frontmatter — no partial syntax required. See [[YAML and Block Templates]].
+> If you need data from a block template to appear in a file's YAML, define it directly in the block template's own YAML frontmatter. When the block is then inserted into the body of the destination file, its YAML is automatically merged into the file's frontmatter — no block syntax required. See [[YAML and Block Templates]].
 >
 > Note: Running the **Insert Block Template** command with your cursor positioned inside the YAML section is also not safe — the block body would be injected into the YAML, corrupting it. Always position your cursor in the document body before inserting. 
 

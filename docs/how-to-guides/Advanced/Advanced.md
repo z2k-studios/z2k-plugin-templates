@@ -9,7 +9,7 @@ So you are a pro-user - familiar with coding, JSON, URIs, etc. We've got some go
 ## Advanced Guides
 - How to Create A New File from an Apple Shortcut
 - How to Create a New File from a JSON Packet
-- How to Construct Hierarchical Templates - introduce z2k-system yaml and partials
+- How to Construct Hierarchical Templates - introduce z2k-system yaml and blocks
 - [[How to Wrap Templater Code Snippets into Fields]]
 - [[How to Clip Web Content into Your Daily Log with a Browser Bookmarklet]]
 

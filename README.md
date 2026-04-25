@@ -15,7 +15,7 @@ Z2K Templates sits between Obsidian's Core Templates (too simple for structured 
 ---
 ## Purpose
 
-The **Z2K Templates Plugin** supercharges Obsidian by providing an advanced templating language. Features including smart field replacement, prompting, formatting helpers, YAML integration, partial templates, and URI automation.
+The **Z2K Templates Plugin** supercharges Obsidian by providing an advanced templating language. Features including smart field replacement, prompting, formatting helpers, YAML integration, block templates, and URI automation.
 
 ---
 
@@ -51,7 +51,7 @@ The **Z2K Templates Plugin** supercharges Obsidian by providing an advanced temp
 - Supports nested helper functions
 
 ### Block Templates
-- Reusable template fragments with filenames prefixed by `Partial -`
+- Reusable template fragments
 - Insert via `{{> blockName}}`
 - Auto-merges YAML and resolves fields inline
 - Directory-based resolution logic ensures the closest block is chosen

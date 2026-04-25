@@ -44,7 +44,7 @@ my-vault/                           ← Root Vault Folder
 │   ├── Information/
 │   │   ├── Templates/              ← Templates Folder for Z2K/Information
 │   │   │   └── Template - Book.md  ← Template only visible in Z2K/Information
-│   │   │   └── Partial - Quote.md  ← Template only visible in Z2K/Information
+│   │   │   └── Block - Quote.md    ← Template only visible in Z2K/Information
 │   ├── Interactions/
 │   │   ├── Templates/              ← Templates Folder for Z2K/Interactions
 │   │   │   └── Lunch Meeting.md    ← Template only visible in Z2K/Interactions

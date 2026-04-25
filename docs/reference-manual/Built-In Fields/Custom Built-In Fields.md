@@ -39,7 +39,7 @@ Once declared, any template in the vault can reference `{{InOneWeek}}` or `{{Aut
 - Field references — `value=Author` (mirrors another field's value)
 - Helper calls — `(wikipedia Author Author)`, `(arr "a" "b" "c")`
 
-For the full parameter reference — accepted types, dependency tracking, resolution priority — see [[fieldInfo value|fieldInfo value Parameter]]. Note that `value` expressions run in [[Restricted Functionality Mode]]: helpers and field references work, but [[Block Templates]] (partials) do not.
+For the full parameter reference — accepted types, dependency tracking, resolution priority — see [[fieldInfo value|fieldInfo value Parameter]]. Note that `value` expressions run in [[Restricted Functionality Mode]]: helpers and field references work, but [[Block Templates]] do not.
 
 ## Method 2 – Zero-Parameter Custom Helper Function
 In Handlebars, a zero-parameter helper function is indistinguishable from a built-in field in template syntax. `{{currentSeason}}` resolves the same way whether the value comes from the engine context or from a registered helper — the template author sees no difference.

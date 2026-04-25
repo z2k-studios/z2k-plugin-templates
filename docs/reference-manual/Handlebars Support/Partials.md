@@ -120,7 +120,7 @@ Inside the block template, these parameters are accessible as fields:
 ```
 
 ## Wikilink Syntax
-Z2K Templates also accepts Obsidian-style wikilinks in partial names:
+Z2K Templates also accepts Obsidian-style wikilinks in block names:
 
 ```handlebars
 {{> [[block-template-name]]}}
@@ -129,7 +129,7 @@ Z2K Templates also accepts Obsidian-style wikilinks in partial names:
 The double brackets are stripped before resolution. This can be useful for maintaining consistent linking conventions in your vault.
 
 ## Limitations
-- **No dynamic block names** – expressions like `{{> (helperName)}}` that compute the partial name at render time are not supported and will produce an error. We sure would love to implement this one day, so cast a vote for it in our community pages.
+- **No dynamic block names** – expressions like `{{> (helperName)}}` that compute the block name at render time are not supported and will produce an error. We sure would love to implement this one day, so cast a vote for it in our community pages.
 - **No relative paths** – `../partial` and `./partial` syntax is not yet supported
 - **No inline partials** – Handlebars' `{{#* inline "name"}}` syntax is untested. See the [[Handlebars and Z2K Templates#Untested Handlebars Features|untested features list]].
 - Block templates must be properly identified – see [[Block Templates]] for requirements
@@ -137,11 +137,11 @@ The double brackets are stripped before resolution. This can be useful for maint
 ## See Also
 - [[Block Templates]] for fundamentals on block template files
 - [[Block Helpers]] for custom block-level helpers
-- [[Iterators]] for considerations when using partials inside `{{#each}}` loops
+- [[Iterators]] for considerations when using blocks inside `{{#each}}` loops
 
 
 > [!DANGER] INTERNAL NOTES
-> - The existing chicken scratch notes mentioned `{{> (random "BlockA.md" "BlockB.md")}}` as working for dynamic block selection. However, the source code at line 1073 of `z2k-template-engine/src/main.ts` explicitly throws an error for SubExpression-based partial names: "Dynamic block names are not supported." This is a **discrepancy** – either the code changed after the notes were written, or the notes were aspirational. Verify which is correct.
+> - The existing chicken scratch notes mentioned `{{> (random "BlockA.md" "BlockB.md")}}` as working for dynamic block selection. However, the source code at line 1073 of `z2k-template-engine/src/main.ts` explicitly throws an error for SubExpression-based block names: "Dynamic block names are not supported." This is a **discrepancy** – either the code changed after the notes were written, or the notes were aspirational. Verify which is correct.
 > - The resolution order described here comes from the chicken scratch notes. Verify against the actual block resolution logic in `z2k-plugin-templates/main.tsx` (the `getBlockCallback` function).
 > - Partial parameters are passed through to Handlebars and should work, but the interaction with Z2K Templates' fieldInfo system (do parameters override fieldInfo declarations in the block?) needs verification.
 > - The wikilink syntax support (`{{> [[name]]}}`) is confirmed in source at line 1077-1078.

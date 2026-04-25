@@ -107,7 +107,7 @@ tags: {{tags}}
 # {{projectName}}
 
 {{!--
-  This section uses a task block partial.
+  This section uses a task block.
   The block prompts for a task name and due date.
   See [[Block Templates]] for details on {{> syntax}}.
 --}}

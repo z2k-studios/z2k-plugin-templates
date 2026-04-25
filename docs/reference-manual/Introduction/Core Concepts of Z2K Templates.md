@@ -60,7 +60,7 @@ Z2K Templates uses [[Handlebars Support|Handlebars.js]] as it's underlying synta
 
 - Read More: [[Built-In Fields]], [[Built-In Helper Functions]]
 - Example:
-```md title="Partial Template - Status Update.md"
+```md title="Block - Status Update.md"
 Date::{{formatDate 'MMMM D, YYYY' now}}
 Status:: {{#if Completed}}✅{{else}}❌{{/if}}
 ```
@@ -116,7 +116,7 @@ StartDate: {{date}}
 ```
 
 
-Z2K Templates merges YAML from multiple sources — including partials and parent templates — according to its [[YAML Integration|merge rules]]. This keeps configuration data synchronized across nested templates. Storing field data into YAML frontmatter allows you to make use of powerful tools like Obsidian Bases to organize your files and empower smart searching. 
+Z2K Templates merges YAML from multiple sources — including blocks and parent templates — according to its [[YAML Integration|merge rules]]. This keeps configuration data synchronized across nested templates. Storing field data into YAML frontmatter allows you to make use of powerful tools like Obsidian Bases to organize your files and empower smart searching. 
 
 - Read More: [[YAML Integration]]
 
@@ -139,7 +139,7 @@ Large templates can be broken into smaller, reusable “block templates". These 
 
 Example:
 
-```md "Partials - Example.md"
+```md "Blocks - Example.md"
 {{> OverviewBlock}}
 {{> PrerequisitesBlock}}
 ```
@@ -167,5 +167,5 @@ Additionally, by using the [[Intro to System Blocks|System YAML feature]], you c
 > [!DANGER] INTERNAL NOTES
 >
 > - Add visuals for data flow and hierarchical template discovery.
-> - Add screenshot examples of modular and partial template use.
+> - Add screenshot examples of modular and block template use.
 

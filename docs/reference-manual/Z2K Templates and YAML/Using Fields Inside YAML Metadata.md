@@ -168,7 +168,7 @@ There are two recommended ways to solve this problem:
 ## Restrictions
 There are several restrictions on what you can place inside YAML frontmatter.
 
-### No Block Templates (Partials)
+### No Block Templates
 Block templates (`{{> blockName}}`) are **not allowed** in YAML frontmatter. The engine explicitly excludes block recursion during YAML processing. If you need to inject YAML from another source, use [[Intro to System Blocks|System Blocks]] or [[YAML and Block Templates|block template YAML merging]] instead.
 
 ### Handlebar Block Expressions - Discouraged

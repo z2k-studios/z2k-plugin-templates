@@ -14,8 +14,8 @@ For more information, please see:
 3. [[Unescaped Expressions]] - How escaping and raw output work in a Markdown-focused environment
 4. [[Whitespace Control]] - Trimming whitespace around expressions with tildes
 5. [[Conditionals]] - Using `{{#if}}` and `{{#unless}}` with Z2K Template's deferred fields
-6. [[Iterators]] - Using `{{#each}}` with arrays, objects, and partials
+6. [[Iterators]] - Using `{{#each}}` with arrays, objects, and blocks
 7. [[Logging]] - Using `{{log}}` for debugging templates
 8. [[Raw Blocks]] - Preventing template processing within a block
 9. [[Block Helpers]] - Custom block-level helpers and their limitations in Z2K Templates
-10. [[Partials]] - Partial syntax, resolution, and dynamic selection
+10. [[Partials]] - Block syntax, resolution, and dynamic selection

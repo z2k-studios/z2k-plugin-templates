@@ -83,7 +83,7 @@ The modal dialog Z2K Templates presents when creating or continuing to fill a co
 A user-configured shortcut that pre-sets the action, destination folder, and template for instant access from the Command Palette or via a keyboard hotkey — bypassing the standard selection dialogs. See [[Quick Commands Overview]].
 
 ## Restricted Functionality Mode
-A limited rendering context active when Z2K Templates evaluates expressions embedded inside `{{fieldInfo}}` parameter strings (such as `prompt`, `suggest`, and `fallback` values). [[Block Templates|Block template]] partials and `{{fieldInfo}}` declarations are not available in this mode. See [[Restricted Functionality Mode]].
+A limited rendering context active when Z2K Templates evaluates expressions embedded inside `{{fieldInfo}}` parameter strings (such as `prompt`, `suggest`, and `fallback` values). [[Block Templates]] and `{{fieldInfo}}` declarations are not available in this mode. See [[Restricted Functionality Mode]].
 
 ## Silent Helper Function
 A helper function that executes and affects template behavior but produces no visible output in the rendered document. `{{fieldInfo}}` and Handlebars comments are the primary examples. See [[Silent Helper Functions]].

@@ -31,8 +31,8 @@ meeting-notes-section.block
 ```
 
 
-### 3. Explicit Partial Reference
-Any file can be used as a block template if it is explicitly referenced using Handlebars [[Partials|partial syntax]]:
+### 3. Explicit Block Reference
+Any file can be used as a block template if it is explicitly referenced using Handlebars [[Partials|block syntax]]:
 
 ```handlebars
 {{> path/to/any-file.md}}

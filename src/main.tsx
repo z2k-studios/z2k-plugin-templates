@@ -1581,7 +1581,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		}
 		let { fm, body } = Z2KYamlDoc.splitFrontmatter(content);
 		if (fm.includes("{{>")) {
-			throw new TemplatePluginError("Block template partials ({{> ...}}) cannot be used in frontmatter.");
+			throw new TemplatePluginError("Block templates ({{> ...}}) cannot be used in frontmatter.");
 		}
 		fm = this.updateYamlOnCreate(fm, templateFileForParse.basename);
 		content = Z2KYamlDoc.joinFrontmatter(fm, body);
@@ -2470,7 +2470,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		return false;
 	}
 	async getBlockCallbackFunc(): Promise<(name: string, path: string) => Promise<[found: boolean, content: string, path: string]>> {
-		// Partials can include any file in the vault, not just templates.
+		// Blocks can include any file in the vault, not just templates.
 		// Build list from indexed files + hidden files in dot-prefixed template folders.
 		let allBlocks: [PathFile, string][] = [];
 		for (const f of this.app.vault.getFiles()) {

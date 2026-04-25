@@ -92,7 +92,7 @@ Finally, take a look at the fields that use `{{chatGPT}}` and `{{wikipedia}}`. T
 - Learn More: [[Built-In Helper Functions]]
 
 ## 3. Create a Block Template
-Now that we have a well-featured book template in our vault, let's create what is called a [[Block Templates|Block Template]] to create a reusable section that contains a quotation from a book. Partials are templates for blocks of text, rather than whole files.
+Now that we have a well-featured book template in our vault, let's create what is called a [[Block Templates|Block Template]] to create a reusable section that contains a quotation from a book. Block Templates are templates for blocks of text, rather than whole files.
 
 ```markdown
 ## Quote:: {{Quotation Name}}
@@ -105,7 +105,7 @@ Now that we have a well-featured book template in our vault, let's create what i
 
 ```
 
-==To do: add the partial yaml code ==
+==To do: add the block yaml code ==
 
 
 ## 4. Now Create A New Card with Quotations

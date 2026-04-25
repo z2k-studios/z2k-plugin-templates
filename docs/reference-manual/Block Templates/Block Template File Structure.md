@@ -27,7 +27,7 @@ Block Templates support the full range of field prompting features. When a block
 
 ```handlebars
 ---
-z2k_template_type: partial
+z2k_template_type: block-template
 ---
 ## Task: {{taskName}}
 - [ ] {{fieldInfo description placeholder="Describe the task..."}}
@@ -40,7 +40,7 @@ Block Templates support all Handlebars syntax and built-in helpers available in 
 
 - **Built-in fields**: `{{date}}`, `{{time}}`, `{{clipboard}}`, etc.
 - **Helper functions**: `{{formatDate}}`, `{{calc}}`, `{{#if}}`, etc.
-- **Nested partials**: `{{> another-block}}`
+- **Nested blocks**: `{{> another-block}}`
 
 ```handlebars
 ## Log Entry - {{formatDate "YYYY-MM-DD HH:mm"}}

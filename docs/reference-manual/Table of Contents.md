@@ -230,11 +230,11 @@ The complete, nested table of contents for the Z2K Templates Reference Manual.
 	- [[Unescaped Expressions]] — How escaping and raw output work in a Markdown-focused environment
 	- [[Whitespace Control]] — Trimming whitespace around expressions with tildes
 	- [[Conditionals]] — Using `{{#if}}` and `{{#unless}}` with Z2K Templates' deferred fields
-	- [[Iterators]] — Using `{{#each}}` with arrays, objects, and partials
+	- [[Iterators]] — Using `{{#each}}` with arrays, objects, and blocks
 	- [[Logging]] — Using `{{log}}` for debugging templates
 	- [[Raw Blocks]] — Preventing template processing within a block
 	- [[Block Helpers]] — Custom block-level helpers and their limitations in Z2K Templates
-	- [[Partials]] — Partial syntax, resolution, and dynamic selection
+	- [[Partials]] — Block syntax, resolution, and dynamic selection
 
 15. **[[Block Templates]] — Reusable fragments of markdown that can be inserted inside existing files**
 	- [[What is a Block Template|What is a Block Template?]] — What fundamentally is a Block Template?

@@ -15,7 +15,7 @@ z2k_card_source_type: ".:Z2K/SourceType/AI/Analysis"
 ### System Block Inheritance
 The system block architecture is the strongest design decision in v3. Domain-level identity (`z2k_creation_domain`), privacy (`z2k_card_privacy`), and ratings fields are injected at instantiation without any per-template boilerplate. This eliminated ~20 lines of duplicated YAML from every template and created a single source of truth per domain.
 
-### Block Templates as Reusable Partials
+### Block Templates as Reusable Fragments
 The `{{> "BlockName"}}` pattern dramatically reduces duplication. The Logistics block (shared across 12 Interactions templates), When Where Who block (shared across 5 Memories templates), and Podcast Interview Content block (shared across 7 podcast templates) each demonstrate high reuse ratios. Any change to shared structure now propagates instantly.
 
 ### fieldInfo Declarations
@@ -24,8 +24,8 @@ The `{{fieldInfo FieldName "prompt" type="text"}}` pattern creates a clean separ
 - `directives="no-prompt"` and `value="..."` for preset fields in host-specific podcast templates
 - This pattern enables future UI-driven field validation without template changes
 
-### Card Fabric as Opt-In Partial
-Moving Card Fabric from mandatory template content to an opt-in `{{> "Card Fabric"}}` partial was the right call. Most templates carry the commented-out reference (`{{!-- To include Card Fabric: {{> "Card Fabric"}} --}}`) as a reminder, keeping templates clean by default.
+### Card Fabric as Opt-In Block
+Moving Card Fabric from mandatory template content to an opt-in `{{> "Card Fabric"}}` block was the right call. Most templates carry the commented-out reference (`{{!-- To include Card Fabric: {{> "Card Fabric"}} --}}`) as a reminder, keeping templates clean by default.
 
 ### Suggested Title Expressions
 The `z2k_template_suggested_title` field with Handlebars expressions (e.g., `"{{BookTitle}} - {{AuthorNameOnly}}"`) provides immediate feedback during card creation. The built-in date helpers (`{{today}}`, `{{dateYearMonthName}}`, `{{yearQuarter}}`) are particularly useful for time-indexed domains like Logs and Journals.
@@ -59,7 +59,7 @@ The `z2k_card_source_type` values across domains follow different naming convent
 **Priority: Medium.** The `(General)` suffix pattern (e.g., "Information (General).md") is a workaround for GH issue #182. Once the Default Template feature ships, these should be renamed to just the domain name or designated as the default via YAML configuration.
 
 ### Dot-Notation for Prompted Fields (BLK-001/004/005)
-Dot-notation (e.g., `Content.Author`) was tested during Task 07 and confirmed working. However, its behavior in nested block partials and across partial boundaries should be more thoroughly documented.
+Dot-notation (e.g., `Content.Author`) was tested during Task 07 and confirmed working. However, its behavior in nested blocks and across block boundaries should be more thoroughly documented.
 
 ### Conditional Rendering
 Some v2 templates had sections that only appeared when certain fields were filled. The current v3 system has no `{{#if FieldName}}` conditional rendering. This would enable cleaner output for optional sections.
@@ -87,7 +87,7 @@ System blocks currently have no version field. If the domain metadata schema cha
 ### Template Validation Script
 Extend the current test suite (`test-structure.py`) into a permanent validation tool that runs on every vault sync:
 - Verify all templates have required YAML fields
-- Check that block partials referenced in templates actually exist
+- Check that blocks referenced in templates actually exist
 - Validate `z2k_card_source_type` values against a canonical registry
 - Detect orphaned templates (files in Templates/ not referenced by any configuration)
 

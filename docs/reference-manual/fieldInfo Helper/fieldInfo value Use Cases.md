@@ -123,7 +123,7 @@ When `fileTitlePostFix` is provided — say, "Meeting notes" — the file is nam
 ## Embedding Rich Content
 The `value` parameter is not limited to simple strings. It can hold any text the template engine would otherwise write to the file — including multi-line plugin syntax like Dataview queries.
 
-Declare a Dataview query as a named field in your [[Global Block]] or in a dedicated partial:
+Declare a Dataview query as a named field in your [[Global Block]] or in a dedicated block:
 
 ```handlebars
 {{fieldInfo CardsNeedingWork value="```dataview
@@ -149,15 +149,15 @@ This pattern extends to any multi-line markdown content: callouts, table fragmen
 > **Multi-line strings and backtick escaping**: Verify that multi-line `value` strings with embedded fenced code blocks render correctly. Confirm that inner backticks and quotes do not require additional escaping beyond what is shown above.
 
 ## Block Template Composition
-[[Block Templates|Block templates]] can use `value` to inject field values into a shared layout partial — effectively parameterizing a shared visual or structural component from a domain-specific partial.
+[[Block Templates|Block templates]] can use `value` to inject field values into a shared layout block — effectively parameterizing a shared visual or structural component from a domain-specific block.
 
-Suppose a shared header partial provides a banner image whose filename varies by template domain:
+Suppose a shared header block provides a banner image whose filename varies by template domain:
 
 ```md file="Root Level - Header.block"
 ![[{{BannerImage}}#bannerimg]]
 ```
 
-Each domain-specific partial sets the image by injecting a value before the shared partial is included:
+Each domain-specific block sets the image by injecting a value before the shared block is included:
 
 ```md file="Thoughts - Header.block"
 {{fieldInfo BannerImage value="Banners-Thoughts.png"}}
@@ -172,7 +172,7 @@ A template in the "Thoughts" domain then composes both:
 This is a new Thoughts card...
 ```
 
-At render time, `BannerImage` resolves to `"Banners-Thoughts.png"` before the layout partial uses it, yielding:
+At render time, `BannerImage` resolves to `"Banners-Thoughts.png"` before the layout block uses it, yielding:
 
 ```md
 ![[Banners-Thoughts.png#bannerimg]]
@@ -180,9 +180,9 @@ At render time, `BannerImage` resolves to `"Banners-Thoughts.png"` before the la
 This is a new Thoughts card...
 ```
 
-The same `Root Level - Header` partial works across all domains — each domain partial simply injects the appropriate value. Adding a new domain means adding one partial; the layout is never touched.
+The same `Root Level - Header` block works across all domains — each domain block simply injects the appropriate value. Adding a new domain means adding one block; the layout is never touched.
 
-This differs from [[#Hierarchical Value Injection]] (which uses system blocks scoped to folders) in that it operates through explicit partial composition — value injection is controlled by which block templates you include, not which folder a file lives in.
+This differs from [[#Hierarchical Value Injection]] (which uses system blocks scoped to folders) in that it operates through explicit block composition — value injection is controlled by which block templates you include, not which folder a file lives in.
 
 > [!DANGER] INTERNAL NOTES
-> **Partial ordering**: Confirm that a `value` set in one included partial is visible to a subsequent included partial within the same template render pass. This depends on whether the engine resolves values across partials in declaration order.
+> **Block ordering**: Confirm that a `value` set in one included block is visible to a subsequent included block within the same template render pass. This depends on whether the engine resolves values across blocks in declaration order.

@@ -42,7 +42,7 @@ my-vault/                           ← Root Vault Folder
 │   │   ├── Generic Z2K File.md     ← Template only visible in Z2K & below
 │   │   ├── Information/
 │   │   │   └── Template - Book.md   ← Template only visible in Z2K/Information
-│   │   │   └── Partial - Quote.md   ← Template only visible in Z2K/Information
+│   │   │   └── Block - Quote.md     ← Template only visible in Z2K/Information
 │   │   ├── Interactions/
 │   │   │   └── Lunch Meeting.md     ← Template only visible in Z2K/Interactions
 └── ...
@@ -51,6 +51,6 @@ my-vault/                           ← Root Vault Folder
 Notice in this new vault structure that the `\Templates` root folder now contains subfolders that mirror the folder structure in the root of the vault. If you are creating a new template inside the `/Z2K/Information/` folder, it will show four templates to choose from:
 
 1. `Template - Book.md` -- because it is located in `Templates/Z2K/Information`
-2. `Partial - Quote.md` -- also because it is located in `Templates/Z2K/Information`
+2. `Block - Quote.md` -- also because it is located in `Templates/Z2K/Information`
 3. `Generic - Z2K File.md` -- because of tree traversal, it will also present this template.
 4. `Generic - File.md` -- because of tree traversal, it will also present this template for use.

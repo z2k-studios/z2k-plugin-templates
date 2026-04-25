@@ -83,7 +83,7 @@ Produces:
 Because `arr` constructs the array at render time, there is no deferred-field issue – the data is always available.
 
 ## Iterators and Block Templates
-You can include [[Partials]] (aka [[Block Templates]]) inside an `{{#each}}` loop. This is useful for repeating a structured fragment multiple times with different data.
+You can include [[Block Templates|blocks]] (aka [[Partials]] in Handlebars) inside an `{{#each}}` loop. This is useful for repeating a structured fragment multiple times with different data.
 
 ### Example: Generating a List of Tasks
 Suppose you have a block template called `task-block` that renders a single task checkbox:
@@ -114,7 +114,7 @@ You can use `{{#each}}` with the [[arr]] helper to generate multiple task entrie
 Inside the loop, `{{this}}` in the block template refers to the current array item. Each iteration invokes the same block template with a different value for `{{this}}`.
 
 ### Considerations
-Z2K Templates renames partials uniquely internally during preprocessing to avoid collisions. When the same partial appears multiple times inside a loop, each iteration reuses the same compiled partial — which is typically fine for simple blocks.
+Z2K Templates renames blocks uniquely internally during preprocessing to avoid collisions. When the same block appears multiple times inside a loop, each iteration reuses the same compiled block — which is typically fine for simple blocks.
 
 > [!WARNING]
 > If a block template contains [[fieldInfo Helper|fieldInfo]] declarations with prompted fields, the prompting behavior when used inside a loop depends on how [[Deferred Field Resolution]] and fieldInfo interact with repeated invocations. This pattern is not well-tested — verify with your specific templates.
@@ -140,7 +140,7 @@ This is particularly useful for data coming in through [[JSON Packages Overview|
 
 > [!DANGER] INTERNAL NOTES
 > - **Deferred field bug**: `{{#each}}` is affected by the same [[Conditionals#Known Issue|block statement preservation bug]] as `{{#if}}`. See that page for root cause, desired behavior options, and test cases. For iterators specifically, an unresolved field passed to `{{#each}}` is treated as an empty collection, collapsing the block permanently.
-> - The interaction between `{{#each}}` and partials needs testing. The engine renames partials to `block_N` during preprocessing (line 1083 of `z2k-template-engine/src/main.ts`), but it's unclear how this works when the same partial appears multiple times inside a loop.
+> - The interaction between `{{#each}}` and blocks needs testing. The engine renames blocks to `block_N` during preprocessing (line 1083 of `z2k-template-engine/src/main.ts`), but it's unclear how this works when the same block appears multiple times inside a loop.
 > - Data variables (`@index`, `@first`, `@last`, `@key`) are standard Handlebars and should work, but have not been explicitly verified in Z2K Templates.
 > - Consider whether `{{#each}}` works with JSON data passed via [[URI, JSON, Command Queues|URI or JSON packets]] – this is likely the most common source of array data for iteration.
 > - **Test cases for deferred `{{#each}}`**:
