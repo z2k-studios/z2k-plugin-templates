@@ -1163,20 +1163,72 @@ export default class Z2KTemplatesPlugin extends Plugin {
 
 	async updateQueueDirPath(newPath: string) {
 		const oldPath = this.settings.offlineCommandQueueDir;
-		this.settings.offlineCommandQueueDir = newPath;
-		await this.saveData(this.settings);
+		if (oldPath === newPath) { return; }
 
 		const adapter = this.app.vault.adapter;
+		const oldDirPath = oldPath ? this.resolveQueueFilePath(oldPath) : null;
+		const newDirPath = newPath ? this.resolveQueueFilePath(newPath) : null;
 
-		// Move files from old directory to new if both paths exist
-		if (oldPath && oldPath !== newPath && newPath) {
-			const oldDirPath = this.resolveQueueFilePath(oldPath);
-			const newDirPath = this.resolveQueueFilePath(newPath);
-			if (oldDirPath && newDirPath && await adapter.exists(oldDirPath)) {
-				// TODO: Move files from old to new directory
+		// Move existing queue contents before persisting the setting, so a failure
+		// leaves both setting and files at their old location (recoverable).
+		if (oldDirPath && newDirPath && oldDirPath !== newDirPath && await adapter.exists(oldDirPath)) {
+			const wasProcessing = this._processingQueue;
+			this._processingQueue = true;
+			try {
+				await this.moveQueueContents(oldDirPath, newDirPath);
+			} catch (err) {
+				this._processingQueue = wasProcessing;
+				await this.log('error', true,
+					`Failed to move queue files from ${oldDirPath} to ${newDirPath}. Setting unchanged.`,
+					err instanceof Error ? err : undefined);
+				return;
 			}
+			this._processingQueue = wasProcessing;
 		}
 
+		this.settings.offlineCommandQueueDir = newPath;
+		await this.saveData(this.settings);
+	}
+
+	private async moveQueueContents(oldDir: string, newDir: string): Promise<void> {
+		const adapter = this.app.vault.adapter;
+		if (!(await adapter.exists(newDir))) {
+			await adapter.mkdir(newDir);
+		}
+
+		const listing = await adapter.list(oldDir);
+		const skipped: string[] = [];
+
+		for (const filePath of listing.files) {
+			const basename = filePath.split('/').pop()!;
+			const targetPath = `${newDir}/${basename}`;
+			if (await adapter.exists(targetPath)) {
+				skipped.push(basename);
+				continue;
+			}
+			await adapter.rename(filePath, targetPath);
+		}
+
+		// Subfolders (e.g., done/, failed/) move whole; collisions skipped without recursive merge.
+		for (const folderPath of listing.folders) {
+			const basename = folderPath.split('/').pop()!;
+			const targetPath = `${newDir}/${basename}`;
+			if (await adapter.exists(targetPath)) {
+				skipped.push(`${basename}/`);
+				continue;
+			}
+			await adapter.rename(folderPath, targetPath);
+		}
+
+		const remaining = await adapter.list(oldDir);
+		if (remaining.files.length === 0 && remaining.folders.length === 0) {
+			await adapter.rmdir(oldDir, false);
+		}
+
+		if (skipped.length > 0) {
+			await this.log('warn', true,
+				`Queue move: ${skipped.length} item(s) skipped due to name collision in ${newDir}: ${skipped.join(', ')}. Manually move from ${oldDir}.`);
+		}
 	}
 
 	private startQueueProcessor() {
