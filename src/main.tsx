@@ -238,6 +238,58 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		};
 	}
 
+	// =================================================================
+	// SECURITY: dynamic code execution via `new Function`
+	// =================================================================
+	// loadUserHelpers and validateUserHelpers both invoke `new Function` to
+	// execute user-authored JavaScript. This note exists so reviewers and
+	// future maintainers can immediately see the threat model and what
+	// safeguards apply.
+	//
+	// What this enables: the user can register custom Handlebars helpers
+	// (e.g. a `formatDuration` or `wikiTitle` helper) that templates can
+	// then call. Helpers are arbitrary JavaScript — without dynamic
+	// execution, helpers would be limited to a fixed set the plugin ships,
+	// which would force every novel transform to be a feature request.
+	// Templater established this pattern (its `tp.user` system); we follow
+	// it deliberately.
+	//
+	// Threat model — who provides the code:
+	//   The code passed to `new Function` is `this.settings.userHelpers`
+	//   (see utils.ts), a string the user typed into a settings textarea.
+	//   It is never sourced from a template, never sourced from the vault,
+	//   never sourced from a remote URL. The only path for code to enter
+	//   this function is the user themselves authoring it in plugin
+	//   settings. Trust boundary is identical to installing any third-party
+	//   Obsidian plugin — the user has chosen to run code on their own
+	//   machine.
+	//
+	// Mitigations in place:
+	//   1. Off by default. `userHelpersEnabled` defaults to false in
+	//      DEFAULT_SETTINGS (utils.ts). The plugin ignores user helper
+	//      code unless the user explicitly opts in.
+	//   2. Confirmation dialog on opt-in. Toggling `userHelpersEnabled`
+	//      to true in the settings UI surfaces a confirm modal before
+	//      activation (settings.tsx). It is not a silent flip.
+	//   3. Self-aware threat label. The setting type is annotated
+	//      `(ACE risk)` (utils.ts) so anyone reading the codebase sees
+	//      the classification.
+	//   4. Templates cannot inject code. Even a malicious template loaded
+	//      from elsewhere has no path to dynamic execution — the only
+	//      entry is the settings textarea.
+	//   5. Errors are caught and surfaced to the user via Notice, not
+	//      silently swallowed.
+	//
+	// Why `new Function` rather than `eval`:
+	//   `new Function` creates a fresh function scope and does not have
+	//   access to the enclosing lexical scope. Marginally safer than
+	//   `eval`, and idiomatic for this kind of plugin extension point.
+	//
+	// Why not a sandboxed iframe / Worker:
+	//   Helpers must be synchronous (Handlebars renders synchronously) and
+	//   share the plugin's `app`/`obsidian`/`Handlebars` references to be
+	//   useful. Both alternatives would break those constraints.
+	// =================================================================
 	loadUserHelpers(code: string): { valid: boolean; error?: string; helperNames?: string[] } {
 		const newHelpers: Record<string, Function> = {};
 		const registerHelper = (name: string, fn: Function) => {
@@ -305,6 +357,9 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		}
 	}
 
+	// See the security notes above loadUserHelpers — same `new Function`
+	// pattern, but for read-only validation (settings UI syntax check),
+	// not for committing helpers to plugin state.
 	validateUserHelpers(code: string): { valid: boolean; error?: string; message?: string } {
 		if (!code || code.trim() === "") {
 			return { valid: true, message: "Empty" };
@@ -726,51 +781,6 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				});
 			})
 		);
-
-		// { // Template editing mode toggle
-		// 	// Toggle command
-		// 	this.addCommand({
-		// 		id: 'z2k-enable-template-editing',
-		// 		name: 'Enable Template Editing Mode',
-		// 		checkCallback: (checking) => {
-		// 			if (checking) { return !this.settings.templateEditingEnabled; }
-		// 			this.enableTemplateEditing();
-		// 		},
-		// 	});
-		// 	this.addCommand({
-		// 		id: 'z2k-disable-template-editing',
-		// 		name: 'Disable Template Editing Mode',
-		// 		checkCallback: (checking) => {
-		// 			if (checking) { return this.settings.templateEditingEnabled; }
-		// 			this.disableTemplateEditing();
-		// 		},
-		// 	});
-		// 	// Toggle in context menu in file explorer
-		// 	this.registerEvent(
-		// 		this.app.workspace.on('file-menu', (menu, file) => {
-		// 			if (this.settings.templateEditingEnabled) {
-		// 				menu.addItem(i => i.setTitle("Z2K: Disable Template Editing Mode")
-		// 					.onClick(() => this.disableTemplateEditing()));
-		// 			} else {
-		// 				menu.addItem(i => i.setTitle("Z2K: Enable Template Editing Mode")
-		// 					.onClick(() => this.enableTemplateEditing()));
-		// 			}
-		// 		})
-		// 	);
-		// 	this.registerEvent(
-		// 		// ts-ignore because folder-menu is not in the type definitions
-		// 		// @ts-ignore
-		// 		this.app.workspace.on('folder-menu', (menu, folder) => {
-		// 			if (this.settings.templateEditingEnabled) {
-		// 				menu.addItem((i: any) => i.setTitle("Z2K: Disable Template Editing Mode")
-		// 					.onClick(() => this.disableTemplateEditing()));
-		// 			} else {
-		// 				menu.addItem((i: any) => i.setTitle("Z2K: Enable Template Editing Mode")
-		// 					.onClick(() => this.enableTemplateEditing()));
-		// 			}
-		// 		})
-		// 	);
-		// }
 
 		// Template conversion context menu in file explorer
 		this.registerEvent(
