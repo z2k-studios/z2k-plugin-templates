@@ -1714,7 +1714,6 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		await this.addPluginBuiltIns(state, { existingTitle: opts.existingFile.basename, fileCreationDate: opts.existingFile.stat.ctime, existingFile: opts.existingFile, templatePath: opts.existingFile.path });
 		this.handleOverrides(state, opts.fieldOverrides, opts.uriKeys ?? new Set(), opts.promptMode || "remaining");
 		let hasFillableFields = this.hasFillableFields(state.fieldInfos);
-		// TODO: handle the case where fieldOverrides fills all fields and promptMode is "remaining"
 		if (!hasFillableFields && !opts.fieldOverrides && !opts.finalize) {
 			const hasAnyField = state.referencedFields.size > 0 || state.declaredFields.size > 0;
 			const msg = hasAnyField
