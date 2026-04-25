@@ -31,7 +31,9 @@ export interface Z2KTemplatesPluginSettings {
 	templateExtensionsVisible: boolean; // Whether .template and .block files are currently visible in Obsidian
 	globalBlock: string; // Global fieldInfo declarations (applied to all templates)
 	userHelpers: string; // Custom JavaScript helper functions
-	customHelpersEnabled: boolean; // Whether custom helpers are active (ACE risk)
+	userHelpersEnabled: boolean; // Whether user-written custom helpers are active (ACE risk)
+	pluginHelpersEnabled: boolean; // Master toggle for helpers/built-in fields registered by other plugins
+	perPluginEnabled: Record<string, boolean>; // Per-plugin enable/disable of registered helpers and built-in fields; missing entries default to enabled
 }
 
 export const DEFAULT_SETTINGS: Z2KTemplatesPluginSettings = {
@@ -55,7 +57,9 @@ export const DEFAULT_SETTINGS: Z2KTemplatesPluginSettings = {
 // Example:
 // registerHelper('shout', (value) => String(value).toUpperCase() + '!');
 `,
-	customHelpersEnabled: false,
+	userHelpersEnabled: false,
+	pluginHelpersEnabled: true,
+	perPluginEnabled: {},
 };
 
 const DURATION_FORMAT_ERROR = 'Invalid duration. Use number + suffix: ms, s, m, h, d, w, mo, y (e.g., 500ms, 30s, 5m, 12h, 3d, 1w, 6mo, 1y)';

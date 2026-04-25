@@ -1,12 +1,12 @@
 {
 	"id": "z2k-plugin-templates",
 	"name": "Z2K - Templates",
-	"version": "0.3.1",
+	"version": "0.4.0",
 	"minAppVersion": "0.15.0",
-	"description": "Provides template functionality for Z2K and more, allowing you to create new cards and perform other actions using templates and partials.",
+	"description": "Create structured notes from declarative templates. Interactive prompts, smart field replacement, YAML merging across folders, and reusable blocks.",
 	"author": "Z2K",
 	"authorUrl": "https://z2k.dev/",
-	"isDesktopOnly": false,
+	"isDesktopOnly": true,
 	"styles": [
 		"styles.css"
 	]

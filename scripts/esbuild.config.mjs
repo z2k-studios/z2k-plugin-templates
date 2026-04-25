@@ -37,14 +37,15 @@ const context = await esbuild.context({
 	logLevel: "info",
 	sourcemap: prod ? false : "inline",
 	treeShaking: true,
-	outfile: "main.js",
+	outfile: prod ? "release/main.js" : "main.js",
 	jsx: "automatic",
 	minify: prod,
 });
 
 
 if (prod) {
-	context.rebuild();
+	await context.rebuild();
+	await context.dispose();
 	process.exit(0);
 } else {
 	await context.watch();

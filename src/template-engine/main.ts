@@ -400,7 +400,16 @@ class Z2KTemplateEngine {
 		//
 		// We use the AST to detect single expressions rather than regex, because regex can't
 		// reliably distinguish `{{a}}` from `{{a}} and {{b}}` or handle nested braces correctly.
-		let ast = parse(content);
+		// If content isn't parseable as Handlebars (e.g., raw user content in clipboard/sourceText
+		// that happens to contain '{{' or unmatched quotes), it has no template expressions to
+		// evaluate — return it as-is. Genuine template bugs in author-declared content will still
+		// surface during the main render pass over the template body.
+		let ast: AST.Program;
+		try {
+			ast = parse(content);
+		} catch {
+			return content;
+		}
 		const isSingleExpression = ast.body.length === 1 && ast.body[0].type === 'MustacheStatement';
 		if (isSingleExpression) {
 			const mustache = ast.body[0] as AST.MustacheStatement;
@@ -536,13 +545,24 @@ class Z2KTemplateEngine {
 			}
 			return Array.from(new Set(dependencies));
 		} else if (typeof val === 'string') {
-			return this.getVarReferences(parse(val));
+			// Values can legitimately hold raw user content (clipboard, sourceText, creator, etc.)
+			// that isn't valid Handlebars. A value that can't be parsed has no discoverable
+			// template references — return []. Genuine template bugs in author-declared field
+			// values will still surface at render time.
+			try {
+				return this.getVarReferences(parse(val));
+			} catch {
+				return [];
+			}
 		} else {
 			return [];
 		}
 	}
 	// Collects all field names referenced in a fieldInfo's string properties
 	static getFieldInfoDependencies(fieldInfo: FieldInfo): string[] {
+		// Raw-content fields (clipboard, sourceText, and anything tagged by the author)
+		// never contain intentional template expressions, so they have no discoverable deps.
+		if (fieldInfo.directives?.includes('raw-content')) { return []; }
 		const deps: string[] = [];
 		const scan = (val: VarValueType | undefined) => {
 			if (val !== undefined) { deps.push(...this.reducedGetDependencies(val)); }
@@ -568,7 +588,9 @@ class Z2KTemplateEngine {
 
 			fieldInfos: {},
 			referencedFields: new Set(),
+			declaredFields: new Set(),
 			resolvedValues: {},
+			metadata: {},
 		}
 
 		// Priority chain: built-in < global < system < block < main
@@ -1229,6 +1251,7 @@ class Z2KTemplateEngine {
 		// Collect all fields actually referenced in template body (not just declared via fi)
 		// This is used to determine which fields should be prompted
 		const refs = state.referencedFields;
+		const decls = state.declaredFields;
 
 		function addIfFieldRef(node: AST.Node | undefined) {
 			if (node?.type === 'PathExpression') {
@@ -1238,6 +1261,19 @@ class Z2KTemplateEngine {
 					refs.add(path.parts[0]);
 				}
 			}
+		}
+
+		function getDeclaredFieldName(stmt: AST.MustacheStatement | AST.SubExpression): string | undefined {
+			// fi/fo field name comes from first positional param or hash `fieldName=`
+			const namedPair = stmt.hash?.pairs?.find(p => p.key === 'fieldName');
+			if (namedPair && namedPair.value.type === 'PathExpression') {
+				return (namedPair.value as AST.PathExpression).original;
+			}
+			const first = stmt.params?.[0];
+			if (first?.type === 'PathExpression') {
+				return (first as AST.PathExpression).original;
+			}
+			return undefined;
 		}
 
 		function visit(node: AST.Node) {
@@ -1252,7 +1288,9 @@ class Z2KTemplateEngine {
 					const helperName = stmt.path.type === 'PathExpression' ? (stmt.path as AST.PathExpression).original : '';
 					const isFieldInfoHelper = ['fi', 'fo', 'fieldInfo', 'fieldOutput'].includes(helperName);
 					if (isFieldInfoHelper) {
-						// fi/fo are declarations - don't count their params as references
+						// fi/fo are declarations - record name in declaredFields, don't count params as references
+						const declaredName = getDeclaredFieldName(stmt);
+						if (declaredName) { decls.add(declaredName); }
 						// But DO add the field to referencedFields for fo (it outputs the value)
 						if ((helperName === 'fo' || helperName === 'fieldOutput') && stmt.params?.[0]?.type === 'PathExpression') {
 							addIfFieldRef(stmt.params[0]);
@@ -1746,6 +1784,18 @@ class Z2KYamlDoc {
 	}
 }
 
+// All plugin-reserved YAML keys — one struct, not separate "metadata" vs "skip list"
+interface TemplateMetadata {
+	z2k_template_name?: string;
+	z2k_template_version?: string;
+	z2k_template_author?: string;
+	z2k_template_suggested_title?: string;
+	z2k_template_description?: string;
+	z2k_template_type?: string;
+	z2k_template_default_fallback_handling?: string;
+	z2k_default?: boolean;
+}
+
 interface TemplateState {
 	templates: string[];
 	templateASTs: AST.Program[];
@@ -1757,14 +1807,16 @@ interface TemplateState {
 
 	fieldInfos: Record<string, FieldInfo>; // There should be a fieldInfo for every field (so we can know what fields are in the template)
 	referencedFields: Set<string>; // Fields actually used in template (not just declared via fi)
+	declaredFields: Set<string>; // Fields declared via fi/fo helpers (not necessarily referenced)
 	resolvedValues: Record<string, VarValueType>;
+	metadata: TemplateMetadata;
 }
 
 type DataType = "text" | "number" | "date" | "datetime" | "boolean" | "singleSelect" | "multiSelect" | "titleText";
 let DataTypeValues: DataType[] = ["text", "number", "date", "datetime", "boolean", "singleSelect", "multiSelect", "titleText"];
 
-type Directive = "required" | "not-required" | "prompt" | "no-prompt" | "finalize-clear" | "finalize-preserve" | "finalize-suggest";
-let DirectiveValues: Directive[] = ["required", "not-required", "prompt", "no-prompt", "finalize-clear", "finalize-preserve", "finalize-suggest"];
+type Directive = "required" | "not-required" | "prompt" | "no-prompt" | "finalize-clear" | "finalize-preserve" | "finalize-suggest" | "raw-content";
+let DirectiveValues: Directive[] = ["required", "not-required", "prompt", "no-prompt", "finalize-clear", "finalize-preserve", "finalize-suggest", "raw-content"];
 const DirectiveCounterparts: Record<string, Directive[]> = {
 	"required": ["not-required"],
 	"not-required": ["required"],
@@ -1813,6 +1865,7 @@ export {
 };
 export type {
 	TemplateState,
+	TemplateMetadata,
 	DataType,
 	VarValueType,
 	FieldInfo,

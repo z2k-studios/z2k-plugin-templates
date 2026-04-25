@@ -1,4 +1,16 @@
-> The Z2K Templates Obsidian Plugin powerful extension to Obsidian’s native templating, enabling an easy, robust and consistent file creation for your Digital Mind.
+> The Z2K Templates Obsidian Plugin is a powerful extension to Obsidian's native templating, enabling easy, robust, and consistent file creation for your Digital Mind.
+
+---
+## Why Z2K Templates?
+
+Z2K Templates sits between Obsidian's Core Templates (too simple for structured workflows) and Templater (requires JavaScript). It's for users who want declarative structure and automation without code execution in their notes.
+
+---
+## Installation
+
+- **From the Obsidian Community Plugins gallery:** *Coming soon.*
+- **Via [BRAT](https://github.com/TfTHacker/obsidian42-brat):** Add `z2k-studios/z2k-plugin-templates` as a beta plugin.
+- **Manual install:** Download `main.js`, `manifest.json`, and `styles.css` from the [latest release](https://github.com/z2k-studios/z2k-plugin-templates/releases) and place them in `<vault>/.obsidian/plugins/z2k-plugin-templates/`.
 
 ---
 ## Purpose
@@ -38,11 +50,11 @@ The **Z2K Templates Plugin** supercharges Obsidian by providing an advanced temp
 - Built-in helpers for formatting and linking:
 - Supports nested helper functions
 
-### Partial Templates
-- Reusable block templates with filenames prefixed by `Partial -`
-- Insert via `{{> partialName}}`
+### Block Templates
+- Reusable template fragments with filenames prefixed by `Partial -`
+- Insert via `{{> blockName}}`
 - Auto-merges YAML and resolves fields inline
-- Directory-based resolution logic ensures closest partial is chosen
+- Directory-based resolution logic ensures the closest block is chosen
 
 ### YAML Field Integration
 - Fields can be embedded directly inside YAML frontmatter:
@@ -55,12 +67,12 @@ The **Z2K Templates Plugin** supercharges Obsidian by providing an advanced temp
     `obsidian://z2k-templates?action=New&templatepath=MyTemplate&filepath=MyCard`
 - Supports embedded JSON data for automation and API use
 
-* * * * *
+---
 ## Why It Matters
 - **Consistency**: Enforces uniform structure across notes
-- **Composable**: Modular design through partials and YAML inheritance
+- **Composable**: Modular design through blocks and YAML inheritance
 
-* * * * *
+---
 ## Use Cases
 - Daily logs and journals
 - Book and media summaries

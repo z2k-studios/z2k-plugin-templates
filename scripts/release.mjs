@@ -1,17 +1,9 @@
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync, copyFileSync, rmSync, statSync } from "fs";
+import { readFileSync, writeFileSync, existsSync, statSync } from "fs";
 import { execSync } from "child_process";
-import { createRequire } from "module";
-import { resolve } from "path";
 
-const require = createRequire(import.meta.url);
-let crossZip;
-try {
-	crossZip = require("cross-zip");
-} catch {
-	console.error("cross-zip not found. Run 'npm install' first.");
-	process.exit(1);
-}
+const BUILT_MAIN = "release/main.js";
+const MAX_PROD_SIZE = 5 * 1024 * 1024; // 5 MB — generous; real prod builds are ~1-2 MB
 
 // --- Helpers ---
 function run(cmd, opts = {}) {
@@ -98,9 +90,9 @@ if (upstream) {
 }
 
 // Check tag doesn't already exist
-const tagExists = runSilent(`git rev-parse "v${v}" --`);
+const tagExists = runSilent(`git rev-parse "${v}" --`);
 if (tagExists) {
-	console.error(`Tag v${v} already exists. Choose a different version.`);
+	console.error(`Tag ${v} already exists. Choose a different version.`);
 	process.exit(1);
 }
 
@@ -126,15 +118,34 @@ console.log(`\nReleasing v${v} (current: ${currentVersion})\n`);
 // --- 1) Build first (before any file changes) ---
 // If build fails, nothing has been modified yet - no recovery needed
 console.log("Building...");
-run("node esbuild.config.mjs production");
+run("node scripts/esbuild.config.mjs production");
+
+// --- Verify the build is actually a production build ---
+// Catches dev-watcher contamination (separate outfile prevents it now, but keep the check)
+// and any future build misconfiguration that disables minification or leaves sourcemaps in.
+console.log("Verifying production build...");
+if (!existsSync(BUILT_MAIN)) {
+	console.error(`Build output not found at ${BUILT_MAIN}.`);
+	process.exit(1);
+}
+const builtContents = readFileSync(BUILT_MAIN, "utf8");
+if (builtContents.includes("//# sourceMappingURL=data:")) {
+	console.error(`${BUILT_MAIN} contains an inline sourcemap — not a production build.`);
+	console.error("Check scripts/esbuild.config.mjs — the prod path should set sourcemap: false.");
+	process.exit(1);
+}
+const builtSize = statSync(BUILT_MAIN).size;
+if (builtSize > MAX_PROD_SIZE) {
+	console.error(`${BUILT_MAIN} is ${(builtSize / 1024 / 1024).toFixed(1)} MB — too large for a production build.`);
+	console.error("Check scripts/esbuild.config.mjs — minify and sourcemap settings should both gate on the prod flag.");
+	process.exit(1);
+}
+console.log(`✓ Build looks healthy: ${(builtSize / 1024).toFixed(0)} KB, no inline sourcemap`);
 
 // --- Track state for recovery ---
 let commitMade = false;
 const changedFiles = [];
-const zipFile = "z2k-plugin-templates.zip";
-const tempDir = ".release-temp";
 
-(async () => {
 try {
 	// --- 2) bump package.json and package-lock.json ---
 	console.log("Updating package.json and package-lock.json...");
@@ -156,41 +167,15 @@ try {
 		changedFiles.push("versions.json");
 	}
 
-	// --- 5) zip payload ---
-	console.log("Creating zip...");
-	rmSync(tempDir, { recursive: true, force: true });
-	rmSync(zipFile, { force: true });
-	mkdirSync(tempDir);
-	copyFileSync("main.js", `${tempDir}/main.js`);
-	copyFileSync("manifest.json", `${tempDir}/manifest.json`);
-	if (existsSync("styles.css")) { copyFileSync("styles.css", `${tempDir}/styles.css`); }
-	// Use async zip with promise wrapper for better error handling
-	await new Promise((res, rej) => {
-		crossZip.zip(resolve(tempDir), resolve(zipFile), (err) => {
-			if (err) { rej(err); }
-			else { res(); }
-		});
-	});
-	rmSync(tempDir, { recursive: true });
-	// Verify zip was created
-	if (!existsSync(zipFile)) {
-		throw new Error("Zip file was not created");
-	}
-	const zipSize = statSync(zipFile).size;
-	if (zipSize < 1000) {
-		throw new Error(`Zip file seems too small (${zipSize} bytes)`);
-	}
-	// Note: zip file is NOT committed - it's uploaded to GitHub release page
-
-	// --- 6) commit and tag ---
+	// --- 5) commit and tag ---
 	console.log("Committing...");
 	run('git add package.json package-lock.json manifest.json');
 	fileAddIfExists("versions.json");
 	run(`git commit -m "release: v${v}"`);
-	run(`git tag "v${v}"`);
+	run(`git tag "${v}"`);
 	commitMade = true;
 
-	// --- 7) push ---
+	// --- 6) push ---
 	console.log("Pushing...");
 	run("git push");
 	run("git push --tags");
@@ -199,12 +184,12 @@ try {
 	console.log("\nNext steps:");
 	console.log("  1. Go to the GitHub repository");
 	console.log("  2. Create a new release from tag v" + v);
-	console.log("  3. Upload: main.js, manifest.json, styles.css, " + zipFile);
+	console.log("  3. Upload these files as loose release assets:");
+	console.log(`     - ${BUILT_MAIN}`);
+	console.log("     - manifest.json");
+	console.log("     - styles.css");
 
 } catch (err) {
-	// Clean up temp directory
-	rmSync(tempDir, { recursive: true, force: true });
-
 	console.error("\n❌ Release failed!\n");
 	console.error("Error:", err.message || err);
 
@@ -212,7 +197,7 @@ try {
 		// Commit was made but push failed
 		console.error("\nCommit was created but push failed. To recover:");
 		console.error(`  git reset --soft HEAD~1`);
-		console.error(`  git tag -d v${v}`);
+		console.error(`  git tag -d ${v}`);
 		console.error(`  git checkout -- ${changedFiles.join(" ")}`);
 	} else if (changedFiles.length > 0) {
 		// Files were modified but no commit yet
@@ -223,4 +208,3 @@ try {
 
 	process.exit(1);
 }
-})();

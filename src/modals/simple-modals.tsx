@@ -62,12 +62,11 @@ interface CardTypeSelectorProps {
 
 // React component for the modal content
 const CardTypeSelector = ({ cardTypes, settings, onConfirm, onCancel }: CardTypeSelectorProps) => {
-	const [selectedIndex, setSelectedIndex] = useState<number>(0);
+	const [focusedIndex, setFocusedIndex] = useState<number>(0);
 	const listRef = useRef<HTMLDivElement>(null);
 
-	// Focus first item on mount
+	// Focus the container on mount for keyboard navigation
 	useEffect(() => {
-		// Focus the container for keyboard navigation
 		if (listRef.current) {
 			listRef.current.focus();
 		}
@@ -77,17 +76,19 @@ const CardTypeSelector = ({ cardTypes, settings, onConfirm, onCancel }: CardType
 	const handleKeyDown = (e: React.KeyboardEvent) => {
 		if (e.key === 'ArrowDown') {
 			e.preventDefault();
-			const newIndex = Math.min(selectedIndex + 1, cardTypes.length - 1);
-			setSelectedIndex(newIndex);
+			const newIndex = Math.min(focusedIndex + 1, cardTypes.length - 1);
+			setFocusedIndex(newIndex);
 			scrollToItem(newIndex);
 		} else if (e.key === 'ArrowUp') {
 			e.preventDefault();
-			const newIndex = Math.max(selectedIndex - 1, 0);
-			setSelectedIndex(newIndex);
+			const newIndex = Math.max(focusedIndex - 1, 0);
+			setFocusedIndex(newIndex);
 			scrollToItem(newIndex);
 		} else if (e.key === 'Enter') {
 			e.preventDefault();
-			onConfirm(cardTypes[selectedIndex]);
+			if (cardTypes.length > 0) {
+				onConfirm(cardTypes[focusedIndex]);
+			}
 		} else if (e.key === 'Escape') {
 			e.preventDefault();
 			onCancel();
@@ -127,11 +128,9 @@ const CardTypeSelector = ({ cardTypes, settings, onConfirm, onCancel }: CardType
 					cardTypes.map((cardType, index) => (
 						<div
 							key={cardType.path}
-							className={`selection-item ${selectedIndex === index ? 'selected' : ''}`}
+							className={`selection-item ${focusedIndex === index ? 'focused' : ''}`}
 							onClick={() => onConfirm(cardType)}
-							tabIndex={index + 1}
-							role="button"
-							aria-selected={selectedIndex === index}
+							onMouseEnter={() => setFocusedIndex(index)}
 						>
 							<span className="selection-primary" title={cardType.path}>{getPrettyPath(cardType.path)}</span>
 							{/* <span className="selection-secondary">{cardType.}</span> */}
@@ -149,13 +148,13 @@ const CardTypeSelector = ({ cardTypes, settings, onConfirm, onCancel }: CardType
 // Template Selection Modal
 // ------------------------------------------------------------------------------------------------
 export class TemplateSelectionModal extends Modal {
-	templates: { file: PathFile, isDefault: boolean }[];
+	templates: { file: PathFile, isDefault: boolean, description?: string }[];
 	settings: Z2KTemplatesPluginSettings;
 	resolve: (template: PathFile) => void;
 	reject: (error: Error) => void;
 	root: any; // For React root
 
-	constructor(app: App, templates: { file: PathFile, isDefault: boolean }[], settings: Z2KTemplatesPluginSettings, resolve: (template: PathFile) => void, reject: (error: Error) => void){
+	constructor(app: App, templates: { file: PathFile, isDefault: boolean, description?: string }[], settings: Z2KTemplatesPluginSettings, resolve: (template: PathFile) => void, reject: (error: Error) => void){
 		super(app);
 		this.templates = templates;
 		this.settings = settings;
@@ -185,7 +184,7 @@ export class TemplateSelectionModal extends Modal {
 				/>
 			</ErrorBoundary>
 		);
-		// Lock dimensions after initial render so search filtering doesn't shrink the modal
+		// Lock minimum dimensions after initial render so search filtering doesn't shrink the modal
 		requestAnimationFrame(() => {
 			this.modalEl.style.minWidth = this.modalEl.offsetWidth + 'px';
 			this.modalEl.style.minHeight = this.modalEl.offsetHeight + 'px';
@@ -199,7 +198,7 @@ export class TemplateSelectionModal extends Modal {
 }
 
 interface TemplateSelectorProps {
-	templates: { file: PathFile, isDefault: boolean }[];
+	templates: { file: PathFile, isDefault: boolean, description?: string }[];
 	settings: Z2KTemplatesPluginSettings;
 	onConfirm: (template: PathFile) => void;
 	onCancel: () => void;
@@ -207,7 +206,7 @@ interface TemplateSelectorProps {
 
 // React component for the modal content
 const TemplateSelector = ({ templates, settings, onConfirm, onCancel }: TemplateSelectorProps) => {
-	const getItems = (): { file: PathFile, name: string, cardType: string, isDefault: boolean }[] => {
+	const getItems = (): { file: PathFile, name: string, cardType: string, isDefault: boolean, description?: string }[] => {
 		const rootPath = normalizeFullPath(settings.templatesRootFolder);
 		return templates.map((t) => {
 			let parentPath = normalizeFullPath(t.file.parentPath);
@@ -217,13 +216,14 @@ const TemplateSelector = ({ templates, settings, onConfirm, onCancel }: Template
 			} else if (parentPath === rootPath) {
 				parentPath = "";
 			}
-			return { file: t.file, name: t.file.basename, cardType: parentPath, isDefault: t.isDefault }
+			return { file: t.file, name: t.file.basename, cardType: parentPath, isDefault: t.isDefault, description: t.description }
 		});
 	}
 
 	const [searchTerm, setSearchTerm] = useState<string>('');
-	const [filteredItems, setFilteredItems] = useState<{ file: PathFile, name: string, cardType: string, isDefault: boolean }[]>(getItems());
-	const [selectedIndex, setSelectedIndex] = useState<number>(0);
+	const [filteredItems, setFilteredItems] = useState<{ file: PathFile, name: string, cardType: string, isDefault: boolean, description?: string }[]>(getItems());
+	// Unified focus index — driven by both arrow keys and mouse hover
+	const [focusedIndex, setFocusedIndex] = useState<number>(0);
 	const searchInputRef = useRef<HTMLInputElement>(null);
 	const listRef = useRef<HTMLDivElement>(null);
 
@@ -236,7 +236,7 @@ const TemplateSelector = ({ templates, settings, onConfirm, onCancel }: Template
 				return nameMatch || pathMatch;
 			})
 		);
-		setSelectedIndex(0); // Reset selection when search changes
+		setFocusedIndex(0); // Reset focus when search changes
 	}, [searchTerm, templates]);
 
 	// Focus search input on mount
@@ -250,17 +250,19 @@ const TemplateSelector = ({ templates, settings, onConfirm, onCancel }: Template
 	const handleKeyDown = (e: React.KeyboardEvent) => {
 		if (e.key === 'ArrowDown') {
 			e.preventDefault();
-			const newIndex = Math.min(selectedIndex + 1, filteredItems.length - 1);
-			setSelectedIndex(newIndex);
+			const newIndex = Math.min(focusedIndex + 1, filteredItems.length - 1);
+			setFocusedIndex(newIndex);
 			scrollToItem(newIndex);
 		} else if (e.key === 'ArrowUp') {
 			e.preventDefault();
-			const newIndex = Math.max(selectedIndex - 1, -1);
-			setSelectedIndex(newIndex);
+			const newIndex = Math.max(focusedIndex - 1, 0);
+			setFocusedIndex(newIndex);
 			scrollToItem(newIndex);
 		} else if (e.key === 'Enter') {
 			e.preventDefault();
-			onConfirm(filteredItems[selectedIndex].file);
+			if (filteredItems.length > 0) {
+				onConfirm(filteredItems[focusedIndex].file);
+			}
 		} else if (e.key === 'Escape') {
 			e.preventDefault();
 			onCancel();
@@ -304,6 +306,8 @@ const TemplateSelector = ({ templates, settings, onConfirm, onCancel }: Template
 		return <>{parts}</>;
 	};
 
+	const focusedDescription = filteredItems[focusedIndex]?.description;
+
 	return (
 		<div className="selection-content" onKeyDown={handleKeyDown}>
 			<div className="search-container">
@@ -323,9 +327,9 @@ const TemplateSelector = ({ templates, settings, onConfirm, onCancel }: Template
 					filteredItems.map((item, index) => (
 						<div
 							key={item.file.path}
-							className={`selection-item ${selectedIndex === index ? 'selected' : ''}`}
+							className={`selection-item ${focusedIndex === index ? 'focused' : ''}`}
 							onClick={() => onConfirm(item.file)}
-							tabIndex={index + 2} // +2 because search is tabIndex 1
+							onMouseEnter={() => setFocusedIndex(index)}
 						>
 							<span className="selection-primary">
 								{highlightMatch(item.name, searchTerm)}
@@ -337,6 +341,9 @@ const TemplateSelector = ({ templates, settings, onConfirm, onCancel }: Template
 						</div>
 					))
 				)}
+			</div>
+			<div className="selection-description-slot">
+				<div className="selection-description">{focusedDescription || '\u00A0'}</div>
 			</div>
 		</div>
 	);
