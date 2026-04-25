@@ -238,58 +238,25 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		};
 	}
 
-	// =================================================================
 	// SECURITY: dynamic code execution via `new Function`
-	// =================================================================
-	// loadUserHelpers and validateUserHelpers both invoke `new Function` to
-	// execute user-authored JavaScript. This note exists so reviewers and
-	// future maintainers can immediately see the threat model and what
-	// safeguards apply.
 	//
-	// What this enables: the user can register custom Handlebars helpers
-	// (e.g. a `formatDuration` or `wikiTitle` helper) that templates can
-	// then call. Helpers are arbitrary JavaScript — without dynamic
-	// execution, helpers would be limited to a fixed set the plugin ships,
-	// which would force every novel transform to be a feature request.
-	// Templater established this pattern (its `tp.user` system); we follow
-	// it deliberately.
+	// loadUserHelpers and validateUserHelpers execute user-authored JavaScript
+	// so users can register custom Handlebars helpers — the pattern Templater
+	// established with `tp.user`.
 	//
-	// Threat model — who provides the code:
-	//   The code passed to `new Function` is `this.settings.userHelpers`
-	//   (see utils.ts), a string the user typed into a settings textarea.
-	//   It is never sourced from a template, never sourced from the vault,
-	//   never sourced from a remote URL. The only path for code to enter
-	//   this function is the user themselves authoring it in plugin
-	//   settings. Trust boundary is identical to installing any third-party
-	//   Obsidian plugin — the user has chosen to run code on their own
-	//   machine.
+	// The code comes from `this.settings.userHelpers`: a settings textarea
+	// the user typed into themselves. Never sourced from templates, vault
+	// content, or remote URLs — templates have no path to dynamic execution.
+	// Trust boundary matches installing any third-party Obsidian plugin.
 	//
-	// Mitigations in place:
-	//   1. Off by default. `userHelpersEnabled` defaults to false in
-	//      DEFAULT_SETTINGS (utils.ts). The plugin ignores user helper
-	//      code unless the user explicitly opts in.
-	//   2. Confirmation dialog on opt-in. Toggling `userHelpersEnabled`
-	//      to true in the settings UI surfaces a confirm modal before
-	//      activation (settings.tsx). It is not a silent flip.
-	//   3. Self-aware threat label. The setting type is annotated
-	//      `(ACE risk)` (utils.ts) so anyone reading the codebase sees
-	//      the classification.
-	//   4. Templates cannot inject code. Even a malicious template loaded
-	//      from elsewhere has no path to dynamic execution — the only
-	//      entry is the settings textarea.
-	//   5. Errors are caught and surfaced to the user via Notice, not
-	//      silently swallowed.
+	// Mitigations: off by default (`userHelpersEnabled: false` in
+	// DEFAULT_SETTINGS); opt-in surfaces a confirm modal in settings.tsx;
+	// the setting is type-annotated `(ACE risk)` in utils.ts; errors are
+	// caught and surfaced to the user via Notice.
 	//
-	// Why `new Function` rather than `eval`:
-	//   `new Function` creates a fresh function scope and does not have
-	//   access to the enclosing lexical scope. Marginally safer than
-	//   `eval`, and idiomatic for this kind of plugin extension point.
-	//
-	// Why not a sandboxed iframe / Worker:
-	//   Helpers must be synchronous (Handlebars renders synchronously) and
-	//   share the plugin's `app`/`obsidian`/`Handlebars` references to be
-	//   useful. Both alternatives would break those constraints.
-	// =================================================================
+	// `new Function` over `eval` for fresh scope isolation. A sandboxed
+	// iframe/Worker would break Handlebars' synchronous render contract and
+	// the helpers' need for `app`/`obsidian`/`Handlebars` access.
 	loadUserHelpers(code: string): { valid: boolean; error?: string; helperNames?: string[] } {
 		const newHelpers: Record<string, Function> = {};
 		const registerHelper = (name: string, fn: Function) => {
