@@ -118,7 +118,7 @@ console.log(`\nReleasing v${v} (current: ${currentVersion})\n`);
 // --- 1) Build first (before any file changes) ---
 // If build fails, nothing has been modified yet - no recovery needed
 console.log("Building...");
-run("node esbuild.config.mjs production");
+run("node scripts/esbuild.config.mjs production");
 
 // --- Verify the build is actually a production build ---
 // Catches dev-watcher contamination (separate outfile prevents it now, but keep the check)
@@ -131,13 +131,13 @@ if (!existsSync(BUILT_MAIN)) {
 const builtContents = readFileSync(BUILT_MAIN, "utf8");
 if (builtContents.includes("//# sourceMappingURL=data:")) {
 	console.error(`${BUILT_MAIN} contains an inline sourcemap — not a production build.`);
-	console.error("Check esbuild.config.mjs — the prod path should set sourcemap: false.");
+	console.error("Check scripts/esbuild.config.mjs — the prod path should set sourcemap: false.");
 	process.exit(1);
 }
 const builtSize = statSync(BUILT_MAIN).size;
 if (builtSize > MAX_PROD_SIZE) {
 	console.error(`${BUILT_MAIN} is ${(builtSize / 1024 / 1024).toFixed(1)} MB — too large for a production build.`);
-	console.error("Check esbuild.config.mjs — minify and sourcemap settings should both gate on the prod flag.");
+	console.error("Check scripts/esbuild.config.mjs — minify and sourcemap settings should both gate on the prod flag.");
 	process.exit(1);
 }
 console.log(`✓ Build looks healthy: ${(builtSize / 1024).toFixed(0)} KB, no inline sourcemap`);

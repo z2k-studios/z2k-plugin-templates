@@ -40,7 +40,7 @@ A testing vault is included in the repository and can be opened directly in Obsi
 
 ## Releasing
 
-The `release.mjs` script handles version bumping, building, committing, tagging, and pushing.
+The `scripts/release.mjs` script handles version bumping, building, committing, tagging, and pushing.
 
 ```bash
 # Show current version
