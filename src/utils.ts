@@ -34,6 +34,7 @@ export interface Z2KTemplatesPluginSettings {
 	userHelpersEnabled: boolean; // Whether user-written custom helpers are active (ACE risk)
 	pluginHelpersEnabled: boolean; // Master toggle for helpers/built-in fields registered by other plugins
 	perPluginEnabled: Record<string, boolean>; // Per-plugin enable/disable of registered helpers and built-in fields; missing entries default to enabled
+	hasSeenWelcome: boolean; // Set to true after the first-run welcome modal has been shown and dismissed
 }
 
 export const DEFAULT_SETTINGS: Z2KTemplatesPluginSettings = {
@@ -60,6 +61,7 @@ export const DEFAULT_SETTINGS: Z2KTemplatesPluginSettings = {
 	userHelpersEnabled: false,
 	pluginHelpersEnabled: true,
 	perPluginEnabled: {},
+	hasSeenWelcome: false,
 };
 
 const DURATION_FORMAT_ERROR = 'Invalid duration. Use number + suffix: ms, s, m, h, d, w, mo, y (e.g., 500ms, 30s, 5m, 12h, 3d, 1w, 6mo, 1y)';

@@ -719,6 +719,31 @@
 	gap: 8px;
 }
 
+.z2k.welcome-modal {
+	padding: 16px 20px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	max-width: 560px;
+}
+.z2k.welcome-modal ol {
+	margin: 0;
+	padding-left: 20px;
+	line-height: 1.6;
+}
+.z2k.welcome-modal code {
+	background: var(--background-secondary);
+	padding: 1px 4px;
+	border-radius: 3px;
+	font-size: 0.9em;
+}
+.z2k .welcome-buttons {
+	padding: 12px 0 0 0;
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
+}
+
 
 
 /*

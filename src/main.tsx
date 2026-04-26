@@ -5,11 +5,11 @@ import { Z2KTemplateEngine, Z2KYamlDoc, TemplateState, VarValueType, FieldInfo, 
 import { PathFile, PathFolder, pathFileFrom, pathFolderFrom, pathFileFromTFile, pathFolderFromTFolder, normalizeFullPath, isSubPathOf, joinPath } from './paths';
 import { type Extension } from "@codemirror/state";
 import moment from 'moment';
-import { Z2KTemplatesPluginSettings, DEFAULT_SETTINGS, ErrorLogger, UserCancelError, TemplatePluginError, rethrowWithMessage, escapeRegExp, cardRefNameUpper, cardRefNameLower, parseDuration, parseDelayFromFilename, sleep, type ErrorSeverity } from './utils';
+import { Z2KTemplatesPluginSettings, DEFAULT_SETTINGS, DOCS_BASE_URL, ErrorLogger, UserCancelError, TemplatePluginError, rethrowWithMessage, escapeRegExp, cardRefNameUpper, cardRefNameLower, parseDuration, parseDelayFromFilename, sleep, type ErrorSeverity } from './utils';
 import { handlebarsOverlay } from './syntax-highlighting';
 import { TemplateValidationController } from './template-validation';
 import { Z2KTemplatesSettingTab } from './settings';
-import { CardTypeSelectionModal, TemplateSelectionModal, ConfirmationModal, ErrorModal, LogViewerModal } from './modals/simple-modals';
+import { CardTypeSelectionModal, TemplateSelectionModal, ConfirmationModal, ErrorModal, LogViewerModal, WelcomeModal } from './modals/simple-modals';
 import { FieldCollectionModal, buildDependencyMap, detectCircularDependencies, calculateFieldDependencyOrder } from './modals/field-collection';
 import { EditorModal, QuickCommandsModal } from './modals/editor-modals';
 import { createApi, Z2KTemplatesApi, BuiltInContext, BuiltInProvider } from './api';
@@ -398,6 +398,15 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		if (this.settings.useTemplateFileExtensions && this.settings.templateExtensionsVisible) {
 			// @ts-expect-error: internal API — see comment above
 			this.app.viewRegistry.registerExtensions(["template", "block"], "markdown");
+		}
+		// First-run welcome modal. Defer until after layout settles so we don't open a modal
+		// during Obsidian's startup paint pass (which can cause focus-trap issues).
+		if (!this.settings.hasSeenWelcome) {
+			this.app.workspace.onLayoutReady(() => {
+				new WelcomeModal(this.app, DOCS_BASE_URL).open();
+				this.settings.hasSeenWelcome = true;
+				void this.saveData(this.settings);
+			});
 		}
 	}
 	onunload() {

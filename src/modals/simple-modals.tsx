@@ -451,6 +451,56 @@ export class ConfirmationModal extends Modal {
 	}
 }
 
+// Shown once on first plugin enable. Gated by settings.hasSeenWelcome — caller is
+// responsible for setting that flag and persisting after the modal is opened.
+export class WelcomeModal extends Modal {
+	docsUrl: string;
+	root: any;
+
+	constructor(app: App, docsUrl: string) {
+		super(app);
+		this.docsUrl = docsUrl;
+	}
+
+	onOpen() {
+		this.modalEl.addClass('z2k', 'welcome-modal');
+		this.titleEl.setText('Welcome to Z2K Templates');
+		this.contentEl.empty();
+		this.contentEl.addClass('modal-content');
+		this.root = createRoot(this.contentEl);
+		this.root.render(
+			<>
+				<p>Z2K Templates lets you create structured notes from declarative templates with interactive prompts, smart field replacement, and YAML inheritance — all without writing JavaScript.</p>
+				<p>To get started:</p>
+				<ol>
+					<li>Open <strong>Settings → Z2K Templates</strong> to set your templates folder.</li>
+					<li>Add a template file (a Markdown file with <code>{`{{Field}}`}</code> placeholders) to that folder.</li>
+					<li>Run <strong>Z2K Templates: Create new file from template</strong> from the command palette, or click the file-plus icon in the ribbon.</li>
+				</ol>
+				<div className="welcome-buttons">
+					<button
+						className="btn btn-secondary"
+						onClick={() => window.open(this.docsUrl, '_blank', 'noopener,noreferrer')}
+					>
+						View docs
+					</button>
+					<button
+						className="btn btn-primary"
+						onClick={() => this.close()}
+					>
+						Got it
+					</button>
+				</div>
+			</>
+		);
+	}
+
+	onClose() {
+		if (this.root) { this.root.unmount(); }
+		this.contentEl.empty();
+	}
+}
+
 export class ErrorModal extends Modal {
 	error: Error;
 	root: any; // React root
