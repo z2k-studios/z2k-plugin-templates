@@ -1,4 +1,4 @@
-import { App, Plugin, Modal, Notice, PluginSettingTab, Setting, ToggleComponent } from 'obsidian';
+import { App, Plugin, Modal, PluginSettingTab, Setting, ToggleComponent } from 'obsidian';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { Z2KTemplatesPluginSettings, DEFAULT_SETTINGS, DOCS_BASE_URL, cardRefNameUpper, cardRefNameLower, cardRefNameUpperPlural, cardRefNameLowerPlural, parseDuration } from './utils';
@@ -6,7 +6,7 @@ import moment from 'moment';
 import type Z2KTemplatesPlugin from './main';
 import { EditorModal } from './modals/editor-modals';
 import { QuickCommandsModal } from './modals/editor-modals';
-import { LogViewerModal, ConfirmationModal } from './modals/simple-modals';
+import { LogViewerModal, ConfirmationModal, ErrorModal } from './modals/simple-modals';
 
 export class Z2KTemplatesSettingTab extends PluginSettingTab {
 	plugin: Z2KTemplatesPlugin;
@@ -42,8 +42,8 @@ export class Z2KTemplatesSettingTab extends PluginSettingTab {
 		containerEl.empty();
 		containerEl.addClass('z2k-settings');
 		// --- General ---
+		// Per Obsidian's UI guidelines, general/default settings sit at the top with no heading.
 		const generalGroup = containerEl.createDiv({ cls: 'setting-group' });
-		new Setting(generalGroup).setHeading().setName('General');
 		const generalItems = generalGroup.createDiv({ cls: 'setting-items' });
 
 		this.refs.descTemplatesRootFolder = new Setting(generalItems)
@@ -116,7 +116,7 @@ export class Z2KTemplatesSettingTab extends PluginSettingTab {
 		new Setting(generalItems)
 			.setName('Name for files')
 			.setDesc(createFragment(f => {
-				f.appendText("This is the name to use when referring to files in the system. ('file', 'note', 'card', etc.) ");
+				f.appendText("What to call your files across the Z2K system (e.g. 'note', 'card', 'entry'). Used in commands, prompts, and messages. ");
 				f.createEl('a', {
 					text: '(?)',
 					href: `${DOCS_BASE_URL}/settings-page/general-settings/name-for-files`,
@@ -502,7 +502,8 @@ Example:
 								title: 'Enable Custom Helpers?',
 								message: <>
 									<p>Custom helpers execute <strong>arbitrary JavaScript code</strong> with full access to your vault, files, and the Obsidian API.</p>
-									<p>Only enable this if you wrote the helper code yourself or fully trust its source.</p>
+									<p>A malicious helper could read any file in your vault, modify or delete your notes, or send your data over the network.</p>
+									<p>Only enable this if you wrote the helper code yourself or fully trust its source. <a href={`${DOCS_BASE_URL}/settings-page/advanced-settings/custom-helper-settings/enable-custom-helpers`} target="_blank" rel="noopener noreferrer">Learn more</a>.</p>
 								</>,
 								confirmText: 'I understand, enable',
 								cancelText: 'Cancel',
@@ -515,8 +516,8 @@ Example:
 							if (this.plugin.settings.userHelpers && this.plugin.settings.userHelpers.trim() !== "") {
 								const result = this.plugin.loadUserHelpers(this.plugin.settings.userHelpers);
 								if (!result.valid) {
-									new Notice('Failed to load custom helpers - check console');
 									console.error('[Z2K Templates] Custom helpers error:', result.error);
+									new ErrorModal(this.app, new Error(`Failed to load custom helpers: ${result.error}`)).open();
 								}
 							}
 							this.display(); // Re-render to show editor button
@@ -570,8 +571,8 @@ registerHelper('recentFiles', () => {
 								// Reload helpers
 								const result = this.plugin.loadUserHelpers(content);
 								if (!result.valid) {
-									new Notice('Failed to load custom helpers - check console');
 									console.error('[Z2K Templates] Custom helpers error:', result.error);
+									new ErrorModal(this.app, new Error(`Failed to load custom helpers: ${result.error}`)).open();
 								}
 							}
 						}).open();
