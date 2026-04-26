@@ -421,13 +421,13 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	refreshMainCommands(deleteExisting: boolean = true) {
 		let mainCommands: Command[] = [
 			{
-				id: 'z2k-create-new-card',
-				name: `Create New ${cardRefNameUpper(this.settings)}`,
+				id: 'create-new-card',
+				name: `Create new ${cardRefNameLower(this.settings)}`,
 				callback: () => this.runWithErrorHandling(() => this.createCard({ openInEditor: true })),
 			},
 			{
-				id: 'z2k-create-card-from-selected-text',
-				name: `Create ${cardRefNameUpper(this.settings)} From Selected Text`,
+				id: 'create-card-from-selection',
+				name: `Create ${cardRefNameLower(this.settings)} from selected text`,
 				editorCheckCallback: (checking, editor) => {
 					const selectedText = editor.getSelection();
 					if (checking) { return selectedText.length > 0; } // Only enable if text is selected
@@ -435,8 +435,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				},
 			},
 			{
-				id: 'z2k-apply-template-to-file',
-				name: `Apply Template to ${cardRefNameUpper(this.settings)}`,
+				id: 'apply-template-to-file',
+				name: `Apply template to ${cardRefNameLower(this.settings)}`,
 				checkCallback: (checking) => {
 					const activeFile = this.app.workspace.getActiveFile();
 					// Only enable if there's an active file and it's a markdown file
@@ -445,8 +445,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				},
 			},
 			{
-				id: 'z2k-continue-filling-card',
-				name: `Continue Filling ${cardRefNameUpper(this.settings)}`,
+				id: 'continue-filling-card',
+				name: `Continue filling ${cardRefNameLower(this.settings)}`,
 				checkCallback: (checking) => {
 					const activeFile = this.app.workspace.getActiveFile();
 					if (checking) { return !!activeFile && activeFile.extension === 'md'; }
@@ -454,8 +454,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				},
 			},
 			{
-				id: 'z2k-finalize-card',
-				name: `Finalize ${cardRefNameUpper(this.settings)}`,
+				id: 'finalize-card',
+				name: `Finalize ${cardRefNameLower(this.settings)}`,
 				checkCallback: (checking) => {
 					const activeFile = this.app.workspace.getActiveFile();
 					if (checking) { return !!activeFile && activeFile.extension === 'md'; }
@@ -463,8 +463,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				},
 			},
 			{
-				id: 'z2k-insert-block-template',
-				name: 'Insert Block Template',
+				id: 'insert-block',
+				name: 'Insert block template',
 				editorCheckCallback: (checking, editor) => {
 					const file = this.app.workspace.getActiveFile();
 					if (checking) {
@@ -475,8 +475,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				}
 			},
 			{
-				id: 'z2k-insert-block-template-from-selection',
-				name: 'Insert Block Template Using Selected Text',
+				id: 'insert-block-from-selection',
+				name: 'Insert block template from selection',
 				editorCheckCallback: (checking, editor) => {
 					const file = this.app.workspace.getActiveFile();
 					if (checking) {
@@ -487,8 +487,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				}
 			},
 			{
-				id: 'z2k-process-command-queue',
-				name: 'Process Command Queue Now',
+				id: 'process-command-queue',
+				name: 'Process command queue now',
 				checkCallback: (checking) => {
 					if (!this.settings.offlineCommandQueueEnabled) return false;
 					if (checking) return true;
@@ -500,8 +500,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				},
 			},
 			{
-				id: "z2k-convert-file-to-template",
-				name: "Convert to Document Template",
+				id: "convert-to-document-template",
+				name: "Convert to document template",
 				checkCallback: (checking) => {
 					let file = this.app.workspace.getActiveFile();
 					if (checking) { return !!file && this.getFileTemplateTypeSync(file) !== "document-template"; }
@@ -509,8 +509,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				},
 			},
 			{
-				id: "z2k-convert-file-to-block-template",
-				name: "Convert to Block Template",
+				id: "convert-to-block-template",
+				name: "Convert to block template",
 				checkCallback: (checking) => {
 					let file = this.app.workspace.getActiveFile();
 					if (checking) { return !!file && this.getFileTemplateTypeSync(file) !== "block-template"; }
@@ -518,8 +518,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				},
 			},
 			{
-				id: "z2k-convert-file-to-md-template",
-				name: "Switch to .md Extension",
+				id: "switch-to-md-extension",
+				name: "Switch to .md extension",
 				checkCallback: (checking) => {
 					let file = this.app.workspace.getActiveFile();
 					// Only show if file has .template or .block extension
@@ -528,8 +528,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				},
 			},
 			{
-				id: "z2k-convert-file-to-md",
-				name: "Convert to Content File",
+				id: "convert-to-content-file",
+				name: "Convert to content file",
 				checkCallback: (checking) => {
 					let file = this.app.workspace.getActiveFile();
 					if (checking) { return !!file && this.getFileTemplateTypeSync(file) !== "content-file"; }
@@ -537,8 +537,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				},
 			},
 			{
-				id: "z2k-toggle-template-visibility",
-				name: this.settings.templateExtensionsVisible ? "Make .template and .block Templates Hidden" : "Make .template and .block Templates Visible",
+				id: "toggle-template-visibility",
+				name: this.settings.templateExtensionsVisible ? "Hide .template and .block files" : "Show .template and .block files",
 				checkCallback: (checking) => {
 					// Only show if useTemplateFileExtensions is enabled
 					if (checking) { return this.settings.useTemplateFileExtensions; }
@@ -700,7 +700,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				const selectedText = editor.getSelection();
 				if (selectedText.length === 0) return;
 				menu.addItem((item) => {
-					item.setTitle(`Z2K: Create ${cardRefNameUpper(this.settings)} From Selection...`)
+					item.setTitle(`Z2K: Create ${cardRefNameLower(this.settings)} from selection…`)
 						.onClick(() => {
 							this.runWithErrorHandling(() => this.createCard({ fromSelection: true, openInEditor: true }));
 						});
@@ -712,7 +712,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			this.app.workspace.on("file-menu", (menu, folder) => {
 				if (!(folder instanceof TFolder)) return;
 				menu.addItem((item) => {
-					item.setTitle(`Z2K: Create New ${cardRefNameUpper(this.settings)} Here...`)
+					item.setTitle(`Z2K: Create new ${cardRefNameLower(this.settings)} here…`)
 						.onClick(() => this.runWithErrorHandling(() => this.createCard({ cardTypeFolder: pathFolderFromTFolder(folder as TFolder), openInEditor: true })));
 				});
 			})
@@ -726,7 +726,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				const selectedText = editor.getSelection();
 				if (selectedText.length > 0) return;
 				menu.addItem((item) => {
-					item.setTitle("Z2K: Insert Block Template...")
+					item.setTitle("Z2K: Insert block template…")
 						.onClick(() => {
 							this.runWithErrorHandling(() => this.insertBlock());
 						});
@@ -742,7 +742,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				const selectedText = editor.getSelection();
 				if (selectedText.length === 0) return;
 				menu.addItem((item) => {
-					item.setTitle("Z2K: Insert Block Template Using Selection...")
+					item.setTitle("Z2K: Insert block template from selection…")
 						.onClick(() => {
 							this.runWithErrorHandling(() => this.insertBlock({ fromSelection: true }));
 						});
@@ -755,7 +755,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			this.app.workspace.on("file-menu", (menu, file) => {
 				if (!(file instanceof TFile) || this.getFileTemplateTypeSync(file) === "document-template") { return; }
 				menu.addItem((item) => {
-					item.setTitle("Z2K: Convert to Document Template")
+					item.setTitle("Z2K: Convert to document template")
 						.onClick(() => this.convertFileTemplateType(file as TFile, "document-template"));
 				});
 			})
@@ -764,7 +764,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			this.app.workspace.on("file-menu", (menu, file) => {
 				if (!(file instanceof TFile) || this.getFileTemplateTypeSync(file) === "block-template") { return; }
 				menu.addItem((item) => {
-					item.setTitle("Z2K: Convert to Block Template")
+					item.setTitle("Z2K: Convert to block template")
 						.onClick(() => this.convertFileTemplateType(file as TFile, "block-template"));
 				});
 			})
@@ -774,7 +774,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				// Only show for .template or .block files
 				if (!(file instanceof TFile) || (file.extension !== "template" && file.extension !== "block")) { return; }
 				menu.addItem((item) => {
-					item.setTitle("Z2K: Switch to .md Extension")
+					item.setTitle("Z2K: Switch to .md extension")
 						.onClick(() => this.convertToMarkdownTemplate(file as TFile));
 				});
 			})
@@ -783,7 +783,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			this.app.workspace.on("file-menu", (menu, file) => {
 				if (!(file instanceof TFile) || this.getFileTemplateTypeSync(file) === "content-file") { return; }
 				menu.addItem((item) => {
-					item.setTitle("Z2K: Convert to Content File")
+					item.setTitle("Z2K: Convert to content file")
 						.onClick(() => this.convertFileTemplateType(file as TFile, "content-file"));
 				});
 			})
@@ -793,7 +793,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			this.app.workspace.on("file-menu", (menu, file) => {
 				if (!(file instanceof TFile) || file.extension !== "md") { return; }
 				menu.addItem((item) => {
-					item.setTitle(`Z2K: Continue Filling This ${cardRefNameUpper(this.settings)}`)
+					item.setTitle(`Z2K: Continue filling this ${cardRefNameLower(this.settings)}`)
 						.onClick(() => this.runWithErrorHandling(() => this.continueCard({ existingFile: file as TFile })));
 				});
 			})
@@ -802,7 +802,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			this.app.workspace.on("file-menu", (menu, file) => {
 				if (!(file instanceof TFile) || file.extension !== "md") { return; }
 				menu.addItem((item) => {
-					item.setTitle(`Z2K: Finalize This ${cardRefNameUpper(this.settings)}`)
+					item.setTitle(`Z2K: Finalize this ${cardRefNameLower(this.settings)}`)
 						.onClick(() => this.runWithErrorHandling(() => this.continueCard({ existingFile: file as TFile, promptMode: "none", finalize: true })));
 				});
 			})
@@ -1718,7 +1718,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		if (!hasFillableFields && !opts.fieldOverrides && !opts.finalize) {
 			const hasAnyField = state.referencedFields.size > 0 || state.declaredFields.size > 0;
 			const msg = hasAnyField
-				? `Nothing to fill in — run Finalize ${cardRefNameUpper(this.settings)} to commit computed values.`
+				? `Nothing to fill in — run Finalize ${cardRefNameLower(this.settings)} to commit computed values.`
 				: `No fields found in this ${cardRefNameLower(this.settings)}.`;
 			await this.logInfo(msg, opts.showNotices ?? true);
 			return { kind: 'continue', filePath: opts.existingFile.path, finalized: !!opts.finalize };
