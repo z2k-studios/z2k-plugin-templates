@@ -601,7 +601,7 @@ export class LogViewerModal extends Modal {
 		this.contentEl.addClass('modal-content');
 		this.root = createRoot(this.contentEl);
 		this.root.render(
-			<ErrorBoundary onError={(error) => { new Notice(`Log viewer error: ${error.message}`); this.close(); }}>
+			<ErrorBoundary onError={(error) => { this.close(); new ErrorModal(this.app, error).open(); }}>
 				<LogViewerContent app={this.app} options={this.options} onClose={() => this.close()} />
 			</ErrorBoundary>
 		);
