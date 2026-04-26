@@ -1658,6 +1658,13 @@ class Z2KTemplateEngine {
 	// }
 }
 
+// We deliberately do NOT use Obsidian's FileManager.processFrontMatter for our YAML work.
+// processFrontMatter parses via js-yaml, which discards comments during the parse-and-serialize
+// round-trip. Templates frequently contain explanatory YAML comments that must survive across
+// merges, hierarchical block composition, and field updates. We use the `yaml` package's Document
+// API (parseDocument + Document#toString) with keepSourceTokens to preserve comments end-to-end.
+// If a future maintainer is tempted to "modernize" by switching to processFrontMatter, this will
+// silently strip user comments from every frontmatter touch.
 class Z2KYamlDoc {
 	constructor(public doc: YAML.Document.Parsed) {}
 
