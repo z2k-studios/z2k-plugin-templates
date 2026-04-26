@@ -365,8 +365,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		if (this.settings.userHelpersEnabled && this.settings.userHelpers && this.settings.userHelpers.trim() !== "") {
 			const result = this.loadUserHelpers(this.settings.userHelpers);
 			if (!result.valid) {
-				new Notice('Failed to load custom helpers - check console for details');
 				console.error('[Z2K Templates] Custom helpers error:', result.error);
+				new ErrorModal(this.app, new Error(`Failed to load custom helpers: ${result.error}`)).open();
 			}
 		}
 		this.refreshMainCommands(false); // Don't delete existing, since none exist yet
@@ -482,22 +482,6 @@ export default class Z2KTemplatesPlugin extends Plugin {
 					this.checkAndProcessQueue();
 				},
 			},
-			// {
-			// 	id: 'z2k-enable-template-editing',
-			// 	name: 'Enable Template Editing Mode',
-			// 	checkCallback: (checking) => {
-			// 		if (checking) { return !this.settings.templateEditingEnabled; }
-			// 		this.enableTemplateEditing();
-			// 	},
-			// },
-			// {
-			// 	id: 'z2k-disable-template-editing',
-			// 	name: 'Disable Template Editing Mode',
-			// 	checkCallback: (checking) => {
-			// 		if (checking) { return this.settings.templateEditingEnabled; }
-			// 		this.disableTemplateEditing();
-			// 	},
-			// },
 			{
 				id: "z2k-convert-file-to-template",
 				name: "Convert to Document Template",
@@ -2107,40 +2091,6 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	async toggleTemplateExtensionsVisibility() {
 		await this.setTemplateExtensionsVisible(!this.settings.templateExtensionsVisible);
 	}
-	// async enableTemplateEditing() {
-	// 	try {
-	// 		this.settings.templateEditingEnabled = true;
-	// 		await this.saveData(this.settings);
-	// 		for (const f of this.getAllZ2KFiles()) {
-	// 			// Not using await
-	// 			if (f instanceof TFolder && f.name === "." + this.settings.templatesFolderName) {
-	// 				this.unhideFolder(f);
-	// 			}
-	// 			if (f instanceof TFile && f.name.startsWith(".") && this.getFileTemplateTypeSync(f) !== "content-file") {
-	// 				this.unhideTemplateFile(f);
-	// 			}
-	// 		}
-	// 		this.registerTemplateFileExtension();
-	// 		new Notice("Z2K template editing enabled.");
-	// 	} catch (error) { this.handleErrors(error); }
-	// }
-	// async disableTemplateEditing() {
-	// 	try {
-	// 		this.settings.templateEditingEnabled = false;
-	// 		await this.saveData(this.settings);
-	// 		for (const f of this.getAllZ2KFiles()) {
-	// 			// Not using await
-	// 			if (f instanceof TFolder && f.name === this.settings.templatesFolderName) {
-	// 				this.hideFolder(f);
-	// 			}
-	// 			if (f instanceof TFile && this.getFileTemplateTypeSync(f) !== "content-file") {
-	// 				this.hideTemplateFile(f);
-	// 			}
-	// 		}
-	// 		this.unregisterTemplateFileExtension();
-	// 		new Notice("Z2K template editing disabled.");
-	// 	} catch (error) { this.handleErrors(error); }
-	// }
 
 	//// All other functions
 
@@ -2868,7 +2818,6 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		// Plugin-reserved keys (TEMPLATE_METADATA_KEYS) are skipped — they live in state.metadata.
 		// User-facing fields like 'tags', 'aliases', and 'cssclasses' are included as they represent user data.
 		// Values are passed through with their native YAML types (string, number, array, etc.)
-		// TODO: Refactor to use valuesBySource pattern for explicit priority ordering instead of relying on call order
 
 		// Merge all YAML sources (from template state + additional sources like system blocks or existing files)
 		const allYamlSources = [...state.templatesYaml, ...(additionalYamlSources || [])];
