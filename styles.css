@@ -1019,6 +1019,13 @@
 .z2k-template-validation-status.z2k-template-waiting {
 	color: var(--text-muted);
 }
+.z2k-template-validation-status.z2k-template-hidden {
+	display: none;
+}
+
+.z2k-warning-text {
+	color: var(--text-warning, #e0a530);
+}
 
 /* Theme the lint hover tooltip for dark mode — CM6's default is light. */
 .cm-tooltip.cm-tooltip-hover {

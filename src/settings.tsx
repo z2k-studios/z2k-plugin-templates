@@ -580,8 +580,7 @@ registerHelper('recentFiles', () => {
 				);
 			// This overwrites the initial .setDesc(), so any description content (including docs links) must go here
 			const warningDesc = createFragment(f => {
-				const warn = f.createSpan({ text: 'Warning: ' });
-				warn.style.color = 'var(--text-warning, #e0a530)';
+				f.createSpan({ text: 'Warning: ', cls: 'z2k-warning-text' });
 				f.appendText('Custom helpers run arbitrary JavaScript with full access to your vault and Obsidian API. ');
 				f.createEl('a', {
 					text: '(?)',
@@ -642,8 +641,8 @@ registerHelper('recentFiles', () => {
 			}
 		};
 
-		el.addEventListener('input', () => applyValidation(el.value));
-		el.addEventListener('blur', () => {
+		this.plugin.registerDomEvent(el, 'input', () => applyValidation(el.value));
+		this.plugin.registerDomEvent(el, 'blur', () => {
 			if (settingItem?.classList.contains('is-invalid')) {
 				el.value = lastValid;
 				clearError();

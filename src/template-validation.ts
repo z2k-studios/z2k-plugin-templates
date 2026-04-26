@@ -28,8 +28,8 @@ export class TemplateValidationController {
 		this.statusBarItem.addClass('z2k-template-validation-status');
 		// Hide synchronously so the empty min-width slot doesn't flash before
 		// refreshFromActiveFile (async) settles to its real state.
-		this.statusBarItem.style.display = 'none';
-		this.statusBarItem.addEventListener('click', () => this.handleStatusBarClick());
+		this.statusBarItem.addClass('z2k-template-hidden');
+		this.plugin.registerDomEvent(this.statusBarItem, 'click', () => this.handleStatusBarClick());
 		void this.refreshFromActiveFile();
 	}
 
@@ -145,14 +145,14 @@ export class TemplateValidationController {
 
 	private setHidden() {
 		this.clearWaitingTimer();
-		this.statusBarItem.style.display = 'none';
+		this.statusBarItem.addClass('z2k-template-hidden');
 		this.clearStateClasses();
 		this.lastError = null;
 	}
 
 	private setValid() {
 		this.clearWaitingTimer();
-		this.statusBarItem.style.display = '';
+		this.statusBarItem.removeClass('z2k-template-hidden');
 		this.statusBarItem.setText('✓ Template is valid');
 		this.clearStateClasses();
 		this.statusBarItem.addClass('z2k-template-valid');
@@ -161,7 +161,7 @@ export class TemplateValidationController {
 
 	private setInvalid(line: number, col: number) {
 		this.clearWaitingTimer();
-		this.statusBarItem.style.display = '';
+		this.statusBarItem.removeClass('z2k-template-hidden');
 		this.statusBarItem.setText(`✗ Error on line ${line}`);
 		this.clearStateClasses();
 		this.statusBarItem.addClass('z2k-template-invalid');
@@ -171,7 +171,7 @@ export class TemplateValidationController {
 	private setWaiting() {
 		const file = this.plugin.app.workspace.getActiveFile();
 		if (!file || this.plugin.getFileTemplateTypeSync(file) === 'content-file') { return; }
-		this.statusBarItem.style.display = '';
+		this.statusBarItem.removeClass('z2k-template-hidden');
 		this.statusBarItem.setText('⋯ Validating template');
 		this.clearStateClasses();
 		this.statusBarItem.addClass('z2k-template-waiting');
