@@ -216,6 +216,7 @@ const FieldCollectionForm = ({ templateState, userHelpers, onComplete, onCancel,
 		return calculateFieldDependencyOrder(depsMap);
 	});
 	const [renderOrderFieldNames] = useState<string[]>(() => computeInitialRenderOrderFieldNames());
+	const [submitting, setSubmitting] = useState(false);
 	// Update fields after the first render to distribute and apply dependencies
 	useEffect(() => {
 		let newFieldStates = {...fieldStates};
@@ -413,6 +414,7 @@ const FieldCollectionForm = ({ templateState, userHelpers, onComplete, onCancel,
 
 	function handleSubmit(e: React.FormEvent, finalize: boolean = false) {
 		e.preventDefault();
+		if (submitting) { return; } // Guard against double-submit while modal is closing
 
 		// Abort if there are errors
 		let isValid = validateAllFields(fieldStates, finalize);
@@ -420,6 +422,7 @@ const FieldCollectionForm = ({ templateState, userHelpers, onComplete, onCancel,
 			scrollToFirstError();
 			return;
 		}
+		setSubmitting(true);
 
 		// Update template state with resolved values
 		// NOTE: Similar logic exists in applyFinalFieldStates(). If you modify
@@ -519,9 +522,9 @@ const FieldCollectionForm = ({ templateState, userHelpers, onComplete, onCancel,
 			</div>
 
 			<div className="form-actions">
-				<button type="button" className="btn btn-secondary" onClick={onCancel}>Cancel</button>
-				<button type="submit" className="btn btn-primary">Save for Now</button>
-				<button type="button" className="btn btn-primary" onClick={(e) => handleSubmit(e, true)}>Finalize</button>
+				<button type="button" className="btn btn-secondary" onClick={onCancel} disabled={submitting}>Cancel</button>
+				<button type="submit" className="btn btn-primary" disabled={submitting}>Save for Now</button>
+				<button type="button" className="btn btn-primary" onClick={(e) => handleSubmit(e, true)} disabled={submitting}>Finalize</button>
 			</div>
 		</form>
 	);

@@ -373,6 +373,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		this.refreshDynamicCommands(false);
 		this.registerEvents();
 		this.addSettingTab(new Z2KTemplatesSettingTab(this.app, this));
+		this.addRibbonIcon('file-plus', `Create new ${cardRefNameLower(this.settings)} from template`,
+			() => this.runWithErrorHandling(() => this.createCard({ openInEditor: true })));
 		this.registerEditorExtension(handlebarsOverlay());
 		this._templateValidation = new TemplateValidationController(this);
 		this.registerEditorExtension(this._templateValidation.getEditorExtensions());
