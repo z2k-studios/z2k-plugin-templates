@@ -386,9 +386,15 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		// Initialize offline command queue
 		await this.recoverFromCrash();
 		this.startQueueProcessor();
-		// Restore template extension visibility state
+		// Restore template extension visibility state.
+		// Note: viewRegistry.registerExtensions is an internal Obsidian API (not in the public types).
+		// We use it because there is no public way to make Obsidian treat a custom file extension as
+		// markdown. Without this, .template / .block files cannot be opened in the markdown editor.
+		// If/when Obsidian adds a public alternative, swap in the public call. Risk: if Obsidian
+		// removes or renames this internal method, the toggle stops working — feature degrades
+		// (files become unopenable as markdown) but the rest of the plugin keeps working.
 		if (this.settings.useTemplateFileExtensions && this.settings.templateExtensionsVisible) {
-			// @ts-expect-error: internal API
+			// @ts-expect-error: internal API — see comment above
 			this.app.viewRegistry.registerExtensions(["template", "block"], "markdown");
 		}
 	}
@@ -2073,12 +2079,12 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			return; // Already in desired state
 		}
 		if (visible) {
-			// Show: register extensions as markdown
+			// Show: register extensions as markdown (internal API — see rationale in onload)
 			// @ts-expect-error: internal API
 			this.app.viewRegistry.registerExtensions(["template", "block"], "markdown");
 			new Notice("Template files are now visible");
 		} else {
-			// Hide: unregister extensions
+			// Hide: unregister extensions (internal API — see rationale in onload)
 			// @ts-expect-error: internal API
 			this.app.viewRegistry.unregisterExtensions(["template", "block"]);
 			new Notice("Template files are now hidden");
