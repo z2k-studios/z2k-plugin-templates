@@ -143,7 +143,7 @@ export class Z2KTemplatesSettingTab extends PluginSettingTab {
 
 		// --- Command Queue ---
 		const queueGroup = containerEl.createDiv({ cls: 'setting-group' });
-		new Setting(queueGroup).setHeading().setName('Command Queue');
+		new Setting(queueGroup).setHeading().setName('Command queue');
 		const queueItems = queueGroup.createDiv({ cls: 'setting-items' });
 
 		const queueSubSettings: Setting[] = [];
@@ -287,7 +287,7 @@ export class Z2KTemplatesSettingTab extends PluginSettingTab {
 
 		// --- Error Logging ---
 		const errorGroup = containerEl.createDiv({ cls: 'setting-group' });
-		new Setting(errorGroup).setHeading().setName('Error Logging');
+		new Setting(errorGroup).setHeading().setName('Error logging');
 		const errorItems = errorGroup.createDiv({ cls: 'setting-items' });
 
 		// Log path setting removed from UI — uses default path in plugin folder.
@@ -342,10 +342,10 @@ export class Z2KTemplatesSettingTab extends PluginSettingTab {
 				});
 			}))
 			.addButton(button => button
-				.setButtonText('View Error Log')
+				.setButtonText('View error log')
 				.onClick(() => {
 					new LogViewerModal(this.app, {
-						title: 'Error Log',
+						title: 'Error log',
 						logPath: this.plugin.settings.errorLogPath,
 						emptyMessage: 'No log entries yet.',
 						onClear: () => this.plugin.errorLogger.clearLog(),
@@ -354,7 +354,7 @@ export class Z2KTemplatesSettingTab extends PluginSettingTab {
 
 		// --- Quick Commands ---
 		const quickGroup = containerEl.createDiv({ cls: 'setting-group' });
-		new Setting(quickGroup).setHeading().setName('Quick Commands');
+		new Setting(quickGroup).setHeading().setName('Quick commands');
 		const quickItems = quickGroup.createDiv({ cls: 'setting-items' });
 
 		new Setting(quickItems)
@@ -367,7 +367,7 @@ export class Z2KTemplatesSettingTab extends PluginSettingTab {
 				});
 			}))
 			.addButton(button => button
-				.setButtonText('Edit Quick Commands')
+				.setButtonText('Edit quick commands')
 				.onClick(() => {
 					new QuickCommandsModal(this.app, this.plugin).open();
 				})
@@ -401,13 +401,13 @@ export class Z2KTemplatesSettingTab extends PluginSettingTab {
 							// Show warning only if template files exist
 							const confirmed = await new Promise<boolean>((resolve) => {
 								new ConfirmationModal(this.app, {
-									title: 'Disable Template File Extensions?',
+									title: 'Disable template file extensions?',
 									message: <>
 										<p>We recommend that you convert your existing .template and .block files back to markdown before disabling Template File Extensions.</p>
 										<p>If you do not convert them to markdown, then these templates will not be easily accessible inside Obsidian for updates and changes.</p>
 										<p><a href={`${DOCS_BASE_URL}/settings-page/advanced-settings/file-extension-settings/use-template-file-extensions`} target="_blank">See docs for more details.</a></p>
 									</>,
-									confirmText: 'Disable Anyway',
+									confirmText: 'Disable anyway',
 									cancelText: 'Cancel',
 								}, resolve).open();
 							});
@@ -454,10 +454,10 @@ export class Z2KTemplatesSettingTab extends PluginSettingTab {
 				});
 			}))
 			.addButton(button => button
-				.setButtonText('Edit Global Block')
+				.setButtonText('Edit global block')
 				.onClick(() => {
 					new EditorModal(this.app, {
-						title: 'Edit Global Block',
+						title: 'Edit global block',
 						initialContent: this.plugin.settings.globalBlock,
 						language: 'handlebars',
 						helpText: `The global block works like a system block but applies to all templates
@@ -499,7 +499,7 @@ Example:
 						// Show ACE warning before enabling
 						const confirmed = await new Promise<boolean>((resolve) => {
 							new ConfirmationModal(this.app, {
-								title: 'Enable Custom Helpers?',
+								title: 'Enable custom helpers?',
 								message: <>
 									<p>Custom helpers execute <strong>arbitrary JavaScript code</strong> with full access to your vault, files, and the Obsidian API.</p>
 									<p>A malicious helper could read any file in your vault, modify or delete your notes, or send your data over the network.</p>
@@ -535,10 +535,10 @@ Example:
 			const editSetting = new Setting(advancedItems)
 				.setName('Edit custom helpers')
 				.addButton(button => button
-					.setButtonText('Edit Custom Helpers')
+					.setButtonText('Edit custom helpers')
 					.onClick(() => {
 						new EditorModal(this.app, {
-							title: 'Edit Custom Helpers',
+							title: 'Edit custom helpers',
 							initialContent: this.plugin.settings.userHelpers,
 							language: 'javascript',
 							helpText: `Write JavaScript code to register custom Handlebars helpers.
@@ -592,7 +592,7 @@ registerHelper('recentFiles', () => {
 
 		new Setting(advancedItems)
 			.setName('Plugin-registered helpers and built-in fields')
-			.setDesc('Allow other installed plugins (such as Z2K Core) to register custom Handlebars helpers and built-in fields with this plugin. Per-plugin controls will be added in a later release.')
+			.setDesc('Allow other installed plugins (such as Z2K Core) to register custom Handlebars helpers and built-in fields with this plugin.')
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.pluginHelpersEnabled)
 				.onChange(async (value) => {
