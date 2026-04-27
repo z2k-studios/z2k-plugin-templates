@@ -463,7 +463,14 @@ const FieldCollectionForm = ({ templateState, userHelpers, onComplete, onCancel,
 			// Else: field already specified externally, leave it alone
 		}
 
-		onComplete(finalize);
+		// onComplete is expected to close the modal. If it throws, re-enable the buttons
+		// so the user isn't trapped with a frozen form.
+		try {
+			onComplete(finalize);
+		} catch (e) {
+			setSubmitting(false);
+			throw e;
+		}
 	}
 
 	function scrollToFirstError() {

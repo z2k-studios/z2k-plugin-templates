@@ -640,8 +640,10 @@ registerHelper('recentFiles', () => {
 			}
 		};
 
-		this.plugin.registerDomEvent(el, 'input', () => applyValidation(el.value));
-		this.plugin.registerDomEvent(el, 'blur', () => {
+		// Use the SettingTab's own Component lifecycle (not the plugin's), so listeners
+		// release when the settings tab closes instead of accumulating across re-opens.
+		this.registerDomEvent(el, 'input', () => applyValidation(el.value));
+		this.registerDomEvent(el, 'blur', () => {
 			if (settingItem?.classList.contains('is-invalid')) {
 				el.value = lastValid;
 				clearError();
