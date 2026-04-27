@@ -66,11 +66,8 @@ export function joinPath(...parts: string[]): string {
 	return normalizeFullPath(parts.join('/'));
 }
 
-// Path normalizer used everywhere we accept user-provided or constructed paths.
-// Does what Obsidian's normalizePath() does (slash cleanup, non-breaking space replacement,
-// Unicode NFC normalization) PLUS resolves '..' and './' segments — needed for our
-// hierarchical template paths. We use this in place of Obsidian's normalizePath because
-// Obsidian's stops short of segment resolution, which we depend on for cross-folder lookups.
+// Like Obsidian's normalizePath but also resolves '..' and './' segments — needed for
+// hierarchical template lookups across folders.
 export function normalizeFullPath(path: string): string {
 	path = path
 		.trim()

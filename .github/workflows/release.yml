@@ -1,9 +1,7 @@
 name: Release Obsidian plugin
 
-# Triggers on plain semver tags pushed via scripts/release.mjs (no 'v' prefix).
-# Builds the plugin, then creates a draft GitHub release with the three required
-# Obsidian assets attached. The release stays in draft so the maintainer can
-# review and add changelog notes before publishing.
+# Triggers on plain semver tags from scripts/release.mjs (no 'v' prefix). Creates a
+# draft release with the three required Obsidian assets so the maintainer can add notes.
 on:
   push:
     tags:

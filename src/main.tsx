@@ -384,29 +384,22 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		this.registerURIHandler();
 		this._statusBarItem = this.addStatusBarItem();
 
-		// Initialize offline command queue. Guard against recoverFromCrash failures so a bad
-		// queue dir or disk error can't take down the whole plugin load.
+		// Guard recoverFromCrash so a bad queue dir or disk error can't kill plugin load.
 		try {
 			await this.recoverFromCrash();
 		} catch (e) {
 			console.error('[Z2K Templates] recoverFromCrash failed:', e);
 		}
 		this.startQueueProcessor();
-		// Restore template extension visibility state.
-		// Note: viewRegistry.registerExtensions is an internal Obsidian API (not in the public types).
-		// We use it because there is no public way to make Obsidian treat a custom file extension as
-		// markdown. Without this, .template / .block files cannot be opened in the markdown editor.
-		// If/when Obsidian adds a public alternative, swap in the public call. Risk: if Obsidian
-		// removes or renames this internal method, the toggle stops working — feature degrades
-		// (files become unopenable as markdown) but the rest of the plugin keeps working.
+		// viewRegistry.registerExtensions is internal API — no public alternative for treating
+		// custom extensions as markdown. If it goes away, the .template/.block toggle stops
+		// working but the rest of the plugin keeps running.
 		if (this.settings.useTemplateFileExtensions && this.settings.templateExtensionsVisible) {
 			// @ts-expect-error: internal API — see comment above
 			this.app.viewRegistry.registerExtensions(["template", "block"], "markdown");
 		}
-		// First-run welcome modal. Defer until after layout settles so we don't open a modal
-		// during Obsidian's startup paint pass (which can cause focus-trap issues).
-		// Persist the flag regardless of whether the modal actually rendered, so a broken
-		// modal can never repeatedly re-fire on every plugin enable.
+		// Defer to onLayoutReady to avoid focus issues during startup. Persist the flag
+		// before opening so a broken modal can't loop on every plugin enable.
 		if (!this.settings.hasSeenWelcome) {
 			this.app.workspace.onLayoutReady(() => {
 				this.settings.hasSeenWelcome = true;
@@ -419,10 +412,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			});
 		}
 	}
-	// Settings whose defaults depend on the runtime vault config dir + manifest id.
-	// Stored as empty strings in DEFAULT_SETTINGS so we can fill them in here at load time
-	// without hardcoding '.obsidian/plugins/z2k-plugin-templates' anywhere. Existing user
-	// settings are preserved; only empty values get filled.
+	// Fill path defaults from configDir + manifest.id at load time so we don't hardcode
+	// '.obsidian/plugins/...'. Empty saved values get defaults; explicit user values are kept.
 	private ensureDynamicDefaults() {
 		const pluginDataDir = `${this.app.vault.configDir}/plugins/${this.manifest.id}`;
 		if (!this.settings.offlineCommandQueueDir) {
@@ -839,9 +830,8 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	registerURIHandler() {
 		this.registerObsidianProtocolHandler("z2k-templates", async (rawParams) => {
 			await this.runWithErrorHandling(async () => {
-				// Obsidian's protocol handler already URL-decodes query params before passing them
-				// here. Don't decode again — a second decodeURIComponent corrupts literal '%' chars
-				// (encoded as %25 in the URI) and other percent-encoded sequences in user data.
+				// Don't decode rawParams — Obsidian already URL-decoded them; a second pass
+				// corrupts literal '%' chars (encoded as %25) and any other %XX in user data.
 				await this.processCommand({ ...rawParams }, true);
 			});
 		});
@@ -1261,8 +1251,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		if (!this.settings.offlineCommandQueueDir) return;
 		// Set initial lastQueueCheck to now (delays first scan by frequency duration)
 		this._lastQueueCheck = Date.now();
-		// Meta-timer: check every second if it's time to process.
-		// Wrap with registerInterval so Obsidian auto-clears it on plugin unload (canonical pattern).
+		// Meta-timer (1s tick); registerInterval handles cleanup on unload.
 		this._queueCheckInterval = this.registerInterval(window.setInterval(() => {
 			if (!this.settings.offlineCommandQueueEnabled) return;
 			const freqMs = parseDuration(this.settings.offlineCommandQueueFrequency, 0);
@@ -1842,9 +1831,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			blockBody += `\n\n${String(opts.fieldOverrides.sourceText)}\n`;
 		}
 
-		// Editor mode (no explicit location/header) drives the editor directly to preserve cursor.
-		// All other modes do a programmatic read-modify-write on the file.
-		// Note: line-number 0 is a valid explicit location, so we can't use a truthy check on opts.location.
+		// Note: can't use !opts.location — line-number 0 is a valid explicit location.
 		const isExplicitLocation =
 			opts.location === "file-top" ||
 			opts.location === "file-bottom" ||

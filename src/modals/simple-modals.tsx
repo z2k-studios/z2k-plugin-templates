@@ -451,8 +451,7 @@ export class ConfirmationModal extends Modal {
 	}
 }
 
-// Shown once on first plugin enable. Gated by settings.hasSeenWelcome — caller is
-// responsible for setting that flag and persisting after the modal is opened.
+// Caller gates this on settings.hasSeenWelcome and persists the flag.
 export class WelcomeModal extends Modal {
 	docsUrl: string;
 	root: any;
@@ -553,9 +552,8 @@ interface LogViewerModalOptions {
 	logPath: string;
 	emptyMessage?: string;
 	onClear?: () => Promise<void>;
-	// Optional subscription hook. When provided, the viewer refreshes on every callback fire
-	// (e.g. ErrorLogger emits one after each write). Returns an unsubscribe function. A slow
-	// fallback poll still runs to catch external edits that don't go through the subscriber.
+	// Refresh trigger. Caller (ErrorLogger.onChange) fires this after each write; viewer also
+	// runs a slow fallback poll to catch external edits that bypass the subscriber.
 	subscribe?: (cb: () => void) => () => void;
 }
 
@@ -606,9 +604,7 @@ function LogViewerContent({ app, options, onClose }: { app: App; options: LogVie
 		};
 		poll(); // initial read
 		const unsubscribe = options.subscribe?.(poll);
-		// Fallback poll at 5s catches external edits (e.g. user manually edits the log file
-		// in Obsidian or via another tool). Internal writes update via subscribe — much faster
-		// than the old 250ms tight poll.
+		// Fallback poll for edits that bypass the subscriber (manual edits, external tools).
 		const intervalId = window.setInterval(poll, 5000);
 		return () => {
 			unsubscribe?.();

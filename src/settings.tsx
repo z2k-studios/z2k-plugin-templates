@@ -641,13 +641,8 @@ registerHelper('recentFiles', () => {
 			}
 		};
 
-		// Use raw addEventListener: SettingTab does NOT extend Component, so neither
-		// `this.registerDomEvent` nor analogues exist. Per Obsidian's own guideline:
-		// "you don't need to clean up resources that are guaranteed to be removed when your
-		// plugin unloads. For example, if you register a listener on a DOM element, the event
-		// listener will be garbage-collected when the element goes out of scope." The settings
-		// tab DOM is recreated on every display() call; the old elements (and their listeners)
-		// are released naturally when the settings tab is rebuilt or closed.
+		// Don't switch to registerDomEvent — SettingTab isn't a Component.
+		// Plain addEventListener is fine; the settings tab DOM is rebuilt on each display().
 		el.addEventListener('input', () => applyValidation(el.value));
 		el.addEventListener('blur', () => {
 			if (settingItem?.classList.contains('is-invalid')) {

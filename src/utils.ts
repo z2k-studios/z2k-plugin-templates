@@ -45,8 +45,7 @@ export const DEFAULT_SETTINGS: Z2KTemplatesPluginSettings = {
 	cardReferenceName: 'file',
 	quickCommands: [],
 	offlineCommandQueueEnabled: false,
-	// Path defaults are computed at plugin load (see ensureDynamicDefaults) so they respect
-	// custom vault.configDir values and the actual manifest.id rather than hardcoding '.obsidian'.
+	// Empty here; filled in by ensureDynamicDefaults() at load time.
 	offlineCommandQueueDir: '',
 	offlineCommandQueueFrequency: '60s',
 	offlineCommandQueuePause: '1s',
@@ -127,8 +126,6 @@ export interface LogContext {
 }
 
 export class ErrorLogger {
-	// Listeners called after each successful write/clear. The log viewer modal subscribes here
-	// instead of polling the file at a tight interval — see LogViewerContent.
 	private listeners: Set<() => void> = new Set();
 
 	constructor(
