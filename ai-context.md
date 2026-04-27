@@ -58,7 +58,9 @@ Z2K Templates sits between Core Templates (too simple) and Templater (requires J
 ## Release
 
 - **GitHub repo:** `z2k-studios/z2k-plugin-templates`
-- **Release script:** `npm run release <version>` (runs `scripts/release.mjs` — bumps version, builds, commits, tags, pushes)
-- **Tag format:** plain semver, no `v` prefix (e.g. `0.4.0`)
+- **Release script:** `npm run release <version>` (runs `scripts/release.mjs` — validates working tree, bumps version files, builds, commits, tags, pushes)
+- **Tag format:** plain semver, no `v` prefix (e.g. `0.5.0`)
+- **Auto-release:** yes — `.github/workflows/release.yml` triggers on tag push, builds, and creates a draft GitHub release with assets attached. Maintainer (or `code/release` workflow) replaces the auto-generated notes with a curated changelog and publishes.
 - **Assets:** `release/main.js`, `manifest.json`, `styles.css`
 - **Prerelease:** yes (all releases are pre-release until public launch)
+- **Build outputs:** dev watcher writes to `dev/main.js`; prod builds write to `release/main.js`. Both gitignored.
