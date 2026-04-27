@@ -641,10 +641,15 @@ registerHelper('recentFiles', () => {
 			}
 		};
 
-		// Use the SettingTab's own Component lifecycle (not the plugin's), so listeners
-		// release when the settings tab closes instead of accumulating across re-opens.
-		this.registerDomEvent(el, 'input', () => applyValidation(el.value));
-		this.registerDomEvent(el, 'blur', () => {
+		// Use raw addEventListener: SettingTab does NOT extend Component, so neither
+		// `this.registerDomEvent` nor analogues exist. Per Obsidian's own guideline:
+		// "you don't need to clean up resources that are guaranteed to be removed when your
+		// plugin unloads. For example, if you register a listener on a DOM element, the event
+		// listener will be garbage-collected when the element goes out of scope." The settings
+		// tab DOM is recreated on every display() call; the old elements (and their listeners)
+		// are released naturally when the settings tab is rebuilt or closed.
+		el.addEventListener('input', () => applyValidation(el.value));
+		el.addEventListener('blur', () => {
 			if (settingItem?.classList.contains('is-invalid')) {
 				el.value = lastValid;
 				clearError();
