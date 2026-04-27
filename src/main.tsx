@@ -1,17 +1,15 @@
 
-import { App, Plugin, Modal, Notice, TAbstractFile, TFolder, TFile, Setting, MarkdownView, Editor, Command, DataAdapter } from 'obsidian';
+import { Plugin, Notice, TFolder, TFile, MarkdownView, Editor, Command, DataAdapter } from 'obsidian';
 import * as obsidian from 'obsidian';
 import { Z2KTemplateEngine, Z2KYamlDoc, TemplateState, VarValueType, FieldInfo, TemplateError, Handlebars } from './template-engine/main';
 import { PathFile, PathFolder, pathFileFrom, pathFolderFrom, pathFileFromTFile, pathFolderFromTFolder, normalizeFullPath, isSubPathOf, joinPath } from './paths';
-import { type Extension } from "@codemirror/state";
 import moment from 'moment';
 import { Z2KTemplatesPluginSettings, DEFAULT_SETTINGS, DOCS_BASE_URL, ErrorLogger, UserCancelError, TemplatePluginError, rethrowWithMessage, escapeRegExp, cardRefNameUpper, cardRefNameLower, parseDuration, parseDelayFromFilename, sleep, type ErrorSeverity } from './utils';
 import { handlebarsOverlay } from './syntax-highlighting';
 import { TemplateValidationController } from './template-validation';
 import { Z2KTemplatesSettingTab } from './settings';
-import { CardTypeSelectionModal, TemplateSelectionModal, ConfirmationModal, ErrorModal, LogViewerModal, WelcomeModal } from './modals/simple-modals';
+import { CardTypeSelectionModal, TemplateSelectionModal, ErrorModal, WelcomeModal } from './modals/simple-modals';
 import { FieldCollectionModal, buildDependencyMap, detectCircularDependencies, calculateFieldDependencyOrder } from './modals/field-collection';
-import { EditorModal, QuickCommandsModal } from './modals/editor-modals';
 import { createApi, Z2KTemplatesApi, BuiltInContext, BuiltInProvider } from './api';
 import { CommandResult } from './api/commands';
 
