@@ -3,14 +3,42 @@
 ---
 ## Why Z2K Templates?
 
-Z2K Templates sits between Obsidian's Core Templates (too simple for structured workflows) and Templater (requires JavaScript). It's for users who want declarative structure and automation without code execution in their notes.
+Core Templates is great for static snippets. Templater is great when you want full JavaScript. Z2K Templates is for when you want declarative structure — fields with types, prompts, and YAML inheritance — without writing code.
 
 ---
 ## Installation
 
-- **From the Obsidian Community Plugins gallery:** *Coming soon.*
 - **Via [BRAT](https://github.com/TfTHacker/obsidian42-brat):** Add `z2k-studios/z2k-plugin-templates` as a beta plugin.
 - **Manual install:** Download `main.js`, `manifest.json`, and `styles.css` from the [latest release](https://github.com/z2k-studios/z2k-plugin-templates/releases) and place them in `<vault>/.obsidian/plugins/z2k-plugin-templates/`.
+
+---
+## Getting started
+
+A three-step walkthrough to create your first templated note.
+
+**1. Set your templates folder.** Open **Settings → Z2K Templates** and set "Templates root folder" (or leave blank to use the vault root). Inside that folder, create a subfolder called `Templates` — this is where the plugin looks for template files.
+
+**2. Add a template file.** Create a markdown file in your `Templates` folder. Use `{{FieldName}}` to mark anywhere you want the user to be prompted. For example, save the following as `Daily Log.md`:
+
+```markdown
+---
+type: daily-log
+date: {{today}}
+mood: "{{Mood|singleSelect|How's your mood today?|neutral|N/A|great,good,neutral,low,rough}}"
+---
+
+# Daily Log — {{today}}
+
+## Intention for today
+{{Intention|text|What's your one thing today?|}}
+
+## Notes
+{{Notes|text|Any other notes?||N/A}}
+```
+
+**3. Run the command.** Open the command palette (`Ctrl+P` / `Cmd+P`) and run **Z2K Templates: Create new file from template**, or click the file-plus icon in the left ribbon. Pick `Daily Log`, fill in the prompts, and the plugin will create your note with `{{today}}` replaced by today's date and the field values you provided.
+
+That's the basic loop. Once it works, explore [the docs](https://z2k-studios.github.io/z2k-plugin-templates-docs/) for the full feature set: block templates, hierarchical YAML, URI automation, and more.
 
 ---
 ## Purpose
