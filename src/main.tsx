@@ -356,6 +356,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 
 	async onload() {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+		this.ensureDynamicDefaults();
 		this.api = createApi(this);
 		this.templateEngine = new Z2KTemplateEngine();
 		this.errorLogger = new ErrorLogger(this.app, this.settings);
@@ -383,8 +384,13 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		this.registerURIHandler();
 		this._statusBarItem = this.addStatusBarItem();
 
-		// Initialize offline command queue
-		await this.recoverFromCrash();
+		// Initialize offline command queue. Guard against recoverFromCrash failures so a bad
+		// queue dir or disk error can't take down the whole plugin load.
+		try {
+			await this.recoverFromCrash();
+		} catch (e) {
+			console.error('[Z2K Templates] recoverFromCrash failed:', e);
+		}
 		this.startQueueProcessor();
 		// Restore template extension visibility state.
 		// Note: viewRegistry.registerExtensions is an internal Obsidian API (not in the public types).
@@ -413,10 +419,27 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			});
 		}
 	}
+	// Settings whose defaults depend on the runtime vault config dir + manifest id.
+	// Stored as empty strings in DEFAULT_SETTINGS so we can fill them in here at load time
+	// without hardcoding '.obsidian/plugins/z2k-plugin-templates' anywhere. Existing user
+	// settings are preserved; only empty values get filled.
+	private ensureDynamicDefaults() {
+		const pluginDataDir = `${this.app.vault.configDir}/plugins/${this.manifest.id}`;
+		if (!this.settings.offlineCommandQueueDir) {
+			this.settings.offlineCommandQueueDir = `${pluginDataDir}/command-queue`;
+		}
+		if (!this.settings.errorLogPath) {
+			this.settings.errorLogPath = `${pluginDataDir}/error-log.md`;
+		}
+	}
 	onunload() {
 		if (this._queueCheckInterval !== null) {
 			window.clearInterval(this._queueCheckInterval);
 			this._queueCheckInterval = null;
+		}
+		if (this._refreshTimer !== null) {
+			window.clearTimeout(this._refreshTimer);
+			this._refreshTimer = null;
 		}
 		this._templateValidation?.destroy();
 		this._templateValidation = null;
@@ -816,12 +839,10 @@ export default class Z2KTemplatesPlugin extends Plugin {
 	registerURIHandler() {
 		this.registerObsidianProtocolHandler("z2k-templates", async (rawParams) => {
 			await this.runWithErrorHandling(async () => {
-				// URL-decode all parameters and pass to processCommand
-				const cmdParams: CommandParams = {};
-				for (const key in rawParams) {
-					cmdParams[key] = decodeURIComponent(rawParams[key]);
-				}
-				await this.processCommand(cmdParams, true);
+				// Obsidian's protocol handler already URL-decodes query params before passing them
+				// here. Don't decode again — a second decodeURIComponent corrupts literal '%' chars
+				// (encoded as %25 in the URI) and other percent-encoded sequences in user data.
+				await this.processCommand({ ...rawParams }, true);
 			});
 		});
 	}
@@ -1240,8 +1261,9 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		if (!this.settings.offlineCommandQueueDir) return;
 		// Set initial lastQueueCheck to now (delays first scan by frequency duration)
 		this._lastQueueCheck = Date.now();
-		// Meta-timer: check every second if it's time to process
-		this._queueCheckInterval = window.setInterval(() => {
+		// Meta-timer: check every second if it's time to process.
+		// Wrap with registerInterval so Obsidian auto-clears it on plugin unload (canonical pattern).
+		this._queueCheckInterval = this.registerInterval(window.setInterval(() => {
 			if (!this.settings.offlineCommandQueueEnabled) return;
 			const freqMs = parseDuration(this.settings.offlineCommandQueueFrequency, 0);
 			if (freqMs === 0) return; // Manual only (blank or invalid)
@@ -1250,7 +1272,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				this._lastQueueCheck = now;
 				this.checkAndProcessQueue();
 			}
-		}, 1000);
+		}, 1000));
 	}
 
 	private async recoverFromCrash() {

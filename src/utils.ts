@@ -45,11 +45,13 @@ export const DEFAULT_SETTINGS: Z2KTemplatesPluginSettings = {
 	cardReferenceName: 'file',
 	quickCommands: [],
 	offlineCommandQueueEnabled: false,
-	offlineCommandQueueDir: '.obsidian/plugins/z2k-plugin-templates/command-queue',
+	// Path defaults are computed at plugin load (see ensureDynamicDefaults) so they respect
+	// custom vault.configDir values and the actual manifest.id rather than hardcoding '.obsidian'.
+	offlineCommandQueueDir: '',
 	offlineCommandQueueFrequency: '60s',
 	offlineCommandQueuePause: '1s',
 	offlineCommandQueueArchiveDuration: '1w',
-	errorLogPath: '.obsidian/plugins/z2k-plugin-templates/error-log.md',
+	errorLogPath: '',
 	errorLogLevel: 'warn',
 	useTemplateFileExtensions: false,
 	templateExtensionsVisible: false,
