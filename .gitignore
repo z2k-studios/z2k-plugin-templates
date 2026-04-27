@@ -8,11 +8,10 @@
 # npm
 node_modules
 
-# Don't include the compiled main.js file in the repo.
-# They should be uploaded to GitHub releases instead.
-main.js
-
-# Production build output (separate from dev watcher to avoid contention)
+# Build outputs. dev/ holds the watcher output (used by the testing vault sync);
+# release/ holds the production build (uploaded to GitHub releases).
+# Neither is committed — release artifacts get attached on tag push.
+dev/
 release/
 
 # Exclude the zip file of the plugin too

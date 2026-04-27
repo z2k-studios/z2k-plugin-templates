@@ -182,9 +182,11 @@ try {
 
 	console.log(`\n✅ Released v${v}`);
 	console.log("\nNext steps:");
-	console.log("  1. Go to the GitHub repository");
-	console.log("  2. Create a new release from tag v" + v);
-	console.log("  3. Upload these files as loose release assets:");
+	console.log("  1. The .github/workflows/release.yml action will run on the pushed tag");
+	console.log("     and create a draft GitHub release with main.js, manifest.json, and");
+	console.log("     styles.css already attached.");
+	console.log("  2. Open the draft on GitHub, add changelog notes, and publish it.");
+	console.log("  3. If the action fails, fall back to manual upload:");
 	console.log(`     - ${BUILT_MAIN}`);
 	console.log("     - manifest.json");
 	console.log("     - styles.css");
