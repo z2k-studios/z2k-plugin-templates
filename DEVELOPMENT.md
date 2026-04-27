@@ -54,7 +54,15 @@ npm run release
 npm run release <version>
 ```
 
-After the script pushes the tag, the GitHub Actions workflow at `.github/workflows/release.yml` automatically creates a draft GitHub release with `release/main.js`, `manifest.json`, and `styles.css` attached. Open the release on GitHub, fill in the changelog notes, and publish it.
+After the script completes:
+
+1. Open the GitHub repository.
+2. Create a new release from the pushed tag.
+3. Fill out the changelog.
+4. Upload these files as loose release assets:
+   - `release/main.js`
+   - `manifest.json`
+   - `styles.css`
 
 ## License
 
