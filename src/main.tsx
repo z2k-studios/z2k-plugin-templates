@@ -401,11 +401,17 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		}
 		// First-run welcome modal. Defer until after layout settles so we don't open a modal
 		// during Obsidian's startup paint pass (which can cause focus-trap issues).
+		// Persist the flag regardless of whether the modal actually rendered, so a broken
+		// modal can never repeatedly re-fire on every plugin enable.
 		if (!this.settings.hasSeenWelcome) {
 			this.app.workspace.onLayoutReady(() => {
-				new WelcomeModal(this.app, DOCS_BASE_URL).open();
 				this.settings.hasSeenWelcome = true;
 				void this.saveData(this.settings);
+				try {
+					new WelcomeModal(this.app, DOCS_BASE_URL).open();
+				} catch (e) {
+					console.error('[Z2K Templates] Welcome modal failed to open:', e);
+				}
 			});
 		}
 	}
@@ -1818,7 +1824,14 @@ export default class Z2KTemplatesPlugin extends Plugin {
 
 		// Editor mode (no explicit location/header) drives the editor directly to preserve cursor.
 		// All other modes do a programmatic read-modify-write on the file.
-		const isEditorMode = !opts.location && !opts.destHeader;
+		// Note: line-number 0 is a valid explicit location, so we can't use a truthy check on opts.location.
+		const isExplicitLocation =
+			opts.location === "file-top" ||
+			opts.location === "file-bottom" ||
+			opts.location === "header-top" ||
+			opts.location === "header-bottom" ||
+			typeof opts.location === "number";
+		const isEditorMode = !isExplicitLocation && !opts.destHeader;
 		if (isEditorMode) {
 			const editor = this.getEditorOrThrow();
 			if (opts.fromSelection) {
