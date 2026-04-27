@@ -2,7 +2,6 @@ import { App, Plugin, Modal, PluginSettingTab, Setting, ToggleComponent } from '
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { Z2KTemplatesPluginSettings, DEFAULT_SETTINGS, DOCS_BASE_URL, cardRefNameUpper, cardRefNameLower, cardRefNameUpperPlural, cardRefNameLowerPlural, parseDuration } from './utils';
-import moment from 'moment';
 import type Z2KTemplatesPlugin from './main';
 import { EditorModal } from './modals/editor-modals';
 import { QuickCommandsModal } from './modals/editor-modals';
