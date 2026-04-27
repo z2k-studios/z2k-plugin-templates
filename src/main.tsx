@@ -1816,33 +1816,10 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			blockBody += `\n\n${String(opts.fieldOverrides.sourceText)}\n`;
 		}
 
-		// Insert into body: file position, header position, line number, or editor mode
-		let newFileContent: string;
-		const fileContent = await this.app.vault.read(opts.existingFile);
-		const { fm: fileFm, body: fileBody } = Z2KYamlDoc.splitFrontmatter(fileContent);
-		const mergedFm = Z2KYamlDoc.mergeLastWins([fileFm, blockFm]);
-
-		let newBody: string;
-		if (opts.location === "file-top") {
-			// Insert at top of file (first line of content after frontmatter)
-			newBody = blockBody + fileBody;
-		} else if (opts.location === "file-bottom") {
-			// Insert at bottom of file
-			newBody = fileBody + "\n" + blockBody;
-		} else if (opts.location === "header-top" || opts.location === "header-bottom") {
-			// Insert at header position
-			if (!opts.destHeader) {
-				throw new TemplatePluginError("destHeader is required when location is 'header-top' or 'header-bottom'");
-			}
-			newBody = this.insertIntoHeaderSection(fileBody, opts.destHeader, blockBody, opts.location);
-		} else if (typeof opts.location === "number") {
-			// Insert at specific line number
-			newBody = this.insertAtLineNumber(fileBody, opts.location, blockBody);
-		} else if (opts.destHeader) {
-			// Backward compatibility: if destHeader is specified without location, use header-top
-			newBody = this.insertIntoHeaderSection(fileBody, opts.destHeader, blockBody, "header-top");
-		} else {
-			// Editor mode: insert at cursor or replace selection
+		// Editor mode (no explicit location/header) drives the editor directly to preserve cursor.
+		// All other modes do a programmatic read-modify-write on the file.
+		const isEditorMode = !opts.location && !opts.destHeader;
+		if (isEditorMode) {
 			const editor = this.getEditorOrThrow();
 			if (opts.fromSelection) {
 				editor.replaceSelection(blockBody);
@@ -1852,16 +1829,34 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			const full = editor.getValue();
 			const { fm: fileFm2, body: newBody2 } = Z2KYamlDoc.splitFrontmatter(full);
 			const mergedFm2 = Z2KYamlDoc.mergeLastWins([fileFm2, blockFm]);
-			newFileContent = Z2KYamlDoc.joinFrontmatter(mergedFm2, newBody2);
+			const newFileContent = Z2KYamlDoc.joinFrontmatter(mergedFm2, newBody2);
 			await this.app.vault.modify(opts.existingFile, newFileContent);
-			if (opts.openInEditor) {
-				await this.app.workspace.openLinkText(opts.existingFile.path, "");
-			}
-			return { kind: 'insertBlock', filePath: opts.existingFile.path, finalized: !!opts.finalize };
+		} else {
+			// Atomic read-modify-write to avoid races with other plugins editing the same file.
+			await this.app.vault.process(opts.existingFile, fileContent => {
+				const { fm: fileFm, body: fileBody } = Z2KYamlDoc.splitFrontmatter(fileContent);
+				const mergedFm = Z2KYamlDoc.mergeLastWins([fileFm, blockFm]);
+				let newBody: string;
+				if (opts.location === "file-top") {
+					newBody = blockBody + fileBody;
+				} else if (opts.location === "file-bottom") {
+					newBody = fileBody + "\n" + blockBody;
+				} else if (opts.location === "header-top" || opts.location === "header-bottom") {
+					if (!opts.destHeader) {
+						throw new TemplatePluginError("destHeader is required when location is 'header-top' or 'header-bottom'");
+					}
+					newBody = this.insertIntoHeaderSection(fileBody, opts.destHeader, blockBody, opts.location);
+				} else if (typeof opts.location === "number") {
+					newBody = this.insertAtLineNumber(fileBody, opts.location, blockBody);
+				} else if (opts.destHeader) {
+					// Backward compatibility: destHeader without location → header-top
+					newBody = this.insertIntoHeaderSection(fileBody, opts.destHeader, blockBody, "header-top");
+				} else {
+					throw new Error("insertBlock: unreachable — isEditorMode should have handled this");
+				}
+				return Z2KYamlDoc.joinFrontmatter(mergedFm, newBody);
+			});
 		}
-
-		newFileContent = Z2KYamlDoc.joinFrontmatter(mergedFm, newBody);
-		await this.app.vault.modify(opts.existingFile, newFileContent);
 		if (opts.openInEditor) {
 			await this.app.workspace.openLinkText(opts.existingFile.path, "");
 		}
@@ -2027,17 +2022,17 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			if (type === "content-file" && this.isInsideTemplatesFolder(pathFileFromTFile(file))) {
 				await this.logInfo("You will need to manually move the file outside of your templates folder (" + this.settings.templatesFolderName + ").");
 			}
-			let content = await this.app.vault.read(file);
-			let { fm, body } = Z2KYamlDoc.splitFrontmatter(content);
-			let doc = Z2KYamlDoc.fromString(fm);
-			if (type === "content-file") {
-				doc.del("z2k_template_type");
-			} else if (type === "document-template" || type === "block-template") {
-				doc.set("z2k_template_type", type);
-			}
-			fm = doc.toString();
-			content = Z2KYamlDoc.joinFrontmatter(fm, body);
-			await this.app.vault.modify(file, content);
+			// Atomic read-modify-write to avoid races with other plugins editing the same file.
+			await this.app.vault.process(file, content => {
+				let { fm, body } = Z2KYamlDoc.splitFrontmatter(content);
+				let doc = Z2KYamlDoc.fromString(fm);
+				if (type === "content-file") {
+					doc.del("z2k_template_type");
+				} else if (type === "document-template" || type === "block-template") {
+					doc.set("z2k_template_type", type);
+				}
+				return Z2KYamlDoc.joinFrontmatter(doc.toString(), body);
+			});
 			// Rename file extension if template file extensions are enabled
 			if (this.settings.useTemplateFileExtensions) {
 				let targetExt: string;
@@ -2075,14 +2070,13 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				const renamedFile = await this.renameFileExtension(file, "md");
 				if (renamedFile) { file = renamedFile; }
 			}
-			// Update YAML to ensure type is set
-			let content = await this.app.vault.read(file);
-			let { fm, body } = Z2KYamlDoc.splitFrontmatter(content);
-			let doc = Z2KYamlDoc.fromString(fm);
-			doc.set("z2k_template_type", currentType);
-			fm = doc.toString();
-			content = Z2KYamlDoc.joinFrontmatter(fm, body);
-			await this.app.vault.modify(file, content);
+			// Update YAML to ensure type is set. Atomic read-modify-write.
+			await this.app.vault.process(file, content => {
+				let { fm, body } = Z2KYamlDoc.splitFrontmatter(content);
+				let doc = Z2KYamlDoc.fromString(fm);
+				doc.set("z2k_template_type", currentType);
+				return Z2KYamlDoc.joinFrontmatter(doc.toString(), body);
+			});
 		} catch (error) { this.handleErrors(error); }
 	}
 	async setTemplateExtensionsVisible(visible: boolean) {
