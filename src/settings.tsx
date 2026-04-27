@@ -348,6 +348,7 @@ export class Z2KTemplatesSettingTab extends PluginSettingTab {
 						logPath: this.plugin.settings.errorLogPath,
 						emptyMessage: 'No log entries yet.',
 						onClear: () => this.plugin.errorLogger.clearLog(),
+						subscribe: (cb) => this.plugin.errorLogger.onChange(cb),
 					}).open();
 				}));
 

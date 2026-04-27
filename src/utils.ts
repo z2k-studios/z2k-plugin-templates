@@ -127,10 +127,25 @@ export interface LogContext {
 }
 
 export class ErrorLogger {
+	// Listeners called after each successful write/clear. The log viewer modal subscribes here
+	// instead of polling the file at a tight interval — see LogViewerContent.
+	private listeners: Set<() => void> = new Set();
+
 	constructor(
 		private app: App,
 		private settings: Z2KTemplatesPluginSettings
 	) {}
+
+	onChange(listener: () => void): () => void {
+		this.listeners.add(listener);
+		return () => this.listeners.delete(listener);
+	}
+
+	private notifyListeners(): void {
+		for (const cb of this.listeners) {
+			try { cb(); } catch (e) { console.error("[Z2K Templates] Log change listener threw:", e); }
+		}
+	}
 
 	async log(context: LogContext): Promise<void> {
 		if (!this.shouldLog(context.severity)) { return; }
@@ -150,6 +165,7 @@ export class ErrorLogger {
 	async clearLog(): Promise<void> {
 		try {
 			await this.app.vault.adapter.write(this.settings.errorLogPath, '');
+			this.notifyListeners();
 		} catch (error) {
 			console.error("[Z2K Templates] Failed to clear error log:", error);
 		}
@@ -167,6 +183,7 @@ export class ErrorLogger {
 			const newContent = existingContent + entry;
 			await this.app.vault.adapter.write(logPath, newContent);
 			await this.truncateIfNeeded(logPath, newContent);
+			this.notifyListeners();
 		} catch (error) {
 			console.error("[Z2K Templates] Failed to write to error log:", error);
 		}

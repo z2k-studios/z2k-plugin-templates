@@ -553,6 +553,10 @@ interface LogViewerModalOptions {
 	logPath: string;
 	emptyMessage?: string;
 	onClear?: () => Promise<void>;
+	// Optional subscription hook. When provided, the viewer refreshes on every callback fire
+	// (e.g. ErrorLogger emits one after each write). Returns an unsubscribe function. A slow
+	// fallback poll still runs to catch external edits that don't go through the subscriber.
+	subscribe?: (cb: () => void) => () => void;
 }
 
 function LogViewerContent({ app, options, onClose }: { app: App; options: LogViewerModalOptions; onClose: () => void }) {
@@ -601,8 +605,15 @@ function LogViewerContent({ app, options, onClose }: { app: App; options: LogVie
 			}
 		};
 		poll(); // initial read
-		const intervalId = window.setInterval(poll, 250);
-		return () => window.clearInterval(intervalId);
+		const unsubscribe = options.subscribe?.(poll);
+		// Fallback poll at 5s catches external edits (e.g. user manually edits the log file
+		// in Obsidian or via another tool). Internal writes update via subscribe — much faster
+		// than the old 250ms tight poll.
+		const intervalId = window.setInterval(poll, 5000);
+		return () => {
+			unsubscribe?.();
+			window.clearInterval(intervalId);
+		};
 	}, []);
 
 	const handleClear = () => {
