@@ -228,7 +228,6 @@ const FieldCollectionForm = ({ templateState, userHelpers, onComplete, onCancel,
 	function updateFieldStates(newFieldStates: Record<string, FieldState>) {
 		for (const fieldName of dependencyOrderedFieldNames) {
 			const fieldInfo = templateState.fieldInfos[fieldName];
-			if (!fieldInfo) { continue; }
 
 			// Build context from current field values (excluding undefined)
 			const context: Record<string, VarValueType> = {};
@@ -324,11 +323,6 @@ const FieldCollectionForm = ({ templateState, userHelpers, onComplete, onCancel,
 		let isValid: boolean = true;
 		for (const fieldName of Object.keys(newFieldStates)) {
 			const fieldInfo = templateState.fieldInfos[fieldName];
-			if (!fieldInfo) {
-				console.error(`[Z2K Templates] Field ${fieldName} not found in fieldInfos`);
-				return true; // Skip validation if field not found
-			}
-
 			const value = fieldStates[fieldName].value;
 			let hasError = false;
 			let hasFinalizeError = false;
