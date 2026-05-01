@@ -19,6 +19,7 @@ export class FieldCollectionModal extends Modal {
 	resolve: (finalize: boolean) => void;
 	reject: (error: Error) => void;
 	root: any; // React root
+	private settled = false;
 
 	constructor(app: App, title: string, templateState: TemplateState, userHelpers: Record<string, Function>, resolve: (finalize: boolean) => void, reject: (error: Error) => void) {
 		super(app);
@@ -29,24 +30,36 @@ export class FieldCollectionModal extends Modal {
 		this.reject = reject;
 	}
 
+	private settleResolve(value: boolean) {
+		if (this.settled) { return; }
+		this.settled = true;
+		this.resolve(value);
+	}
+
+	private settleReject(error: Error) {
+		if (this.settled) { return; }
+		this.settled = true;
+		this.reject(error);
+	}
+
 	onOpen() {
 		this.modalEl.addClass('z2k', 'field-collection-modal');
 		this.titleEl.setText(this.title);
 		this.contentEl.empty();
 		this.contentEl.addClass('modal-content');
 		this.root = createRoot(this.contentEl);
-		const handleError = (error: Error) => { this.reject(error); this.close(); };
+		const handleError = (error: Error) => { this.settleReject(error); this.close(); };
 		this.root.render(
 			<ErrorBoundary onError={handleError}>
 				<FieldCollectionForm
 					templateState={this.templateState}
 					userHelpers={this.userHelpers}
 					onComplete={(finalize) => {
-						this.resolve(finalize);
+						this.settleResolve(finalize);
 						this.close();
 					}}
 					onCancel={() => {
-						this.reject(new UserCancelError("User cancelled field collection"));
+						this.settleReject(new UserCancelError("User cancelled field collection"));
 						this.close();
 					}}
 					onError={handleError}
@@ -56,6 +69,8 @@ export class FieldCollectionModal extends Modal {
 	}
 
 	onClose() {
+		// Outside-click / Escape closes the modal without going through our handlers; treat as cancel.
+		this.settleReject(new UserCancelError("User cancelled field collection"));
 		if (this.root) { this.root.unmount(); }
 		this.contentEl.empty();
 	}
@@ -201,6 +216,7 @@ const FieldCollectionForm = ({ templateState, userHelpers, onComplete, onCancel,
 		return calculateFieldDependencyOrder(depsMap);
 	});
 	const [renderOrderFieldNames] = useState<string[]>(() => computeInitialRenderOrderFieldNames());
+	const [submitting, setSubmitting] = useState(false);
 	// Update fields after the first render to distribute and apply dependencies
 	useEffect(() => {
 		let newFieldStates = {...fieldStates};
@@ -212,7 +228,6 @@ const FieldCollectionForm = ({ templateState, userHelpers, onComplete, onCancel,
 	function updateFieldStates(newFieldStates: Record<string, FieldState>) {
 		for (const fieldName of dependencyOrderedFieldNames) {
 			const fieldInfo = templateState.fieldInfos[fieldName];
-			if (!fieldInfo) { continue; }
 
 			// Build context from current field values (excluding undefined)
 			const context: Record<string, VarValueType> = {};
@@ -308,11 +323,6 @@ const FieldCollectionForm = ({ templateState, userHelpers, onComplete, onCancel,
 		let isValid: boolean = true;
 		for (const fieldName of Object.keys(newFieldStates)) {
 			const fieldInfo = templateState.fieldInfos[fieldName];
-			if (!fieldInfo) {
-				console.error(`[Z2K Templates] Field ${fieldName} not found in fieldInfos`);
-				return true; // Skip validation if field not found
-			}
-
 			const value = fieldStates[fieldName].value;
 			let hasError = false;
 			let hasFinalizeError = false;
@@ -398,6 +408,7 @@ const FieldCollectionForm = ({ templateState, userHelpers, onComplete, onCancel,
 
 	function handleSubmit(e: React.FormEvent, finalize: boolean = false) {
 		e.preventDefault();
+		if (submitting) { return; } // Guard against double-submit while modal is closing
 
 		// Abort if there are errors
 		let isValid = validateAllFields(fieldStates, finalize);
@@ -405,6 +416,7 @@ const FieldCollectionForm = ({ templateState, userHelpers, onComplete, onCancel,
 			scrollToFirstError();
 			return;
 		}
+		setSubmitting(true);
 
 		// Update template state with resolved values
 		// NOTE: Similar logic exists in applyFinalFieldStates(). If you modify
@@ -445,7 +457,13 @@ const FieldCollectionForm = ({ templateState, userHelpers, onComplete, onCancel,
 			// Else: field already specified externally, leave it alone
 		}
 
-		onComplete(finalize);
+		// Re-enable buttons if onComplete throws so the user isn't trapped on a frozen form.
+		try {
+			onComplete(finalize);
+		} catch (e) {
+			setSubmitting(false);
+			throw e;
+		}
 	}
 
 	function scrollToFirstError() {
@@ -504,9 +522,9 @@ const FieldCollectionForm = ({ templateState, userHelpers, onComplete, onCancel,
 			</div>
 
 			<div className="form-actions">
-				<button type="button" className="btn btn-secondary" onClick={onCancel}>Cancel</button>
-				<button type="submit" className="btn btn-primary">Save for Now</button>
-				<button type="button" className="btn btn-primary" onClick={(e) => handleSubmit(e, true)}>Finalize</button>
+				<button type="button" className="btn btn-secondary" onClick={onCancel} disabled={submitting}>Cancel</button>
+				<button type="submit" className="btn btn-primary" disabled={submitting}>Save for Now</button>
+				<button type="button" className="btn btn-primary" onClick={(e) => handleSubmit(e, true)} disabled={submitting}>Finalize</button>
 			</div>
 		</form>
 	);

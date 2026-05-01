@@ -30,7 +30,7 @@ Z2K Templates recognizes three file extensions:
 |---|---|---|
 | `.md` | All template types | The default. Templates are standard Markdown files. |
 | `.template` | Document templates | Optional custom extension that hides templates from Obsidian's normal file operations. |
-| `.block` | Block templates | Optional custom extension for [[Block Templates\|block template]] partials. |
+| `.block` | Block templates | Optional custom extension for [[Block Templates\|block templates]]. |
 
 The `.template` and `.block` extensions are part of the [[Template File Extensions]] feature. When enabled, they prevent template files from appearing in Obsidian's quick switcher, graph view, and search results – addressing the [[Template Pollution]] problem.
 

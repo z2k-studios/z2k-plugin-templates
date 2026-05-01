@@ -44,7 +44,7 @@ Nest helpers with parentheses (subexpressions):
 {{wikilink (formatDate 'YYYY-MM-DD' now)}}
 ```
 
-### Block Templates (Partials)
+### Block Templates
 Insert a reusable template fragment with `{{> BlockName}}`. Block templates are stored in Templates folders and identified by `z2k_template_type: block-template` in YAML or a `.block` file extension. See [[Block Templates]].
 
 ### Comments
@@ -467,7 +467,7 @@ See [[Command Queues Overview]] for full configuration details.
 | Built-in fields | camelCase | `{{dateAdd}}`, `{{yearMonth}}` |
 | Helper functions | camelCase | `{{formatStringToUpper}}` |
 | Document template files | `Template - <Name>.md` or `<Name>.template` | `Template - Book Review.md` |
-| Block template files | `Partial - <Name>.md` or `<Name>.block` | `Partial - Citation Block.block` |
+| Block template files | `Block - <Name>.md` or `<Name>.block` | `Block - Citation.block` |
 | Template folders | `Templates` (configurable) | `/Research/Templates/` |
 | System block files | `.system-block.md` (hidden, dot-prefixed) | `.system-block.md` |
 

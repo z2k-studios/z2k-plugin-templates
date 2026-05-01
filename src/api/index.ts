@@ -41,7 +41,7 @@ export function createApi(plugin: Z2KTemplatesPlugin) {
 		meta: {
 			/** The plugin's semver version string, from manifest.json. */
 			getVersion: () => plugin.manifest.version,
-			/** User-configured word for files ("note", "card", "file", etc.). */
+			/** User-configured word for files ("file", "note", "card", etc.). */
 			getNomenclature: () => plugin.settings.cardReferenceName,
 		},
 		commands: createCommandsNamespace(plugin),

@@ -28,7 +28,7 @@ Let's step back and review the top alternatives to **Z2K Templates**:
 - **Core Templates** is the easiest entry point: insert prewritten text and a few built‑in variables. No logic, no language to learn. Ideal for lightweight snippets. Uses `{{fields}}` just like Z2K Templates does.
 - **Templater** adds a **programmable layer**: JavaScript execution, file ops, and a rich API. This is excellent for complex automation, with the trade‑off of more moving parts and code in your notes.
 - **Liquid Templates** swaps in a **LiquidJS** syntax. It emphasizes template tags over code, landing between Core Templates and Templater in capability.
-- **Z2K Templates** takes a **declarative `{{fields}}` approach** backed by the [Handlebars.js](https://handlebarsjs.com/) language. It focuses on structured fields, interactive prompting, YAML integration, partials, and *context-aware* discovery (hierarchical templates). The intent is to standardize structure without requiring JavaScript in your notes.
+- **Z2K Templates** takes a **declarative `{{fields}}` approach** backed by the [Handlebars.js](https://handlebarsjs.com/) language. It focuses on structured fields, interactive prompting, YAML integration, blocks, and *context-aware* discovery (hierarchical templates). The intent is to standardize structure without requiring JavaScript in your notes.
 
 ## Design Approach Comparison
 
@@ -38,7 +38,7 @@ Let's step back and review the top alternatives to **Z2K Templates**:
 | **Instantiation**                 | Immediate **or deferred**; unresolved fields can persist and be **finalized** later | Immediate expansion on command; event triggers available; no first-class deferred placeholders | Immediate expansion on command                                |
 | **Interactive data-prompting UI** | **Yes** — native, field-driven modal prompts (text, number, select, etc.)           | **Yes** — prompts/suggesters via API (`tp.system.prompt/suggester`)                            | Typically **No** — Liquid is a static engine (no built-in UI) |
 | **Underlying language**           | Handlebars (expressions, conditionals, partials)                                    | Custom template syntax + **JavaScript** execution                                              | **LiquidJS** (filters/tags)                                   |
-| **Primary emphasis**              | Structured fields, YAML merging, hierarchical discovery, partials                   | Programmable automation, JS scripting, file ops                                                | Liquid-style tags/filters in notes                            |
+| **Primary emphasis**              | Structured fields, YAML merging, hierarchical discovery, blocks                     | Programmable automation, JS scripting, file ops                                                | Liquid-style tags/filters in notes                            |
 | **Typical pairings**              | Stands alone; pairs well with QuickAdd                                              | Frequently paired with QuickAdd                                                                | Sometimes paired with QuickAdd                                |
 
 > Notes: “Deferred” means leaving unresolved `{{fields}}` in a note to fill later. Z2K Templates handles these explicitly at **[[Lifecycle of a Template#Finalize|Finalize]]** time.

@@ -68,8 +68,8 @@ Note: These hidden fields still participate in dependency resolution and renderi
 ## Submission Modes
 The prompting interface offers two buttons for completing the form, plus a cancel button:
 
-- **Submit** – Saves the note with the values you've entered. Fields you haven't [[Prompt Touching|touched]] remain unresolved in the output file, creating a [[WIP Stage|WIP content file]] that you can [[Continue filling file|continue filling]] later. This is [[Deferred Field Resolution]] in action.
-- **Submit and Finalize** – Resolves all fields and produces a [[Finalized Stage|finalized content file]]. Untouched fields receive their [[fieldInfo fallback|fallback]] value (if specified), or are handled according to the [[Fallback Behavior]] rules. Required fields must have values – the form will block submission and scroll to the first error if they don't.
+- **Save for Now** – Saves the note with the values you've entered. Fields you haven't [[Prompt Touching|touched]] remain unresolved in the output file, creating a [[WIP Stage|WIP content file]] that you can [[Continue filling file|continue filling]] later. This is [[Deferred Field Resolution]] in action.
+- **Finalize** – Resolves all fields and produces a [[Finalized Stage|finalized content file]]. Untouched fields receive their [[fieldInfo fallback|fallback]] value (if specified), or are handled according to the [[Fallback Behavior]] rules. Required fields must have values – the form will block submission and scroll to the first error if they don't.
 - **Cancel** – Discards the operation entirely. No file is created or modified.
 
 > [!NOTE]
@@ -79,7 +79,7 @@ The prompting interface offers two buttons for completing the form, plus a cance
 The prompting interface validates field values before allowing submission:
 - **Number fields** – Must contain a valid number.
 - **titleText fields** – Cannot contain characters invalid in filenames (`\ / : * ? " < > |`), cannot be only dots, and cannot end with a space or dot.
-- **Required fields** – Must have a non-empty value. This is enforced only on **Submit and Finalize** – the **Submit** button allows partial entry.
+- **Required fields** – Must have a non-empty value. This is enforced only on **Finalize** – the **Save for Now** button allows partial entry.
 
 When validation fails, the form scrolls to the first field with an error and focuses it.
 
@@ -91,7 +91,6 @@ When validation fails, the form scrolls to the first field with an error and foc
 
 > [!DANGER] INTERNAL NOTES
 > - **Title vs. Subtitle**: The current code renders a single label per field (`resolvedPrompt || fieldName` at `src/main.tsx` ~line 4291). When a custom `prompt` is set, the prettified field name is only accessible via hover text – there is no separate "title" line. The intended design appears to be a title (prettified field name, always shown) with a subtitle (custom prompt text, shown when specified). This needs a code change before the Label bullet point above can be updated to document title/subtitle behavior.
-> - The submit button labels are "Submit" and "Submit and Finalize" in the current codebase (~line 4320). See GitHub issue #148 for renaming discussion.
 > - The suggest value currently renders identically to user-typed text in untouched fields – no grayed-out or italic treatment. See GitHub issue #147 for tracking. Once resolved, update the "Visual Indicators" section.
 > - **Field Filtering bug**: The current code at ~line 3935 allows unreferenced fields with a `prompt` directive to appear in the form. This is a bug – unreferenced fields should always be hidden. See GitHub issue #149. The doc above reflects the intended behavior, not the current code.
 > - Screenshot placeholder `prompting-interface-anatomy.png` needs to be captured from a live template with multiple field types and states visible.

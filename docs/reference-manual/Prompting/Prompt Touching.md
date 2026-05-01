@@ -40,10 +40,10 @@ When a field transitions from untouched to touched:
 ## What Happens When a Field Is Not Touched
 An untouched field is interpreted as one the user has not yet addressed. The consequences depend on which button is used to submit:
 
-### On Submit (WIP save)
+### On Save for Now
 The field remains **unresolved** in the output file. The raw template syntax (e.g., `{{fieldName}}`) is preserved in the note, and the file becomes a [[WIP Stage|WIP content file]]. The user can return to it later via [[Continue filling file]]. This is [[Deferred Field Resolution]] – the defining feature of Z2K Templates' iterative workflow.
 
-### On Submit and Finalize
+### On Finalize
 The plugin resolves the field using the [[Fallback Behavior]] procedure:
 1. If a `fallback` value is specified on [[fieldInfo Helper|{{fieldInfo}}]], that value is used
 2. If a `finalize-clear` or `finalize-preserve` [[fieldInfo directives|directive]] is specified, it determines behavior

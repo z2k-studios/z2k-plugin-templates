@@ -24,7 +24,7 @@ Just starting out and need some tutorials on how to use [[Z2K Templates]]? These
 	- Add a [[Custom Helper Functions]] to format a string to have every line have a preceeding "> " to it from the selection
 	- Step through the process from simple (just insert block template) to moderate (has the selected text) to advanced (custom text formatting function)
 - How to Create a New File from a Selected Block of Text and Template - introduces SystemData
-- How to Use Partial Templates for Block Level Templates
+- How to Use Block Templates for Block Level Templates
 - What Does it Mean to Finalize a File
 
 

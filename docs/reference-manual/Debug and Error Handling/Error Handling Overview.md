@@ -32,7 +32,7 @@ The [[Prompting]] form validates field values as you type. When a field has an i
 Validation runs on every change, focus, and blur event – you don't have to submit the form to see problems. Some validations only block submission during [[Finalization|finalization]] (for example, fields marked as `required`).
 
 ### What Gets Validated
-| Condition | Error Message | Blocks Submit? |
+| Condition | Error Message | Blocks Submission? |
 | --- | --- | --- |
 | Number field with non-numeric value | "Please enter a valid number" | Always |
 | `required` field left empty | "This field is required to finalize" | Only during finalization |
@@ -75,4 +75,4 @@ Most error behaviors are documented alongside the feature they belong to. Here's
 > - The error dialog uses the `TemplateError` class from the engine to show richer descriptions for syntax errors. For other error types, it shows a raw message. This distinction is internal and not documented to users.
 > - The `UserCancelError` class suppresses all error handling when a user cancels a dialog – no logging, no modal, no notice. This is intentional but not surfaced anywhere in docs.
 > - The inline validation for `fileTitle` and `titleText` types share the same rules, but `fileTitle` is always validated regardless of type setting. If these diverge in future, this page will need updating.
-> - The "Blocks Submit?" column in the validation table reflects current code: `required` fields use a separate `hasFinalizeError` flag that only blocks during finalization, while other errors block unconditionally.
+> - The "Blocks Submission?" column in the validation table reflects current code: `required` fields use a separate `hasFinalizeError` flag that only blocks during finalization, while other errors block unconditionally.

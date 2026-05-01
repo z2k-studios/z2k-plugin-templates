@@ -48,7 +48,7 @@ The `value` parameter accepts:
 Arrays are not a native literal type, but `value=(arr "a" "b" "c")` works — the [[arr]] helper returns a real array that is stored and passed through the value pipeline intact.
 
 > [!NOTE] Restricted Functionality Mode
-> The `value` expression is evaluated using [[Restricted Functionality Mode]] — a simplified rendering path. Field references, built-in fields, inline helpers, nested subexpressions, and Handlebars block helpers (`{{#if}}`, `{{#each}}`) all work normally. What does not work: [[Block Templates]] (partials) and `{{fieldInfo}}` declarations embedded inside the expression (they are silently ignored). If your `value` expression calls another helper that internally tries to use partials, it will fail. See [[Restricted Functionality Mode]] for the complete supported/unsupported feature list.
+> The `value` expression is evaluated using [[Restricted Functionality Mode]] — a simplified rendering path. Field references, built-in fields, inline helpers, nested subexpressions, and Handlebars block helpers (`{{#if}}`, `{{#each}}`) all work normally. What does not work: [[Block Templates]] and `{{fieldInfo}}` declarations embedded inside the expression (they are silently ignored). If your `value` expression calls another helper that internally tries to use blocks, it will fail. See [[Restricted Functionality Mode]] for the complete supported/unsupported feature list.
 
 ## Default Value
 If `value` is omitted, the field has no computed value and behaves normally — the user is prompted as usual.

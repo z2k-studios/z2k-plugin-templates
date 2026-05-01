@@ -3,19 +3,48 @@
 ---
 ## Why Z2K Templates?
 
-Z2K Templates sits between Obsidian's Core Templates (too simple for structured workflows) and Templater (requires JavaScript). It's for users who want declarative structure and automation without code execution in their notes.
+Core Templates is great for static snippets. Templater is great when you want full JavaScript. Z2K Templates is for when you want declarative structure — fields with types, prompts, and YAML inheritance — without writing code.
 
 ---
 ## Installation
 
-- **From the Obsidian Community Plugins gallery:** *Coming soon.*
 - **Via [BRAT](https://github.com/TfTHacker/obsidian42-brat):** Add `z2k-studios/z2k-plugin-templates` as a beta plugin.
 - **Manual install:** Download `main.js`, `manifest.json`, and `styles.css` from the [latest release](https://github.com/z2k-studios/z2k-plugin-templates/releases) and place them in `<vault>/.obsidian/plugins/z2k-plugin-templates/`.
 
 ---
+## Getting started
+
+A three-step walkthrough to create your first templated note.
+
+**1. Set your templates folder.** Open **Settings → Z2K Templates** and set "Templates root folder" (or leave blank to use the vault root). Inside that folder, create a subfolder called `Templates` — this is where the plugin looks for template files.
+
+**2. Add a template file.** Create a markdown file in your `Templates` folder. Use `{{FieldName}}` to mark anywhere you want the user to be prompted — that's all you need for a basic template. Save the following as `Daily Log.md`:
+
+````markdown
+---
+type: daily-log
+date: {{date}}
+---
+
+# Daily Log — {{date}}
+
+## Intention for today
+{{Intention}}
+
+## Notes
+{{Notes}}
+````
+
+**3. Run the command.** Open the command palette (`Ctrl+P` / `Cmd+P`) and run **Z2K Templates: Create new file from template**, or click the file-plus icon in the left ribbon. Pick `Daily Log`, fill in the prompts for `Intention` and `Notes`, and the plugin creates your note with `{{date}}` replaced by today's date.
+
+That's the minimum. To control prompt text, default values, field types, and dropdown options, add `{{fieldInfo}}` (or its short form `{{fi}}`) helpers — see the Core Features section below.
+
+Once the basics work, explore [the docs](https://z2k-studios.github.io/z2k-plugin-templates-docs/) for the full feature set: block templates, hierarchical YAML, URI automation, and more.
+
+---
 ## Purpose
 
-The **Z2K Templates Plugin** supercharges Obsidian by providing an advanced templating language. Features including smart field replacement, prompting, formatting helpers, YAML integration, partial templates, and URI automation.
+The **Z2K Templates Plugin** supercharges Obsidian by providing an advanced templating language. Features include smart field replacement, prompting, formatting helpers, YAML integration, block templates, and URI automation.
 
 ---
 
@@ -28,44 +57,54 @@ The **Z2K Templates Plugin** supercharges Obsidian by providing an advanced temp
   - **Built-In Fields**: Auto-filled (e.g. `{{today}}`, `{{cardTitle}}`)
 
 ### Prompting & Input Control
-- Rich inline prompt format to control typing, prompting and default answers for a field.
+
+The `{{fieldInfo}}` helper (short form: `{{fi}}`) attaches metadata to a field — prompt text, type, defaults, options, validation. It's silent (produces no output), so place it anywhere in the template. Use `{{fieldOutput}}` (`{{fo}}`) instead when you want the field's value rendered inline at the same spot.
+
 ```md
-  {{BookTitle|text|What is the book's title?|Untitled|N/A}}
+{{fi BookTitle "Title of the book?" directives="required"}}
+{{fi Genre type="singleSelect" opts="Fiction, Non-Fiction, Reference" fallback="Fiction"}}
+{{fi Rating "Rating out of 5?" type="number"}}
 ```
--  Features include:
-	- A User Interface that prompts the user for field entries when the template is used.
-    - Default values, Prompt Expressions
-    - Required fields
-    - Data types: text, titleText, number, date, boolean, singleSelect, multiSelect
 
-## Built-In Fields and Functions
-- The Z2K Template Plugin provides a rich set of built-in fields and helper functions that enable automation, consistency, and semantic structure in your notes.
-	- **Built-in fields** include automatically generated values such as timestamps, dates, card titles, and references to related files (e.g., today's journal or log). These fields are available out of the box and require no user input, making template-driven note creation fast and consistent.
-		- `{{today}}`, `{{timestamp}}`, `{{cardTitle}}`
+Features:
 
-	- **Helper functions** transform and format data during template rendering. They support operations like string casing, date formatting, whitespace control, bulletizing multiline text, and linking fields as Obsidian wikilinks or URLs. These functions follow a Handlebars-inspired syntax and can be nested for advanced logic.
-	    - `formatDate`, `formatString`, `formatStringToUpper`, `wikilink`, `url`, `formatStringRaw`
+- A prompting UI driven by the `{{fi}}` declarations
+- Default values, suggested values, fallback values
+- Required fields
+- Field types: `text`, `titleText`, `number`, `date`, `datetime`, `boolean`, `singleSelect`, `multiSelect`
 
-### Formatting & Helper Functions
-- Built-in helpers for formatting and linking:
-- Supports nested helper functions
+### Built-In Fields and Functions
+- **Built-in fields** are auto-populated values that require no user input — timestamps, dates, card titles, references to related files (e.g., today's journal or log).
+	- `{{today}}`, `{{timestamp}}`, `{{cardTitle}}`
+- **Helper functions** transform and format data during rendering: string casing, date formatting, whitespace control, bulletizing multiline text, and linking fields as wikilinks or URLs. Helpers follow Handlebars syntax and can be nested.
+	- `formatDate`, `formatString`, `formatStringToUpper`, `wikilink`, `url`, `formatStringRaw`
 
 ### Block Templates
-- Reusable template fragments with filenames prefixed by `Partial -`
+- Reusable template fragments
 - Insert via `{{> blockName}}`
 - Auto-merges YAML and resolves fields inline
 - Directory-based resolution logic ensures the closest block is chosen
 
 ### YAML Field Integration
-- Fields can be embedded directly inside YAML frontmatter:
-    `card_author: "{{CardAuthor|text|Who is the author?|Unknown}}"`
-- Supports System YAML files (`.z2k-system.yaml`) to apply global or scoped template yaml fields across folders
+
+Fields and `{{fieldInfo}}` declarations work directly inside YAML frontmatter:
+
+```yaml
+---
+title: "{{BookTitle}}"
+author: "{{fo AuthorName 'Who is the author?' fallback='Unknown'}}"
+date: "{{date}}"
+genre: "{{fo Genre type='singleSelect' opts='Fiction, Non-Fiction, Reference'}}"
+---
+```
+
+Also supports System YAML files (`.z2k-system.yaml`) to apply global or scoped template YAML across folders.
 
 ### URI + JSON API Support
-- Cards can be created via Obsidian commands or via URI
-- URI Example:
-    `obsidian://z2k-templates?action=New&templatepath=MyTemplate&filepath=MyCard`
-- Supports embedded JSON data for automation and API use
+- Notes can be created via Obsidian commands or via URI
+- URI example:
+    `obsidian://z2k-templates?vault=MyVault&cmd=new&templatePath=Templates/Daily%20Log.md&fileTitle=My%20Daily%20Log`
+- Supports embedded JSON data for automation and API use, plus a Command Queue for batch / offline ingestion
 
 ---
 ## Why It Matters

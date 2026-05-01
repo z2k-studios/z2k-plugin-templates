@@ -34,7 +34,7 @@ A simple block template for adding a task to a file:
 
 Insert it via:
 - The [[Insert Block Template]] command in Obsidian
-- Inside another template using the handlebars [[Partials|partial]] command, e.g.`{{> task-block}}`
+- Inside another template using the handlebars [[Partials|block]] syntax, e.g.`{{> task-block}}`
 
 
 
@@ -43,7 +43,7 @@ Insert it via:
 > [!DANGER] INTERNAL NOTES
 > 
 > ===question===
-> Can you make a partial that is based on a field (eg use a multiselect to allow the user to choose a partial to import)
+> Can you make a block that is based on a field (eg use a multiselect to allow the user to choose a block to import)
 > 
 > `{{< (random "Foo.md" "Bar.md")}}`
 > 

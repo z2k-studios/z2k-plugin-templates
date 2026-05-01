@@ -66,9 +66,13 @@ export function joinPath(...parts: string[]): string {
 	return normalizeFullPath(parts.join('/'));
 }
 
+// Like Obsidian's normalizePath but also resolves '..' and './' segments — needed for
+// hierarchical template lookups across folders.
 export function normalizeFullPath(path: string): string {
 	path = path
 		.trim()
+		.replace(/ /g, ' ')   // Replace non-breaking spaces with regular spaces (matches Obsidian's normalizePath)
+		.normalize('NFC')          // Unicode NFC normalization (matches Obsidian's normalizePath; aligns macOS NFD paths)
 		.replace(/\\/g, '/')       // Normalize backslashes to '/'
 		.replace(/\/{2,}/g, '/')   // Collapse multiple slashes
 		.replace(/^\.\//, '')      // Remove leading "./"

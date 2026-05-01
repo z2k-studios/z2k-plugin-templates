@@ -23,7 +23,7 @@ Restricted functionality mode is active whenever Z2K Templates evaluates an expr
 Any expression that can be used in the main template body — including [[Block Helpers]] like `{{#if}}` and `{{#each}}` — can also be embedded inside these parameter strings, and will be evaluated in restricted mode when they appear there. The behavior of those expressions is the same as in the main body, with the exceptions listed in [[#What Is Not Supported in Restricted Functionality Mode?]] above.
 
 ### What About YAML Frontmatter?
-YAML frontmatter is **not** in restricted functionality mode. YAML values are rendered through the main rendering pipeline using with the full set of helpers and the same expression preservation logic as the template body. The only difference is that [[Block Templates]] (partials) are not available in YAML — but all helpers, fields, and block helpers work normally.
+YAML frontmatter is **not** in restricted functionality mode. YAML values are rendered through the main rendering pipeline using with the full set of helpers and the same expression preservation logic as the template body. The only difference is that [[Block Templates]] are not available in YAML — but all helpers, fields, and block helpers work normally.
 
 ## What Is Supported in Restricted Functionality Mode?
 In restricted functionality mode, the following features **work normally**:
@@ -38,7 +38,7 @@ In restricted functionality mode, the following features **work normally**:
 ## What Is Not Supported in Restricted Functionality Mode?
 The following features are **not available** in restricted functionality mode:
 
-- **[[Block Templates]] (partials)** — `{{> block-name}}` syntax is not supported because block template partials are not registered in the restricted rendering context. Using this syntax will produce an error.
+- **[[Block Templates]]** — `{{> block-name}}` syntax is not supported because block templates are not registered in the restricted rendering context. Using this syntax will produce an error.
 - **`{{fieldInfo}}` / `{{fi}}` declarations** — these are registered as no-ops. They won't cause errors, but they won't process metadata or affect field behavior. Defining field metadata inside a restricted context has no effect.
 - **[[Template Comments]] line-aware removal** — comments are handled by Handlebars directly (stripped entirely) rather than Z2K Templates' line-aware removal logic.
 
@@ -46,7 +46,7 @@ The following features are **not available** in restricted functionality mode:
 This is an important distinction:
 
 - **Block helpers** (`{{#if}}`, `{{#each}}`, `{{#unless}}`, `{{#with}}`, and custom block helpers) are Handlebars language constructs that control rendering flow. They **work** in restricted mode — and identically to how they work in the main template body, because both paths run through the same underlying Handlebars compiler.
-- **[[Block Templates]]** (partials, `{{> block-name}}`) are Z2K's modular template fragments. They **don't work** in restricted mode because no partials are registered in the rendering context.
+- **[[Block Templates]]** (`{{> block-name}}`) are Z2K's modular template fragments. They **don't work** in restricted mode because no blocks are registered in the rendering context.
 
 Note that the [[Conditionals#Known Issue|deferred field limitation on block helpers]] — where `{{#if}}` evaluates immediately rather than being preserved for later resolution — is also not a restricted mode issue. It is a bug in the shared preprocessing step (`preserveExpressionsPreprocess`) used by both rendering paths. Block helpers have the same deferred-field behavior everywhere.
 
@@ -59,5 +59,5 @@ When a `{{fieldInfo}}` parameter like `prompt="{{#if projectName}}Task for {{pro
 > [!DANGER] INTERNAL NOTES
 > - ==Needs testing==: Verify that `{{#if}}` and `{{#each}}` actually work inside fieldInfo parameters (e.g., `prompt="{{#if projectName}}Task for {{projectName}}{{else}}Task name{{/if}}"`). Code analysis confirms the path is: `StringLiteral.value` → `reducedRenderContent` → `Handlebars.compile` → native `#if` evaluation. This should work, but needs empirical verification.
 > - ==Needs testing==: Verify that custom block helpers (user-defined) also work in restricted mode. They are passed via `userHelpers` into `allHelpers`, so they should work.
-> - The code comment at line 366 ("fieldInfos and blocks are not supported") has been clarified in the docs as referring to block templates, not block helpers. Consider updating the code comment to be more precise: "fieldInfo declarations and block templates (partials) are not supported in reduced-set templates."
+> - The code comment at line 366 ("fieldInfos and blocks are not supported") has been clarified in the docs as referring to block templates, not block helpers. Consider updating the code comment to be more precise: "fieldInfo declarations and block templates are not supported in reduced-set templates."
 > - Are there additional contexts where restricted mode applies beyond the ones listed? All call sites of `reducedRenderContent` in the plugin: template title rendering (line 2122), fieldInfo `value` resolution (lines 2234, 4050), `prompt` resolution (line 4057), `suggest` resolution (line 4058), `fallback` resolution (line 4059), `opts` resolution (line 4064).

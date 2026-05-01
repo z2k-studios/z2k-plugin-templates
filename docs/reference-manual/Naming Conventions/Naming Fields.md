@@ -55,7 +55,7 @@ Certain characters inside `{{ }}` trigger special parsing behavior. Using them i
 | `\|` (pipe) | `{{Author\|text\|Who is the Author?}}` | Inline [[Prompting\|prompting syntax]] |
 | `!` (bang) | `{{! this is a comment}}` | [[Template Comments\|Comment]] – entire expression is ignored |
 | `.` (period) | `{{Meals.Dinner}}` | Hierarchical JSON data path |
-| `<` (less than) | `{{< PartialTemplate.md}}` | [[Block Templates\|Partial / block template]] insertion |
+| `<` (less than) | `{{< BlockTemplate.md}}` | [[Block Templates\|Block template]] insertion |
 | `( )` (parentheses) | `{{wikilink (formatdate today)}}` | [[Using Nested Helper Functions\|Nested helper]] evaluation |
 | `~` (tilde) | `{{~FilenameText}}` | [[Whitespace Control\|Whitespace trimming]] |
 

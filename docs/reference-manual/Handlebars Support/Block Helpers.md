@@ -72,7 +72,7 @@ For example, this works:
 When rendered, the `prompt` string is compiled by Handlebars, and the `{{#if}}` block evaluates `projectName` from the current context. If `projectName` is defined, the prompt reads "Task for My Project:"; otherwise, it falls back to "Task name:".
 
 > [!NOTE] Block Helpers vs Block Templates
-> Don't confuse Handlebars' block helpers (`{{#if}}`, `{{#each}}`, custom block helpers) with Z2K Templates' [[Block Templates]] (`{{> block-name}}`). Block helpers work everywhere, including restricted mode. Block templates (partials) are the feature that is **not available** in restricted mode. See [[Restricted Functionality Mode#Block Helpers vs Block Templates]] for the full distinction.
+> Don't confuse Handlebars' block helpers (`{{#if}}`, `{{#each}}`, custom block helpers) with Z2K Templates' [[Block Templates]] (`{{> block-name}}`). Block helpers work everywhere, including restricted mode. Block templates are the feature that is **not available** in restricted mode. See [[Restricted Functionality Mode#Block Helpers vs Block Templates]] for the full distinction.
 
 ## Block Helpers and Deferred Fields
 Like [[Conditionals]] and [[Iterators]], block helpers are block statements – they are not preserved by Z2K Templates' [[Deferred Field Resolution]] logic. If a block helper references an unresolved field, the field will be `undefined` during evaluation.
@@ -80,6 +80,6 @@ Like [[Conditionals]] and [[Iterators]], block helpers are block statements – 
 
 > [!DANGER] INTERNAL NOTES
 > - **Deferred field bug**: Custom block helpers are affected by the same [[Conditionals#Known Issue|block statement preservation bug]] as `{{#if}}` and `{{#each}}`. Block statements referencing unresolved fields are not preserved — they evaluate immediately with `undefined` values. See that page for root cause and desired behavior options.
-> - **Restricted mode correction**: The previous version of this page incorrectly stated that block helpers don't work in restricted mode. Code analysis (tracing `reducedRenderContent` → `Handlebars.compile` path) shows they DO work — the code comment at line 366 ("blocks not supported") refers to block templates (partials), not block helpers. ==Needs testing== to confirm empirically that the `{{#if}}` in prompt parameter example actually works as described.
+> - **Restricted mode correction**: The previous version of this page incorrectly stated that block helpers don't work in restricted mode. Code analysis (tracing `reducedRenderContent` → `Handlebars.compile` path) shows they DO work — the code comment at line 366 ("blocks not supported") refers to block templates, not block helpers. ==Needs testing== to confirm empirically that the `{{#if}}` in prompt parameter example actually works as described.
 > - Custom block helpers are registered via the same `registerHelper` mechanism as inline helpers (lines 801-820 of `z2k-plugin-templates/main.tsx`). The distinction is purely in how the helper function uses `options.fn()`.
 > - It's unclear whether Z2K Templates' built-in helpers (like `fieldInfo`) can be used as block helpers. This should be tested and documented if relevant.

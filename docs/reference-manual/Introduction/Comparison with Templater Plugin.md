@@ -25,7 +25,7 @@ Why build a new templating plugin when the impressive [Templater plugin](https:/
 | **String/date formatting helpers**    | **Yes** (`formatString`, `formatDate`, etc.) | **Yes** (via JS functions/libraries)         |
 | **Context-aware template discovery**  | **Yes** (folder ancestry)                      | Not built-in (QuickAdd/scripts)              |
 | **Hierarchical System YAML**          | **Yes** (merged on create)                     | Not built-in (scriptable)                    |
-| **Partials / includes**               | **Yes** (Handlebars partials)                  | **Yes** (`tp.file.include()`)                |
+| **Blocks / includes**                 | **Yes** (Handlebars partials)                  | **Yes** (`tp.file.include()`)                |
 | **Deferred fields & Finalize step**   | **Yes** (continue filling, then finalize)      | Not a first-class concept                    |
 | **YAML merge across templates**       | **Yes** (built-in)                             | Scriptable                                   |
 | **URI triggers / JSON command lists** | **Yes** (URIs + packages)                      | Possible via JS/QuickAdd                     |
@@ -91,7 +91,7 @@ Date: {{date}}
 {{> ParticipantsBlock}}
 ```
 
-> The Z2K version keeps logic out of code blocks and standardizes on fields and partials. Templater enables deep automation through JavaScript.
+> The Z2K version keeps logic out of code blocks and standardizes on fields and blocks. Templater enables deep automation through JavaScript.
 
 
 ---

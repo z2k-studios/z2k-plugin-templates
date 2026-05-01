@@ -10,6 +10,9 @@ sidebar_label: fieldInfo Output
 ## Can I Output the Field Value?
 If you wish to specify the [[fieldInfo Parameters]] but want it to also emit the field value once the user specifies it, then use the [[fieldOutput Helper Variation]] instead.
 
+## When Does fieldInfo Get Cleared?
+For the full rules on when `{{fieldInfo}}` is removed, preserved, or replaced – across both pre-finalization and finalization, and across all combinations of data, [[fieldInfo value|value=]], and the [[fieldInfo directives#finalize-preserve|finalize-preserve]] directive – see [[fieldInfo Lifecycle]].
+
 ## Whitespace
 The `{{fieldInfo}}` helper function will remove any whitespace after it, up until the end of the line, and will remove the ending "new line" (return/enter) at the end of the line. This effectively makes a line containing a fieldInfo to be completely removed.
 

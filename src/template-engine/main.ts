@@ -1437,9 +1437,6 @@ class Z2KTemplateEngine {
 		// This should actually preserve fieldInfo and fieldOutput helpers for undefined values as well, as they contain the variable in them
 		// Use the AST, finding the start/end locations of matched expressions,
 		// then replace these segments in the original content with the placeholders (__z2kpres_b0_0__, etc)
-		// TODO: replace any references to fields in preserved expressions if their value is defined, like
-		// {{concat notDefinedVar " + " definedVar}} -> {{concat notDefinedVar " + " "definedVar's value"}}
-		// Extra credit: do it in the field prompts too
 
 		let placeholderCount = 0;
 		const replacements: { start: number; end: number; replacement: string }[] = [];
@@ -1661,6 +1658,8 @@ class Z2KTemplateEngine {
 	// }
 }
 
+// Don't switch this to FileManager.processFrontMatter — it goes through js-yaml which strips
+// comments. Templates rely on YAML comments surviving merges and field updates.
 class Z2KYamlDoc {
 	constructor(public doc: YAML.Document.Parsed) {}
 

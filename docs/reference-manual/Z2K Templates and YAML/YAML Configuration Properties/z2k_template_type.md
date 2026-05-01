@@ -14,7 +14,7 @@ This property works together with [[Template File Extensions]] but does not depe
 The `z2k_template_type` property is one of several ways the plugin identifies a file as a template. When this property is absent, the plugin falls back to other signals:
 - **Folder location** – any file inside a [[Template Folders|Template Folder]] is treated as a document template (see [[Template Requirements]])
 - **File extension** – files with `.template` or `.block` extensions are recognized automatically (see [[Template File Extensions]])
-- **Explicit partial reference** – any file referenced via Handlebars `{{> partial}}` syntax is treated as a block template for that invocation (see [[Block Template Requirements]])
+- **Explicit block reference** – any file referenced via Handlebars `{{> blockName}}` syntax is treated as a block template for that invocation (see [[Block Template Requirements]])
 
 When `z2k_template_type` is present, it takes precedence. For full details on how these methods interact, see [[Template Requirements]] and [[Block Template Requirements]].
 

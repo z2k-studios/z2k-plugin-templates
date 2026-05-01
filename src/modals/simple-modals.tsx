@@ -14,6 +14,7 @@ export class CardTypeSelectionModal extends Modal {
 	resolve: (cardType: PathFolder) => void;
 	reject: (error: Error) => void;
 	root: any; // For React root
+	private settled = false;
 
 	constructor(app: App, cardTypes: PathFolder[], settings: Z2KTemplatesPluginSettings, resolve: (cardType: PathFolder) => void, reject: (error: Error) => void) {
 		super(app);
@@ -23,6 +24,18 @@ export class CardTypeSelectionModal extends Modal {
 		this.reject = reject;
 	}
 
+	private settleResolve(value: PathFolder) {
+		if (this.settled) { return; }
+		this.settled = true;
+		this.resolve(value);
+	}
+
+	private settleReject(error: Error) {
+		if (this.settled) { return; }
+		this.settled = true;
+		this.reject(error);
+	}
+
 	onOpen() {
 		this.modalEl.addClass('z2k', 'card-type-selection-modal');
 		this.titleEl.setText(`Select ${cardRefNameUpper(this.settings)} Type`);
@@ -30,16 +43,16 @@ export class CardTypeSelectionModal extends Modal {
 		this.contentEl.addClass('modal-content');
 		this.root = createRoot(this.contentEl);
 		this.root.render(
-			<ErrorBoundary onError={(error) => { this.reject(error); this.close(); }}>
+			<ErrorBoundary onError={(error) => { this.settleReject(error); this.close(); }}>
 				<CardTypeSelector
 					cardTypes={this.cardTypes}
 					settings={this.settings}
 					onConfirm={(cardType: PathFolder) => {
-						this.resolve(cardType);
+						this.settleResolve(cardType);
 						this.close();
 					}}
 					onCancel={() => {
-						this.reject(new UserCancelError(`User cancelled ${cardRefNameLower(this.settings)} type selection`));
+						this.settleReject(new UserCancelError(`User cancelled ${cardRefNameLower(this.settings)} type selection`));
 						this.close();
 					}}
 				/>
@@ -48,6 +61,8 @@ export class CardTypeSelectionModal extends Modal {
 	}
 
 	onClose() {
+		// Outside-click / Escape closes the modal without going through our handlers; treat as cancel.
+		this.settleReject(new UserCancelError(`User cancelled ${cardRefNameLower(this.settings)} type selection`));
 		if (this.root) { this.root.unmount(); }
 		this.contentEl.empty();
 	}
@@ -153,6 +168,7 @@ export class TemplateSelectionModal extends Modal {
 	resolve: (template: PathFile) => void;
 	reject: (error: Error) => void;
 	root: any; // For React root
+	private settled = false;
 
 	constructor(app: App, templates: { file: PathFile, isDefault: boolean, description?: string }[], settings: Z2KTemplatesPluginSettings, resolve: (template: PathFile) => void, reject: (error: Error) => void){
 		super(app);
@@ -162,6 +178,18 @@ export class TemplateSelectionModal extends Modal {
 		this.reject = reject;
 	}
 
+	private settleResolve(value: PathFile) {
+		if (this.settled) { return; }
+		this.settled = true;
+		this.resolve(value);
+	}
+
+	private settleReject(error: Error) {
+		if (this.settled) { return; }
+		this.settled = true;
+		this.reject(error);
+	}
+
 	onOpen() {
 		this.modalEl.addClass('z2k', 'template-selection-modal');
 		this.titleEl.setText('Select Template');
@@ -169,16 +197,16 @@ export class TemplateSelectionModal extends Modal {
 		this.contentEl.addClass('modal-content');
 		this.root = createRoot(this.contentEl);
 		this.root.render(
-			<ErrorBoundary onError={(error) => { this.reject(error); this.close(); }}>
+			<ErrorBoundary onError={(error) => { this.settleReject(error); this.close(); }}>
 				<TemplateSelector
 					templates={this.templates}
 					settings={this.settings}
 					onConfirm={(template: PathFile) => {
-						this.resolve(template);
+						this.settleResolve(template);
 						this.close();
 					}}
 					onCancel={() => {
-						this.reject(new UserCancelError("User cancelled template selection"));
+						this.settleReject(new UserCancelError("User cancelled template selection"));
 						this.close();
 					}}
 				/>
@@ -192,6 +220,8 @@ export class TemplateSelectionModal extends Modal {
 	}
 
 	onClose() {
+		// Outside-click / Escape closes the modal without going through our handlers; treat as cancel.
+		this.settleReject(new UserCancelError("User cancelled template selection"));
 		if (this.root) { this.root.unmount(); }
 		this.contentEl.empty();
 	}
@@ -351,10 +381,6 @@ const TemplateSelector = ({ templates, settings, onConfirm, onCancel }: Template
 
 
 
-// TODO: Save the state of the modal to prevent large data loss on accidental close
-// I tried a long time to block the closing upon clicking outside the modal but was not able to do so.
-
-
 // ------------------------------------------------------------------------------------------------
 // Confirmation Modal
 // ------------------------------------------------------------------------------------------------
@@ -425,6 +451,55 @@ export class ConfirmationModal extends Modal {
 	}
 }
 
+// Caller gates this on settings.hasSeenWelcome and persists the flag.
+export class WelcomeModal extends Modal {
+	docsUrl: string;
+	root: any;
+
+	constructor(app: App, docsUrl: string) {
+		super(app);
+		this.docsUrl = docsUrl;
+	}
+
+	onOpen() {
+		this.modalEl.addClass('z2k', 'welcome-modal');
+		this.titleEl.setText('Welcome to Z2K Templates');
+		this.contentEl.empty();
+		this.contentEl.addClass('modal-content');
+		this.root = createRoot(this.contentEl);
+		this.root.render(
+			<>
+				<p>Z2K Templates lets you create structured notes from declarative templates with interactive prompts, smart field replacement, and YAML inheritance — all without writing JavaScript.</p>
+				<p>To get started:</p>
+				<ol>
+					<li>Open <strong>Settings → Z2K Templates</strong> to set your templates folder.</li>
+					<li>Add a template file (a Markdown file with <code>{`{{Field}}`}</code> placeholders) to that folder.</li>
+					<li>Run <strong>Z2K Templates: Create new file from template</strong> from the command palette, or click the file-plus icon in the ribbon.</li>
+				</ol>
+				<div className="welcome-buttons">
+					<button
+						className="btn btn-secondary"
+						onClick={() => window.open(this.docsUrl, '_blank', 'noopener,noreferrer')}
+					>
+						View docs
+					</button>
+					<button
+						className="btn btn-primary"
+						onClick={() => this.close()}
+					>
+						Got it
+					</button>
+				</div>
+			</>
+		);
+	}
+
+	onClose() {
+		if (this.root) { this.root.unmount(); }
+		this.contentEl.empty();
+	}
+}
+
 export class ErrorModal extends Modal {
 	error: Error;
 	root: any; // React root
@@ -477,6 +552,9 @@ interface LogViewerModalOptions {
 	logPath: string;
 	emptyMessage?: string;
 	onClear?: () => Promise<void>;
+	// Refresh trigger. Caller (ErrorLogger.onChange) fires this after each write; viewer also
+	// runs a slow fallback poll to catch external edits that bypass the subscriber.
+	subscribe?: (cb: () => void) => () => void;
 }
 
 function LogViewerContent({ app, options, onClose }: { app: App; options: LogViewerModalOptions; onClose: () => void }) {
@@ -525,8 +603,13 @@ function LogViewerContent({ app, options, onClose }: { app: App; options: LogVie
 			}
 		};
 		poll(); // initial read
-		const intervalId = window.setInterval(poll, 250);
-		return () => window.clearInterval(intervalId);
+		const unsubscribe = options.subscribe?.(poll);
+		// Fallback poll for edits that bypass the subscriber (manual edits, external tools).
+		const intervalId = window.setInterval(poll, 5000);
+		return () => {
+			unsubscribe?.();
+			window.clearInterval(intervalId);
+		};
 	}, []);
 
 	const handleClear = () => {
@@ -575,7 +658,7 @@ export class LogViewerModal extends Modal {
 		this.contentEl.addClass('modal-content');
 		this.root = createRoot(this.contentEl);
 		this.root.render(
-			<ErrorBoundary onError={(error) => { new Notice(`Log viewer error: ${error.message}`); this.close(); }}>
+			<ErrorBoundary onError={(error) => { this.close(); new ErrorModal(this.app, error).open(); }}>
 				<LogViewerContent app={this.app} options={this.options} onClose={() => this.close()} />
 			</ErrorBoundary>
 		);

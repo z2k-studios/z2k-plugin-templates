@@ -100,7 +100,7 @@ These occur during template rendering or file operations:
 | Error | Cause |
 | --- | --- |
 | Template parsing error | Invalid Handlebars syntax in the template |
-| Missing partial | A block template reference that can't be resolved |
+| Missing block | A block template reference that can't be resolved |
 | File system error | Permission denied, disk full, path too long |
 | YAML merge conflict | Incompatible frontmatter structures |
 

@@ -37,7 +37,9 @@ const context = await esbuild.context({
 	logLevel: "info",
 	sourcemap: prod ? false : "inline",
 	treeShaking: true,
-	outfile: prod ? "release/main.js" : "main.js",
+	// Dev and prod outputs live in their own folders so they never collide and the
+	// release/upload artifacts (manifest.json, styles.css, release/main.js) are easy to spot.
+	outfile: prod ? "release/main.js" : "dev/main.js",
 	jsx: "automatic",
 	minify: prod,
 });

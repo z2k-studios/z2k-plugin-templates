@@ -52,7 +52,7 @@ See [[Template Requirements]] for more details.
 ## How are Block and File Templates Treated Differently?
 So why does it matter whether or not it is a document-level template or a block-level template? In reality, the distinction only appears a few times:
 
-1. When inserting a block template with an Obsidian Command Prompt (e.g. "[[Insert Block Template]]" and "[[Insert Block Template Using Selected Text]]"), it will only display block templates to choose from. Note: Using the [[Partial Expression]] however does not prevent the insertion of a Document Template. 
+1. When inserting a block template with an Obsidian Command Prompt (e.g. "[[Insert Block Template]]" and "[[Insert Block Template Using Selected Text]]"), it will only display block templates to choose from. Note: Using the [[Partials|block syntax]] however does not prevent the insertion of a Document Template. 
 2. When creating a new file from a template with an Obsidian Command Prompt (e.g. "[[Create new note]]" and "[[Create note from selected text]]"), it will only display document templates to choose from.
 3. ==Any other ways?==
 

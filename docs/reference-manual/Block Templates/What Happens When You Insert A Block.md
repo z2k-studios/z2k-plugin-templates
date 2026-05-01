@@ -25,7 +25,7 @@ If you are inserting a block template interactively via the [[Insert Block Templ
 - Gathers block templates relevant to that context (e.g. exists within the path)
 - Presents a selection modal for you to choose from
 
-If the block template is being inserted directly using the [[Partials|partial syntax]] (`{{> block-name}}`), the block is resolved based on [[Partials#Path Resolution|path resolution rules]].
+If the block template is being inserted directly using the [[Partials|block syntax]] (`{{> block-name}}`), the block is resolved based on [[Partials#Path Resolution|path resolution rules]].
 
 ### 2. Template Parsing
 The block template file is read and parsed:
@@ -49,7 +49,7 @@ This means that if a field already exists in your target document's YAML as YAML
 ### 4. Field Prompting
 If there are fields without values (and prompting is [[fieldInfo directives#no-prompt|enabled]]), you'll see the field prompt modal. Fields marked with `no-prompt` directive are skipped.
 
-If the block template is being inserted using [[Partials]] syntax, prompting will defer until the end when prompting is performed at the document template level. 
+If the block template is being inserted using [[Partials|block]] syntax, prompting will defer until the end when prompting is performed at the document template level. 
 
 ### 5. Template Rendering
 The Handlebars template is rendered with all resolved field values. Helper functions are executed, conditionals are evaluated, and nested block templates are resolved.
@@ -63,7 +63,7 @@ Before merging, the plugin removes template-specific YAML properties from the bl
 These properties are only relevant during template authoring and shouldn't appear in your content files.
 
 ### 7. YAML Merging
-The Z2K Templates Plugin attempts to be smart at how to handle YAML frontmatter found in the block template file being inserted. If the partial contains yaml data, it will extract those entries and add them into the card's YAML frontmatter. 
+The Z2K Templates Plugin attempts to be smart at how to handle YAML frontmatter found in the block template file being inserted. If the block contains yaml data, it will extract those entries and add them into the card's YAML frontmatter. 
 
 The block's YAML frontmatter is merged into the target document's frontmatter using a **"last wins"** strategy:
 

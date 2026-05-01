@@ -6,7 +6,7 @@ aliases:
 - fallback resolution
 ---
 # Fallback Behavior
-Fallback behavior determines what happens to a [[Template Fields|template field]] when no value is provided for it – specifically, when the user never [[Prompt Touching|touches]] the field in the [[Prompting Interface]] and then clicks **Submit and Finalize**.
+Fallback behavior determines what happens to a [[Template Fields|template field]] when no value is provided for it – specifically, when the user never [[Prompt Touching|touches]] the field in the [[Prompting Interface]] and then clicks **Finalize**.
 
 This matters because Z2K Templates supports [[Deferred Field Resolution]] – fields can remain unresolved across multiple editing sessions. At some point, though, the note gets [[Finalization|finalized]], and every remaining field needs a resolution strategy.
 
@@ -112,4 +112,4 @@ See [[Prompt Touching]] for details on how the system distinguishes "deliberatel
 - [[Deferred Field Resolution]] – The broader concept of iterative field resolution
 
 > [!DANGER] INTERNAL NOTES
-> - Submit handling at `src/main.tsx` ~line 4249: untouched fields during finalization use `resolvedFallback` value, but skip `finalize-preserve` fields to let preservation logic handle them.
+> - Finalize handling lives in `handleSubmit` in `src/modals/field-collection.tsx`: untouched fields during finalization use `resolvedFallback` value, but skip `finalize-preserve` fields to let preservation logic handle them.

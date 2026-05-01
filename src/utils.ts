@@ -34,6 +34,7 @@ export interface Z2KTemplatesPluginSettings {
 	userHelpersEnabled: boolean; // Whether user-written custom helpers are active (ACE risk)
 	pluginHelpersEnabled: boolean; // Master toggle for helpers/built-in fields registered by other plugins
 	perPluginEnabled: Record<string, boolean>; // Per-plugin enable/disable of registered helpers and built-in fields; missing entries default to enabled
+	hasSeenWelcome: boolean; // Set to true after the first-run welcome modal has been shown and dismissed
 }
 
 export const DEFAULT_SETTINGS: Z2KTemplatesPluginSettings = {
@@ -41,14 +42,15 @@ export const DEFAULT_SETTINGS: Z2KTemplatesPluginSettings = {
 	templatesRootFolder: '',
 	creator: '',
 	templatesFolderName: 'Templates',
-	cardReferenceName: 'note',
+	cardReferenceName: 'file',
 	quickCommands: [],
 	offlineCommandQueueEnabled: false,
-	offlineCommandQueueDir: '.obsidian/plugins/z2k-plugin-templates/command-queue',
+	// Empty here; filled in by ensureDynamicDefaults() at load time.
+	offlineCommandQueueDir: '',
 	offlineCommandQueueFrequency: '60s',
 	offlineCommandQueuePause: '1s',
 	offlineCommandQueueArchiveDuration: '1w',
-	errorLogPath: '.obsidian/plugins/z2k-plugin-templates/error-log.md',
+	errorLogPath: '',
 	errorLogLevel: 'warn',
 	useTemplateFileExtensions: false,
 	templateExtensionsVisible: false,
@@ -60,6 +62,7 @@ export const DEFAULT_SETTINGS: Z2KTemplatesPluginSettings = {
 	userHelpersEnabled: false,
 	pluginHelpersEnabled: true,
 	perPluginEnabled: {},
+	hasSeenWelcome: false,
 };
 
 const DURATION_FORMAT_ERROR = 'Invalid duration. Use number + suffix: ms, s, m, h, d, w, mo, y (e.g., 500ms, 30s, 5m, 12h, 3d, 1w, 6mo, 1y)';
@@ -123,10 +126,23 @@ export interface LogContext {
 }
 
 export class ErrorLogger {
+	private listeners: Set<() => void> = new Set();
+
 	constructor(
 		private app: App,
 		private settings: Z2KTemplatesPluginSettings
 	) {}
+
+	onChange(listener: () => void): () => void {
+		this.listeners.add(listener);
+		return () => this.listeners.delete(listener);
+	}
+
+	private notifyListeners(): void {
+		for (const cb of this.listeners) {
+			try { cb(); } catch (e) { console.error("[Z2K Templates] Log change listener threw:", e); }
+		}
+	}
 
 	async log(context: LogContext): Promise<void> {
 		if (!this.shouldLog(context.severity)) { return; }
@@ -146,6 +162,7 @@ export class ErrorLogger {
 	async clearLog(): Promise<void> {
 		try {
 			await this.app.vault.adapter.write(this.settings.errorLogPath, '');
+			this.notifyListeners();
 		} catch (error) {
 			console.error("[Z2K Templates] Failed to clear error log:", error);
 		}
@@ -163,6 +180,7 @@ export class ErrorLogger {
 			const newContent = existingContent + entry;
 			await this.app.vault.adapter.write(logPath, newContent);
 			await this.truncateIfNeeded(logPath, newContent);
+			this.notifyListeners();
 		} catch (error) {
 			console.error("[Z2K Templates] Failed to write to error log:", error);
 		}

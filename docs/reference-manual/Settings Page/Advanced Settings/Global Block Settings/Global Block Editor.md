@@ -87,7 +87,7 @@ The token names in these messages refer to specific Handlebars syntax constructs
 | `OPEN_BLOCK` | `{{#` | Parser expected something else but found a block helper opening (e.g., `{{#if}}`) |
 | `OPEN_ENDBLOCK` | `{{/name}}` | Opened a `{{#block}}` but never closed it with `{{/block}}` |
 | `OPEN_INVERSE` | `{{^}}` / `{{else}}` | An else/inverse branch appeared in an unexpected position |
-| `OPEN_PARTIAL` | `{{>` | A partial (block template) invocation appeared where not expected |
+| `OPEN_PARTIAL` | `{{>` | A block invocation appeared where not expected |
 | `OPEN_RAW_BLOCK` | `{{{{` | Parser expected something else but found the start of a raw block |
 | `OPEN_SEXPR` | `(` | A subexpression started but context doesn't allow it |
 | `CLOSE_SEXPR` | `)` | A subexpression was left unclosed — missing closing `)` |

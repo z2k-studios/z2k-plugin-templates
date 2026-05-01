@@ -32,11 +32,15 @@ Runs an esbuild watcher that rebuilds on source changes. Output is copied into t
 npm run build
 ```
 
-Produces a bundled `main.js` in the repo root.
+Produces a bundled `main.js` at `release/main.js`.
+
+## Build outputs
+
+The dev watcher writes to `dev/main.js` (used by the testing-vault sync). Production builds write to `release/main.js`. Both directories are gitignored. `manifest.json` and `styles.css` (also released artifacts) live at the plugin root and are tracked. The two outputs live in separate folders so they never collide — you can leave `npm run dev` running during a release.
 
 ## Testing
 
-A testing vault is included in the repository and can be opened directly in Obsidian. Plugin files are copied into the vault on each `npm run build` or `npm run dev`.
+A testing vault is included in the repository and can be opened directly in Obsidian. The `update-plugins.sh` script in the testing-vaults repo watches `dev/main.js`, `manifest.json`, and `styles.css` and copies them into the vault as the dev watcher rebuilds.
 
 ## Releasing
 
@@ -50,12 +54,10 @@ npm run release
 npm run release <version>
 ```
 
-The dev watcher writes to `main.js` (used by the testing vault), and production builds write to `release/main.js` — they don't collide, so you can leave `npm run dev` running during a release.
-
 After the script completes:
 
 1. Open the GitHub repository.
-2. Create a new release on the right.
+2. Create a new release from the pushed tag.
 3. Fill out the changelog.
 4. Upload these files as loose release assets:
    - `release/main.js`

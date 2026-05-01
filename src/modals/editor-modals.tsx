@@ -1,4 +1,4 @@
-import { App, Modal, Notice, TFolder } from 'obsidian';
+import { App, Modal, TFolder } from 'obsidian';
 import React, { useState, useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import { EditorView, keymap, lineNumbers, highlightActiveLine, highlightActiveLineGutter } from "@codemirror/view";
@@ -9,6 +9,7 @@ import { tags } from "@lezer/highlight";
 import { javascript } from "@codemirror/lang-javascript";
 import { handlebarsOverlay } from '../syntax-highlighting';
 import { Z2KTemplatesPluginSettings, ErrorBoundary } from '../utils';
+import { ErrorModal } from './simple-modals';
 import { SuggestInput, SuggestItem } from '../components/suggest-input';
 import type Z2KTemplatesPlugin from '../main';
 
@@ -433,7 +434,7 @@ export class QuickCommandsModal extends Modal {
 		this.contentEl.addClass('modal-content');
 		this.root = createRoot(this.contentEl);
 		this.root.render(
-			<ErrorBoundary onError={(error) => { new Notice(`Quick Commands error: ${error.message}`); this.close(); }}>
+			<ErrorBoundary onError={(error) => { this.close(); new ErrorModal(this.app, error).open(); }}>
 				<QuickCommandsModalContent
 					initialCommands={this.plugin.settings.quickCommands}
 					loadSuggestItems={() => this.buildSuggestItems()}
@@ -509,7 +510,7 @@ export class EditorModal extends Modal {
 
 		this.root = createRoot(this.contentEl);
 		this.root.render(
-			<ErrorBoundary onError={(error) => { new Notice(`Editor error: ${error.message}`); this.close(); }}>
+			<ErrorBoundary onError={(error) => { this.close(); new ErrorModal(this.app, error).open(); }}>
 				<EditorModalContent
 					initialContent={this.options.initialContent}
 					language={this.options.language}

@@ -28,7 +28,7 @@ With these fields specified, Z2K will prompt the user for these fields when crea
 ## Dot Notation
 You can also nest fields using dot notation for structured data:
 
-```md title="Partial Template - Person.md"
+```md title="Block - Person.md"
 {{person.firstname}} {{person.lastname}}
 ```
 

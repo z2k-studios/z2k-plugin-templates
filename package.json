@@ -1,6 +1,6 @@
 {
 	"name": "z2k-plugin-templates",
-	"version": "0.4.0",
+	"version": "0.5.0",
 	"description": "Create structured notes from declarative templates. Interactive prompts, smart field replacement, YAML merging across folders, and reusable blocks.",
 	"main": "main.js",
 	"scripts": {
@@ -8,9 +8,14 @@
 		"build": "tsc -noEmit -skipLibCheck && node scripts/esbuild.config.mjs production",
 		"release": "node scripts/release.mjs"
 	},
-	"keywords": [],
-	"author": "",
-	"license": "MIT",
+	"keywords": [
+		"obsidian-plugin",
+		"templates",
+		"handlebars",
+		"yaml"
+	],
+	"author": "Z2K",
+	"license": "Apache-2.0",
 	"devDependencies": {
 		"@types/node": "^16.11.6",
 		"@types/numeral": "^2.0.5",

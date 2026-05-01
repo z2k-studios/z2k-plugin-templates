@@ -17,21 +17,21 @@ Welcome to the **Best Practices** section for [[README|Z2K Templates]]. Included
 	-
 - Template Folders vs Template File Extensions - How to Decide
 - How to Make Use of Hierarchical YAML text
-- How and When to Use Partials
+- How and When to Use Blocks
 - Case sensitivity and field names
 - How to organize your fieldInfos in your template files
 - A Guide to Making Your Templates Modular
-	- Steps through how to use partials for creating common sections, discusses the benefits
+	- Steps through how to use blocks for creating common sections, discusses the benefits
 	- Also, step through how the modular sections can be stored at different hierarchical levels.
 
 - What Makes a good Templating System for a Vault
 	- Describe how to build hierarchical system Yaml code (overwrite property values?)
-	- Use of partials - and naming to include partials that are folder specific
+	- Use of blocks - and naming to include blocks that are folder specific
 	- Use of predefined variables to clean up template text.
 	- Maybe categorize techniques as advanced or intermediate.
 
 - A Guide to Making Multiple Variations of a Template
-	- Example: A Podcast Notes template, with variations for different shows. How to use partials to make this easy to manage and update.
+	- Example: A Podcast Notes template, with variations for different shows. How to use blocks to make this easy to manage and update.
 	- See `Docs/z2k-design-notes/Z2K System - Design Notes/Design Decisions/Template Migration - v2 to v3 - Open Questions.md` for an example of ways to implement.
 
 ## 11. Best Practices

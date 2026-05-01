@@ -57,7 +57,7 @@ Tildes can be combined with any Handlebars expression type:
 | Long comment | `{{~!-- comment --~}}` |
 | Block open | `{{~#if condition~}}` |
 | Block close | `{{~/if~}}` |
-| Partial | `{{~> blockName~}}` |
+| Block | `{{~> blockName~}}` |
 
 ## Silent Helpers and Implicit Whitespace Handling
 Some Z2K Templates helpers – known as [[Silent Helper Functions|silent helpers]] – produce no visible output. The most common is `{{fieldInfo}}` (and its abbreviation `{{fi}}`), which declares metadata about a field but renders as an empty string (see [[fieldInfo Helper]]).

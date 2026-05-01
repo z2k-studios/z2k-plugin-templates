@@ -183,7 +183,7 @@ try {
 	console.log(`\n✅ Released v${v}`);
 	console.log("\nNext steps:");
 	console.log("  1. Go to the GitHub repository");
-	console.log("  2. Create a new release from tag v" + v);
+	console.log("  2. Create a new release from tag " + v);
 	console.log("  3. Upload these files as loose release assets:");
 	console.log(`     - ${BUILT_MAIN}`);
 	console.log("     - manifest.json");
