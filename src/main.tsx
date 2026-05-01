@@ -434,6 +434,12 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		}
 		this._templateValidation?.destroy();
 		this._templateValidation = null;
+		// Mirror onload's registerExtensions — Obsidian persists the registration across
+		// plugin disable, so re-enable would throw "existing file extension".
+		if (this.settings?.useTemplateFileExtensions && this.settings?.templateExtensionsVisible) {
+			// @ts-expect-error: internal API — see rationale in onload
+			this.app.viewRegistry.unregisterExtensions(["template", "block"]);
+		}
 	}
 
 	refreshMainCommands(deleteExisting: boolean = true) {
