@@ -1,7 +1,7 @@
 {
 	"id": "z2k-plugin-templates",
 	"name": "Z2K - Templates",
-	"version": "0.4.0",
+	"version": "0.5.0",
 	"minAppVersion": "1.12.7",
 	"description": "Create structured notes from declarative templates. Interactive prompts, smart field replacement, YAML merging across folders, and reusable blocks.",
 	"author": "Z2K",
