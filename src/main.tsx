@@ -4,7 +4,8 @@ import * as obsidian from 'obsidian';
 import { Z2KTemplateEngine, Z2KYamlDoc, TemplateState, VarValueType, FieldInfo, TemplateError, Handlebars } from './template-engine/main';
 import { PathFile, PathFolder, pathFileFrom, pathFolderFrom, pathFileFromTFile, pathFolderFromTFolder, normalizeFullPath, isSubPathOf, joinPath } from './paths';
 import moment from 'moment';
-import { Z2KTemplatesPluginSettings, DEFAULT_SETTINGS, DOCS_BASE_URL, ErrorLogger, UserCancelError, TemplatePluginError, rethrowWithMessage, escapeRegExp, cardRefNameUpper, cardRefNameLower, parseDuration, parseDelayFromFilename, sleep, type ErrorSeverity } from './utils';
+import { Z2KTemplatesPluginSettings, DEFAULT_SETTINGS, DOCS_BASE_URL, escapeRegExp, cardRefNameUpper, cardRefNameLower, parseDuration, parseDelayFromFilename, sleep, normalizeEol } from './utils';
+import { ErrorLogger, UserCancelError, TemplatePluginError, rethrowWithMessage, type ErrorSeverity } from './errors';
 import { handlebarsOverlay } from './syntax-highlighting';
 import { TemplateValidationController } from './template-validation';
 import { Z2KTemplatesSettingTab } from './settings';
@@ -946,17 +947,17 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			if (!jsonStr) {
 				throw new TemplatePluginError("Command: 'fromJson' cmd requires 'jsonData' or 'jsonData64' parameter");
 			}
+			let parsedParams: any;
 			try {
-				const parsedParams = JSON.parse(jsonStr);
-				if (!parsedParams || typeof parsedParams !== "object" || Array.isArray(parsedParams)) {
-					throw new TemplatePluginError("Command: 'jsonData' must be a valid JSON object (not array or null)");
-				}
-				// Recursive call with parsed JSON (inherit showNotices, mark as JSON source)
-				return await this.processCommand(parsedParams as CommandParams, showNotices, true);
-			} catch (e) {
-				if (e instanceof TemplatePluginError) throw e;
+				parsedParams = JSON.parse(jsonStr);
+			} catch {
 				throw new TemplatePluginError("Command: Invalid jsonData (must be valid JSON)");
 			}
+			if (!parsedParams || typeof parsedParams !== "object" || Array.isArray(parsedParams)) {
+				throw new TemplatePluginError("Command: 'jsonData' must be a valid JSON object (not array or null)");
+			}
+			// Recursive call with parsed JSON (inherit showNotices, mark as JSON source)
+			return await this.processCommand(parsedParams as CommandParams, showNotices, true);
 		}
 
 		// Validate and convert prompt mode
@@ -1622,12 +1623,12 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		if (!opts) { opts = {}; }
 		if (!opts.fieldOverrides) { opts.fieldOverrides = {}; }
 		if (opts.sourceFile) {
-			opts.fieldOverrides.sourceText = await this.app.vault.read(opts.sourceFile);
+			opts.fieldOverrides.sourceText = normalizeEol(await this.app.vault.read(opts.sourceFile));
 		}
 		if (opts.fromSelection) {
 			const editor = this.app.workspace.getActiveViewOfType(MarkdownView)?.editor;
 			if (editor) {
-				opts.fieldOverrides.sourceText = editor.getSelection();
+				opts.fieldOverrides.sourceText = normalizeEol(editor.getSelection());
 			}
 		}
 
@@ -1649,9 +1650,9 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		let content: string;
 		const templateFileForParse = opts.templateFile ?? pathFileFrom("(inline)");
 		if (opts.templateContent) {
-			content = opts.templateContent;
+			content = normalizeEol(opts.templateContent);
 		} else {
-			content = await this.app.vault.adapter.read(opts.templateFile!.path);
+			content = normalizeEol(await this.app.vault.adapter.read(opts.templateFile!.path));
 		}
 		let { fm, body } = Z2KYamlDoc.splitFrontmatter(content);
 		if (fm.includes("{{>")) {
@@ -1727,7 +1728,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		openInEditor?: boolean, // When true, brings the target file to focus after the write
 		showNotices?: boolean, // When true, errors/info messages show user-visible notices. Default true.
 	}): Promise<CommandResult> {
-		let content = await this.app.vault.read(opts.existingFile);
+		let content = normalizeEol(await this.app.vault.read(opts.existingFile));
 		let state = await this.parseTemplate(content, "", "", pathFileFromTFile(opts.existingFile));
 		this.extractTemplateMetadata(state);
 		// Add global block YAML for field values (system blocks already in note from creation)
@@ -1790,7 +1791,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				}
 			}
 			if (opts.fromSelection) {
-				opts.fieldOverrides.sourceText = editor.getSelection();
+				opts.fieldOverrides.sourceText = normalizeEol(editor.getSelection());
 			}
 		}
 		if (!opts.templateFile && !opts.templateContent) {
@@ -1802,9 +1803,9 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		const templateFileForParse = opts.templateFile ?? pathFileFrom("(inline)");
 		let content: string;
 		if (opts.templateContent) {
-			content = opts.templateContent;
+			content = normalizeEol(opts.templateContent);
 		} else {
-			content = await this.app.vault.adapter.read(opts.templateFile!.path);
+			content = normalizeEol(await this.app.vault.adapter.read(opts.templateFile!.path));
 		}
 		let state = await this.parseTemplate(content, "", "", templateFileForParse);
 		this.extractTemplateMetadata(state);
@@ -1815,7 +1816,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			? await this.GetSystemBlocksContent(this.getTemplateCardType(opts.templateFile))
 			: "";
 		let systemBlocksYaml = Z2KYamlDoc.splitFrontmatter(systemBlocksContent).fm;
-		let existingFileContent = await this.app.vault.read(opts.existingFile);
+		let existingFileContent = normalizeEol(await this.app.vault.read(opts.existingFile));
 		let existingFileYaml = Z2KYamlDoc.splitFrontmatter(existingFileContent).fm;
 		await this.addYamlFieldValues(state, [globalBlockYaml, systemBlocksYaml, existingFileYaml]);
 		// Convert sourceText to string for addPluginBuiltIns (handles all VarValueType cases)
@@ -1852,7 +1853,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			} else {
 				editor.replaceRange(blockBody, editor.getCursor());
 			}
-			const full = editor.getValue();
+			const full = normalizeEol(editor.getValue());
 			const { fm: fileFm2, body: newBody2 } = Z2KYamlDoc.splitFrontmatter(full);
 			const mergedFm2 = Z2KYamlDoc.mergeLastWins([fileFm2, blockFm]);
 			const newFileContent = Z2KYamlDoc.joinFrontmatter(mergedFm2, newBody2);
@@ -1860,6 +1861,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		} else {
 			// Atomic read-modify-write to avoid races with other plugins editing the same file.
 			await this.app.vault.process(opts.existingFile, fileContent => {
+				fileContent = normalizeEol(fileContent);
 				const { fm: fileFm, body: fileBody } = Z2KYamlDoc.splitFrontmatter(fileContent);
 				const mergedFm = Z2KYamlDoc.mergeLastWins([fileFm, blockFm]);
 				let newBody: string;
@@ -2050,6 +2052,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			}
 			// Atomic read-modify-write to avoid races with other plugins editing the same file.
 			await this.app.vault.process(file, content => {
+				content = normalizeEol(content);
 				let { fm, body } = Z2KYamlDoc.splitFrontmatter(content);
 				let doc = Z2KYamlDoc.fromString(fm);
 				if (type === "content-file") {
@@ -2098,6 +2101,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			}
 			// Update YAML to ensure type is set. Atomic read-modify-write.
 			await this.app.vault.process(file, content => {
+				content = normalizeEol(content);
 				let { fm, body } = Z2KYamlDoc.splitFrontmatter(content);
 				let doc = Z2KYamlDoc.fromString(fm);
 				doc.set("z2k_template_type", currentType);
@@ -2257,7 +2261,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			yamlTemplateType = this.app.metadataCache.getFileCache(tFile)?.frontmatter?.["z2k_template_type"];
 		} else {
 			try {
-				const content = await this.app.vault.adapter.read(file.path);
+				const content = normalizeEol(await this.app.vault.adapter.read(file.path));
 				const { fm } = Z2KYamlDoc.splitFrontmatter(content);
 				if (fm) { yamlTemplateType = Z2KYamlDoc.fromString(fm).get("z2k_template_type"); }
 			} catch {} // File unreadable — fall through to location/default
@@ -2414,7 +2418,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				if (typeof desc === "string") { description = desc; }
 			} else {
 				try {
-					const content = await this.app.vault.adapter.read(t.file.path);
+					const content = normalizeEol(await this.app.vault.adapter.read(t.file.path));
 					const { fm } = Z2KYamlDoc.splitFrontmatter(content);
 					if (fm) {
 						const yaml = Z2KYamlDoc.fromString(fm);
@@ -2539,7 +2543,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		await findHiddenFolders(this.getTemplatesRootFolder());
 
 		const returnBlock = async (file: PathFile): Promise<[true, string, string]> => {
-			return [true, await adapter.read(file.path), file.path];
+			return [true, normalizeEol(await adapter.read(file.path)), file.path];
 		};
 		// Helper for hierarchical resolution: prefer current folder → parents → first match
 		const resolveHierarchically = async (matches: [PathFile, string][], currentPath: string): Promise<[boolean, string, string]> => {
@@ -2981,10 +2985,10 @@ export default class Z2KTemplatesPlugin extends Plugin {
 		const dotBlock = joinPath(folderPath, '.system-block.md');
 		const plainBlock = joinPath(folderPath, 'system-block.md');
 		try {
-			blocks.push({ content: await adapter.read(dotBlock), depth });
+			blocks.push({ content: normalizeEol(await adapter.read(dotBlock)), depth });
 		} catch {
 			try {
-				blocks.push({ content: await adapter.read(plainBlock), depth });
+				blocks.push({ content: normalizeEol(await adapter.read(plainBlock)), depth });
 			} catch {} // Neither exists
 		}
 		const dotStop = joinPath(folderPath, '.system-block-stop');

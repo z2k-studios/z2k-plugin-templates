@@ -3,6 +3,7 @@ import { type Extension } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
 import { linter, type Diagnostic } from '@codemirror/lint';
 import { Handlebars } from './template-engine/main';
+import { normalizeEol } from './utils';
 import type Z2KTemplatesPlugin from './main';
 
 type ValidationResult =
@@ -111,7 +112,7 @@ export class TemplateValidationController {
 		// a stale-disk result can't overwrite a fresher linter result.
 		const mdView = this.plugin.app.workspace.getActiveViewOfType(MarkdownView);
 		if (mdView?.getMode() === 'source') { return; }
-		const content = await this.plugin.app.vault.cachedRead(file);
+		const content = normalizeEol(await this.plugin.app.vault.cachedRead(file));
 		const result = this.validate(content);
 		if (result.valid) { this.setValid(); }
 		else { this.setInvalid(result.line, result.col); }

@@ -34,7 +34,8 @@ Z2K Templates sits between Core Templates (too simple) and Templater (requires J
 
 - **Source:** `src/`
   - `main.tsx` — Z2KTemplatesPlugin class, command processing, template resolution
-  - `utils.ts` — shared types (settings, errors), utility functions
+  - `utils.ts` — settings types/defaults, small utilities (`normalizeEol`, duration parsing, `cardRefName*`, etc.)
+  - `errors.ts` — error classes (`TemplatePluginError`, `UserCancelError`), `ErrorLogger`, `ErrorBoundary`
   - `settings.tsx` — settings tab UI
   - `syntax-highlighting.ts` — CodeMirror handlebars overlay
   - `paths.ts` — path utilities

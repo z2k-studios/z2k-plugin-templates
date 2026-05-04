@@ -8,7 +8,8 @@ import { syntaxHighlighting, bracketMatching, HighlightStyle } from "@codemirror
 import { tags } from "@lezer/highlight";
 import { javascript } from "@codemirror/lang-javascript";
 import { handlebarsOverlay } from '../syntax-highlighting';
-import { Z2KTemplatesPluginSettings, ErrorBoundary } from '../utils';
+import { Z2KTemplatesPluginSettings } from '../utils';
+import { ErrorBoundary } from '../errors';
 import { ErrorModal } from './simple-modals';
 import { SuggestInput, SuggestItem } from '../components/suggest-input';
 import type Z2KTemplatesPlugin from '../main';

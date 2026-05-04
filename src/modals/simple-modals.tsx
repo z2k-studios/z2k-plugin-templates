@@ -1,7 +1,8 @@
 import { App, Modal, Notice } from 'obsidian';
 import React, { useState, useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
-import { Z2KTemplatesPluginSettings, cardRefNameUpper, cardRefNameLower, ErrorBoundary, TemplatePluginError, UserCancelError } from '../utils';
+import { Z2KTemplatesPluginSettings, cardRefNameUpper, cardRefNameLower } from '../utils';
+import { ErrorBoundary, TemplatePluginError, UserCancelError } from '../errors';
 import { TemplateError } from '../template-engine/main';
 import { PathFolder, PathFile, normalizeFullPath } from '../paths';
 

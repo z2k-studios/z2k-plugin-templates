@@ -2,7 +2,7 @@ import { App, Modal, Notice } from 'obsidian';
 import React, { useState, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Z2KTemplateEngine, TemplateState, VarValueType, FieldInfo } from '../template-engine/main';
-import { ErrorBoundary, TemplatePluginError, UserCancelError } from '../utils';
+import { ErrorBoundary, TemplatePluginError, UserCancelError } from '../errors';
 import moment from 'moment';
 
 // ------------------------------------------------------------------------------------------------

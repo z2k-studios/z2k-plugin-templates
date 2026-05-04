@@ -6,6 +6,7 @@ import type { AST } from '@handlebars/parser';
 import YAML, { isMap, YAMLMap } from 'yaml';   // npm i yaml
 import { evaluate } from 'mathjs';   // npm i mathjs
 import numeral from 'numeral';   // npm i numeral @types/numeral
+import { normalizeEol } from '../utils';
 
 class Z2KTemplateEngine {
 	private static getBuiltInVars(): Record<string, VarValueType> {
@@ -722,6 +723,12 @@ class Z2KTemplateEngine {
 		fieldInfosBySource: Array<{ source: 'built-in' | 'global' | 'system' | 'main' | 'block', fieldInfos: Record<string, FieldInfo> }>,
 		includeChain: Set<string> = new Set()
 	): Promise<void> {
+		// Defense-in-depth: external callers should already pass LF-normalized content
+		// (see `normalizeEol`), but the engine re-normalizes here so direct callers
+		// (tests, scripts) can't accidentally feed CRLF into the parser.
+		content = normalizeEol(content);
+		systemBlocksContent = normalizeEol(systemBlocksContent);
+
 		// Normalize field aliases first, before any other parsing
 		content = this.normalizeFieldAliases(content);
 		systemBlocksContent = this.normalizeFieldAliases(systemBlocksContent);
