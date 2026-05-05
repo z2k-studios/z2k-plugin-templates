@@ -1056,10 +1056,16 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			throw new TemplatePluginError("Command: Cannot specify both templatePath/blockPath and templateContents/blockContents");
 		}
 
-		// Resolve existing file
+		// Resolve existing file. Verify against disk (not just the index) — Obsidian's
+		// in-memory index can lag behind external file deletions (e.g., git checkout, OS
+		// file ops, or our own test runner). Without this, upsert would see a stale TFile
+		// and take the "continue" branch, then ENOENT when reading the missing file.
 		let existingFile: TFile | undefined;
 		if (cps.existingFilePath) {
-			existingFile = this.getFile(cps.existingFilePath) || undefined;
+			const candidate = this.getFile(cps.existingFilePath);
+			if (candidate && await this.app.vault.adapter.exists(normalizeFullPath(cps.existingFilePath))) {
+				existingFile = candidate;
+			}
 			if (!existingFile && cmd !== "upsert") {
 				throw new TemplatePluginError(`Command: File not found:\n${cps.existingFilePath}`);
 			}
@@ -1703,7 +1709,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			const filename = this.getValidFilename(title);
 			const targetPath = joinPath(opts.destDir.path, filename + '.md');
 			if (targetPath !== opts.sourceFile.path) {
-				const newPath = this.generateUniqueFilePath(opts.destDir.path, filename);
+				const newPath = await this.generateUniqueFilePath(opts.destDir.path, filename);
 				await this.app.fileManager.renameFile(opts.sourceFile, newPath);
 			}
 			filePath = opts.sourceFile.path;
@@ -1909,7 +1915,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			await this.app.vault.modify(file, content);
 			const filename = this.getValidFilename(title);
 			if (filename !== file.basename) {
-				const newPath = this.generateUniqueFilePath(file.parent?.path as string, filename);
+				const newPath = await this.generateUniqueFilePath(file.parent?.path as string, filename);
 				await this.app.fileManager.renameFile(file, newPath);
 			}
 		} catch (error) {
@@ -2692,12 +2698,15 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			.replace(/^ +/, '')                         // No leading spaces
 			|| 'Untitled';                              // Fallback if empty
 	}
-	generateUniqueFilePath(folderPath: string, basename: string): string {
+	// Check disk via adapter.exists rather than Obsidian's index. The index can lag
+	// behind external file deletions (git checkout, OS file ops, our own test runner),
+	// which would cause this function to suffix the path even when it's actually free.
+	async generateUniqueFilePath(folderPath: string, basename: string): Promise<string> {
 		basename = basename.replace(/\.md$/, '');
 		let filename = basename + '.md';
 		let fullPath = joinPath(folderPath, filename);
 		let counter = 1;
-		while (this.getFile(fullPath)) {
+		while (await this.app.vault.adapter.exists(fullPath)) {
 			fullPath = joinPath(folderPath, `${basename} ${counter++}.md`);
 		}
 		return fullPath;
@@ -3084,7 +3093,7 @@ export default class Z2KTemplatesPlugin extends Plugin {
 				await this.app.vault.createFolder(folder.path);
 			}
 			const filename = this.getValidFilename(title);
-			const newPath = this.generateUniqueFilePath(folder.path, filename);
+			const newPath = await this.generateUniqueFilePath(folder.path, filename);
 			const file = await this.app.vault.create(newPath, content);
 			return file;
 		} catch (error) {

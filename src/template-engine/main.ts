@@ -375,7 +375,7 @@ class Z2KTemplateEngine {
 		if (typeof content !== 'string') { return content; }
 
 		// Merge built-in helpers with user-provided helpers (user helpers override built-ins)
-		const allHelpers = { ...this.getHelperFunctions(), ...userHelpers };
+		const allHelpers = this.wrapHelpersWithEscapeProcessing({ ...this.getHelperFunctions(), ...userHelpers });
 
 		// Single Expression vs Template Rendering
 		//
@@ -481,12 +481,43 @@ class Z2KTemplateEngine {
 		return renderedContent;
 	}
 	// Converts \n → newline, \t → tab, \\ → backslash
-	private static processStringEscapes(str: string): string {
+	static processStringEscapes(str: string): string {
 		return str
 			.replace(/\\\\/g, '\x00')  // Temporarily replace \\ with placeholder
 			.replace(/\\n/g, '\n')
 			.replace(/\\t/g, '\t')
 			.replace(/\x00/g, '\\');   // Restore \\ as single backslash
+	}
+
+	// Wrap helpers so their string arguments get escape sequences (\n, \t, \\) converted
+	// to real characters before the helper body sees them. Handlebars passes string
+	// literals verbatim to helpers — without this wrapper, `{{helper "a\nb"}}` would arrive
+	// as the literal 4 chars `a\nb` rather than `a` + newline + `b`. Path-resolved string
+	// args are also processed; in practice they've already been through the same conversion
+	// upstream (in reducedRenderContent), so re-processing is a no-op for those.
+	// Known edge case: a helper returning a string with literal `\n` that's then nested
+	// inside another helper would have those escapes re-processed. Vanishingly rare in
+	// practice; accepted as the tradeoff for keeping the wrapper simple.
+	static wrapHelpersWithEscapeProcessing(helpers: Record<string, Handlebars.HelperDelegate | Function>): Record<string, Handlebars.HelperDelegate> {
+		const wrapped: Record<string, Handlebars.HelperDelegate> = {};
+		for (const [name, fn] of Object.entries(helpers)) {
+			wrapped[name] = function(this: any, ...args: unknown[]) {
+				const options = args[args.length - 1] as HelperOptions;
+				const positional = args.slice(0, -1).map(a =>
+					typeof a === 'string' ? Z2KTemplateEngine.processStringEscapes(a) : a
+				);
+				let wrappedOptions = options;
+				if (options?.hash) {
+					const wrappedHash: Record<string, unknown> = {};
+					for (const [k, v] of Object.entries(options.hash)) {
+						wrappedHash[k] = typeof v === 'string' ? Z2KTemplateEngine.processStringEscapes(v) : v;
+					}
+					wrappedOptions = { ...options, hash: wrappedHash };
+				}
+				return (fn as Function).apply(this, [...positional, wrappedOptions]);
+			};
+		}
+		return wrapped;
 	}
 
 	// Pre-check for common Handlebars errors before execution
@@ -1351,7 +1382,7 @@ class Z2KTemplateEngine {
 
 	static renderTemplate(state: TemplateState, finalize: boolean, userHelpers?: Record<string, Function>): { fm: string; body: string } {
 		// Merge built-in helpers with user-provided helpers (user helpers override built-ins)
-		const allHelpers = { ...this.getHelperFunctions(), ...userHelpers };
+		const allHelpers = this.wrapHelpersWithEscapeProcessing({ ...this.getHelperFunctions(), ...userHelpers });
 		// Make a map of all the expressions to preserve
 		let preserveExpressions: Record<string, string> = {};
 		for (let i = 0; i < state.templates.length; i++) {
@@ -1439,13 +1470,18 @@ class Z2KTemplateEngine {
 			replacements.sort((a, b) => b.start - a.start);
 			let result = content;
 			for (let { start, end, replacement } of replacements) {
-				// If surrounded by newlines, remove trailing newline too
-				const hasLeadingNewline = start > 0 && result[start - 1] === '\n';
-				const hasTrailingNewline = end < result.length && result[end] === '\n';
-				if (hasLeadingNewline && hasTrailingNewline) {
-					end++;
+				// If the expression is the only non-whitespace on its line, remove the
+				// whole line including its terminating newline. Boundary cases (start
+				// or end of content) and indented expressions both fall under this rule.
+				const lineStart = result.lastIndexOf('\n', start - 1) + 1;
+				let lineEnd = result.indexOf('\n', end);
+				if (lineEnd === -1) { lineEnd = result.length; }
+				const beforeOnLine = result.substring(lineStart, start);
+				const afterOnLine = result.substring(end, lineEnd);
+				if (/^\s*$/.test(beforeOnLine) && /^\s*$/.test(afterOnLine)) {
+					start = lineStart;
+					end = lineEnd < result.length ? lineEnd + 1 : lineEnd;
 				}
-
 				result = result.substring(0, start) + replacement + result.substring(end);
 			}
 			state.preprocessedTemplates[i] = result;
