@@ -419,7 +419,7 @@ const FieldCollectionForm = ({ templateState, userHelpers, onComplete, onCancel,
 		setSubmitting(true);
 
 		// Update template state with resolved values
-		// NOTE: Similar logic exists in applyFinalFieldStates(). If you modify
+		// NOTE: Similar logic exists in resolveComputedFieldValues(). If you modify
 		// the value= or fallback handling here, check if the same change is needed there.
 		for (const fieldName of dependencyOrderedFieldNames) {
 			const fieldInfo = templateState.fieldInfos[fieldName];
@@ -437,7 +437,7 @@ const FieldCollectionForm = ({ templateState, userHelpers, onComplete, onCancel,
 				}
 			} else if (fieldInfo.value !== undefined && !(fieldName in templateState.resolvedValues)) {
 				// Computed field (value=) not overridden by external data
-				// NOTE: Similar logic in applyFinalFieldStates() - keep in sync
+				// NOTE: Similar logic in resolveComputedFieldValues() - keep in sync
 				if (value === undefined) {
 					delete templateState.resolvedValues[fieldName];
 				} else {
@@ -446,7 +446,12 @@ const FieldCollectionForm = ({ templateState, userHelpers, onComplete, onCancel,
 			} else if (finalize && !(fieldName in templateState.resolvedValues) && !fieldInfo.directives?.includes('finalize-preserve')) {
 				// Unspecified field during finalization - use fallback value
 				// Skip finalize-preserve fields - leave undefined so preservation logic handles them
-				// NOTE: Similar logic in applyFinalFieldStates() - keep in sync
+				// NOTE: Similar logic in resolveComputedFieldValues() - keep in sync
+				// Don't auto-empty an unresolved field that exists only because it's a value=
+				// dependency of another field — see Z2KTemplateEngine.isUsedAsValueDependency.
+				if (fieldInfo.fallback === undefined && Z2KTemplateEngine.isUsedAsValueDependency(fieldName, templateState.fieldInfos)) {
+					continue;
+				}
 				const fallbackValue = fieldState.resolvedFallback;
 				if (fallbackValue === undefined) {
 					delete templateState.resolvedValues[fieldName];

@@ -2034,6 +2034,13 @@ export default class Z2KTemplatesPlugin extends Plugin {
 			// NOTE: Similar logic in handleSubmit() - keep in sync
 			const hasFinalizePreserve = fieldInfo.directives?.includes('finalize-preserve');
 			if (finalize && !(fieldName in state.resolvedValues) && !hasFinalizePreserve) {
+				// Don't auto-empty an unresolved field that exists only because it's a value=
+				// dependency of another field. If we did, the parent's value= would partial-
+				// resolve (with "" for the missing piece) instead of failing-and-falling-through
+				// to its own fallback. Explicit fallback= on the orphan still applies.
+				if (fieldInfo.fallback === undefined && Z2KTemplateEngine.isUsedAsValueDependency(fieldName, state.fieldInfos)) {
+					continue;
+				}
 				const resolvedFallback = Z2KTemplateEngine.reducedRenderContent(fieldInfo.fallback || "", context, true, this.activeHelpers);
 				if (resolvedFallback === undefined) {
 					delete state.resolvedValues[fieldName];

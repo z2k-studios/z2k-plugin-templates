@@ -79,10 +79,11 @@ class Z2KTemplateEngine {
 			let str = String(value);
 			str = str.charAt(0).toUpperCase() + str.slice(1);
 			return str
-				.replace(/([a-z0-9])([A-Z])/g, '$1 $2')      // ParseXML → Parse XML, GLTF2L → GLTF2 L
+				.replace(/([A-Za-z])([0-9])/g, '$1 $2')      // version2 → version 2, GLTF2 → GLTF 2
+				.replace(/([0-9])([A-Za-z])/g, '$1 $2')      // 2Update → 2 Update, 2Loader → 2 Loader
+				.replace(/([a-z])([A-Z])/g, '$1 $2')         // helloWorld → hello World
 				.replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')   // XMLFile → XML File, HTTPServer → HTTP Server
 				.trim();
-			// return (value == null) ? value : String(value).replace(/([A-Z])/g, ' $1').trim();
 		};
 		helperFunctions["formatStringBulletize"] = (...args: unknown[]) => {
 			const options = args[args.length - 1] as HelperOptions;
@@ -559,6 +560,19 @@ class Z2KTemplateEngine {
 			return [];
 		}
 	}
+	// True if the field is referenced in some other field's value= expression. Used by
+	// the finalize-fallback path to decide whether to leave an unresolved orphan as
+	// undefined (so its dependent's value= will fail-and-fallback) instead of clearing
+	// it to "" (which would let the dependent's value= partial-resolve with empty).
+	static isUsedAsValueDependency(fieldName: string, fieldInfos: Record<string, FieldInfo>): boolean {
+		for (const other of Object.values(fieldInfos)) {
+			if (other.fieldName === fieldName) { continue; }
+			if (other.value === undefined) { continue; }
+			if (this.reducedGetDependencies(other.value).includes(fieldName)) { return true; }
+		}
+		return false;
+	}
+
 	// Collects all field names referenced in a fieldInfo's string properties
 	static getFieldInfoDependencies(fieldInfo: FieldInfo): string[] {
 		// Raw-content fields (clipboard, sourceText, and anything tagged by the author)
