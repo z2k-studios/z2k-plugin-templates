@@ -475,7 +475,7 @@ export class WelcomeModal extends Modal {
 				<ol>
 					<li>Open <strong>Settings → Z2K Templates</strong> to set your templates folder.</li>
 					<li>Add a template file (a Markdown file with <code>{`{{Field}}`}</code> placeholders) to that folder.</li>
-					<li>Run <strong>Z2K Templates: Create new file from template</strong> from the command palette, or click the file-plus icon in the ribbon.</li>
+					<li>Run <strong>Z2K Templates: Create new file</strong> from the command palette, or click the file-plus icon in the ribbon.</li>
 				</ol>
 				<div className="welcome-buttons">
 					<button

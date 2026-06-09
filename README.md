@@ -35,7 +35,7 @@ date: {{date}}
 {{Notes}}
 ````
 
-**3. Run the command.** Open the command palette (`Ctrl+P` / `Cmd+P`) and run **Z2K Templates: Create new file from template**, or click the file-plus icon in the left ribbon. Pick `Daily Log`, fill in the prompts for `Intention` and `Notes`, and the plugin creates your note with `{{date}}` replaced by today's date.
+**3. Run the command.** Open the command palette (`Ctrl+P` / `Cmd+P`) and run **Z2K Templates: Create new file**, or click the file-plus icon in the left ribbon. Pick `Daily Log`, fill in the prompts for `Intention` and `Notes`, and the plugin creates your note with `{{date}}` replaced by today's date.
 
 That's the minimum. To control prompt text, default values, field types, and dropdown options, add `{{fieldInfo}}` (or its short form `{{fi}}`) helpers — see the Core Features section below.
 
